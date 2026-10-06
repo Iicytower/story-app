@@ -15,3 +15,7 @@ Spec zakłada jedno konto i jedną kolekcję `stories`. Zmiana: konta trzymamy w
 - Strona publiczna `/s/[token]` szuka tylko po `shareToken` (token globalnie unikalny).
 - Skrypt seedujący dodaje nowe konto; jeśli e-mail istnieje, pyta, czy zmienić hasło.
 - Brak rejestracji w UI (bez zmian względem spec).
+
+## D2 – Strategia testów (2026-10-06)
+
+Spec wymaga tylko testu `stripComments`. Rozszerzenie: testy jednostkowe (Vitest), integracyjne Server Actions i zapytań (`mongodb-memory-server`) oraz E2E (Playwright, osobny task 05). Każde kryterium akceptacji ma przypisany test lub oznaczenie `manual`. Szczegóły: [`testing.md`](testing.md).

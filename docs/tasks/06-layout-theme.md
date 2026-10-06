@@ -1,4 +1,4 @@
-# 05 – Layout, nagłówek, dark mode
+# 06 – Layout, nagłówek, dark mode
 
 Spec: „Cel i stack”, „Logowanie”.
 
@@ -12,3 +12,8 @@ Spec: „Cel i stack”, „Logowanie”.
 
 - Przełączenie motywu przetrwa odświeżenie strony.
 - Wylogowanie wraca na `/login`.
+
+## Testy
+
+- E2E `tests/e2e/layout.spec.ts`: przełączenie motywu → klasa `dark` na `<html>` po przeładowaniu nadal obecna; „Log out” → `/login`, a `/stories` znów przekierowuje.
+- `manual`: brak mignięcia złego motywu przy ładowaniu.

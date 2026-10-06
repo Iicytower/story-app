@@ -19,26 +19,43 @@
       "Bash(git commit*)",
       "Bash(git status*)",
       "Bash(git diff*)",
-      "Bash(git log*)"
+      "Bash(git log*)",
+      "Bash(npm run test:e2e*)",
+      "Bash(npm run verify*)",
+      "Bash(npx playwright test*)",
+      "Bash(npx playwright show-report*)"
     ],
     "ask": [
       "Bash(npm install*)",
       "Bash(npm i *)",
       "Bash(npm uninstall*)",
       "Bash(git push*)",
-      "Bash(npm run create-account*)"
+      "Bash(npm run create-account*)",
+      "Bash(npx playwright install*)"
     ]
   },
   "hooks": {
     "PostToolUse": [
       {
         "matcher": "Edit|Write|MultiEdit",
-        "hooks": [{ "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/format.sh", "timeout": 30 }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/format.sh",
+            "timeout": 30
+          }
+        ]
       }
     ],
     "Stop": [
       {
-        "hooks": [{ "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/typecheck.sh", "timeout": 120 }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/typecheck.sh",
+            "timeout": 120
+          }
+        ]
       }
     ]
   }

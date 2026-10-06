@@ -19,3 +19,9 @@ Spec: „Logowanie”, „Architektura i ścieżki”.
 - Niezalogowany użytkownik → przekierowanie na `/login`.
 - Błędne dane → komunikat, opóźnienie ~1,5 s.
 - `/s/[token]` dostępne bez sesji.
+
+## Testy
+
+- Integracyjne: `authorize` – poprawne dane → user z `id`; złe hasło / nieznany e-mail → `null`; e-mail wielkimi literami działa; opóźnienie ≥ 1,5 s (mock timera lub pomiar).
+- Jednostkowy: `requireUser()` bez sesji → `UNAUTHORIZED`.
+- E2E: pisane w tasku 05 (`auth.spec.ts`), bo infrastruktura Playwrighta powstaje tam. Dostępność `/s/[token]` bez sesji – w tasku 12.

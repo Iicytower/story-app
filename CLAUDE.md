@@ -6,19 +6,24 @@ Prywatna aplikacja webowa do pisania opowiadań w markdown (Next.js App Router, 
 
 - `docs/spec.md` – specyfikacja funkcjonalna (kopia dokumentu z Claude Docs, nie edytować bez prośby).
 - `docs/decisions.md` – decyzje i odstępstwa od spec; **ma pierwszeństwo nad spec**. Nową decyzję dopisz tutaj.
-- `docs/tasks/README.md` – lista tasków ze statusami; szczegóły w `docs/tasks/NN-*.md`.
+- `docs/testing.md` – strategia testów (unit / integracyjne z `mongodb-memory-server` / E2E Playwright). **Obowiązkowa przy każdym tasku.**
+- `docs/tasks/README.md` – lista tasków ze statusami i definicja „zrobione”; szczegóły w `docs/tasks/NN-*.md` (sekcje Zakres, Kryteria akceptacji, Testy).
 
 ## Praca z taskami
 
 1. Przed startem przeczytaj plik taska oraz wskazane sekcje spec i `decisions.md`.
 2. Ustaw status `[~]` w `docs/tasks/README.md`.
 3. Niejasności lub kilka sensownych rozwiązań → zapytaj, zanim zaimplementujesz.
-4. Po implementacji: `npm run lint`, `npm run typecheck`, `npm test` muszą przechodzić; sprawdź kryteria akceptacji.
-5. Status `[x]`, potem jeden commit na task na `main` (wiadomość: `NN: <krótki opis>`). Bez push.
+4. Napisz testy z sekcji „Testy” taska razem z kodem (nie na końcu). Każde kryterium akceptacji musi mieć test albo oznaczenie `manual`.
+5. `npm run verify` musi przechodzić (przed taskiem 05: `lint`, `typecheck`, `test`). Nie zamykaj taska z czerwonymi lub pominiętymi testami.
+6. W odpowiedzi do użytkownika podaj mapowanie: kryterium akceptacji → test (lub wynik weryfikacji `manual`).
+7. Status `[x]`, potem jeden commit na task na `main` (wiadomość: `NN: <krótki opis>`). Bez push.
 
 ## Komendy
 
-- `npm run dev` / `build` / `lint` / `typecheck` / `test` / `format`
+- `npm run dev` / `build` / `lint` / `typecheck` / `format`
+- `npm test` (Vitest: unit + integracyjne), `npm run test:e2e` (Playwright), `npm run verify` (wszystko)
+- Testy nigdy nie używają bazy z `.env.local` – tylko `mongodb-memory-server`.
 - `npm run create-account` – interaktywny skrypt dodający konto (uruchamia użytkownik, nie Claude).
 - Package manager: npm. Instalacja pakietów tylko po zgodzie użytkownika.
 

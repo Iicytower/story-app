@@ -13,3 +13,8 @@ Spec: „Logowanie”, „Zmienne środowiskowe”; decisions.md D1.
 
 - Niezgodne hasła → ponowne pytanie lub czytelny błąd.
 - Kolejne uruchomienie dodaje kolejne konto, które od razu może się zalogować.
+
+## Testy
+
+- Logika skryptu wydzielona od I/O terminala (`createOrUpdateUser(email, password)`), testowana integracyjnie: nowe konto, hash weryfikowalny przez `bcryptjs`, e-mail lowercase, zmiana hasła istniejącego.
+- `manual`: interaktywny przebieg (ukryte hasło, potwierdzenie) – sprawdza użytkownik, uruchamiając `npm run create-account`.

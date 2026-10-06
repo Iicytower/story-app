@@ -1,4 +1,4 @@
-# 12 – Wdrożenie: Vercel + Atlas
+# 13 – Wdrożenie: Vercel + Atlas
 
 Spec: „Cel i stack”, „Uwagi implementacyjne”, „Zmienne środowiskowe”.
 
@@ -12,3 +12,7 @@ Spec: „Cel i stack”, „Uwagi implementacyjne”, „Zmienne środowiskowe�
 ## Kryteria akceptacji
 
 - Aplikacja działa na Vercelu, a kroki są powtarzalne z README.
+
+## Testy
+
+- `manual`: smoke test na produkcji (lista kroków w README), wynik zgłoszony użytkownikowi.
