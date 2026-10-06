@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { E2E_MONGODB_URI } from "./env";
+import { E2E_MONGODB_URI, USERS, type UserName } from "./env";
 
 export async function withE2EDb<T>(
   fn: (connection: mongoose.Connection) => Promise<T>,
@@ -17,5 +17,27 @@ export async function withE2EDb<T>(
 export function clearStories(): Promise<void> {
   return withE2EDb(async (connection) => {
     await connection.collection("stories").deleteMany({});
+  });
+}
+
+export function seedStory(
+  user: UserName,
+  story: { title: string; content?: string; updatedAt?: Date },
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const account = await connection
+      .collection("users")
+      .findOne({ email: USERS[user].email });
+    if (!account) throw new Error(`User ${user} is not seeded`);
+    const now = new Date();
+    await connection.collection("stories").insertOne({
+      userId: account._id,
+      title: story.title,
+      content: story.content ?? "",
+      notes: "",
+      deletedAt: null,
+      createdAt: now,
+      updatedAt: story.updatedAt ?? now,
+    });
   });
 }
