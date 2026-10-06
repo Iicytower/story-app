@@ -21,7 +21,7 @@ Spec: „Model danych”, „Indeksy”, „Uwagi implementacyjne”; decisions.
 
 ## Testy
 
-- Infrastruktura: `mongodb-memory-server` + helper startu/czyszczenia bazy dla testów integracyjnych (po zgodzie na instalację).
+- Infrastruktura: MongoDB w Dockerze (D3) + helper startu/czyszczenia bazy dla testów integracyjnych.
 - `tests/integration/models.test.ts` (po `syncIndexes()`):
   - drugi aktywny `Story` z tym samym `userId` + `title` → błąd duplikatu,
   - ten sam tytuł u innego użytkownika → OK,

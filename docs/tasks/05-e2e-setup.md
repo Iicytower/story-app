@@ -6,7 +6,7 @@ Strategia: [`../testing.md`](../testing.md).
 
 - `@playwright/test`, przeglądarka Chromium (po zgodzie użytkownika).
 - `playwright.config.ts`: `webServer` startuje aplikację (`build` + `start` lub `dev`) z `MONGODB_URI` wskazującym na bazę testową.
-- `globalSetup`: `mongodb-memory-server`, seed dwóch użytkowników (`alice`, `bob`) z znanymi hasłami; `globalTeardown` zatrzymuje bazę.
+- `globalSetup`: kontener `mongo` z `docker-compose.yml` (D3), czysta baza `story_app_e2e`, seed dwóch użytkowników (`alice`, `bob`) z znanymi hasłami; `globalTeardown` usuwa bazę.
 - Helper logowania (zapis `storageState` per użytkownik), helper czyszczenia kolekcji `stories` między testami.
 - Skrypty `test:e2e` i `verify` w `package.json`.
 - Katalog wyników Playwrighta w `.gitignore`.
