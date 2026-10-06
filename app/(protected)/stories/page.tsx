@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { requireUser } from "@/lib/auth/session";
 import { listStories } from "@/lib/stories/queries";
 import { buildSnippet } from "@/lib/stories/search";
+import { CreateStoryDialog } from "./create-story-dialog";
+import { DeleteStoryButton } from "./delete-story-button";
 
 export const metadata: Metadata = { title: "Stories – Story App" };
 
@@ -21,7 +23,10 @@ export default async function StoriesPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Stories</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Stories</h1>
+        <CreateStoryDialog />
+      </div>
       <Form action="/stories" role="search">
         <Input
           key={query}
@@ -43,10 +48,10 @@ export default async function StoriesPage({
           {stories.map((story) => {
             const snippet = buildSnippet(story.content, query || undefined);
             return (
-              <li key={story.id}>
+              <li key={story.id} className="flex items-center gap-2 pr-3">
                 <Link
                   href={`/stories/${story.id}`}
-                  className="hover:bg-muted/50 flex flex-col gap-1 px-4 py-3"
+                  className="hover:bg-muted/50 flex min-w-0 flex-1 flex-col gap-1 px-4 py-3"
                 >
                   <span className="font-medium">{story.title}</span>
                   <span className="text-muted-foreground line-clamp-2 text-sm">
@@ -59,6 +64,7 @@ export default async function StoriesPage({
                     {snippet.after}
                   </span>
                 </Link>
+                <DeleteStoryButton id={story.id} title={story.title} />
               </li>
             );
           })}

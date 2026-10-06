@@ -21,3 +21,9 @@ export async function disconnectDB(): Promise<void> {
   cache.mongooseConnection = undefined;
   await mongoose.disconnect();
 }
+
+export function isDuplicateKeyError(error: unknown): boolean {
+  return (
+    error instanceof mongoose.mongo.MongoServerError && error.code === 11000
+  );
+}

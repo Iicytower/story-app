@@ -41,3 +41,13 @@ export function seedStory(
     });
   });
 }
+
+export function findStory(
+  title: string,
+): Promise<{ deletedAt: Date | null } | null> {
+  return withE2EDb((connection) =>
+    connection
+      .collection<{ deletedAt: Date | null }>("stories")
+      .findOne({ title }),
+  );
+}

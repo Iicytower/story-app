@@ -13,7 +13,7 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione.
 | 05 | [Infrastruktura E2E (Playwright)](05-e2e-setup.md) | 04 | [x] |
 | 06 | [Layout, nagłówek, dark mode](06-layout-theme.md) | 05 | [x] |
 | 07 | [Lista opowiadań i wyszukiwanie](07-stories-list.md) | 06 | [x] |
-| 08 | [Tworzenie i usuwanie opowiadań](08-create-delete.md) | 07 | [ ] |
+| 08 | [Tworzenie i usuwanie opowiadań](08-create-delete.md) | 07 | [x] |
 | 09 | [Edytor: UI, podgląd, notatki, liczniki](09-editor-ui.md) | 08 | [ ] |
 | 10 | [Zapis: saveStory, autozapis, zabezpieczenia](10-save.md) | 09 | [ ] |
 | 11 | [Eksport .md](11-export.md) | 10 | [ ] |
