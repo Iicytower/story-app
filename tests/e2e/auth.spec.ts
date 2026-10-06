@@ -35,4 +35,9 @@ test.describe("signed in", () => {
     await page.goto("/");
     await expect(page).toHaveURL("/stories");
   });
+
+  test("/login redirects to /stories", async ({ page }) => {
+    await page.goto("/login");
+    await expect(page).toHaveURL("/stories");
+  });
 });
