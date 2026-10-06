@@ -33,6 +33,15 @@ const AUTOSAVE_DELAY_MS = 3000;
 
 type Values = { title: string; content: string; notes: string };
 
+// Below the md breakpoint only one panel is shown at a time.
+type MobileView = "editor" | "preview" | "notes";
+
+const MOBILE_VIEWS: { value: MobileView; label: string }[] = [
+  { value: "editor", label: "Editor" },
+  { value: "preview", label: "Preview" },
+  { value: "notes", label: "Notes" },
+];
+
 type SaveState =
   | { status: "idle" | "saving" | "saved" }
   | { status: "error"; message: string };
@@ -49,6 +58,7 @@ export function Editor({ story }: { story: EditorStory }) {
   const [content, setContent] = useState(story.content);
   const [notes, setNotes] = useState(story.notes);
   const [notesOpen, setNotesOpen] = useState(true);
+  const [mobileView, setMobileView] = useState<MobileView>("editor");
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
   const [sharePath, setSharePath] = useState(
     story.shareToken ? `/s/${story.shareToken}` : null,
@@ -173,20 +183,20 @@ export function Editor({ story }: { story: EditorStory }) {
 
   return (
     <div className="flex h-[calc(100dvh-3.5rem-1px)] flex-col">
-      <div className="flex items-center gap-3 border-b px-6 py-3">
+      <div className="flex flex-wrap items-center gap-2 border-b px-4 py-3 md:flex-nowrap md:gap-3 md:px-6">
         <Input
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           aria-label="Title"
           placeholder="Title"
-          className="h-9 flex-1 text-lg font-semibold md:text-lg"
+          className="h-9 w-full text-lg font-semibold md:w-auto md:flex-1 md:text-lg"
         />
         <span
           role="status"
           className={
             saveState.status === "error"
-              ? "text-destructive max-w-md text-sm"
-              : "text-muted-foreground text-sm"
+              ? "text-destructive mr-auto max-w-md text-sm md:mr-0"
+              : "text-muted-foreground mr-auto text-sm md:mr-0"
           }
         >
           {saveState.status === "saving" && "Saving…"}
@@ -195,7 +205,7 @@ export function Editor({ story }: { story: EditorStory }) {
         </span>
         <Button variant="outline" onClick={exportStory}>
           <DownloadIcon />
-          Export .md
+          <span className="sr-only md:not-sr-only">Export .md</span>
         </Button>
         <Button
           variant="outline"
@@ -203,7 +213,9 @@ export function Editor({ story }: { story: EditorStory }) {
           disabled={sharingPending}
         >
           <Share2Icon />
-          {sharePath ? "Stop sharing" : "Share"}
+          <span className="sr-only md:not-sr-only">
+            {sharePath ? "Stop sharing" : "Share"}
+          </span>
         </Button>
         <DeleteStoryButton
           id={story.id}
@@ -216,15 +228,16 @@ export function Editor({ story }: { story: EditorStory }) {
           aria-label={notesOpen ? "Hide notes" : "Show notes"}
           aria-expanded={notesOpen}
           aria-controls="notes-panel"
+          className="hidden md:inline-flex"
           onClick={() => setNotesOpen((open) => !open)}
         >
           {notesOpen ? <PanelRightCloseIcon /> : <PanelRightOpenIcon />}
         </Button>
       </div>
       {shareUrl && (
-        <div className="flex items-center gap-2 border-b px-6 py-2 text-sm">
-          <LinkIcon className="text-muted-foreground size-4" />
-          <span className="text-muted-foreground">
+        <div className="flex items-center gap-2 border-b px-4 py-2 text-sm md:px-6">
+          <LinkIcon className="text-muted-foreground size-4 shrink-0" />
+          <span className="text-muted-foreground hidden md:inline">
             Anyone with this link can read the story:
           </span>
           <Input
@@ -232,54 +245,74 @@ export function Editor({ story }: { story: EditorStory }) {
             value={shareUrl}
             aria-label="Share link"
             onFocus={(event) => event.target.select()}
-            className="h-8 max-w-xl"
+            className="h-8 max-w-xl min-w-0"
           />
           <Button variant="outline" size="sm" onClick={copyShareUrl}>
             {copied ? <CheckIcon /> : <CopyIcon />}
-            {copied ? "Copied" : "Copy link"}
+            <span className="sr-only md:not-sr-only">
+              {copied ? "Copied" : "Copy link"}
+            </span>
           </Button>
         </div>
       )}
+      <div
+        role="tablist"
+        aria-label="View"
+        className="bg-muted text-muted-foreground mx-4 mt-3 grid grid-cols-3 gap-1 rounded-lg p-1 md:hidden"
+      >
+        {MOBILE_VIEWS.map((view) => (
+          <button
+            key={view.value}
+            type="button"
+            role="tab"
+            aria-selected={mobileView === view.value}
+            onClick={() => setMobileView(view.value)}
+            className="aria-selected:bg-background aria-selected:text-foreground rounded-md px-3 py-1.5 text-sm font-medium aria-selected:shadow-sm"
+          >
+            {view.label}
+          </button>
+        ))}
+      </div>
       <div className="flex min-h-0 flex-1">
-        <div className="flex min-w-0 flex-1 flex-col border-r">
+        <div
+          className={`${mobileView === "editor" ? "flex" : "hidden"} min-w-0 flex-1 flex-col md:flex md:border-r`}
+        >
           <textarea
             value={content}
             onChange={(event) => setContent(event.target.value)}
             aria-label="Content"
             placeholder="Write your story in markdown…"
-            className="min-h-0 flex-1 resize-none bg-transparent px-6 py-4 font-mono text-sm leading-relaxed outline-none"
+            className="min-h-0 flex-1 resize-none bg-transparent px-4 py-4 font-mono text-base leading-relaxed outline-none md:px-6 md:text-sm"
           />
-          <p className="text-muted-foreground border-t px-6 py-2 text-xs">
+          <p className="text-muted-foreground border-t px-4 py-2 text-xs md:px-6">
             {words} words · {countCharacters(content)} characters ·{" "}
             {formatReadAloudTime(words)} read aloud
           </p>
         </div>
         <section
           aria-label="Preview"
-          className="min-w-0 flex-1 overflow-y-auto px-6 py-4"
+          className={`${mobileView === "preview" ? "block" : "hidden"} min-w-0 flex-1 overflow-y-auto px-4 py-4 md:block md:px-6`}
         >
           <MarkdownPreview content={content} />
         </section>
-        {notesOpen && (
-          <aside
-            id="notes-panel"
-            className="flex w-80 shrink-0 flex-col border-l"
+        <aside
+          id="notes-panel"
+          className={`${mobileView === "notes" ? "flex" : "hidden"} ${notesOpen ? "md:flex" : "md:hidden"} w-full shrink-0 flex-col md:w-80 md:border-l`}
+        >
+          <label
+            htmlFor="notes"
+            className="border-b px-4 py-2 text-sm font-medium"
           >
-            <label
-              htmlFor="notes"
-              className="border-b px-4 py-2 text-sm font-medium"
-            >
-              Notes
-            </label>
-            <textarea
-              id="notes"
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              placeholder="Notes for this story…"
-              className="min-h-0 flex-1 resize-none bg-transparent px-4 py-3 text-sm outline-none"
-            />
-          </aside>
-        )}
+            Notes
+          </label>
+          <textarea
+            id="notes"
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
+            placeholder="Notes for this story…"
+            className="min-h-0 flex-1 resize-none bg-transparent px-4 py-3 text-base outline-none md:text-sm"
+          />
+        </aside>
       </div>
     </div>
   );

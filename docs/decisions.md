@@ -85,3 +85,9 @@ Zamiast `mongodb-memory-server` używamy kontenera `mongo:8` z `docker-compose.y
 - Soft delete nie usuwa tokenu; link przestaje działać dzięki filtrowi `deletedAt: null` na stronie publicznej.
 - Strona `/s/[token]` wywołuje `connection()`, żeby nie była cache'owana (inaczej link działałby po „Stop sharing”). `noindex`: `metadata.robots` (meta tag) + `X-Robots-Tag: noindex, nofollow` przez `headers()` w `next.config.ts`.
 - `stripComments`: komentarz kończy się na pierwszym `-->` (jak w HTML), więc z zagnieżdżonego `<!-- a <!-- b --> c -->` zostaje ` c -->`.
+
+## D12 – Widok mobilny edytora (2026-10-06)
+
+- Odstępstwo od „tylko desktop” w spec: edytor obsługuje wąskie ekrany. Poniżej breakpointu `md` (768 px) na górze jest przełącznik Editor / Preview / Notes (`role="tablist"`) i widoczny jest jeden panel naraz; od `md` układ bez zmian (panele obok siebie, przycisk zwijania notatek).
+- Na wąskim ekranie przyciski paska narzędzi pokazują tylko ikony (etykieta w `sr-only`), przycisk zwijania notatek jest ukryty, a pola tekstowe mają `text-base`, żeby iOS nie powiększał strony przy fokusie.
+- Panel notatek jest zawsze w DOM (ukrywany klasami), więc zwinięcie go na desktopie nie wpływa na zakładkę Notes na telefonie.
