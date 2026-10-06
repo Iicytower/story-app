@@ -46,39 +46,60 @@ export function Editor({ story }: { story: EditorStory }) {
   const words = countWords(content);
 
   // Saves run one at a time, so each one sends the updatedAt returned by the previous one.
-  const save = useCallback(() => {
-    queue.current = queue.current.then(async () => {
-      const values = latest.current;
-      if (!values.title.trim() || isSame(values, saved.current)) return;
-      setSaveState({ status: "saving" });
-      try {
-        const result = await saveStory(
-          story.id,
-          values.title,
-          values.content,
-          values.notes,
-          updatedAt.current,
-        );
-        if (result.ok) {
-          saved.current = values;
-          updatedAt.current = result.updatedAt;
-          setSaveState({ status: "saved" });
-        } else {
+  // Resolves to true when the editor state is saved. `force` saves unchanged
+  // values too, so export still detects a conflict with another tab.
+  const save = useCallback(
+    (force = false) => {
+      const run = queue.current.then(async () => {
+        const values = latest.current;
+        if (!values.title.trim()) return false;
+        if (!force && isSame(values, saved.current)) return true;
+        setSaveState({ status: "saving" });
+        try {
+          const result = await saveStory(
+            story.id,
+            values.title,
+            values.content,
+            values.notes,
+            updatedAt.current,
+          );
+          if (result.ok) {
+            saved.current = values;
+            updatedAt.current = result.updatedAt;
+            setSaveState({ status: "saved" });
+            return true;
+          }
           setSaveState({ status: "error", message: result.message });
+        } catch {
+          setSaveState({
+            status: "error",
+            message: "Could not reach the server. Check your connection.",
+          });
         }
-      } catch {
-        setSaveState({
-          status: "error",
-          message: "Could not reach the server. Check your connection.",
-        });
-      }
-    });
-  }, [story.id]);
+        return false;
+      });
+      queue.current = run.then(() => {});
+      return run;
+    },
+    [story.id],
+  );
+
+  async function exportStory() {
+    if (!latest.current.title.trim()) {
+      setSaveState({ status: "error", message: "Title is required." });
+      return;
+    }
+    if (!(await save(true))) return;
+    const link = document.createElement("a");
+    link.href = `/stories/${story.id}/export`;
+    link.download = "";
+    link.click();
+  }
 
   useEffect(() => {
     latest.current = { title, content, notes };
     if (!title.trim() || isSame(latest.current, saved.current)) return;
-    const timer = setTimeout(save, AUTOSAVE_DELAY_MS);
+    const timer = setTimeout(() => save(), AUTOSAVE_DELAY_MS);
     return () => clearTimeout(timer);
   }, [title, content, notes, save]);
 
@@ -123,7 +144,7 @@ export function Editor({ story }: { story: EditorStory }) {
           {saveState.status === "saved" && "Saved"}
           {saveState.status === "error" && saveState.message}
         </span>
-        <Button variant="outline" disabled>
+        <Button variant="outline" onClick={exportStory}>
           <DownloadIcon />
           Export .md
         </Button>

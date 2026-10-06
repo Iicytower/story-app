@@ -30,3 +30,12 @@ export async function getStory(userId: string, id: string) {
 }
 
 export type EditorStory = NonNullable<Awaited<ReturnType<typeof getStory>>>;
+
+export async function getStoryForExport(userId: string, id: string) {
+  if (!isObjectIdOrHexString(id)) return null;
+  await connectDB();
+  const story = await Story.findOne({ _id: id, userId, deletedAt: null })
+    .select({ title: 1, content: 1, notes: 1, createdAt: 1, updatedAt: 1 })
+    .lean();
+  return story && serialize(story);
+}
