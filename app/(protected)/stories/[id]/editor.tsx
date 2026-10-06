@@ -1,13 +1,22 @@
 "use client";
 
 import {
+  CheckIcon,
+  CopyIcon,
   DownloadIcon,
+  LinkIcon,
   PanelRightCloseIcon,
   PanelRightOpenIcon,
   Share2Icon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +26,7 @@ import {
   formatReadAloudTime,
 } from "@/lib/stories/count";
 import type { EditorStory } from "@/lib/stories/queries";
-import { saveStory } from "../actions";
+import { saveStory, setSharing } from "../actions";
 import { DeleteStoryButton } from "../delete-story-button";
 
 const AUTOSAVE_DELAY_MS = 3000;
@@ -32,6 +41,8 @@ function isSame(a: Values, b: Values) {
   return a.title === b.title && a.content === b.content && a.notes === b.notes;
 }
 
+const subscribeNever = () => () => {};
+
 export function Editor({ story }: { story: EditorStory }) {
   const router = useRouter();
   const [title, setTitle] = useState(story.title);
@@ -39,6 +50,18 @@ export function Editor({ story }: { story: EditorStory }) {
   const [notes, setNotes] = useState(story.notes);
   const [notesOpen, setNotesOpen] = useState(true);
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
+  const [sharePath, setSharePath] = useState(
+    story.shareToken ? `/s/${story.shareToken}` : null,
+  );
+  const [sharingPending, setSharingPending] = useState(false);
+  const [copied, setCopied] = useState(false);
+  // Empty during SSR, so the absolute link is only rendered after hydration.
+  const origin = useSyncExternalStore(
+    subscribeNever,
+    () => window.location.origin,
+    () => "",
+  );
+  const shareUrl = sharePath && origin + sharePath;
   const latest = useRef<Values>(story);
   const saved = useRef<Values>(story);
   const updatedAt = useRef(story.updatedAt);
@@ -96,6 +119,32 @@ export function Editor({ story }: { story: EditorStory }) {
     link.click();
   }
 
+  async function toggleSharing() {
+    setSharingPending(true);
+    try {
+      const result = await setSharing(story.id, !sharePath);
+      if (result.ok) {
+        setSharePath(result.sharePath);
+        setCopied(false);
+      } else {
+        setSaveState({ status: "error", message: result.message });
+      }
+    } catch {
+      setSaveState({
+        status: "error",
+        message: "Could not reach the server. Check your connection.",
+      });
+    }
+    setSharingPending(false);
+  }
+
+  async function copyShareUrl() {
+    if (!shareUrl) return;
+    await navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   useEffect(() => {
     latest.current = { title, content, notes };
     if (!title.trim() || isSame(latest.current, saved.current)) return;
@@ -148,9 +197,13 @@ export function Editor({ story }: { story: EditorStory }) {
           <DownloadIcon />
           Export .md
         </Button>
-        <Button variant="outline" disabled>
+        <Button
+          variant="outline"
+          onClick={toggleSharing}
+          disabled={sharingPending}
+        >
           <Share2Icon />
-          Share
+          {sharePath ? "Stop sharing" : "Share"}
         </Button>
         <DeleteStoryButton
           id={story.id}
@@ -168,6 +221,25 @@ export function Editor({ story }: { story: EditorStory }) {
           {notesOpen ? <PanelRightCloseIcon /> : <PanelRightOpenIcon />}
         </Button>
       </div>
+      {shareUrl && (
+        <div className="flex items-center gap-2 border-b px-6 py-2 text-sm">
+          <LinkIcon className="text-muted-foreground size-4" />
+          <span className="text-muted-foreground">
+            Anyone with this link can read the story:
+          </span>
+          <Input
+            readOnly
+            value={shareUrl}
+            aria-label="Share link"
+            onFocus={(event) => event.target.select()}
+            className="h-8 max-w-xl"
+          />
+          <Button variant="outline" size="sm" onClick={copyShareUrl}>
+            {copied ? <CheckIcon /> : <CopyIcon />}
+            {copied ? "Copied" : "Copy link"}
+          </Button>
+        </div>
+      )}
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col border-r">
           <textarea

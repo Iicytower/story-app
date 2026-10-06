@@ -39,3 +39,10 @@ export async function getStoryForExport(userId: string, id: string) {
     .lean();
   return story && serialize(story);
 }
+
+export async function getSharedStory(token: string) {
+  await connectDB();
+  return Story.findOne({ shareToken: token, deletedAt: null })
+    .select({ _id: 0, title: 1, content: 1 })
+    .lean<{ title: string; content: string }>();
+}

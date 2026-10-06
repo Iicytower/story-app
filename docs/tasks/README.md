@@ -17,7 +17,7 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione.
 | 09 | [Edytor: UI, podgląd, notatki, liczniki](09-editor-ui.md) | 08 | [x] |
 | 10 | [Zapis: saveStory, autozapis, zabezpieczenia](10-save.md) | 09 | [x] |
 | 11 | [Eksport .md](11-export.md) | 10 | [x] |
-| 12 | [Udostępnianie przez link](12-sharing.md) | 10 | [ ] |
+| 12 | [Udostępnianie przez link](12-sharing.md) | 10 | [x] |
 | 13 | [Wdrożenie: Vercel + Atlas](13-deploy.md) | 01–12 | [ ] |
 
 ## Definicja „zrobione” (każdy task)

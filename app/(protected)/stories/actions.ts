@@ -1,5 +1,6 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { isObjectIdOrHexString } from "mongoose";
 import { revalidatePath } from "next/cache";
 import type { ActionError, ActionResult } from "@/lib/action-result";
@@ -118,4 +119,35 @@ export async function saveStory(
     message:
       "The story content cannot be cleared completely. Your changes were not saved.",
   };
+}
+
+// Sharing does not touch updatedAt: an open editor sends it as expectedUpdatedAt on the next save.
+export async function setSharing(
+  id: string,
+  enabled: boolean,
+): Promise<ActionResult<{ sharePath: string | null }>> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+
+  await connectDB();
+  const owned = { _id: id, userId: user.userId, deletedAt: null };
+  if (!enabled) {
+    const { matchedCount } = await Story.updateOne(
+      owned,
+      { $unset: { shareToken: 1 } },
+      { timestamps: false },
+    );
+    return matchedCount === 0 ? NOT_FOUND : { ok: true, sharePath: null };
+  }
+
+  // Keeps an existing token, so sharing twice (e.g. from two tabs) returns the same link.
+  await Story.updateOne(
+    { ...owned, shareToken: { $exists: false } },
+    { $set: { shareToken: randomBytes(16).toString("base64url") } },
+    { timestamps: false },
+  );
+  const story = await Story.findOne(owned).select({ shareToken: 1 }).lean();
+  if (!story?.shareToken) return NOT_FOUND;
+  return { ok: true, sharePath: `/s/${story.shareToken}` };
 }
