@@ -1,5 +1,7 @@
 # Story App
 
+@AGENTS.md
+
 Prywatna aplikacja webowa do pisania opowiadań w markdown (Next.js App Router, TypeScript, MongoDB Atlas + Mongoose, Auth.js Credentials/JWT, Tailwind + shadcn/ui, Vercel).
 
 ## Dokumentacja
