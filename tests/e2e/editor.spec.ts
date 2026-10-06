@@ -83,11 +83,15 @@ test("counts words and characters of the content", async ({ page }) => {
   const id = await seedStory("alice", { title: "Counter" });
 
   await page.goto(`/stories/${id}`);
-  await expect(page.getByText("0 words · 0 characters")).toBeVisible();
+  await expect(
+    page.getByText("0 words · 0 characters · 0 minutes read aloud"),
+  ).toBeVisible();
   await page
     .getByRole("textbox", { name: "Content", exact: true })
     .fill("Zażółć  gęślą\njaźń");
-  await expect(page.getByText("3 words · 18 characters")).toBeVisible();
+  await expect(
+    page.getByText("3 words · 18 characters · 1 minute read aloud"),
+  ).toBeVisible();
 });
 
 test("collapses and expands the notes panel", async ({ page }) => {

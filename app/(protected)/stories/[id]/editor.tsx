@@ -11,7 +11,11 @@ import { useState } from "react";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { countCharacters, countWords } from "@/lib/stories/count";
+import {
+  countCharacters,
+  countWords,
+  formatReadAloudTime,
+} from "@/lib/stories/count";
 import type { EditorStory } from "@/lib/stories/queries";
 import { DeleteStoryButton } from "../delete-story-button";
 
@@ -21,6 +25,7 @@ export function Editor({ story }: { story: EditorStory }) {
   const [content, setContent] = useState(story.content);
   const [notes, setNotes] = useState(story.notes);
   const [notesOpen, setNotesOpen] = useState(true);
+  const words = countWords(content);
 
   return (
     <div className="flex h-[calc(100dvh-3.5rem-1px)] flex-col">
@@ -69,7 +74,8 @@ export function Editor({ story }: { story: EditorStory }) {
             className="min-h-0 flex-1 resize-none bg-transparent px-6 py-4 font-mono text-sm leading-relaxed outline-none"
           />
           <p className="text-muted-foreground border-t px-6 py-2 text-xs">
-            {countWords(content)} words · {countCharacters(content)} characters
+            {words} words · {countCharacters(content)} characters ·{" "}
+            {formatReadAloudTime(words)} read aloud
           </p>
         </div>
         <section

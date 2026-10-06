@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countCharacters, countWords } from "./count";
+import { countCharacters, countWords, formatReadAloudTime } from "./count";
 
 describe("countWords", () => {
   it("returns 0 for empty and whitespace-only text", () => {
@@ -35,5 +35,21 @@ describe("countCharacters", () => {
 
   it("counts an emoji as one character", () => {
     expect(countCharacters("a😀")).toBe(2);
+  });
+});
+
+describe("formatReadAloudTime", () => {
+  it("returns 0 minutes for no words", () => {
+    expect(formatReadAloudTime(0)).toBe("0 minutes");
+  });
+
+  it("rounds a partial minute up", () => {
+    expect(formatReadAloudTime(1)).toBe("1 minute");
+    expect(formatReadAloudTime(150)).toBe("1 minute");
+    expect(formatReadAloudTime(151)).toBe("2 minutes");
+  });
+
+  it("uses 150 words per minute", () => {
+    expect(formatReadAloudTime(750)).toBe("5 minutes");
   });
 });
