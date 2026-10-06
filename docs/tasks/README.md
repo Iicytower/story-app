@@ -11,7 +11,7 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione.
 | 03 | [Skrypt seedujący konto](03-seed-account.md) | 02 | [x] |
 | 04 | [Logowanie i ochrona tras](04-auth.md) | 02, 03 | [x] |
 | 05 | [Infrastruktura E2E (Playwright)](05-e2e-setup.md) | 04 | [x] |
-| 06 | [Layout, nagłówek, dark mode](06-layout-theme.md) | 05 | [ ] |
+| 06 | [Layout, nagłówek, dark mode](06-layout-theme.md) | 05 | [x] |
 | 07 | [Lista opowiadań i wyszukiwanie](07-stories-list.md) | 06 | [ ] |
 | 08 | [Tworzenie i usuwanie opowiadań](08-create-delete.md) | 07 | [ ] |
 | 09 | [Edytor: UI, podgląd, notatki, liczniki](09-editor-ui.md) | 08 | [ ] |
