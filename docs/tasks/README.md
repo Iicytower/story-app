@@ -15,7 +15,7 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione.
 | 07 | [Lista opowiadań i wyszukiwanie](07-stories-list.md) | 06 | [x] |
 | 08 | [Tworzenie i usuwanie opowiadań](08-create-delete.md) | 07 | [x] |
 | 09 | [Edytor: UI, podgląd, notatki, liczniki](09-editor-ui.md) | 08 | [x] |
-| 10 | [Zapis: saveStory, autozapis, zabezpieczenia](10-save.md) | 09 | [ ] |
+| 10 | [Zapis: saveStory, autozapis, zabezpieczenia](10-save.md) | 09 | [x] |
 | 11 | [Eksport .md](11-export.md) | 10 | [ ] |
 | 12 | [Udostępnianie przez link](12-sharing.md) | 10 | [ ] |
 | 13 | [Wdrożenie: Vercel + Atlas](13-deploy.md) | 01–12 | [ ] |

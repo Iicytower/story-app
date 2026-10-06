@@ -7,7 +7,7 @@ import {
   Share2Icon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,20 @@ import {
   formatReadAloudTime,
 } from "@/lib/stories/count";
 import type { EditorStory } from "@/lib/stories/queries";
+import { saveStory } from "../actions";
 import { DeleteStoryButton } from "../delete-story-button";
+
+const AUTOSAVE_DELAY_MS = 3000;
+
+type Values = { title: string; content: string; notes: string };
+
+type SaveState =
+  | { status: "idle" | "saving" | "saved" }
+  | { status: "error"; message: string };
+
+function isSame(a: Values, b: Values) {
+  return a.title === b.title && a.content === b.content && a.notes === b.notes;
+}
 
 export function Editor({ story }: { story: EditorStory }) {
   const router = useRouter();
@@ -25,7 +38,68 @@ export function Editor({ story }: { story: EditorStory }) {
   const [content, setContent] = useState(story.content);
   const [notes, setNotes] = useState(story.notes);
   const [notesOpen, setNotesOpen] = useState(true);
+  const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
+  const latest = useRef<Values>(story);
+  const saved = useRef<Values>(story);
+  const updatedAt = useRef(story.updatedAt);
+  const queue = useRef(Promise.resolve());
   const words = countWords(content);
+
+  // Saves run one at a time, so each one sends the updatedAt returned by the previous one.
+  const save = useCallback(() => {
+    queue.current = queue.current.then(async () => {
+      const values = latest.current;
+      if (!values.title.trim() || isSame(values, saved.current)) return;
+      setSaveState({ status: "saving" });
+      try {
+        const result = await saveStory(
+          story.id,
+          values.title,
+          values.content,
+          values.notes,
+          updatedAt.current,
+        );
+        if (result.ok) {
+          saved.current = values;
+          updatedAt.current = result.updatedAt;
+          setSaveState({ status: "saved" });
+        } else {
+          setSaveState({ status: "error", message: result.message });
+        }
+      } catch {
+        setSaveState({
+          status: "error",
+          message: "Could not reach the server. Check your connection.",
+        });
+      }
+    });
+  }, [story.id]);
+
+  useEffect(() => {
+    latest.current = { title, content, notes };
+    if (!title.trim() || isSame(latest.current, saved.current)) return;
+    const timer = setTimeout(save, AUTOSAVE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [title, content, notes, save]);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        save();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [save]);
+
+  useEffect(() => {
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+      if (!isSame(latest.current, saved.current)) event.preventDefault();
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   return (
     <div className="flex h-[calc(100dvh-3.5rem-1px)] flex-col">
@@ -37,8 +111,17 @@ export function Editor({ story }: { story: EditorStory }) {
           placeholder="Title"
           className="h-9 flex-1 text-lg font-semibold md:text-lg"
         />
-        <span className="text-muted-foreground text-sm" role="status">
-          {/* Save state is implemented in task 10. */}
+        <span
+          role="status"
+          className={
+            saveState.status === "error"
+              ? "text-destructive max-w-md text-sm"
+              : "text-muted-foreground text-sm"
+          }
+        >
+          {saveState.status === "saving" && "Saving…"}
+          {saveState.status === "saved" && "Saved"}
+          {saveState.status === "error" && saveState.message}
         </span>
         <Button variant="outline" disabled>
           <DownloadIcon />

@@ -49,12 +49,24 @@ export function seedStory(
   });
 }
 
-export function findStory(
-  title: string,
-): Promise<{ deletedAt: Date | null } | null> {
+type StoryDoc = {
+  title: string;
+  content: string;
+  notes: string;
+  updatedAt: Date;
+  deletedAt: Date | null;
+};
+
+export function findStory(title: string): Promise<StoryDoc | null> {
+  return withE2EDb((connection) =>
+    connection.collection<StoryDoc>("stories").findOne({ title }),
+  );
+}
+
+export function findStoryById(id: string): Promise<StoryDoc | null> {
   return withE2EDb((connection) =>
     connection
-      .collection<{ deletedAt: Date | null }>("stories")
-      .findOne({ title }),
+      .collection<StoryDoc>("stories")
+      .findOne({ _id: new mongoose.Types.ObjectId(id) }),
   );
 }
