@@ -19,9 +19,11 @@ import { deleteStory } from "./actions";
 export function DeleteStoryButton({
   id,
   title,
+  onDeleted,
 }: {
   id: string;
   title: string;
+  onDeleted?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,8 +39,12 @@ export function DeleteStoryButton({
     event.preventDefault();
     startTransition(async () => {
       const result = await deleteStory(id);
-      if (result.ok) setOpen(false);
-      else setError(result.message);
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      setOpen(false);
+      onDeleted?.();
     });
   }
 

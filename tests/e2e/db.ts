@@ -22,23 +22,30 @@ export function clearStories(): Promise<void> {
 
 export function seedStory(
   user: UserName,
-  story: { title: string; content?: string; updatedAt?: Date },
-): Promise<void> {
+  story: {
+    title: string;
+    content?: string;
+    notes?: string;
+    updatedAt?: Date;
+    deletedAt?: Date;
+  },
+): Promise<string> {
   return withE2EDb(async (connection) => {
     const account = await connection
       .collection("users")
       .findOne({ email: USERS[user].email });
     if (!account) throw new Error(`User ${user} is not seeded`);
     const now = new Date();
-    await connection.collection("stories").insertOne({
+    const { insertedId } = await connection.collection("stories").insertOne({
       userId: account._id,
       title: story.title,
       content: story.content ?? "",
-      notes: "",
-      deletedAt: null,
+      notes: story.notes ?? "",
+      deletedAt: story.deletedAt ?? null,
       createdAt: now,
       updatedAt: story.updatedAt ?? now,
     });
+    return insertedId.toString();
   });
 }
 
