@@ -175,7 +175,7 @@ describe("deleteFolder", () => {
     await deleteFolder(folderId.toString());
 
     const userId = alice.toString();
-    expect(await listFolders(userId)).toEqual([]);
+    expect((await listFolders(userId)).folders).toEqual([]);
     expect(await getFolder(userId, folderId.toString())).toBeNull();
     expect(await listStories(userId, "Dragon")).toEqual([]);
     expect(await getStory(userId, storyId.toString())).toBeNull();
@@ -351,7 +351,7 @@ describe("folder queries", () => {
     await seedStory(older, "Deleted", alice, { deletedAt: new Date() });
     await seedFolder("Bob's", bob);
 
-    const folders = await listFolders(alice.toString());
+    const { folders } = await listFolders(alice.toString());
     expect(folders.map((f) => [f.name, f.chapterCount])).toEqual([
       ["Newer", 0],
       ["Older", 2],

@@ -6,7 +6,15 @@ import { refresh } from "next/cache";
 import type { ActionError, ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import { connectDB, isDuplicateKeyError } from "@/lib/db";
-import { findOrCreateFolder, touchFolder } from "@/lib/folders/mutations";
+import {
+  findOrCreateFolder,
+  moveInList,
+  nextChapterPosition,
+  savePositions,
+  touchFolder,
+} from "@/lib/folders/mutations";
+import { findChaptersInOrder } from "@/lib/folders/queries";
+import { chapterOrder, isDirection, type Direction } from "@/lib/folders/sort";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
 
@@ -53,6 +61,7 @@ export async function createStory(
       userId: user.userId,
       folderId,
       title: trimmed,
+      position: await nextChapterPosition(user.userId, folderId),
     });
     await touchFolder(folderId);
     return { ok: true, id: story._id.toString() };
@@ -82,7 +91,12 @@ export async function moveStory(
   try {
     const { matchedCount } = await Story.updateOne(
       { _id: id, userId: user.userId, deletedAt: null },
-      { $set: { folderId } },
+      {
+        $set: {
+          folderId,
+          position: await nextChapterPosition(user.userId, folderId),
+        },
+      },
       { timestamps: false },
     );
     if (matchedCount === 0) return NOT_FOUND;
@@ -91,6 +105,43 @@ export async function moveStory(
     throw error;
   }
   await touchFolder(folderId);
+
+  refresh();
+  return { ok: true };
+}
+
+export async function reorderChapter(
+  id: string,
+  direction: Direction,
+): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+  if (!isDirection(direction)) {
+    return {
+      ok: false,
+      error: "INVALID_INPUT",
+      message: "This option is not available. Reload the page and try again.",
+    };
+  }
+
+  await connectDB();
+  const story = await Story.findOne({
+    _id: id,
+    userId: user.userId,
+    deletedAt: null,
+  })
+    .select({ folderId: 1 })
+    .lean();
+  if (!story) return NOT_FOUND;
+  const chapters = await findChaptersInOrder(
+    user.userId,
+    story.folderId.toString(),
+    chapterOrder("manual"),
+  )
+    .select({ position: 1 })
+    .lean();
+  await savePositions(Story, moveInList(chapters, id, direction)!);
 
   refresh();
   return { ok: true };

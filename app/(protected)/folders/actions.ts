@@ -5,8 +5,26 @@ import { refresh } from "next/cache";
 import type { ActionError, ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import { connectDB, isDuplicateKeyError } from "@/lib/db";
+import {
+  moveInList,
+  nextFolderPosition,
+  savePositions,
+} from "@/lib/folders/mutations";
+import {
+  findChaptersInOrder,
+  findFoldersInOrder,
+} from "@/lib/folders/queries";
+import {
+  chapterOrder,
+  folderOrder,
+  isChapterSort,
+  isDirection,
+  isFolderSort,
+  type Direction,
+} from "@/lib/folders/sort";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
+import { User } from "@/lib/models/user";
 
 const NOT_FOUND: ActionError = {
   ok: false,
@@ -18,6 +36,12 @@ const EMPTY_NAME: ActionError = {
   ok: false,
   error: "EMPTY_NAME",
   message: "Folder name is required.",
+};
+
+const INVALID_INPUT: ActionError = {
+  ok: false,
+  error: "INVALID_INPUT",
+  message: "This option is not available. Reload the page and try again.",
 };
 
 const DUPLICATE_NAME: ActionError = {
@@ -36,7 +60,11 @@ export async function createFolder(
 
   await connectDB();
   try {
-    const folder = await Folder.create({ userId: user.userId, name: trimmed });
+    const folder = await Folder.create({
+      userId: user.userId,
+      name: trimmed,
+      position: await nextFolderPosition(user.userId),
+    });
     return { ok: true, id: folder._id.toString() };
   } catch (error) {
     if (isDuplicateKeyError(error)) return DUPLICATE_NAME;
@@ -121,4 +149,99 @@ export async function saveFolderNotes(
     message:
       "These notes were changed in another tab or on another device. Reload the page to get the latest version.",
   };
+}
+
+// Sort changes are organizational: they keep lastActivityAt, updatedAt and notesUpdatedAt.
+export async function setFolderSort(mode: string): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!isFolderSort(mode)) return INVALID_INPUT;
+
+  await connectDB();
+  const account = await User.findById(user.userId)
+    .select({ folderSort: 1, manualFolderOrder: 1 })
+    .lean();
+  if (!account) return NOT_FOUND;
+  if (mode === "manual" && !account.manualFolderOrder) {
+    const shown = await findFoldersInOrder(
+      user.userId,
+      folderOrder(account.folderSort ?? "updated"),
+    )
+      .select({ position: 1 })
+      .lean();
+    await savePositions(Folder, shown);
+  }
+  await User.updateOne(
+    { _id: user.userId },
+    {
+      $set: {
+        folderSort: mode,
+        ...(mode === "manual" && { manualFolderOrder: true }),
+      },
+    },
+  );
+
+  refresh();
+  return { ok: true };
+}
+
+export async function setChapterSort(
+  id: string,
+  mode: string,
+): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+  if (!isChapterSort(mode)) return INVALID_INPUT;
+
+  await connectDB();
+  const owned = { _id: id, userId: user.userId, deletedAt: null };
+  const folder = await Folder.findOne(owned)
+    .select({ chapterSort: 1, manualChapterOrder: 1 })
+    .lean();
+  if (!folder) return NOT_FOUND;
+  if (mode === "manual" && !folder.manualChapterOrder) {
+    const shown = await findChaptersInOrder(
+      user.userId,
+      id,
+      chapterOrder(folder.chapterSort ?? "created"),
+    )
+      .select({ position: 1 })
+      .lean();
+    await savePositions(Story, shown);
+  }
+  await Folder.updateOne(
+    owned,
+    {
+      $set: {
+        chapterSort: mode,
+        ...(mode === "manual" && { manualChapterOrder: true }),
+      },
+    },
+    { timestamps: false },
+  );
+
+  refresh();
+  return { ok: true };
+}
+
+export async function reorderFolder(
+  id: string,
+  direction: Direction,
+): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+  if (!isDirection(direction)) return INVALID_INPUT;
+
+  await connectDB();
+  const folders = await findFoldersInOrder(user.userId, folderOrder("manual"))
+    .select({ position: 1 })
+    .lean();
+  const moved = moveInList(folders, id, direction);
+  if (!moved) return NOT_FOUND;
+  await savePositions(Folder, moved);
+
+  refresh();
+  return { ok: true };
 }

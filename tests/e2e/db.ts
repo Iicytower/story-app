@@ -18,6 +18,13 @@ export function clearStories(): Promise<void> {
   return withE2EDb(async (connection) => {
     await connection.collection("stories").deleteMany({});
     await connection.collection("folders").deleteMany({});
+    // Sort modes live on users, which every test shares.
+    await connection
+      .collection("users")
+      .updateMany(
+        {},
+        { $set: { folderSort: "updated", manualFolderOrder: false } },
+      );
   });
 }
 
@@ -38,13 +45,18 @@ async function ensureFolder(
 ) {
   const owner = await userId(connection, user);
   const now = new Date();
-  const folder = await connection.collection("folders").findOneAndUpdate(
+  const folders = connection.collection("folders");
+  const position = await folders.countDocuments({ userId: owner });
+  const folder = await folders.findOneAndUpdate(
     { userId: owner, name, deletedAt: null },
     {
       $setOnInsert: {
         notes: "",
         notesUpdatedAt: now,
         lastActivityAt,
+        position,
+        chapterSort: "created",
+        manualChapterOrder: false,
         createdAt: now,
         updatedAt: now,
       },
@@ -71,6 +83,7 @@ export function seedStory(
     folder?: string;
     content?: string;
     notes?: string;
+    createdAt?: Date;
     updatedAt?: Date;
     deletedAt?: Date;
   },
@@ -82,14 +95,16 @@ export function seedStory(
       story.folder ?? "Unsorted",
     );
     const now = new Date();
-    const { insertedId } = await connection.collection("stories").insertOne({
+    const stories = connection.collection("stories");
+    const { insertedId } = await stories.insertOne({
       userId: await userId(connection, user),
       folderId,
+      position: await stories.countDocuments({ folderId }),
       title: story.title,
       content: story.content ?? "",
       notes: story.notes ?? "",
       deletedAt: story.deletedAt ?? null,
-      createdAt: now,
+      createdAt: story.createdAt ?? now,
       updatedAt: story.updatedAt ?? now,
     });
     return insertedId.toString();

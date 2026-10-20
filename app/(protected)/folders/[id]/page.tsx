@@ -6,11 +6,21 @@ import { requireUser } from "@/lib/auth/session";
 import { getFolder, listFolders } from "@/lib/folders/queries";
 import { buildSnippet } from "@/lib/stories/search";
 import { CreateStoryDialog } from "../../stories/create-story-dialog";
+import { reorderChapter } from "../../stories/actions";
 import { DeleteStoryButton } from "../../stories/delete-story-button";
+import { setChapterSort } from "../actions";
+import { ReorderButtons } from "../reorder-buttons";
+import { SortSelect } from "../sort-select";
 import { DeleteFolderButton } from "./delete-folder-button";
 import { FolderNotes } from "./folder-notes";
 import { MoveStoryDialog } from "./move-story-dialog";
 import { RenameFolderDialog } from "./rename-folder-dialog";
+
+const SORT_OPTIONS = [
+  { value: "created", label: "Newest first" },
+  { value: "manual", label: "Manual" },
+  { value: "alpha", label: "A–Z" },
+];
 
 export const metadata: Metadata = { title: "Folder – Story App" };
 
@@ -21,7 +31,7 @@ export default async function FolderPage({
   if (!user.ok) redirect("/login");
 
   const { id } = await params;
-  const [folder, folders] = await Promise.all([
+  const [folder, { folders }] = await Promise.all([
     getFolder(user.userId, id),
     listFolders(user.userId),
   ]);
@@ -39,6 +49,12 @@ export default async function FolderPage({
         </Link>
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="mr-auto text-2xl font-semibold">{folder.name}</h1>
+          <SortSelect
+            label="Sort chapters"
+            value={folder.chapterSort}
+            options={SORT_OPTIONS}
+            action={setChapterSort.bind(null, folder.id)}
+          />
           <RenameFolderDialog id={folder.id} name={folder.name} />
           <DeleteFolderButton
             id={folder.id}
@@ -61,7 +77,7 @@ export default async function FolderPage({
             aria-label="Chapters"
             className="flex h-fit flex-col divide-y rounded-lg border"
           >
-            {folder.chapters.map((chapter) => {
+            {folder.chapters.map((chapter, index) => {
               const snippet = buildSnippet(chapter.content);
               return (
                 <li key={chapter.id} className="flex items-center gap-1 pr-3">
@@ -77,6 +93,14 @@ export default async function FolderPage({
                       <LocalDate iso={chapter.updatedAt} />
                     </span>
                   </Link>
+                  {folder.chapterSort === "manual" && (
+                    <ReorderButtons
+                      name={chapter.title}
+                      isFirst={index === 0}
+                      isLast={index === folder.chapters.length - 1}
+                      action={reorderChapter.bind(null, chapter.id)}
+                    />
+                  )}
                   <MoveStoryDialog
                     id={chapter.id}
                     title={chapter.title}

@@ -1,4 +1,5 @@
 import mongoose, { Schema, type Model, type Types } from "mongoose";
+import { CHAPTER_SORTS, type ChapterSort } from "@/lib/folders/sort";
 
 export interface FolderFields {
   userId: Types.ObjectId;
@@ -7,6 +8,11 @@ export interface FolderFields {
   // Conflict check for folder notes only, so saving a chapter never conflicts with them.
   notesUpdatedAt: Date;
   lastActivityAt: Date;
+  // Missing on folders created by older deployments until migration 003 runs again.
+  position?: number;
+  chapterSort: ChapterSort;
+  // Set on the first switch to manual, which takes positions from the order shown until then.
+  manualChapterOrder: boolean;
   deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -19,6 +25,9 @@ const folderSchema = new Schema<FolderFields>(
     notes: { type: String, default: "" },
     notesUpdatedAt: { type: Date, default: Date.now },
     lastActivityAt: { type: Date, default: Date.now },
+    position: { type: Number },
+    chapterSort: { type: String, enum: CHAPTER_SORTS, default: "created" },
+    manualChapterOrder: { type: Boolean, default: false },
     deletedAt: { type: Date, default: null },
   },
   { timestamps: true },

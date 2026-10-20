@@ -8,9 +8,18 @@ import { requireUser } from "@/lib/auth/session";
 import { listFolders } from "@/lib/folders/queries";
 import { listStories } from "@/lib/stories/queries";
 import { buildSnippet } from "@/lib/stories/search";
+import { reorderFolder, setFolderSort } from "../folders/actions";
 import { CreateFolderDialog } from "../folders/create-folder-dialog";
+import { ReorderButtons } from "../folders/reorder-buttons";
+import { SortSelect } from "../folders/sort-select";
 import { CreateStoryDialog } from "./create-story-dialog";
 import { DeleteStoryButton } from "./delete-story-button";
+
+const SORT_OPTIONS = [
+  { value: "updated", label: "Last updated" },
+  { value: "manual", label: "Manual" },
+  { value: "alpha", label: "A–Z" },
+];
 
 export const metadata: Metadata = { title: "Stories – Story App" };
 
@@ -22,16 +31,30 @@ export default async function StoriesPage({
 
   const { q } = await searchParams;
   const query = typeof q === "string" ? q.trim() : "";
-  const folders = await listFolders(user.userId);
+  const { sort, folders } = await listFolders(user.userId);
+  // The most recently active folder, whatever order the list is shown in.
+  const defaultFolder = folders.reduce<(typeof folders)[number] | undefined>(
+    (latest, folder) =>
+      !latest || folder.lastActivityAt > latest.lastActivityAt
+        ? folder
+        : latest,
+    undefined,
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
       <div className="flex items-center gap-2">
         <h1 className="mr-auto text-2xl font-semibold">Folders</h1>
+        <SortSelect
+          label="Sort folders"
+          value={sort}
+          options={SORT_OPTIONS}
+          action={setFolderSort}
+        />
         <CreateFolderDialog />
         <CreateStoryDialog
           folderNames={folders.map((folder) => folder.name)}
-          defaultFolder={folders[0]?.name ?? ""}
+          defaultFolder={defaultFolder?.name ?? ""}
         />
       </div>
       <Form action="/stories" role="search">
@@ -55,11 +78,11 @@ export default async function StoriesPage({
           aria-label="Folders"
           className="flex flex-col divide-y rounded-lg border"
         >
-          {folders.map((folder) => (
-            <li key={folder.id}>
+          {folders.map((folder, index) => (
+            <li key={folder.id} className="flex items-center gap-1 pr-3">
               <Link
                 href={`/folders/${folder.id}`}
-                className="hover:bg-muted/50 flex items-baseline gap-4 px-4 py-3"
+                className="hover:bg-muted/50 flex min-w-0 flex-1 items-baseline gap-4 px-4 py-3"
               >
                 <span className="mr-auto font-medium">{folder.name}</span>
                 <span className="text-muted-foreground text-sm">
@@ -70,6 +93,14 @@ export default async function StoriesPage({
                   <LocalDate iso={folder.lastActivityAt} />
                 </span>
               </Link>
+              {sort === "manual" && (
+                <ReorderButtons
+                  name={folder.name}
+                  isFirst={index === 0}
+                  isLast={index === folders.length - 1}
+                  action={reorderFolder.bind(null, folder.id)}
+                />
+              )}
             </li>
           ))}
         </ul>
