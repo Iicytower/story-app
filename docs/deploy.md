@@ -22,7 +22,7 @@
 
 ## Wydanie
 
-1. Taski zmergowane do `staging`, smoke test na stagingu.
+1. Taski zmergowane do `develop`, potem `develop` → `staging` i smoke test na stagingu.
 2. Merge `staging` → `main` robi użytkownik (nigdy push na `main` z lokalnego repo), potem tag `vX.Y.Z` → deploy produkcji.
 3. Rollback: „Promote” poprzedniego deploymentu w Vercelu.
 

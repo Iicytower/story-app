@@ -15,12 +15,12 @@ Prywatna aplikacja webowa do pisania opowiadań w markdown (Next.js App Router, 
 ## Praca z taskami
 
 1. Przed startem przeczytaj plik taska oraz wskazane sekcje spec i `decisions.md`.
-2. Utwórz branch `feature/NN-<slug>` ze `staging` i ustaw status `[~]` w `docs/tasks/README.md`.
+2. Utwórz branch `feature/NN-<slug>` z `develop` i ustaw status `[~]` w `docs/tasks/README.md`.
 3. Niejasności lub kilka sensownych rozwiązań → zapytaj, zanim zaimplementujesz.
 4. Napisz testy z sekcji „Testy” taska razem z kodem (nie na końcu). Każde kryterium akceptacji musi mieć test albo oznaczenie `manual`.
 5. `npm run verify` musi przechodzić. Nie zamykaj taska z czerwonymi lub pominiętymi testami.
 6. W odpowiedzi do użytkownika podaj mapowanie: kryterium akceptacji → test (lub wynik weryfikacji `manual`).
-7. Status `[x]`, potem jeden commit na task na branchu taska (wiadomość: `NN: <krótki opis>`). Merge do `staging` i push `staging` tylko na prośbę użytkownika. **Nigdy nie pushuj na `main` lub `master`** (D13).
+7. Status `[x]`, potem jeden commit na task na branchu taska (wiadomość: `NN: <krótki opis>`). Merge do `develop` po zakończeniu taska; push `develop` oraz merge `develop` → `staging` i push `staging` tylko na prośbę użytkownika. **Nigdy nie pushuj na `main` lub `master`** (D13, D15).
 
 ## Komendy
 
