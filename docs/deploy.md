@@ -10,18 +10,15 @@
 
 - Vercel: Settings → Environment Variables → `MONGODB_URI` i `AUTH_SECRET` dla **Preview** z wybranym branchem `staging`. Inny `AUTH_SECRET` niż na produkcji. URI różni się od produkcyjnego tylko nazwą bazy (`.../story-app-staging?...`).
 - Preview innych branchy (`feature/*`) nie dostaje zmiennych, więc nie łączy się z żadną bazą.
-- Stały adres stagingu: Settings → Domains → dodać domenę i przypisać ją do brancha `staging` (zamiast URL-i deploymentów z hashem).
+- Stały adres stagingu: branch URL `story-app-git-staging-iicytowers-projects.vercel.app` (nie URL-e deploymentów z hashem).
 - Konto na stagingu: `MONGODB_URI='mongodb+srv://.../story-app-staging?...' npm run create-account` (niepotrzebne, jeśli baza zaimportowana z produkcji).
 
-## Do zrobienia na koniec (po kodzie)
+## Stan stagingu (2026-10-20)
 
-Na razie praca tylko lokalnie; hosting stagingu konfigurujemy po zakończeniu zmian w kodzie.
-
-- [x] Baza `story-app-staging` w Atlasie.
-- [ ] Vercel → Environment Variables: `MONGODB_URI` (baza `story-app-staging`) i nowy `AUTH_SECRET` dla Preview, branch `staging`; redeploy.
-- [ ] Vercel → Domains: stała domena przypisana do brancha `staging`.
-- [ ] Import danych z produkcji do `story-app-staging` (`mongodump` z `story-app` + `mongorestore --nsFrom 'story-app.*' --nsTo 'story-app-staging.*'` przez `docker run --rm mongo:8`).
-- [ ] Smoke test na stagingu.
+- [x] Baza `story-app-staging` w Atlasie, dane zaimportowane z produkcji.
+- [x] Vercel → Environment Variables: `MONGODB_URI` i własny `AUTH_SECRET` dla Preview, branch `staging`.
+- [x] Adres: `story-app-git-staging-iicytowers-projects.vercel.app` (branch URL Vercela, za Deployment Protection).
+- [x] Smoke test na stagingu.
 
 ## Wydanie
 
