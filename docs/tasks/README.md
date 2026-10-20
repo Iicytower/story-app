@@ -6,6 +6,15 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `stag
 
 | # | Task | Zależy od | Status |
 | --- | --- | --- | --- |
+| 01 | [System migracji bazy](01-migrations.md) | – | [ ] |
+| 02 | [Foldery](02-folders.md) | 01 | [ ] |
+| 03 | [Tryby sortowania folderów i rozdziałów](03-sorting.md) | 02 | [ ] |
+| 04 | [Eksport i udostępnianie folderu](04-folder-export-share.md) | 03 | [ ] |
+| 05 | [Panele edytora: notatki folderu i rozdziały](05-editor-panels.md) | 03 | [ ] |
+| 06 | [Edytor WYSIWYG z trybem Source](06-wysiwyg-editor.md) | 05 | [ ] |
+| 07 | [Wyrównanie i kolor tekstu](07-align-color.md) | 06 | [ ] |
+
+Nowe pakiety (instalacja po zgodzie użytkownika): `fflate` (04), shadcn Resizable / `react-resizable-panels` (05), biblioteka edytora po spike'u (06), `rehype-raw` + `rehype-sanitize` (07).
 
 ## Branche
 
