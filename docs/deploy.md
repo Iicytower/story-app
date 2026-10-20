@@ -26,6 +26,21 @@
 2. Merge `staging` → `main` robi użytkownik (nigdy push na `main` z lokalnego repo), potem tag `vX.Y.Z` → deploy produkcji.
 3. Rollback: „Promote” poprzedniego deploymentu w Vercelu.
 
+## Migracje
+
+Mechanizm: `docs/decisions.md` D14. Migracje uruchamiają się w buildzie produkcji i stagingu (`vercel.json` → `buildCommand`), przed `next build`. Preview innych branchy je pomijają.
+
+- **Przy wydaniu:** migracja wykonuje się na stagingu przy merge'u do `staging`, a na produkcji przy merge'u do `main`. W trakcie builda ruch dalej obsługuje stary deployment, więc migracje są expand-only. Przed merge'em do `main` sprawdzić w logu builda stagingu linie `Applying <id>` i `Indexes synced`.
+- **Nieudany build:** migracja z błędem nie jest zapisana w `migrations`, a blokada jest zwalniana. Kolejny deploy powtarza migrację, a kopia z pierwszej próby zostaje.
+- **Odtworzenie z kopii** (mongosh na właściwej bazie). Najpierw „Promote” poprzedniego deploymentu, potem:
+  ```js
+  db.getCollection("stories_backup_002-folders").aggregate([{ $out: "stories" }]);
+  db.migrations.deleteOne({ _id: "002-folders" }); // tylko jeśli migracja ma się wykonać ponownie
+  ```
+  `$out` zastępuje zawartość `stories` i zachowuje istniejące indeksy kolekcji docelowej. Kopie 3 ostatnich migracji: `db.getCollectionNames().filter(n => n.includes("_backup_"))`.
+- **Ręczne zdjęcie blokady**, gdy build padł w trakcie migracji, a nie chcesz czekać 15 min na jej przejęcie. Sprawdź najpierw, czy żaden build nie trwa: `db.migrations.deleteOne({ _id: "lock" })`.
+- **Lokalnie:** `npm run migrate` (baza z `.env.local`). Aplikacja nie tworzy indeksów sama (`autoIndex: false`), więc po zmianie schematu trzeba uruchomić migrację.
+
 ## Ustalenia
 
 - Wdrożenie: import repo `Iicytower/story-app` z GitHuba w panelu Vercela. Każdy push na `main` wdraża produkcję, push na `staging` – staging.

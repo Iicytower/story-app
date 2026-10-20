@@ -28,6 +28,7 @@ Prywatna aplikacja webowa do pisania opowiadań w markdown (Next.js App Router, 
 - `npm test` (Vitest: unit + integracyjne), `npm run test:e2e` (Playwright), `npm run verify` (wszystko)
 - Testy nigdy nie używają bazy z `.env.local` – tylko baz `story_app_test_*` / `story_app_e2e` w kontenerze Docker (`docker-compose.yml`, start automatyczny w `globalSetup`).
 - `npm run db:up` / `db:down` – lokalny MongoDB w Dockerze (dev: `MONGODB_URI=mongodb://127.0.0.1:27017/story_app`).
+- `npm run migrate` – migracje bazy z `.env.local` (`migrations/`, D14). Na Vercelu uruchamiane automatycznie w buildzie produkcji i stagingu.
 - `npm run create-account` – interaktywny skrypt dodający konto (uruchamia użytkownik, nie Claude).
 - Package manager: npm. Instalacja pakietów tylko po zgodzie użytkownika.
 

@@ -9,10 +9,14 @@ export function connectDB(): Promise<typeof mongoose> {
   if (!cache.mongooseConnection) {
     const uri = process.env.MONGODB_URI;
     if (!uri) throw new Error("MONGODB_URI is not set");
-    cache.mongooseConnection = mongoose.connect(uri).catch((error) => {
-      cache.mongooseConnection = undefined;
-      throw error;
-    });
+    // Indexes are managed only by the migration script (scripts/migrate.ts); otherwise an old
+    // deployment would recreate dropped indexes on a cold start.
+    cache.mongooseConnection = mongoose
+      .connect(uri, { autoIndex: false })
+      .catch((error) => {
+        cache.mongooseConnection = undefined;
+        throw error;
+      });
   }
   return cache.mongooseConnection;
 }

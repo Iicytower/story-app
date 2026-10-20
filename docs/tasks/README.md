@@ -6,7 +6,7 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `stag
 
 | # | Task | Zależy od | Status |
 | --- | --- | --- | --- |
-| 01 | [System migracji bazy](01-migrations.md) | – | [ ] |
+| 01 | [System migracji bazy](01-migrations.md) | – | [x] |
 | 02 | [Foldery](02-folders.md) | 01 | [ ] |
 | 03 | [Tryby sortowania folderów i rozdziałów](03-sorting.md) | 02 | [ ] |
 | 04 | [Eksport i udostępnianie folderu](04-folder-export-share.md) | 03 | [ ] |

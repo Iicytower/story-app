@@ -1,8 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { createOrUpdateUser } from "@/lib/accounts";
 import { connectDB, disconnectDB } from "@/lib/db";
-import "@/lib/models/story";
-import "@/lib/models/user";
+import "@/lib/models";
 import { E2E_MONGODB_URI, USERS } from "./env";
 
 export default async function globalSetup() {

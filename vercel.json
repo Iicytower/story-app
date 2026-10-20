@@ -1,0 +1,3 @@
+{
+  "buildCommand": "tsx scripts/migrate.ts && next build"
+}
