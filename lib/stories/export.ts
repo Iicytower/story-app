@@ -15,14 +15,26 @@ function quote(value: string): string {
   );
 }
 
+export function withFrontmatter(
+  fields: Record<string, string>,
+  content: string,
+): string {
+  const frontmatter = Object.entries(fields)
+    .map(([key, value]) => `${key}: ${quote(value)}`)
+    .join("\n");
+  return `---\n${frontmatter}\n---\n\n${content}`;
+}
+
 export function toMarkdownExport(story: ExportedStory): string {
-  const frontmatter = [
-    `title: ${quote(story.title)}`,
-    `createdAt: ${quote(story.createdAt)}`,
-    `updatedAt: ${quote(story.updatedAt)}`,
-    `notes: ${quote(story.notes)}`,
-  ].join("\n");
-  return `---\n${frontmatter}\n---\n\n${story.content}`;
+  return withFrontmatter(
+    {
+      title: story.title,
+      createdAt: story.createdAt,
+      updatedAt: story.updatedAt,
+      notes: story.notes,
+    },
+    story.content,
+  );
 }
 
 const POLISH: Record<string, string> = {
@@ -38,7 +50,11 @@ const POLISH: Record<string, string> = {
 };
 
 export function exportFileName(title: string): string {
-  const slug = title
+  return `${safeFileName(title, "story")}.md`;
+}
+
+export function safeFileName(text: string, fallback: string): string {
+  const slug = text
     .toLowerCase()
     .replace(/[ąćęłńóśźż]/g, (char) => POLISH[char])
     .normalize("NFD")
@@ -47,5 +63,5 @@ export function exportFileName(title: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 100)
     .replace(/-+$/, "");
-  return `${slug || "story"}.md`;
+  return slug || fallback;
 }

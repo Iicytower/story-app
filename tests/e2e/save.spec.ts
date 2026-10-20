@@ -28,8 +28,8 @@ test("autosaves about 3 seconds after the last keystroke", async ({ page }) => {
 
   await page.reload();
   await expect(title).toHaveValue("Autosave renamed");
-  await expect(content).toHaveValue("Once upon a time");
-  await expect(notes).toHaveValue("A note");
+  await expect(content).toHaveText("Once upon a time");
+  await expect(notes).toHaveText("A note");
 });
 
 test("Ctrl+S saves immediately", async ({ page }) => {
@@ -102,7 +102,9 @@ test("shows an error for a duplicate title", async ({ page }) => {
   await title.fill("Taken");
   await page.keyboard.press("Control+s");
 
-  await expect(status).toHaveText("A story with this title already exists.");
+  await expect(status).toHaveText(
+    "A story with this title already exists in this folder.",
+  );
   expect(await findStoryById(id)).toMatchObject({ title: "Mine", content: "" });
 });
 

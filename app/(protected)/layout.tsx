@@ -21,9 +21,7 @@ export default function ProtectedLayout({ children }: LayoutProps<"/">) {
           </div>
         </div>
       </header>
-      <main className="flex w-full flex-1 flex-col">
-        {children}
-      </main>
+      <main className="flex w-full flex-1 flex-col">{children}</main>
     </>
   );
 }

@@ -11,6 +11,8 @@ vi.mock("@/lib/auth/session", () => ({ requireUser: vi.fn() }));
 
 setupTestDb();
 
+const folderId = new Types.ObjectId();
+
 const alice = new Types.ObjectId();
 const bob = new Types.ObjectId();
 
@@ -35,7 +37,11 @@ async function storedToken(id: Types.ObjectId) {
 
 describe("setSharing", () => {
   it("enabling stores a random token of at least 16 characters and returns its path", async () => {
-    const story = await Story.create({ userId: alice, title: "Shared" });
+    const story = await Story.create({
+      folderId,
+      userId: alice,
+      title: "Shared",
+    });
 
     const result = await setSharing(story._id.toString(), true);
 
@@ -45,8 +51,8 @@ describe("setSharing", () => {
   });
 
   it("gives different stories different tokens", async () => {
-    const a = await Story.create({ userId: alice, title: "A" });
-    const b = await Story.create({ userId: alice, title: "B" });
+    const a = await Story.create({ folderId, userId: alice, title: "A" });
+    const b = await Story.create({ folderId, userId: alice, title: "B" });
 
     await setSharing(a._id.toString(), true);
     await setSharing(b._id.toString(), true);
@@ -55,7 +61,11 @@ describe("setSharing", () => {
   });
 
   it("enabling again keeps the existing token", async () => {
-    const story = await Story.create({ userId: alice, title: "Shared" });
+    const story = await Story.create({
+      folderId,
+      userId: alice,
+      title: "Shared",
+    });
     const first = await setSharing(story._id.toString(), true);
 
     const [second, third] = await Promise.all([
@@ -68,7 +78,11 @@ describe("setSharing", () => {
   });
 
   it("disabling removes the token field", async () => {
-    const story = await Story.create({ userId: alice, title: "Shared" });
+    const story = await Story.create({
+      folderId,
+      userId: alice,
+      title: "Shared",
+    });
     await setSharing(story._id.toString(), true);
 
     const result = await setSharing(story._id.toString(), false);
@@ -79,19 +93,25 @@ describe("setSharing", () => {
   });
 
   it("enabling after disabling creates a new token", async () => {
-    const story = await Story.create({ userId: alice, title: "Shared" });
+    const story = await Story.create({
+      folderId,
+      userId: alice,
+      title: "Shared",
+    });
     const first = await setSharing(story._id.toString(), true);
     await setSharing(story._id.toString(), false);
 
     const second = await setSharing(story._id.toString(), true);
 
-    expect(second.ok && second.sharePath).not.toBe(
-      first.ok && first.sharePath,
-    );
+    expect(second.ok && second.sharePath).not.toBe(first.ok && first.sharePath);
   });
 
   it("does not change updatedAt, so the open editor can still save", async () => {
-    const story = await Story.create({ userId: alice, title: "Shared" });
+    const story = await Story.create({
+      folderId,
+      userId: alice,
+      title: "Shared",
+    });
     const updatedAt = story.updatedAt.toISOString();
 
     await setSharing(story._id.toString(), true);
@@ -114,6 +134,7 @@ describe("setSharing", () => {
     "returns NOT_FOUND for another user's story (enabled: %s)",
     async (enabled) => {
       const story = await Story.create({
+        folderId,
         userId: bob,
         title: "Bob's",
         ...(!enabled && { shareToken: "bob-token-1234567890" }),
@@ -132,6 +153,7 @@ describe("setSharing", () => {
     "returns NOT_FOUND for a deleted story (enabled: %s)",
     async (enabled) => {
       const story = await Story.create({
+        folderId,
         userId: alice,
         title: "Gone",
         deletedAt: new Date(),
@@ -154,7 +176,11 @@ describe("setSharing", () => {
   });
 
   it("returns UNAUTHORIZED without a session", async () => {
-    const story = await Story.create({ userId: alice, title: "Mine" });
+    const story = await Story.create({
+      folderId,
+      userId: alice,
+      title: "Mine",
+    });
     signInAs(null);
 
     expect(await setSharing(story._id.toString(), true)).toEqual(unauthorized);
@@ -165,6 +191,7 @@ describe("setSharing", () => {
 describe("getSharedStory", () => {
   it("returns only the title and content", async () => {
     await Story.create({
+      folderId,
       userId: alice,
       title: "Public",
       content: "Body",
@@ -180,6 +207,7 @@ describe("getSharedStory", () => {
 
   it("returns null for a deleted story", async () => {
     await Story.create({
+      folderId,
       userId: alice,
       title: "Gone",
       shareToken: "deleted-token-123456",
@@ -190,7 +218,7 @@ describe("getSharedStory", () => {
   });
 
   it("returns null for an unknown token", async () => {
-    await Story.create({ userId: alice, title: "Private" });
+    await Story.create({ folderId, userId: alice, title: "Private" });
 
     expect(await getSharedStory("unknown-token-123456")).toBeNull();
   });

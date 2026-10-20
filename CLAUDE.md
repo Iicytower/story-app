@@ -9,17 +9,18 @@ Prywatna aplikacja webowa do pisania opowiadań w markdown (Next.js App Router, 
 - `docs/spec.md` – specyfikacja funkcjonalna (kopia dokumentu z Claude Docs, nie edytować bez prośby).
 - `docs/decisions.md` – decyzje i odstępstwa od spec; **ma pierwszeństwo nad spec**. Nową decyzję dopisz tutaj.
 - `docs/testing.md` – strategia testów (unit / integracyjne z MongoDB w Dockerze / E2E Playwright). **Obowiązkowa przy każdym tasku.**
-- `docs/tasks/README.md` – lista tasków ze statusami i definicja „zrobione”; szczegóły w `docs/tasks/NN-*.md` (sekcje Zakres, Kryteria akceptacji, Testy).
+- `docs/tasks/README.md` – lista tasków ze statusami, branche i definicja „zrobione”; szczegóły w `docs/tasks/NN-*.md` (sekcje Zakres, Kryteria akceptacji, Testy).
+- `docs/deploy.md` – środowiska (produkcja, staging), wydania, ustalenia z Vercela i Atlasa.
 
 ## Praca z taskami
 
 1. Przed startem przeczytaj plik taska oraz wskazane sekcje spec i `decisions.md`.
-2. Ustaw status `[~]` w `docs/tasks/README.md`.
+2. Utwórz branch `feature/NN-<slug>` z `develop` i ustaw status `[~]` w `docs/tasks/README.md`.
 3. Niejasności lub kilka sensownych rozwiązań → zapytaj, zanim zaimplementujesz.
 4. Napisz testy z sekcji „Testy” taska razem z kodem (nie na końcu). Każde kryterium akceptacji musi mieć test albo oznaczenie `manual`.
-5. `npm run verify` musi przechodzić (przed taskiem 05: `lint`, `typecheck`, `test`). Nie zamykaj taska z czerwonymi lub pominiętymi testami.
+5. `npm run verify` musi przechodzić. Nie zamykaj taska z czerwonymi lub pominiętymi testami.
 6. W odpowiedzi do użytkownika podaj mapowanie: kryterium akceptacji → test (lub wynik weryfikacji `manual`).
-7. Status `[x]`, potem jeden commit na task na `main` (wiadomość: `NN: <krótki opis>`). Bez push.
+7. Status `[x]`, potem jeden commit na task na branchu taska (wiadomość: `NN: <krótki opis>`). Merge do `develop` po zakończeniu taska; push `develop` oraz merge `develop` → `staging` i push `staging` tylko na prośbę użytkownika. **Nigdy nie pushuj na `main` lub `master`** (D13, D15).
 
 ## Komendy
 
@@ -27,6 +28,7 @@ Prywatna aplikacja webowa do pisania opowiadań w markdown (Next.js App Router, 
 - `npm test` (Vitest: unit + integracyjne), `npm run test:e2e` (Playwright), `npm run verify` (wszystko)
 - Testy nigdy nie używają bazy z `.env.local` – tylko baz `story_app_test_*` / `story_app_e2e` w kontenerze Docker (`docker-compose.yml`, start automatyczny w `globalSetup`).
 - `npm run db:up` / `db:down` – lokalny MongoDB w Dockerze (dev: `MONGODB_URI=mongodb://127.0.0.1:27017/story_app`).
+- `npm run migrate` – migracje bazy z `.env.local` (`migrations/`, D14). Na Vercelu uruchamiane automatycznie w buildzie produkcji i stagingu.
 - `npm run create-account` – interaktywny skrypt dodający konto (uruchamia użytkownik, nie Claude).
 - Package manager: npm. Instalacja pakietów tylko po zgodzie użytkownika.
 

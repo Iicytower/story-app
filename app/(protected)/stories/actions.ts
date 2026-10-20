@@ -2,10 +2,20 @@
 
 import { randomBytes } from "node:crypto";
 import { isObjectIdOrHexString } from "mongoose";
-import { revalidatePath } from "next/cache";
+import { refresh } from "next/cache";
 import type { ActionError, ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import { connectDB, isDuplicateKeyError } from "@/lib/db";
+import {
+  findOrCreateFolder,
+  moveInList,
+  nextChapterPosition,
+  savePositions,
+  touchFolder,
+} from "@/lib/folders/mutations";
+import { findChaptersInOrder } from "@/lib/folders/queries";
+import { chapterOrder, isDirection, type Direction } from "@/lib/folders/sort";
+import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
 
 const NOT_FOUND: ActionError = {
@@ -14,31 +24,127 @@ const NOT_FOUND: ActionError = {
   message: "This story does not exist or has been deleted.",
 };
 
+const FOLDER_NOT_FOUND: ActionError = {
+  ok: false,
+  error: "NOT_FOUND",
+  message: "This folder does not exist or has been deleted.",
+};
+
+const DUPLICATE_TITLE: ActionError = {
+  ok: false,
+  error: "DUPLICATE_TITLE",
+  message: "A story with this title already exists in this folder.",
+};
+
+// The folder is picked by name; a name the user has no folder for creates one.
 export async function createStory(
   title: string,
+  folderName: string,
 ): Promise<ActionResult<{ id: string }>> {
   const user = await requireUser();
   if (!user.ok) return user;
 
+  // Both checked before the folder is created, so a rejected story leaves no empty folder behind.
   const trimmed = title.trim();
   if (!trimmed) {
     return { ok: false, error: "EMPTY_TITLE", message: "Title is required." };
   }
+  const trimmedFolder = folderName.trim();
+  if (!trimmedFolder) {
+    return { ok: false, error: "EMPTY_NAME", message: "Folder is required." };
+  }
 
   await connectDB();
+  const folderId = await findOrCreateFolder(user.userId, trimmedFolder);
   try {
-    const story = await Story.create({ userId: user.userId, title: trimmed });
+    const story = await Story.create({
+      userId: user.userId,
+      folderId,
+      title: trimmed,
+      position: await nextChapterPosition(user.userId, folderId),
+    });
+    await touchFolder(folderId);
     return { ok: true, id: story._id.toString() };
   } catch (error) {
-    if (isDuplicateKeyError(error)) {
-      return {
-        ok: false,
-        error: "DUPLICATE_TITLE",
-        message: "A story with this title already exists.",
-      };
-    }
+    if (isDuplicateKeyError(error)) return DUPLICATE_TITLE;
     throw error;
   }
+}
+
+// Organizational change: keeps the story's updatedAt, so an open editor does not get CONFLICT.
+export async function moveStory(
+  id: string,
+  folderId: string,
+): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+  if (!isObjectIdOrHexString(folderId)) return FOLDER_NOT_FOUND;
+
+  await connectDB();
+  const folder = await Folder.exists({
+    _id: folderId,
+    userId: user.userId,
+    deletedAt: null,
+  });
+  if (!folder) return FOLDER_NOT_FOUND;
+  try {
+    const { matchedCount } = await Story.updateOne(
+      { _id: id, userId: user.userId, deletedAt: null },
+      {
+        $set: {
+          folderId,
+          position: await nextChapterPosition(user.userId, folderId),
+        },
+      },
+      { timestamps: false },
+    );
+    if (matchedCount === 0) return NOT_FOUND;
+  } catch (error) {
+    if (isDuplicateKeyError(error)) return DUPLICATE_TITLE;
+    throw error;
+  }
+  await touchFolder(folderId);
+
+  refresh();
+  return { ok: true };
+}
+
+export async function reorderChapter(
+  id: string,
+  direction: Direction,
+): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+  if (!isDirection(direction)) {
+    return {
+      ok: false,
+      error: "INVALID_INPUT",
+      message: "This option is not available. Reload the page and try again.",
+    };
+  }
+
+  await connectDB();
+  const story = await Story.findOne({
+    _id: id,
+    userId: user.userId,
+    deletedAt: null,
+  })
+    .select({ folderId: 1 })
+    .lean();
+  if (!story) return NOT_FOUND;
+  const chapters = await findChaptersInOrder(
+    user.userId,
+    story.folderId.toString(),
+    chapterOrder("manual"),
+  )
+    .select({ position: 1 })
+    .lean();
+  await savePositions(Story, moveInList(chapters, id, direction)!);
+
+  refresh();
+  return { ok: true };
 }
 
 export async function deleteStory(id: string): Promise<ActionResult> {
@@ -53,7 +159,7 @@ export async function deleteStory(id: string): Promise<ActionResult> {
   );
   if (matchedCount === 0) return NOT_FOUND;
 
-  revalidatePath("/stories");
+  refresh();
   return { ok: true };
 }
 
@@ -80,26 +186,22 @@ export async function saveStory(
   const updatedAt = new Date(Math.max(Date.now(), expected.getTime() + 1));
   try {
     // Conflict and empty-content checks live in the filter to make them atomic with the write.
-    const { matchedCount } = await Story.updateOne(
+    const story = await Story.findOneAndUpdate(
       {
         ...owned,
         updatedAt: expected,
         ...(!content.trim() && { content: /^\s*$/ }),
       },
       { $set: { title: trimmed, content, notes, updatedAt } },
-      { timestamps: false },
-    );
-    if (matchedCount === 1) {
+      { timestamps: false, projection: { folderId: 1 } },
+    ).lean();
+    if (story) {
+      // Only the folder's lastActivityAt; notesUpdatedAt stays, so folder notes never conflict.
+      if (story.folderId) await touchFolder(story.folderId, updatedAt);
       return { ok: true, updatedAt: updatedAt.toISOString() };
     }
   } catch (error) {
-    if (isDuplicateKeyError(error)) {
-      return {
-        ok: false,
-        error: "DUPLICATE_TITLE",
-        message: "A story with this title already exists.",
-      };
-    }
+    if (isDuplicateKeyError(error)) return DUPLICATE_TITLE;
     throw error;
   }
 

@@ -16,22 +16,38 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createStory } from "./actions";
 
-export function CreateStoryDialog() {
+export function CreateStoryDialog({
+  folderNames,
+  defaultFolder,
+}: {
+  folderNames: string[];
+  defaultFolder: string;
+}) {
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button>New story</Button>
       </DialogTrigger>
       <DialogContent>
-        <CreateStoryForm />
+        <CreateStoryForm
+          folderNames={folderNames}
+          defaultFolder={defaultFolder}
+        />
       </DialogContent>
     </Dialog>
   );
 }
 
 // Separate component so its state resets each time the dialog content mounts.
-function CreateStoryForm() {
+function CreateStoryForm({
+  folderNames,
+  defaultFolder,
+}: {
+  folderNames: string[];
+  defaultFolder: string;
+}) {
   const router = useRouter();
+  const [folder, setFolder] = useState(defaultFolder);
   const [title, setTitle] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -39,7 +55,7 @@ function CreateStoryForm() {
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     startTransition(async () => {
-      const result = await createStory(title);
+      const result = await createStory(title, folder);
       if (result.ok) router.push(`/stories/${result.id}`);
       else setError(result.message);
     });
@@ -50,6 +66,23 @@ function CreateStoryForm() {
       <DialogHeader>
         <DialogTitle>New story</DialogTitle>
       </DialogHeader>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="new-story-folder">Folder</Label>
+        {/* Pick an existing folder or type a new name; a new name creates the folder. */}
+        <Input
+          id="new-story-folder"
+          list="new-story-folders"
+          value={folder}
+          onChange={(event) => setFolder(event.target.value)}
+          placeholder="Choose or type a new folder"
+          autoComplete="off"
+        />
+        <datalist id="new-story-folders">
+          {folderNames.map((name) => (
+            <option key={name} value={name} />
+          ))}
+        </datalist>
+      </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="new-story-title">Title</Label>
         <Input

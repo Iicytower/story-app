@@ -1,7 +1,10 @@
 "use client";
 
 import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
   CheckIcon,
+  Columns3Icon,
   CopyIcon,
   DownloadIcon,
   LinkIcon,
@@ -9,38 +12,69 @@ import {
   PanelRightOpenIcon,
   Share2Icon,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  Fragment,
   useCallback,
   useEffect,
   useRef,
   useState,
   useSyncExternalStore,
 } from "react";
-import { MarkdownPreview } from "@/components/markdown-preview";
+import { MarkdownEditor } from "@/components/markdown-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import {
+  collapsedColumns,
+  columnsKey,
+  moveColumn,
+  type SidePanel,
+  visibleColumns,
+} from "@/lib/editor-layout";
+import type { EditorFolder } from "@/lib/folders/queries";
 import {
   countCharacters,
   countWords,
   formatReadAloudTime,
 } from "@/lib/stories/count";
 import type { EditorStory } from "@/lib/stories/queries";
+import {
+  FolderNotesField,
+  useFolderNotes,
+} from "../../folders/[id]/folder-notes";
 import { saveStory, setSharing } from "../actions";
 import { DeleteStoryButton } from "../delete-story-button";
+import { ChaptersPanel } from "./chapters-panel";
+import {
+  updateEditorLayout,
+  useEditorLayout,
+  useHydrated,
+  useIsDesktop,
+} from "./layout-store";
 
 const AUTOSAVE_DELAY_MS = 3000;
 
 type Values = { title: string; content: string; notes: string };
 
 // Below the md breakpoint only one panel is shown at a time.
-type MobileView = "editor" | "preview" | "notes";
+type MobileView = "story" | SidePanel;
 
 const MOBILE_VIEWS: { value: MobileView; label: string }[] = [
-  { value: "editor", label: "Editor" },
-  { value: "preview", label: "Preview" },
+  { value: "story", label: "Story" },
   { value: "notes", label: "Notes" },
+  { value: "chapters", label: "Chapters" },
 ];
+
+const PANEL_LABELS: Record<SidePanel, string> = {
+  notes: "Notes",
+  chapters: "Chapters",
+};
 
 type SaveState =
   | { status: "idle" | "saving" | "saved" }
@@ -52,13 +86,27 @@ function isSame(a: Values, b: Values) {
 
 const subscribeNever = () => () => {};
 
-export function Editor({ story }: { story: EditorStory }) {
+export function Editor({
+  story,
+  folder,
+}: {
+  story: EditorStory;
+  folder: EditorFolder | null;
+}) {
   const router = useRouter();
   const [title, setTitle] = useState(story.title);
   const [content, setContent] = useState(story.content);
   const [notes, setNotes] = useState(story.notes);
-  const [notesOpen, setNotesOpen] = useState(true);
-  const [mobileView, setMobileView] = useState<MobileView>("editor");
+  const [mobileView, setMobileView] = useState<MobileView>("story");
+  const layout = useEditorLayout();
+  const isDesktop = useIsDesktop();
+  const hydrated = useHydrated();
+  // Without a folder the hook still runs (hooks cannot be conditional) but never saves.
+  const folderNotes = useFolderNotes(
+    folder?.id ?? "",
+    folder?.notes ?? "",
+    folder?.notesUpdatedAt ?? "",
+  );
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
   const [sharePath, setSharePath] = useState(
     story.shareToken ? `/s/${story.shareToken}` : null,
@@ -129,6 +177,27 @@ export function Editor({ story }: { story: EditorStory }) {
     link.click();
   }
 
+  async function beforeLeave(): Promise<string | null> {
+    if (!latest.current.title.trim()) {
+      const message = "Title is required.";
+      setSaveState({ status: "error", message });
+      return message;
+    }
+    const [storySaved, notesSaved] = await Promise.all([
+      save(),
+      folderNotes.flush(),
+    ]);
+    if (!notesSaved.ok) {
+      const message = `Folder notes were not saved: ${notesSaved.message}`;
+      setSaveState({ status: "error", message });
+      return message;
+    }
+    // save() has already put its error into the status.
+    return storySaved
+      ? null
+      : "The chapter was not saved. See the message above.";
+  }
+
   async function toggleSharing() {
     setSharingPending(true);
     try {
@@ -181,9 +250,169 @@ export function Editor({ story }: { story: EditorStory }) {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
+  const columns = visibleColumns(layout);
+  const hiddenColumns = collapsedColumns(layout);
+  const columnKey = columnsKey(columns);
+  const sideSize = columns.length === 2 ? 25 : 30;
+
+  function setCollapsed(panel: SidePanel, collapsed: boolean) {
+    updateEditorLayout((current) => ({
+      ...current,
+      collapsed: { ...current.collapsed, [panel]: collapsed },
+    }));
+  }
+
+  const storyEditor = (
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <MarkdownEditor
+        value={content}
+        onChange={setContent}
+        label="Content"
+        placeholder="Write your story…"
+        className="flex-1"
+      />
+      <p className="text-muted-foreground border-t px-4 py-2 text-xs md:px-6">
+        {words} words · {countCharacters(content)} characters ·{" "}
+        {formatReadAloudTime(words)} read aloud
+      </p>
+    </div>
+  );
+
+  const chapterNotes = (className: string) => (
+    <div className={`flex min-h-0 flex-col ${className}`}>
+      <h3 className="border-b px-4 py-2 text-sm font-medium">Notes</h3>
+      <MarkdownEditor
+        value={notes}
+        onChange={setNotes}
+        label="Notes"
+        placeholder="Notes for this chapter…"
+        className="flex-1"
+        compact
+      />
+    </div>
+  );
+
+  const desktopNotes = folder ? (
+    <ResizablePanelGroup
+      key={String(hydrated)}
+      id="editor-notes"
+      orientation="vertical"
+      defaultLayout={layout.notesHeights ?? undefined}
+      onLayoutChanged={(_, meta) => {
+        const sizes = meta.requestedLayout;
+        if (!meta.isUserInteraction || !sizes) return;
+        updateEditorLayout((current) => ({ ...current, notesHeights: sizes }));
+      }}
+      className="min-h-0 flex-1"
+    >
+      <ResizablePanel id="folder-notes-panel" minSize="15%" defaultSize="40%">
+        <FolderNotesField state={folderNotes} className="h-full" />
+      </ResizablePanel>
+      <ResizableHandle withHandle aria-label="Resize folder notes" />
+      <ResizablePanel id="chapter-notes-panel" minSize="15%" defaultSize="60%">
+        {chapterNotes("h-full")}
+      </ResizablePanel>
+    </ResizablePanelGroup>
+  ) : (
+    chapterNotes("flex-1")
+  );
+
+  const chaptersPanel = (
+    <ChaptersPanel
+      folder={folder}
+      currentId={story.id}
+      beforeLeave={beforeLeave}
+    />
+  );
+
+  function sideHeader(panel: SidePanel, index: number) {
+    const label = PANEL_LABELS[panel];
+    return (
+      <div className="flex items-center gap-1 border-b px-2 py-1">
+        {layout.split ? (
+          <>
+            <h2 className="mr-auto px-2 text-sm font-medium">{label}</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={`Move ${label.toLowerCase()} left`}
+              title="Move left"
+              disabled={index === 0}
+              onClick={() =>
+                updateEditorLayout((current) => ({
+                  ...current,
+                  order: moveColumn(current.order, panel, "left"),
+                }))
+              }
+            >
+              <ArrowLeftIcon />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={`Move ${label.toLowerCase()} right`}
+              title="Move right"
+              disabled={index === columns.length - 1}
+              onClick={() =>
+                updateEditorLayout((current) => ({
+                  ...current,
+                  order: moveColumn(current.order, panel, "right"),
+                }))
+              }
+            >
+              <ArrowRightIcon />
+            </Button>
+          </>
+        ) : (
+          <div
+            role="tablist"
+            aria-label="Side panel"
+            className="bg-muted text-muted-foreground mr-auto grid grid-cols-2 gap-1 rounded-lg p-1"
+          >
+            {(["notes", "chapters"] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={layout.tab === tab}
+                onClick={() =>
+                  updateEditorLayout((current) => ({ ...current, tab }))
+                }
+                className="aria-selected:bg-background aria-selected:text-foreground rounded-md px-3 py-1 text-sm font-medium aria-selected:shadow-sm"
+              >
+                {PANEL_LABELS[tab]}
+              </button>
+            ))}
+          </div>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`Hide ${label.toLowerCase()}`}
+          title={`Hide ${label.toLowerCase()}`}
+          onClick={() => setCollapsed(panel, true)}
+        >
+          <PanelRightCloseIcon />
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-[calc(100dvh-3.5rem-1px)] flex-col">
       <div className="flex flex-wrap items-center gap-2 border-b px-4 py-3 md:flex-nowrap md:gap-3 md:px-6">
+        {story.folderName !== null && (
+          <Button variant="ghost" size="sm" asChild>
+            <Link
+              href={`/folders/${story.folderId}`}
+              className="max-w-48"
+              title={`Back to ${story.folderName}`}
+            >
+              <ArrowLeftIcon />
+              <span className="truncate">{story.folderName}</span>
+            </Link>
+          </Button>
+        )}
         <Input
           value={title}
           onChange={(event) => setTitle(event.target.value)}
@@ -220,18 +449,27 @@ export function Editor({ story }: { story: EditorStory }) {
         <DeleteStoryButton
           id={story.id}
           title={title}
-          onDeleted={() => router.push("/stories")}
+          onDeleted={() =>
+            router.push(
+              story.folderName === null
+                ? "/stories"
+                : `/folders/${story.folderId}`,
+            )
+          }
         />
         <Button
-          variant="ghost"
-          size="icon"
-          aria-label={notesOpen ? "Hide notes" : "Show notes"}
-          aria-expanded={notesOpen}
-          aria-controls="notes-panel"
+          variant="outline"
+          aria-pressed={layout.split}
           className="hidden md:inline-flex"
-          onClick={() => setNotesOpen((open) => !open)}
+          onClick={() =>
+            updateEditorLayout((current) => ({
+              ...current,
+              split: !current.split,
+            }))
+          }
         >
-          {notesOpen ? <PanelRightCloseIcon /> : <PanelRightOpenIcon />}
+          <Columns3Icon />
+          Split
         </Button>
       </div>
       {shareUrl && (
@@ -255,65 +493,103 @@ export function Editor({ story }: { story: EditorStory }) {
           </Button>
         </div>
       )}
-      <div
-        role="tablist"
-        aria-label="View"
-        className="bg-muted text-muted-foreground mx-4 mt-3 grid grid-cols-3 gap-1 rounded-lg p-1 md:hidden"
-      >
-        {MOBILE_VIEWS.map((view) => (
-          <button
-            key={view.value}
-            type="button"
-            role="tab"
-            aria-selected={mobileView === view.value}
-            onClick={() => setMobileView(view.value)}
-            className="aria-selected:bg-background aria-selected:text-foreground rounded-md px-3 py-1.5 text-sm font-medium aria-selected:shadow-sm"
+      {isDesktop ? (
+        <div className="flex min-h-0 flex-1">
+          <ResizablePanelGroup
+            // defaultLayout is read on mount only: remount once the stored layout
+            // is available after hydration, and whenever the set of columns changes.
+            key={`${hydrated}:${columnKey}`}
+            id="editor-columns"
+            defaultLayout={layout.widths[columnKey]}
+            onLayoutChanged={(_, meta) => {
+              const sizes = meta.requestedLayout;
+              if (!meta.isUserInteraction || !sizes) return;
+              updateEditorLayout((current) => ({
+                ...current,
+                widths: { ...current.widths, [columnKey]: sizes },
+              }));
+            }}
+            className="min-w-0 flex-1"
           >
-            {view.label}
-          </button>
-        ))}
-      </div>
-      <div className="flex min-h-0 flex-1">
-        <div
-          className={`${mobileView === "editor" ? "flex" : "hidden"} min-w-0 flex-1 flex-col md:flex md:border-r`}
-        >
-          <textarea
-            value={content}
-            onChange={(event) => setContent(event.target.value)}
-            aria-label="Content"
-            placeholder="Write your story in markdown…"
-            className="min-h-0 flex-1 resize-none bg-transparent px-4 py-4 font-mono text-base leading-relaxed outline-none md:px-6 md:text-sm"
-          />
-          <p className="text-muted-foreground border-t px-4 py-2 text-xs md:px-6">
-            {words} words · {countCharacters(content)} characters ·{" "}
-            {formatReadAloudTime(words)} read aloud
-          </p>
+            <ResizablePanel
+              id="story-column"
+              minSize="30%"
+              defaultSize={`${100 - columns.length * sideSize}%`}
+            >
+              <div className="flex h-full">{storyEditor}</div>
+            </ResizablePanel>
+            {columns.map((panel, index) => (
+              <Fragment key={panel}>
+                <ResizableHandle
+                  withHandle
+                  aria-label={`Resize ${PANEL_LABELS[panel].toLowerCase()} column`}
+                />
+                <ResizablePanel
+                  // Not the bare panel name: the library also sets it as the DOM id, which labels point to.
+                  id={`${panel}-column`}
+                  minSize="15%"
+                  defaultSize={`${sideSize}%`}
+                >
+                  <div className="flex h-full flex-col">
+                    {sideHeader(panel, index)}
+                    {panel === "notes" ? desktopNotes : chaptersPanel}
+                  </div>
+                </ResizablePanel>
+              </Fragment>
+            ))}
+          </ResizablePanelGroup>
+          {hiddenColumns.length > 0 && (
+            <div className="flex flex-col gap-1 border-l p-1">
+              {hiddenColumns.map((panel) => (
+                <Button
+                  key={panel}
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Show ${PANEL_LABELS[panel].toLowerCase()}`}
+                  title={`Show ${PANEL_LABELS[panel].toLowerCase()}`}
+                  onClick={() => setCollapsed(panel, false)}
+                >
+                  <PanelRightOpenIcon />
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
-        <section
-          aria-label="Preview"
-          className={`${mobileView === "preview" ? "block" : "hidden"} min-w-0 flex-1 overflow-y-auto px-4 py-4 md:block md:px-6`}
-        >
-          <MarkdownPreview content={content} />
-        </section>
-        <aside
-          id="notes-panel"
-          className={`${mobileView === "notes" ? "flex" : "hidden"} ${notesOpen ? "md:flex" : "md:hidden"} w-full shrink-0 flex-col md:w-80 md:border-l`}
-        >
-          <label
-            htmlFor="notes"
-            className="border-b px-4 py-2 text-sm font-medium"
+      ) : (
+        <>
+          <div
+            role="tablist"
+            aria-label="View"
+            className="bg-muted text-muted-foreground mx-4 mt-3 grid grid-cols-3 gap-1 rounded-lg p-1"
           >
-            Notes
-          </label>
-          <textarea
-            id="notes"
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-            placeholder="Notes for this story…"
-            className="min-h-0 flex-1 resize-none bg-transparent px-4 py-3 text-base outline-none md:text-sm"
-          />
-        </aside>
-      </div>
+            {MOBILE_VIEWS.map((view) => (
+              <button
+                key={view.value}
+                type="button"
+                role="tab"
+                aria-selected={mobileView === view.value}
+                onClick={() => setMobileView(view.value)}
+                className="aria-selected:bg-background aria-selected:text-foreground rounded-md px-3 py-1.5 text-sm font-medium aria-selected:shadow-sm"
+              >
+                {view.label}
+              </button>
+            ))}
+          </div>
+          {mobileView === "story" && storyEditor}
+          {mobileView === "notes" && (
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+              {folder && (
+                <FolderNotesField
+                  state={folderNotes}
+                  className="min-h-64 border-b"
+                />
+              )}
+              {chapterNotes("min-h-64 flex-1")}
+            </div>
+          )}
+          {mobileView === "chapters" && chaptersPanel}
+        </>
+      )}
     </div>
   );
 }

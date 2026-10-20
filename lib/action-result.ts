@@ -3,8 +3,11 @@ export type ErrorCode =
   | "NOT_FOUND"
   | "CONFLICT"
   | "DUPLICATE_TITLE"
+  | "DUPLICATE_NAME"
+  | "EMPTY_NAME"
   | "EMPTY_TITLE"
-  | "EMPTY_CONTENT";
+  | "EMPTY_CONTENT"
+  | "INVALID_INPUT";
 
 export type ActionError = { ok: false; error: ErrorCode; message: string };
 
