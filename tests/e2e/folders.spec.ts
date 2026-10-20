@@ -88,7 +88,7 @@ test("autosaves folder notes and keeps them after a reload", async ({
   await page.goto(`/folders/${id}`);
   const notes = page.getByRole("textbox", { name: "Folder notes" });
   await notes.fill("World building");
-  await expect(page.getByRole("status")).toHaveText("Saved", {
+  await expect(page.locator("#folder-notes-status")).toHaveText("Saved", {
     timeout: 10_000,
   });
   expect((await findFolder("Book"))?.notes).toBe("World building");

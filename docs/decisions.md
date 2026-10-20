@@ -86,11 +86,11 @@ Zamiast `mongodb-memory-server` używamy kontenera `mongo:8` z `docker-compose.y
 - Strona `/s/[token]` wywołuje `connection()`, żeby nie była cache'owana (inaczej link działałby po „Stop sharing”). `noindex`: `metadata.robots` (meta tag) + `X-Robots-Tag: noindex, nofollow` przez `headers()` w `next.config.ts`.
 - `stripComments`: komentarz kończy się na pierwszym `-->` (jak w HTML), więc z zagnieżdżonego `<!-- a <!-- b --> c -->` zostaje ` c -->`.
 
-## D12 – Widok mobilny edytora (2026-10-06)
+## D12 – Widok mobilny edytora (2026-10-06, zmienione 2026-10-20 w D19)
 
-- Odstępstwo od „tylko desktop” w spec: edytor obsługuje wąskie ekrany. Poniżej breakpointu `md` (768 px) na górze jest przełącznik Editor / Preview / Notes (`role="tablist"`) i widoczny jest jeden panel naraz; od `md` układ bez zmian (panele obok siebie, przycisk zwijania notatek).
-- Na wąskim ekranie przyciski paska narzędzi pokazują tylko ikony (etykieta w `sr-only`), przycisk zwijania notatek jest ukryty, a pola tekstowe mają `text-base`, żeby iOS nie powiększał strony przy fokusie.
-- Panel notatek jest zawsze w DOM (ukrywany klasami), więc zwinięcie go na desktopie nie wpływa na zakładkę Notes na telefonie.
+- Odstępstwo od „tylko desktop” w spec: edytor obsługuje wąskie ekrany. Poniżej breakpointu `md` (768 px) na górze jest przełącznik Story / Notes / Chapters (`role="tablist"`, nazwa „View”) i widoczny jest jeden panel naraz. Do taska 06 zakładka Story pokazuje edytor z podglądem pod spodem; Notes – notatki folderu nad notatkami rozdziału, bez separatora.
+- Na wąskim ekranie przyciski paska narzędzi pokazują tylko ikony (etykieta w `sr-only`), przyciski zwijania i Split są ukryte, a pola tekstowe mają `text-base`, żeby iOS nie powiększał strony przy fokusie.
+- Układ (desktop lub mobile) wybiera `matchMedia` (`useSyncExternalStore`, serwer renderuje desktop), więc w DOM jest tylko jedno drzewo paneli i każde pole występuje raz. Treść, notatki i notatki folderu trzyma komponent nad oboma drzewami, więc zmiana szerokości okna ich nie gubi.
 
 ## D13 – Branche i środowiska po wersji 1.0 (2026-10-20)
 
@@ -147,3 +147,12 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - `folders.shareToken`: jak D11 (osobny unikalny indeks częściowy, ten sam token przy ponownym „Share”, `timestamps: false`, `lastActivityAt` bez zmian). `setFolderSharing` zwraca `sharePath: "/s/f/<token>" | null`. Udostępnianie folderu i rozdziałów jest niezależne.
 - `/s/f/[token]`: nazwa folderu i numerowany spis. `/s/f/[token]/[n]`: rozdział `n` (od 1, w bieżącej kolejności folderu) z linkami poprzedni / „Contents” / następny; `n` spoza zakresu lub nieliczbowe → 404. Numery zmieniają się razem z kolejnością i usuwaniem rozdziałów. Obie strony: `connection()`, `metadata.robots`, `X-Robots-Tag` w `next.config.ts`, `stripComments`, bez notatek. `isPublicPath` obejmuje `/s/f/<token>` i `/s/f/<token>/<n>`.
 - Przyciski w widoku folderu: „Export .zip” (link z `download`, bez zapisu – folder nie ma niezapisanych zmian poza autozapisywanymi notatkami) i „Share” / „Stop sharing” z polem linku i „Copy link”.
+
+## D19 – Panele edytora (2026-10-20)
+
+- Desktop: `[Story] | [panel boczny]` w `ResizablePanelGroup` (shadcn Resizable, `react-resizable-panels` v4). Story to edytor z podglądem (do taska 06). Panel boczny ma zakładki Notes / Chapters (`tablist` „Side panel”, domyślnie Notes). „Split” w pasku narzędzi (`aria-pressed`) pokazuje obie kolumny; „Move left/right” w nagłówku kolumny zmienia ich kolejność (Story zawsze pierwsza). „Hide notes/chapters” zwija kolumnę, a „Show …” zostaje przy prawej krawędzi.
+- Notes: pionowa grupa – notatki folderu (`useFolderNotes`, osobna kolejka i stan zapisu, konflikt po `notesUpdatedAt`) nad notatkami rozdziału (zapisywanymi z rozdziałem przez `saveStory`, nazwa pola „Notes” bez zmian). Status notatek folderu nie ma `role="status"` (unikalny status edytora zostaje dla rozdziału), tylko `aria-live`.
+- Układ w `localStorage` (`story-app:editor-layout`): split, zakładka, kolejność, zwinięcia, szerokości per zestaw widocznych kolumn, wysokości notatek. Parsowanie pole po polu z wartościami domyślnymi; każdy dostęp do `localStorage` w `try/catch` (także getter `window.localStorage`). Magazyn na poziomie modułu (`useSyncExternalStore`) trzyma układ w pamięci, więc bez `localStorage` działa do przeładowania. Szerokości zapisywane tylko po interakcji użytkownika (`meta.isUserInteraction`, `requestedLayout`). Grupy są remontowane po hydratacji i przy zmianie zestawu kolumn, bo `defaultLayout` jest czytany tylko przy montowaniu. Id paneli mają sufiks (`notes-column`), bo biblioteka ustawia je jako DOM `id`.
+- `ThemeToggle` też łapie wyjątki `localStorage` (wcześniej wyjątek przerywał renderowanie aplikacji).
+- Chapters: rozdziały folderu w kolejności `chapterSort`, bieżący z `aria-current="page"`. Przejście, „New chapter” (dialog z tytułem) najpierw zapisują rozdział i notatki folderu (kolejki autozapisu); pusty tytuł („Title is required.”) albo błąd zapisu zatrzymują przejście z komunikatem. Move up / down w trybie manual, Delete z potwierdzeniem; usunięcie bieżącego przenosi do widoku folderu.
+- `Editor` jest renderowany z `key={story.id}`, żeby przejście do innego rozdziału nie zostawiło w stanie tekstu poprzedniego.

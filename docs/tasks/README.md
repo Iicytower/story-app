@@ -10,7 +10,7 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `deve
 | 02 | [Foldery](02-folders.md) | 01 | [x] |
 | 03 | [Tryby sortowania folderów i rozdziałów](03-sorting.md) | 02 | [x] |
 | 04 | [Eksport i udostępnianie folderu](04-folder-export-share.md) | 03 | [x] |
-| 05 | [Panele edytora: notatki folderu i rozdziały](05-editor-panels.md) | 03 | [ ] |
+| 05 | [Panele edytora: notatki folderu i rozdziały](05-editor-panels.md) | 03 | [x] |
 | 06 | [Edytor WYSIWYG z trybem Source](06-wysiwyg-editor.md) | 05 | [ ] |
 | 07 | [Wyrównanie i kolor tekstu](07-align-color.md) | 06 | [ ] |
 

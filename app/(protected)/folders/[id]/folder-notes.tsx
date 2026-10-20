@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "cn";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { saveFolderNotes } from "../actions";
 
@@ -9,15 +10,14 @@ type SaveState =
   | { status: "idle" | "saving" | "saved" }
   | { status: "error"; message: string };
 
-export function FolderNotes({
-  folderId,
-  initialNotes,
-  initialNotesUpdatedAt,
-}: {
-  folderId: string;
-  initialNotes: string;
-  initialNotesUpdatedAt: string;
-}) {
+type FlushResult = { ok: true } | { ok: false; message: string };
+
+// Lives in the component that owns the notes, so they survive the panels around them remounting.
+export function useFolderNotes(
+  folderId: string,
+  initialNotes: string,
+  initialNotesUpdatedAt: string,
+) {
   const [notes, setNotes] = useState(initialNotes);
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
   const latest = useRef(initialNotes);
@@ -26,10 +26,11 @@ export function FolderNotes({
   const queue = useRef(Promise.resolve());
 
   // Saves run one at a time, so each one sends the notesUpdatedAt returned by the previous one.
-  const save = useCallback(() => {
-    queue.current = queue.current.then(async () => {
+  // Resolves once the notes typed so far are saved, e.g. before leaving the page.
+  const flush = useCallback((): Promise<FlushResult> => {
+    const run = queue.current.then(async (): Promise<FlushResult> => {
       const value = latest.current;
-      if (value === saved.current) return;
+      if (value === saved.current) return { ok: true };
       setSaveState({ status: "saving" });
       try {
         const result = await saveFolderNotes(
@@ -41,24 +42,26 @@ export function FolderNotes({
           saved.current = value;
           notesUpdatedAt.current = result.notesUpdatedAt;
           setSaveState({ status: "saved" });
-        } else {
-          setSaveState({ status: "error", message: result.message });
+          return { ok: true };
         }
+        setSaveState({ status: "error", message: result.message });
+        return { ok: false, message: result.message };
       } catch {
-        setSaveState({
-          status: "error",
-          message: "Could not reach the server. Check your connection.",
-        });
+        const message = "Could not reach the server. Check your connection.";
+        setSaveState({ status: "error", message });
+        return { ok: false, message };
       }
     });
+    queue.current = run.then(() => {});
+    return run;
   }, [folderId]);
 
   useEffect(() => {
     latest.current = notes;
     if (notes === saved.current) return;
-    const timer = setTimeout(save, AUTOSAVE_DELAY_MS);
+    const timer = setTimeout(flush, AUTOSAVE_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [notes, save]);
+  }, [notes, flush]);
 
   useEffect(() => {
     function handleBeforeUnload(event: BeforeUnloadEvent) {
@@ -68,14 +71,31 @@ export function FolderNotes({
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
+  return { notes, setNotes, saveState, flush };
+}
+
+export type FolderNotesState = ReturnType<typeof useFolderNotes>;
+
+export function FolderNotesField({
+  state,
+  className,
+  textareaClassName,
+}: {
+  state: FolderNotesState;
+  className?: string;
+  textareaClassName?: string;
+}) {
+  const { notes, setNotes, saveState } = state;
   return (
-    <section className="flex flex-col rounded-lg border">
+    <section className={cn("flex flex-col", className)}>
       <div className="flex items-center justify-between gap-2 border-b px-4 py-2">
         <label htmlFor="folder-notes" className="text-sm font-medium">
           Folder notes
         </label>
+        {/* Not role="status": the editor already has one for the chapter, and tests rely on it being unique. */}
         <span
-          role="status"
+          id="folder-notes-status"
+          aria-live="polite"
           className={
             saveState.status === "error"
               ? "text-destructive text-sm"
@@ -92,8 +112,30 @@ export function FolderNotes({
         value={notes}
         onChange={(event) => setNotes(event.target.value)}
         placeholder="Notes for this folder…"
-        className="min-h-64 resize-y bg-transparent px-4 py-3 text-base outline-none md:text-sm"
+        className={cn(
+          "bg-transparent px-4 py-3 text-base outline-none md:text-sm",
+          textareaClassName,
+        )}
       />
     </section>
+  );
+}
+
+export function FolderNotes({
+  folderId,
+  initialNotes,
+  initialNotesUpdatedAt,
+}: {
+  folderId: string;
+  initialNotes: string;
+  initialNotesUpdatedAt: string;
+}) {
+  const state = useFolderNotes(folderId, initialNotes, initialNotesUpdatedAt);
+  return (
+    <FolderNotesField
+      state={state}
+      className="rounded-lg border"
+      textareaClassName="min-h-64 resize-y"
+    />
   );
 }

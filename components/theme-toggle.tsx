@@ -7,15 +7,20 @@ import { THEME_STORAGE_KEY } from "@/lib/theme";
 
 export function ThemeToggle() {
   // React's dev-mode remount resets <html> attributes set by the inline script; no-op in production.
+  // Storage access throws when the browser blocks it; the theme then lasts until a reload.
   useLayoutEffect(() => {
-    if (localStorage.getItem(THEME_STORAGE_KEY) === "dark") {
-      document.documentElement.classList.add("dark");
-    }
+    try {
+      if (localStorage.getItem(THEME_STORAGE_KEY) === "dark") {
+        document.documentElement.classList.add("dark");
+      }
+    } catch {}
   }, []);
 
   function toggle() {
     const dark = document.documentElement.classList.toggle("dark");
-    localStorage.setItem(THEME_STORAGE_KEY, dark ? "dark" : "light");
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, dark ? "dark" : "light");
+    } catch {}
   }
 
   return (

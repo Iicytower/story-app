@@ -153,3 +153,32 @@ export async function getSharedChapter(token: string, n: number) {
     next: n < chapters.length ? { n: n + 1, title: chapters[n].title } : null,
   };
 }
+
+// The editor's side panels: folder notes and the chapter list, without chapter contents.
+export async function getEditorFolder(userId: string, id: string) {
+  await connectDB();
+  const folder = await Folder.findOne({ _id: id, userId, deletedAt: null })
+    .select({ name: 1, notes: 1, notesUpdatedAt: 1, chapterSort: 1 })
+    .lean();
+  if (!folder) return null;
+  const chapterSort = folder.chapterSort ?? "created";
+  const chapters = await findChaptersInOrder(
+    userId,
+    id,
+    chapterOrder(chapterSort),
+  )
+    .select({ title: 1 })
+    .lean();
+  return {
+    id: folder._id.toString(),
+    name: folder.name,
+    notes: folder.notes,
+    notesUpdatedAt: folder.notesUpdatedAt.toISOString(),
+    chapterSort,
+    chapters: chapters.map(({ _id, title }) => ({ id: _id.toString(), title })),
+  };
+}
+
+export type EditorFolder = NonNullable<
+  Awaited<ReturnType<typeof getEditorFolder>>
+>;
