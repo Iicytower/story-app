@@ -22,7 +22,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { MarkdownPreview } from "@/components/markdown-preview";
+import { MarkdownEditor } from "@/components/markdown-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -264,12 +264,12 @@ export function Editor({
 
   const storyEditor = (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <textarea
+      <MarkdownEditor
         value={content}
-        onChange={(event) => setContent(event.target.value)}
-        aria-label="Content"
-        placeholder="Write your story in markdown…"
-        className="min-h-0 flex-1 resize-none bg-transparent px-4 py-4 font-mono text-base leading-relaxed outline-none md:px-6 md:text-sm"
+        onChange={setContent}
+        label="Content"
+        placeholder="Write your story…"
+        className="flex-1"
       />
       <p className="text-muted-foreground border-t px-4 py-2 text-xs md:px-6">
         {words} words · {countCharacters(content)} characters ·{" "}
@@ -278,26 +278,16 @@ export function Editor({
     </div>
   );
 
-  const preview = (
-    <section
-      aria-label="Preview"
-      className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-4 md:px-6"
-    >
-      <MarkdownPreview content={content} />
-    </section>
-  );
-
   const chapterNotes = (className: string) => (
     <div className={`flex min-h-0 flex-col ${className}`}>
-      <label htmlFor="notes" className="border-b px-4 py-2 text-sm font-medium">
-        Notes
-      </label>
-      <textarea
-        id="notes"
+      <h3 className="border-b px-4 py-2 text-sm font-medium">Notes</h3>
+      <MarkdownEditor
         value={notes}
-        onChange={(event) => setNotes(event.target.value)}
+        onChange={setNotes}
+        label="Notes"
         placeholder="Notes for this chapter…"
-        className="min-h-0 flex-1 resize-none bg-transparent px-4 py-3 text-base outline-none md:text-sm"
+        className="flex-1"
+        compact
       />
     </div>
   );
@@ -316,11 +306,7 @@ export function Editor({
       className="min-h-0 flex-1"
     >
       <ResizablePanel id="folder-notes-panel" minSize="15%" defaultSize="40%">
-        <FolderNotesField
-          state={folderNotes}
-          className="h-full"
-          textareaClassName="min-h-0 flex-1 resize-none"
-        />
+        <FolderNotesField state={folderNotes} className="h-full" />
       </ResizablePanel>
       <ResizableHandle withHandle aria-label="Resize folder notes" />
       <ResizablePanel id="chapter-notes-panel" minSize="15%" defaultSize="60%">
@@ -530,11 +516,7 @@ export function Editor({
               minSize="30%"
               defaultSize={`${100 - columns.length * sideSize}%`}
             >
-              <div className="flex h-full">
-                {storyEditor}
-                <div className="border-l" />
-                {preview}
-              </div>
+              <div className="flex h-full">{storyEditor}</div>
             </ResizablePanel>
             {columns.map((panel, index) => (
               <Fragment key={panel}>
@@ -593,24 +575,16 @@ export function Editor({
               </button>
             ))}
           </div>
-          {mobileView === "story" && (
-            // Until the WYSIWYG editor (task 06) the preview sits below the editor.
-            <div className="flex min-h-0 flex-1 flex-col">
-              {storyEditor}
-              <div className="border-t" />
-              {preview}
-            </div>
-          )}
+          {mobileView === "story" && storyEditor}
           {mobileView === "notes" && (
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
               {folder && (
                 <FolderNotesField
                   state={folderNotes}
-                  className="border-b"
-                  textareaClassName="min-h-48 resize-y"
+                  className="min-h-64 border-b"
                 />
               )}
-              {chapterNotes("min-h-48 flex-1")}
+              {chapterNotes("min-h-64 flex-1")}
             </div>
           )}
           {mobileView === "chapters" && chaptersPanel}

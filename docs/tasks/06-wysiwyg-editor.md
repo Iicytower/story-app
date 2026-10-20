@@ -2,17 +2,9 @@
 
 Jedno pole zamiast dwóch kolumn (edytor + podgląd). Pisze się w sformatowanym tekście, a markdown jest zapisywany pod spodem. Ten sam edytor obsługuje treść, notatki rozdziału i notatki folderu. Zależy od 05. Nowy pakiet: biblioteka edytora wybrana w spike'u (zgoda użytkownika).
 
-## Spike (przed implementacją)
+## Wybór biblioteki (2026-10-20)
 
-Porównać Tiptap i Milkdown w aktualnej dokumentacji i na małym prototypie. Każdy punkt to pass/fail:
-
-1. Pojedynczy Enter ze starych opowiadań (remark-breaks: nowa linia = złamanie linii) przetrwa wczytanie i zapis bez zmiany wyglądu.
-2. Komentarz `<!-- -->` wczytuje się jako edytowalny węzeł i wraca do źródła bez zmian.
-3. HTML wyrównania i koloru z tasku 07 przetrwa serializację.
-4. Działa jako Client Component w React 19 / Next 16 (SSR bez błędów hydracji).
-5. Rozmiar pakietu i aktywność utrzymania.
-
-Wynik (rekomendacja + tabela) przedstawić użytkownikowi do akceptacji przed instalacją.
+Spike pominięty za zgodą użytkownika: Tiptap v3 (`@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`, `@tiptap/markdown`). Zgodność ze starymi opowiadaniami nie jest wymagana (użytkownik poprawi dane ręcznie), a task 07 jest odłożony, więc odpadły punkty o remark-breaks i HTML wyrównania/koloru. Szczegóły: D20.
 
 ## Zakres
 
@@ -42,7 +34,7 @@ Wynik (rekomendacja + tabela) przedstawić użytkownikowi do akceptacji przed in
 1. Jedno pole edycji w trybie Preview, bez osobnej kolumny podglądu.
 2. Każdy przycisk i skrót daje oczekiwany markdown w Source.
 3. Source ↔ Preview zachowuje treść, a zmiany z Source są widoczne w Preview.
-4. Stare opowiadanie z pojedynczymi nowymi liniami wygląda po wczytaniu tak samo jak w v1.0. Otwarcie bez edycji nie wywołuje zapisu.
+4. ~~Stare opowiadanie wygląda po wczytaniu tak samo jak w v1.0~~ (niewymagane, D20). Otwarcie bez edycji nie wywołuje zapisu.
 5. Enter tworzy akapit, Shift+Enter złamanie linii.
 6. Komentarz widoczny i edytowalny w Preview, zachowany w źródle, nieobecny na stronie publicznej.
 7. Link `javascript:` jest odrzucany.

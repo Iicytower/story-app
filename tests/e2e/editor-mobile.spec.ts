@@ -25,7 +25,6 @@ test("switches between story, notes and chapters on a narrow screen", async ({
 
   await page.goto(`/stories/${id}`);
   const content = page.getByRole("textbox", { name: "Content", exact: true });
-  const preview = page.getByRole("region", { name: "Preview" });
   const notes = page.getByRole("textbox", { name: "Notes", exact: true });
   const folderNotes = page.getByRole("textbox", { name: "Folder notes" });
   const chapters = page.getByRole("list", { name: "Chapters" });
@@ -34,19 +33,22 @@ test("switches between story, notes and chapters on a narrow screen", async ({
 
   await expect(tab("Story")).toHaveAttribute("aria-selected", "true");
   await expect(content).toBeVisible();
-  await expect(preview).toBeVisible();
+  await expect(
+    page.getByRole("group", { name: "Content editor" }).getByRole("button", {
+      name: "Source",
+    }),
+  ).toBeVisible();
   await expect(notes).toBeHidden();
   await expect(chapters).toBeHidden();
   await expect(page.getByRole("button", { name: "Hide notes" })).toBeHidden();
   await expect(page.getByRole("separator")).toHaveCount(0);
 
-  await content.fill("# Changed");
-  await expect(preview.getByRole("heading", { name: "Changed" })).toBeVisible();
+  await content.fill("Changed");
 
   await tab("Notes").click();
   await expect(tab("Notes")).toHaveAttribute("aria-selected", "true");
   await expect(folderNotes).toBeVisible();
-  await expect(notes).toHaveValue("Remember the dragon");
+  await expect(notes).toHaveText("Remember the dragon");
   const folderBox = await folderNotes.boundingBox();
   const notesBox = await notes.boundingBox();
   expect(folderBox!.y).toBeLessThan(notesBox!.y);
@@ -60,7 +62,7 @@ test("switches between story, notes and chapters on a narrow screen", async ({
   await expect(notes).toBeHidden();
 
   await tab("Story").click();
-  await expect(content).toHaveValue("# Changed");
+  await expect(content).toHaveText("Changed");
 });
 
 test("shows the story and the side panel side by side on a wide screen", async ({
@@ -74,7 +76,7 @@ test("shows the story and the side panel side by side on a wide screen", async (
   await expect(
     page.getByRole("textbox", { name: "Content", exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Preview" })).toHaveCount(0);
   await expect(
     page.getByRole("textbox", { name: "Notes", exact: true }),
   ).toBeVisible();

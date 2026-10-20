@@ -21,3 +21,29 @@ export const test = base.extend<{ cleanStories: void }>({
 });
 
 export { expect };
+
+// The rich text editor has no value; tests read and write its markdown through Source mode.
+export function markdownEditor(page: Page, label: string) {
+  const group = page.getByRole("group", {
+    name: `${label} editor`,
+    exact: true,
+  });
+  const mode = (name: "Preview" | "Source") =>
+    group.getByRole("button", { name, exact: true });
+  return {
+    field: page.getByRole("textbox", { name: label, exact: true }),
+    group,
+    button: (name: string) => group.getByRole("button", { name, exact: true }),
+    async source(): Promise<string> {
+      await mode("Source").click();
+      const value = await group.getByRole("textbox").inputValue();
+      await mode("Preview").click();
+      return value;
+    },
+    async setSource(markdown: string) {
+      await mode("Source").click();
+      await group.getByRole("textbox").fill(markdown);
+      await mode("Preview").click();
+    },
+  };
+}

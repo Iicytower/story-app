@@ -2,6 +2,7 @@
 
 import { cn } from "cn";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { MarkdownEditor } from "@/components/markdown-editor";
 import { saveFolderNotes } from "../actions";
 
 const AUTOSAVE_DELAY_MS = 3000;
@@ -79,19 +80,15 @@ export type FolderNotesState = ReturnType<typeof useFolderNotes>;
 export function FolderNotesField({
   state,
   className,
-  textareaClassName,
 }: {
   state: FolderNotesState;
   className?: string;
-  textareaClassName?: string;
 }) {
   const { notes, setNotes, saveState } = state;
   return (
     <section className={cn("flex flex-col", className)}>
       <div className="flex items-center justify-between gap-2 border-b px-4 py-2">
-        <label htmlFor="folder-notes" className="text-sm font-medium">
-          Folder notes
-        </label>
+        <h3 className="text-sm font-medium">Folder notes</h3>
         {/* Not role="status": the editor already has one for the chapter, and tests rely on it being unique. */}
         <span
           id="folder-notes-status"
@@ -107,15 +104,13 @@ export function FolderNotesField({
           {saveState.status === "error" && saveState.message}
         </span>
       </div>
-      <textarea
-        id="folder-notes"
+      <MarkdownEditor
         value={notes}
-        onChange={(event) => setNotes(event.target.value)}
+        onChange={setNotes}
+        label="Folder notes"
         placeholder="Notes for this folder…"
-        className={cn(
-          "bg-transparent px-4 py-3 text-base outline-none md:text-sm",
-          textareaClassName,
-        )}
+        className="flex-1"
+        compact
       />
     </section>
   );
@@ -131,11 +126,5 @@ export function FolderNotes({
   initialNotesUpdatedAt: string;
 }) {
   const state = useFolderNotes(folderId, initialNotes, initialNotesUpdatedAt);
-  return (
-    <FolderNotesField
-      state={state}
-      className="rounded-lg border"
-      textareaClassName="min-h-64 resize-y"
-    />
-  );
+  return <FolderNotesField state={state} className="h-96 rounded-lg border" />;
 }

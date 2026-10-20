@@ -94,5 +94,5 @@ test("autosaves folder notes and keeps them after a reload", async ({
   expect((await findFolder("Book"))?.notes).toBe("World building");
 
   await page.reload();
-  await expect(notes).toHaveValue("World building");
+  await expect(notes).toHaveText("World building");
 });

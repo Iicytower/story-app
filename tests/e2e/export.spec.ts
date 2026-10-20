@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { parse } from "yaml";
 import { findStoryById, seedStory } from "./db";
 import { storageStatePath } from "./env";
-import { expect, test } from "./helpers";
+import { expect, markdownEditor, test } from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
@@ -16,12 +16,10 @@ test("saves unsaved changes and downloads them as a markdown file", async ({
   });
   await page.goto(`/stories/${id}`);
 
-  await page
-    .getByRole("textbox", { name: "Content", exact: true })
-    .fill("Fresh <!-- secret --> text");
-  await page
-    .getByRole("textbox", { name: "Notes", exact: true })
-    .fill("Note: with colon\nand a second line");
+  await markdownEditor(page, "Content").setSource("Fresh <!-- secret --> text");
+  await markdownEditor(page, "Notes").setSource(
+    "Note: with colon\nand a second line",
+  );
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export .md" }).click();
   const download = await downloadPromise;

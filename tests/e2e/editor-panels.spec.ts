@@ -152,8 +152,8 @@ test("folder and chapter notes save separately; folder notes show in another cha
   expect((await findFolder("Book"))?.notes).toBe("Shared world");
 
   await page.goto(`/stories/${second}`);
-  await expect(e.folderNotes).toHaveValue("Shared world");
-  await expect(e.notes).toHaveValue("");
+  await expect(e.folderNotes).toHaveText("Shared world");
+  await expect(e.notes).toHaveText("");
 });
 
 test("folder notes edited in two chapters conflict, chapter autosave does not", async ({
@@ -199,7 +199,7 @@ test("Chapters panel saves before moving to another chapter", async ({
   expect((await findStoryById(first))?.content).toBe(
     "Typed just before leaving",
   );
-  await expect(e.content).toHaveValue("Second content");
+  await expect(e.content).toHaveText("Second content");
 });
 
 test("Chapters panel stays on the chapter when saving fails or the title is empty", async ({
@@ -300,7 +300,7 @@ test("works with the default layout when localStorage throws", async ({
   ).toBe(true);
 
   const e = editor(page);
-  await expect(e.content).toHaveValue("First content");
+  await expect(e.content).toHaveText("First content");
   await expect(e.notes).toBeVisible();
   await page.getByRole("button", { name: "Split" }).click();
   await expect(e.chapters).toBeVisible();

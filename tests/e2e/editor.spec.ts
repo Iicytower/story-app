@@ -1,6 +1,6 @@
 import { findStory, seedStory, seedFolder } from "./db";
 import { storageStatePath } from "./env";
-import { expect, test } from "./helpers";
+import { expect, markdownEditor, test } from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
@@ -15,48 +15,61 @@ test("loads the title, content and notes of the story", async ({ page }) => {
   await expect(
     page.getByRole("textbox", { name: "Title", exact: true }),
   ).toHaveValue("Loaded");
+  const content = markdownEditor(page, "Content");
   await expect(
-    page.getByRole("textbox", { name: "Content", exact: true }),
-  ).toHaveValue("# Heading\n\nSome **bold** text");
-  await expect(
-    page.getByRole("textbox", { name: "Notes", exact: true }),
-  ).toHaveValue("Remember the dragon");
-  const preview = page.getByRole("region", { name: "Preview" });
-  await expect(preview.getByRole("heading", { name: "Heading" })).toBeVisible();
-  await expect(preview.locator("strong")).toHaveText("bold");
+    content.field.getByRole("heading", { name: "Heading" }),
+  ).toBeVisible();
+  await expect(content.field.locator("strong")).toHaveText("bold");
+  await expect(markdownEditor(page, "Notes").field).toHaveText(
+    "Remember the dragon",
+  );
+  expect(await content.source()).toBe("# Heading\n\nSome **bold** text");
 });
 
-test("shows HTML comments in the textarea but not in the preview", async ({
+test("shows a comment as an editable block and keeps it in the source", async ({
   page,
 }) => {
-  const id = await seedStory("alice", { title: "Comments" });
+  const id = await seedStory("alice", {
+    title: "Comments",
+    content: "Visible text\n\n<!-- loaded note -->",
+  });
 
   await page.goto(`/stories/${id}`);
-  await page
-    .getByRole("textbox", { name: "Content", exact: true })
-    .fill("Visible <!-- inline secret --> text\n\n<!--\nblock secret\n-->");
+  const content = markdownEditor(page, "Content");
+  const comments = content.field.locator("aside[data-comment]");
+  await expect(comments).toHaveText(["loaded note"]);
 
-  await expect(
-    page.getByRole("textbox", { name: "Content", exact: true }),
-  ).toHaveValue(/inline secret/);
-  const preview = page.getByRole("region", { name: "Preview" });
-  await expect(preview).toContainText("Visible");
-  await expect(preview).toContainText("text");
-  await expect(preview).not.toContainText("secret");
-  expect(await preview.innerHTML()).not.toContain("secret");
+  await content.field.getByText("Visible text").click();
+  await page.keyboard.press("End");
+  await content.button("Comment").click();
+  await page.keyboard.type("new note");
+  await expect(comments).toHaveText(["new note", "loaded note"]);
+  await comments.last().click();
+  await page.keyboard.press("End");
+  await page.keyboard.type(" edited");
+
+  expect(await content.source()).toBe(
+    "Visible text\n\n<!-- new note -->\n\n<!-- loaded note edited -->",
+  );
 });
 
-test("renders a single Enter as a line break", async ({ page }) => {
+test("Enter starts a paragraph and Shift+Enter breaks the line", async ({
+  page,
+}) => {
   const id = await seedStory("alice", { title: "Breaks" });
 
   await page.goto(`/stories/${id}`);
-  await page
-    .getByRole("textbox", { name: "Content", exact: true })
-    .fill("first line\nsecond line");
+  const content = markdownEditor(page, "Content");
+  await content.field.click();
+  await page.keyboard.type("first");
+  await page.keyboard.press("Shift+Enter");
+  await page.keyboard.type("second");
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("third");
 
-  const paragraph = page.getByRole("region", { name: "Preview" }).locator("p");
-  await expect(paragraph).toHaveCount(1);
-  await expect(paragraph.locator("br")).toHaveCount(1);
+  await expect(content.field.locator("p")).toHaveCount(2);
+  await expect(content.field.locator("p").first().locator("br")).toHaveCount(1);
+  expect(await content.source()).toBe("first  \nsecond\n\nthird");
 });
 
 test("does not execute or render a script from the content", async ({
@@ -70,25 +83,23 @@ test("does not execute or render a script from the content", async ({
   });
 
   await page.goto(`/stories/${id}`);
-  await page
-    .getByRole("textbox", { name: "Content", exact: true })
-    .fill('<script>alert("xss")</script>\n\n<img src=x onerror="alert(1)">');
+  const content = markdownEditor(page, "Content");
+  await content.setSource(
+    '<script>alert("xss")</script>\n\n<img src=x onerror="alert(1)">',
+  );
 
-  const preview = page.getByRole("region", { name: "Preview" });
-  await expect(preview.locator("script, img")).toHaveCount(0);
+  await expect(content.field.locator("script, img")).toHaveCount(0);
   expect(dialogs).toEqual([]);
 });
 
-test("counts words and characters of the content", async ({ page }) => {
+test("counts words and characters of the markdown", async ({ page }) => {
   const id = await seedStory("alice", { title: "Counter" });
 
   await page.goto(`/stories/${id}`);
   await expect(
     page.getByText("0 words · 0 characters · 0 minutes read aloud"),
   ).toBeVisible();
-  await page
-    .getByRole("textbox", { name: "Content", exact: true })
-    .fill("Zażółć  gęślą\njaźń");
+  await markdownEditor(page, "Content").setSource("Zażółć  gęślą\njaźń");
   await expect(
     page.getByText("3 words · 18 characters · 1 minute read aloud"),
   ).toBeVisible();
