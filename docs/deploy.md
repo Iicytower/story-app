@@ -4,19 +4,29 @@
 
 | Środowisko | Branch | Vercel | Baza (Atlas, ten sam klaster) |
 | --- | --- | --- | --- |
-| Produkcja | `main` | Production | `story_app` |
-| Staging | `staging` | Preview, zmienne przypięte do brancha `staging` | `story_app_staging` |
+| Produkcja | `main` | Production | `story-app` |
+| Staging | `staging` | Preview, zmienne przypięte do brancha `staging` | `story-app-staging` |
 | Lokalnie | dowolny | – | Docker, `story_app` (`npm run db:up`) |
 
-- Vercel: Settings → Environment Variables → `MONGODB_URI` i `AUTH_SECRET` dla **Preview** z wybranym branchem `staging`. Inny `AUTH_SECRET` niż na produkcji. URI różni się od produkcyjnego tylko nazwą bazy (`.../story_app_staging?...`).
+- Vercel: Settings → Environment Variables → `MONGODB_URI` i `AUTH_SECRET` dla **Preview** z wybranym branchem `staging`. Inny `AUTH_SECRET` niż na produkcji. URI różni się od produkcyjnego tylko nazwą bazy (`.../story-app-staging?...`).
 - Preview innych branchy (`feature/*`) nie dostaje zmiennych, więc nie łączy się z żadną bazą.
 - Stały adres stagingu: Settings → Domains → dodać domenę i przypisać ją do brancha `staging` (zamiast URL-i deploymentów z hashem).
-- Konto na stagingu: `MONGODB_URI='mongodb+srv://.../story_app_staging?...' npm run create-account`.
+- Konto na stagingu: `MONGODB_URI='mongodb+srv://.../story-app-staging?...' npm run create-account` (niepotrzebne, jeśli baza zaimportowana z produkcji).
+
+## Do zrobienia na koniec (po kodzie)
+
+Na razie praca tylko lokalnie; hosting stagingu konfigurujemy po zakończeniu zmian w kodzie.
+
+- [x] Baza `story-app-staging` w Atlasie.
+- [ ] Vercel → Environment Variables: `MONGODB_URI` (baza `story-app-staging`) i nowy `AUTH_SECRET` dla Preview, branch `staging`; redeploy.
+- [ ] Vercel → Domains: stała domena przypisana do brancha `staging`.
+- [ ] Import danych z produkcji do `story-app-staging` (`mongodump` z `story-app` + `mongorestore --nsFrom 'story-app.*' --nsTo 'story-app-staging.*'` przez `docker run --rm mongo:8`).
+- [ ] Smoke test na stagingu.
 
 ## Wydanie
 
 1. Taski zmergowane do `staging`, smoke test na stagingu.
-2. Merge `staging` → `main`, tag `vX.Y.Z`, push `main` + tag → deploy produkcji.
+2. Merge `staging` → `main` robi użytkownik (nigdy push na `main` z lokalnego repo), potem tag `vX.Y.Z` → deploy produkcji.
 3. Rollback: „Promote” poprzedniego deploymentu w Vercelu.
 
 ## Ustalenia

@@ -20,7 +20,7 @@ Prywatna aplikacja webowa do pisania opowiadań w markdown (Next.js App Router, 
 4. Napisz testy z sekcji „Testy” taska razem z kodem (nie na końcu). Każde kryterium akceptacji musi mieć test albo oznaczenie `manual`.
 5. `npm run verify` musi przechodzić. Nie zamykaj taska z czerwonymi lub pominiętymi testami.
 6. W odpowiedzi do użytkownika podaj mapowanie: kryterium akceptacji → test (lub wynik weryfikacji `manual`).
-7. Status `[x]`, potem jeden commit na task na branchu taska (wiadomość: `NN: <krótki opis>`). Merge do `staging` i wydanie na `main` (D13) tylko na prośbę użytkownika. Bez push.
+7. Status `[x]`, potem jeden commit na task na branchu taska (wiadomość: `NN: <krótki opis>`). Merge do `staging` i push `staging` tylko na prośbę użytkownika. **Nigdy nie pushuj na `main` lub `master`** (D13).
 
 ## Komendy
 

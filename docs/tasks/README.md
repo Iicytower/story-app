@@ -9,7 +9,7 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `stag
 
 ## Branche
 
-- `main` – produkcja (Vercel Production). Tylko merge ze `staging` przy wydaniu + tag `vX.Y.Z`.
+- `main` – produkcja (Vercel Production). Nigdy nie pushujemy na `main`; merge ze `staging` przy wydaniu robi użytkownik.
 - `staging` – środowisko testowe (Vercel Preview przypięty do brancha `staging`). Tu trafiają zakończone taski.
 - `feature/NN-<slug>` – jeden branch na task, tworzony ze `staging`.
 
