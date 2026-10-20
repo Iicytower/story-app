@@ -39,6 +39,8 @@ Mechanizm: `docs/decisions.md` D14. Migracje uruchamiają się w buildzie produk
   ```
   `$out` zastępuje zawartość `stories` i zachowuje istniejące indeksy kolekcji docelowej. Kopie 3 ostatnich migracji: `db.getCollectionNames().filter(n => n.includes("_backup_"))`.
 - **Ręczne zdjęcie blokady**, gdy build padł w trakcie migracji, a nie chcesz czekać 15 min na jej przejęcie. Sprawdź najpierw, czy żaden build nie trwa: `db.migrations.deleteOne({ _id: "lock" })`.
+- **Okno builda:** stary deployment obsługuje ruch, dopóki nowy nie wejdzie. Po `002-folders` stary kod (v1.0) może utworzyć opowiadanie bez `folderId`. `002-folders` jest powtarzalna, więc kolejny deploy przypisze je do „Unsorted” (przy kolizji tytułu z sufiksem „ (2)”). Do tego czasu opowiadanie jest widoczne w wyszukiwaniu i w edytorze, ale nie na liście folderów. Sprawdzenie: `db.stories.countDocuments({ folderId: { $exists: false } })`.
+- **Pierwsze wydanie z `002-folders` (staging i produkcja):** v1.0 nie ma `autoIndex: false`, więc jego zimny start w trakcie builda odtwarza usunięty indeks `userId_1_title_1`. Nowy kod sam go nie usunie, a ten sam tytuł w dwóch folderach dostaje wtedy `DUPLICATE_TITLE`. Dlatego po wejściu nowego deploymentu trzeba zrobić jeden **Redeploy** (jego `syncIndexes()` usunie indeks, a działający kod już go nie odtworzy) i sprawdzić `db.stories.getIndexes()`: nie może być `userId_1_title_1`. To samo po rollbacku („Promote”) do v1.0 i ponownym wydaniu.
 - **Lokalnie:** `npm run migrate` (baza z `.env.local`). Aplikacja nie tworzy indeksów sama (`autoIndex: false`), więc po zmianie schematu trzeba uruchomić migrację.
 
 ## Ustalenia
@@ -66,3 +68,4 @@ Mechanizm: `docs/decisions.md` D14. Migracje uruchamiają się w buildzie produk
 3. „Export .md” pobiera plik z frontmatterem.
 4. „Share”: link w incognito pokazuje opowiadanie bez notatek i komentarzy; po „Stop sharing” 404.
 5. Przełącznik motywu i wylogowanie.
+6. Foldery: nowy folder, rozdział o tym samym tytule w dwóch folderach, przeniesienie rozdziału, notatki folderu z autozapisem.

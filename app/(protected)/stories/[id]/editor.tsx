@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ArrowLeftIcon,
   CheckIcon,
   CopyIcon,
   DownloadIcon,
@@ -9,6 +10,7 @@ import {
   PanelRightOpenIcon,
   Share2Icon,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   useCallback,
@@ -184,6 +186,18 @@ export function Editor({ story }: { story: EditorStory }) {
   return (
     <div className="flex h-[calc(100dvh-3.5rem-1px)] flex-col">
       <div className="flex flex-wrap items-center gap-2 border-b px-4 py-3 md:flex-nowrap md:gap-3 md:px-6">
+        {story.folderName !== null && (
+          <Button variant="ghost" size="sm" asChild>
+            <Link
+              href={`/folders/${story.folderId}`}
+              className="max-w-48"
+              title={`Back to ${story.folderName}`}
+            >
+              <ArrowLeftIcon />
+              <span className="truncate">{story.folderName}</span>
+            </Link>
+          </Button>
+        )}
         <Input
           value={title}
           onChange={(event) => setTitle(event.target.value)}
@@ -220,7 +234,13 @@ export function Editor({ story }: { story: EditorStory }) {
         <DeleteStoryButton
           id={story.id}
           title={title}
-          onDeleted={() => router.push("/stories")}
+          onDeleted={() =>
+            router.push(
+              story.folderName === null
+                ? "/stories"
+                : `/folders/${story.folderId}`,
+            )
+          }
         />
         <Button
           variant="ghost"

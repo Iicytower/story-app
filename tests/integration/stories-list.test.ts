@@ -6,6 +6,8 @@ import { setupTestDb } from "./test-db";
 
 setupTestDb();
 
+const folderId = new Types.ObjectId();
+
 const alice = new Types.ObjectId();
 const bob = new Types.ObjectId();
 
@@ -14,7 +16,12 @@ async function createStory(
   updatedAt: Date,
   userId = alice,
 ) {
-  const { _id } = await Story.create({ userId, notes: "secret", ...fields });
+  const { _id } = await Story.create({
+    folderId,
+    userId,
+    notes: "secret",
+    ...fields,
+  });
   await Story.collection.updateOne({ _id }, { $set: { updatedAt } });
 }
 

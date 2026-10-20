@@ -9,6 +9,9 @@ export interface Migration {
   // Copied to `<name>_backup_<id>` before `up` runs.
   collections: string[];
   up(db: mongo.Db): Promise<void>;
+  // Runs `up` on every invocation, e.g. to fix data written by an old deployment during the build.
+  // The backup is taken only before the first run.
+  repeatable?: boolean;
 }
 
 interface MigrationRecord {
@@ -85,19 +88,22 @@ export async function runMigrations(
       ),
     );
     const pending = migrations
-      .filter((migration) => !applied.has(migration.id))
+      .filter((migration) => migration.repeatable || !applied.has(migration.id))
       .sort((a, b) => (a.id < b.id ? -1 : 1));
 
     for (const migration of pending) {
-      log(`Applying ${migration.id}`);
-      await backup(db, migration);
+      const firstRun = !applied.has(migration.id);
+      log(`${firstRun ? "Applying" : "Re-running"} ${migration.id}`);
+      if (firstRun) await backup(db, migration);
       try {
         await migration.up(db);
       } catch (error) {
         throw new Error(`Migration ${migration.id} failed.`, { cause: error });
       }
-      await records.insertOne({ _id: migration.id, appliedAt: new Date() });
-      await pruneBackups(db);
+      if (firstRun) {
+        await records.insertOne({ _id: migration.id, appliedAt: new Date() });
+        await pruneBackups(db);
+      }
     }
     if (pending.length === 0) log("No pending migrations.");
 

@@ -50,8 +50,8 @@ async function seedStories() {
   const userId = new Types.ObjectId();
   await User.create({ email: "alice@example.com", passwordHash: "hash" });
   await Story.create([
-    { userId, title: "One", content: "first" },
-    { userId, title: "Two", content: "second" },
+    { userId, folderId: userId, title: "One", content: "first" },
+    { userId, folderId: userId, title: "Two", content: "second" },
   ]);
 }
 
@@ -106,6 +106,26 @@ describe("runMigrations", () => {
     expect(await documents("stories")).toEqual(stories);
     expect(await documents("migrations")).toEqual(records);
     expect(await collectionNames()).toEqual(collections);
+  });
+
+  it("re-runs a repeatable migration without a new backup", async () => {
+    await seedStories();
+    const repeatable = {
+      ...migration("001-a", ["stories"], async (database) => {
+        await database.collection("stories").deleteOne({});
+      }),
+      repeatable: true,
+    };
+    await run([repeatable]);
+    const backup = await documents("stories_backup_001-a");
+    const records = await documents("migrations");
+
+    await expect(run([repeatable])).resolves.toEqual(["001-a"]);
+
+    expect(repeatable.up).toHaveBeenCalledTimes(2);
+    expect(await Story.countDocuments()).toBe(0);
+    expect(await documents("stories_backup_001-a")).toEqual(backup);
+    expect(await documents("migrations")).toEqual(records);
   });
 
   it("backs up the listed collections before up runs", async () => {
@@ -249,6 +269,20 @@ describe("scripts/migrate.ts", () => {
         .find()
         .toArray();
       expect(records.map((record) => record._id)).toContain("001-baseline");
+      // Fails if lib/models/index.ts misses a model: syncIndexes() covers only registered ones.
+      const folderIndexes = await connection
+        .db!.collection("folders")
+        .indexes();
+      expect(folderIndexes.map((index) => index.key)).toContainEqual({
+        userId: 1,
+        name: 1,
+      });
+      const storyIndexes = await connection.db!.collection("stories").indexes();
+      expect(storyIndexes.map((index) => index.key)).toContainEqual({
+        userId: 1,
+        folderId: 1,
+        title: 1,
+      });
     } finally {
       await connection.dropDatabase();
       await connection.close();

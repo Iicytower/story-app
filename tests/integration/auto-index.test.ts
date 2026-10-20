@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { afterAll, expect, it } from "vitest";
 import { connectDB, disconnectDB } from "@/lib/db";
 import { Story } from "@/lib/models/story";
@@ -19,7 +19,11 @@ it("does not create indexes when the app connects", async () => {
 
   await Promise.all([Story.init(), User.init()]);
   const user = await User.create({ email: "a@example.com", passwordHash: "x" });
-  await Story.create({ userId: user._id, title: "Title" });
+  await Story.create({
+    folderId: new Types.ObjectId(),
+    userId: user._id,
+    title: "Title",
+  });
 
   for (const model of [Story, User]) {
     const indexes = await model.collection.indexes();

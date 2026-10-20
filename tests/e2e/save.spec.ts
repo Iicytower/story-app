@@ -102,7 +102,9 @@ test("shows an error for a duplicate title", async ({ page }) => {
   await title.fill("Taken");
   await page.keyboard.press("Control+s");
 
-  await expect(status).toHaveText("A story with this title already exists.");
+  await expect(status).toHaveText(
+    "A story with this title already exists in this folder.",
+  );
   expect(await findStoryById(id)).toMatchObject({ title: "Mine", content: "" });
 });
 

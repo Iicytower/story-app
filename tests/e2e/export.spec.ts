@@ -56,7 +56,7 @@ test("does not download when saving fails and shows the error", async ({
   await page.getByRole("button", { name: "Export .md" }).click();
 
   await expect(page.getByRole("status")).toHaveText(
-    "A story with this title already exists.",
+    "A story with this title already exists in this folder.",
   );
   await page.waitForTimeout(1000);
   expect(downloaded).toBe(false);

@@ -10,6 +10,8 @@ vi.mock("@/lib/auth/session", () => ({ requireUser: vi.fn() }));
 
 setupTestDb();
 
+const folderId = new Types.ObjectId();
+
 const alice = new Types.ObjectId();
 const bob = new Types.ObjectId();
 
@@ -37,6 +39,7 @@ async function seed(
   } = {},
 ) {
   const story = await Story.create({
+    folderId,
     userId: alice,
     title: "Story",
     content: "Original content",

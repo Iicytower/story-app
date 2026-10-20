@@ -97,7 +97,7 @@ test("the link returns 404 after the story is deleted", async ({
     .getByRole("alertdialog", { name: "Delete story?" })
     .getByRole("button", { name: "Delete" })
     .click();
-  await expect(page).toHaveURL("/stories");
+  await expect(page).toHaveURL(/\/folders\/[0-9a-f]{24}$/);
 
   const after = await openAnonymously(browser, url);
   expect(after.response.status()).toBe(404);

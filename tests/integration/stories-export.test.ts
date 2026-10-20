@@ -10,6 +10,8 @@ vi.mock("@/lib/auth/session", () => ({ requireUser: vi.fn() }));
 
 setupTestDb();
 
+const folderId = new Types.ObjectId();
+
 const alice = new Types.ObjectId();
 const bob = new Types.ObjectId();
 
@@ -32,6 +34,7 @@ function exportStory(id: string) {
 describe("GET /stories/[id]/export", () => {
   it("returns the story as a markdown attachment with frontmatter", async () => {
     const story = await Story.create({
+      folderId,
       userId: alice,
       title: "Zażółć: „gęślą” jaźń",
       content: "Visible <!-- hidden comment -->\nMore",
@@ -60,7 +63,11 @@ describe("GET /stories/[id]/export", () => {
   });
 
   it("returns 401 without a session", async () => {
-    const story = await Story.create({ userId: alice, title: "Mine" });
+    const story = await Story.create({
+      folderId,
+      userId: alice,
+      title: "Mine",
+    });
     signInAs(null);
 
     const response = await exportStory(story._id.toString());
@@ -70,12 +77,13 @@ describe("GET /stories/[id]/export", () => {
   });
 
   it("returns 404 for another user's story", async () => {
-    const story = await Story.create({ userId: bob, title: "Bob's" });
+    const story = await Story.create({ folderId, userId: bob, title: "Bob's" });
     expect((await exportStory(story._id.toString())).status).toBe(404);
   });
 
   it("returns 404 for a deleted story", async () => {
     const story = await Story.create({
+      folderId,
       userId: alice,
       title: "Gone",
       deletedAt: new Date(),

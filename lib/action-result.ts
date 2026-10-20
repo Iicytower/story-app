@@ -3,6 +3,8 @@ export type ErrorCode =
   | "NOT_FOUND"
   | "CONFLICT"
   | "DUPLICATE_TITLE"
+  | "DUPLICATE_NAME"
+  | "EMPTY_NAME"
   | "EMPTY_TITLE"
   | "EMPTY_CONTENT";
 

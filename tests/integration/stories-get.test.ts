@@ -6,12 +6,15 @@ import { setupTestDb } from "./test-db";
 
 setupTestDb();
 
+const folderId = new Types.ObjectId();
+
 const alice = new Types.ObjectId();
 const bob = new Types.ObjectId();
 
 describe("getStory", () => {
   it("returns the serialized story of its owner", async () => {
     const story = await Story.create({
+      folderId,
       userId: alice,
       title: "Mine",
       content: "Body",
@@ -23,17 +26,21 @@ describe("getStory", () => {
       title: "Mine",
       content: "Body",
       notes: "Note",
+      folderId: folderId.toString(),
+      // No such folder in this test.
+      folderName: null,
       updatedAt: story.updatedAt.toISOString(),
     });
   });
 
   it("returns null for another user's story", async () => {
-    const story = await Story.create({ userId: bob, title: "Bob's" });
+    const story = await Story.create({ folderId, userId: bob, title: "Bob's" });
     expect(await getStory(alice.toString(), story._id.toString())).toBeNull();
   });
 
   it("returns null for a deleted story", async () => {
     const story = await Story.create({
+      folderId,
       userId: alice,
       title: "Gone",
       deletedAt: new Date(),

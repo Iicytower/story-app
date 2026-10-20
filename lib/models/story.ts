@@ -2,6 +2,7 @@ import mongoose, { Schema, type Model, type Types } from "mongoose";
 
 export interface StoryFields {
   userId: Types.ObjectId;
+  folderId: Types.ObjectId;
   title: string;
   content: string;
   notes: string;
@@ -14,6 +15,7 @@ export interface StoryFields {
 const storySchema = new Schema<StoryFields>(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    folderId: { type: Schema.Types.ObjectId, ref: "Folder", required: true },
     title: { type: String, required: true },
     content: { type: String, default: "" },
     notes: { type: String, default: "" },
@@ -25,7 +27,7 @@ const storySchema = new Schema<StoryFields>(
 );
 
 storySchema.index(
-  { userId: 1, title: 1 },
+  { userId: 1, folderId: 1, title: 1 },
   { unique: true, partialFilterExpression: { deletedAt: { $type: "null" } } },
 );
 storySchema.index({ userId: 1, updatedAt: -1 });

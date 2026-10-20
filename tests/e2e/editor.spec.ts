@@ -1,4 +1,4 @@
-import { findStory, seedStory } from "./db";
+import { findStory, seedStory, seedFolder } from "./db";
 import { storageStatePath } from "./env";
 import { expect, test } from "./helpers";
 
@@ -111,16 +111,17 @@ test("collapses and expands the notes panel", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("deletes the story and returns to the list", async ({ page }) => {
-  const id = await seedStory("alice", { title: "Doomed" });
+test("deletes the story and returns to its folder", async ({ page }) => {
+  const id = await seedStory("alice", { title: "Doomed", folder: "Book" });
+  const folderId = await seedFolder("alice", "Book");
 
   await page.goto(`/stories/${id}`);
   await page.getByRole("button", { name: "Delete Doomed" }).click();
   const dialog = page.getByRole("alertdialog", { name: "Delete story?" });
   await dialog.getByRole("button", { name: "Delete" }).click();
 
-  await expect(page).toHaveURL("/stories");
-  await expect(page.getByText("No stories yet.")).toBeVisible();
+  await expect(page).toHaveURL(`/folders/${folderId}`);
+  await expect(page.getByText("No chapters yet.")).toBeVisible();
   expect((await findStory("Doomed"))?.deletedAt).toBeInstanceOf(Date);
 });
 
