@@ -13,6 +13,7 @@ export interface FolderFields {
   chapterSort: ChapterSort;
   // Set on the first switch to manual, which takes positions from the order shown until then.
   manualChapterOrder: boolean;
+  shareToken?: string;
   deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -28,6 +29,7 @@ const folderSchema = new Schema<FolderFields>(
     position: { type: Number },
     chapterSort: { type: String, enum: CHAPTER_SORTS, default: "created" },
     manualChapterOrder: { type: Boolean, default: false },
+    shareToken: { type: String },
     deletedAt: { type: Date, default: null },
   },
   { timestamps: true },
@@ -38,6 +40,13 @@ folderSchema.index(
   { unique: true, partialFilterExpression: { deletedAt: { $type: "null" } } },
 );
 folderSchema.index({ userId: 1, lastActivityAt: -1 });
+folderSchema.index(
+  { shareToken: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { shareToken: { $type: "string" } },
+  },
+);
 
 export const Folder: Model<FolderFields> =
   (mongoose.models.Folder as Model<FolderFields> | undefined) ??

@@ -1,5 +1,6 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { isObjectIdOrHexString } from "mongoose";
 import { refresh } from "next/cache";
 import type { ActionError, ActionResult } from "@/lib/action-result";
@@ -10,10 +11,7 @@ import {
   nextFolderPosition,
   savePositions,
 } from "@/lib/folders/mutations";
-import {
-  findChaptersInOrder,
-  findFoldersInOrder,
-} from "@/lib/folders/queries";
+import { findChaptersInOrder, findFoldersInOrder } from "@/lib/folders/queries";
 import {
   chapterOrder,
   folderOrder,
@@ -244,4 +242,34 @@ export async function reorderFolder(
 
   refresh();
   return { ok: true };
+}
+
+// Independent of chapter sharing (D11): its own token, and it never touches chapters.
+export async function setFolderSharing(
+  id: string,
+  enabled: boolean,
+): Promise<ActionResult<{ sharePath: string | null }>> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+
+  await connectDB();
+  const owned = { _id: id, userId: user.userId, deletedAt: null };
+  if (!enabled) {
+    const { matchedCount } = await Folder.updateOne(
+      owned,
+      { $unset: { shareToken: 1 } },
+      { timestamps: false },
+    );
+    return matchedCount === 0 ? NOT_FOUND : { ok: true, sharePath: null };
+  }
+
+  await Folder.updateOne(
+    { ...owned, shareToken: { $exists: false } },
+    { $set: { shareToken: randomBytes(16).toString("base64url") } },
+    { timestamps: false },
+  );
+  const folder = await Folder.findOne(owned).select({ shareToken: 1 }).lean();
+  if (!folder?.shareToken) return NOT_FOUND;
+  return { ok: true, sharePath: `/s/f/${folder.shareToken}` };
 }

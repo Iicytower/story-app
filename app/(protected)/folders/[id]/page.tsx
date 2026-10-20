@@ -13,6 +13,7 @@ import { ReorderButtons } from "../reorder-buttons";
 import { SortSelect } from "../sort-select";
 import { DeleteFolderButton } from "./delete-folder-button";
 import { FolderNotes } from "./folder-notes";
+import { FolderShare } from "./folder-share";
 import { MoveStoryDialog } from "./move-story-dialog";
 import { RenameFolderDialog } from "./rename-folder-dialog";
 
@@ -55,6 +56,7 @@ export default async function FolderPage({
             options={SORT_OPTIONS}
             action={setChapterSort.bind(null, folder.id)}
           />
+          <FolderShare id={folder.id} shareToken={folder.shareToken} />
           <RenameFolderDialog id={folder.id} name={folder.name} />
           <DeleteFolderButton
             id={folder.id}
