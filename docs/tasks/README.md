@@ -6,6 +6,7 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `deve
 
 | # | Task | Zależy od | Status |
 | --- | --- | --- | --- |
+| 07 | [Wersjonowanie opowiadań](07-story-versioning.md) | – | [ ] |
 
 ## Branche
 
