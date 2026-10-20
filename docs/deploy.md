@@ -1,11 +1,27 @@
-# Notatki z wdrożenia (2026-10-06)
+# Wdrożenie
 
-Robocze notatki do taska 13 (`docs/tasks/13-deploy.md`). Docelowo trafią do README.
+## Środowiska
+
+| Środowisko | Branch | Vercel | Baza (Atlas, ten sam klaster) |
+| --- | --- | --- | --- |
+| Produkcja | `main` | Production | `story_app` |
+| Staging | `staging` | Preview, zmienne przypięte do brancha `staging` | `story_app_staging` |
+| Lokalnie | dowolny | – | Docker, `story_app` (`npm run db:up`) |
+
+- Vercel: Settings → Environment Variables → `MONGODB_URI` i `AUTH_SECRET` dla **Preview** z wybranym branchem `staging`. Inny `AUTH_SECRET` niż na produkcji. URI różni się od produkcyjnego tylko nazwą bazy (`.../story_app_staging?...`).
+- Preview innych branchy (`feature/*`) nie dostaje zmiennych, więc nie łączy się z żadną bazą.
+- Stały adres stagingu: Settings → Domains → dodać domenę i przypisać ją do brancha `staging` (zamiast URL-i deploymentów z hashem).
+- Konto na stagingu: `MONGODB_URI='mongodb+srv://.../story_app_staging?...' npm run create-account`.
+
+## Wydanie
+
+1. Taski zmergowane do `staging`, smoke test na stagingu.
+2. Merge `staging` → `main`, tag `vX.Y.Z`, push `main` + tag → deploy produkcji.
+3. Rollback: „Promote” poprzedniego deploymentu w Vercelu.
 
 ## Ustalenia
 
-- Wdrożenie: import repo `Iicytower/story-app` z GitHuba w panelu Vercela. Każdy push na `main` wdraża produkcję, rollback przez „Promote” poprzedniego deploymentu.
-- Zmienne `MONGODB_URI` i `AUTH_SECRET` ustawione tylko dla środowiska **Production** (preview deploymenty nie dotykają produkcyjnej bazy).
+- Wdrożenie: import repo `Iicytower/story-app` z GitHuba w panelu Vercela. Każdy push na `main` wdraża produkcję, push na `staging` – staging.
 - `AUTH_SECRET` generowany lokalnie (`openssl rand -base64 32`), nigdy nie wklejany do rozmowy z Claude.
 - Atlas: Network Access `0.0.0.0/0`, użytkownik z silnym hasłem i rolą `readWrite`. W URI nazwa bazy przed `?` (`.../story_app?retryWrites=true&w=majority`), inaczej Mongoose użyje bazy `test`.
 - Atlas M0 nie ma automatycznych backupów (dopiero Flex i wyżej). Plan: ręczny `mongodump` przez `docker run --rm mongo:8 mongodump ...`, bez instalowania MongoDB Database Tools.
@@ -19,18 +35,12 @@ Robocze notatki do taska 13 (`docs/tasks/13-deploy.md`). Docelowo trafią do REA
 - Pierwsza przyczyna: zmienne dodane po deployu. Vercel wczytuje zmienne dopiero przy deployu, więc po zmianie potrzebny **Redeploy**.
 - Druga przyczyna: testowanie przez URL konkretnego deploymentu (`story-<hash>-iicytowers-projects.vercel.app`). Taki URL jest na stałe przypięty do jednej wersji, więc po redeployu dalej działał stary deployment bez zmiennych (ten sam Deployment ID w logach). Trzeba otwierać **domenę produkcyjną** z Settings → Domains (bez hasha) i wyczyścić cookies starego URL-a.
 - Diagnostyka: w Logs szukać linii `[auth][error]` i porównać Deployment ID oraz region funkcji z oczekiwanymi.
-- Awaryjnie: `AUTH_TRUST_HOST=true` (Production) + redeploy. Jeśli to pomoże, przyczyną był `UntrustedHost` i trzeba poprawić D4 w `decisions.md`.
+- Awaryjnie: `AUTH_TRUST_HOST=true` + redeploy. Jeśli to pomoże, przyczyną był `UntrustedHost` i trzeba poprawić D4 w `decisions.md`.
 
-## Smoke test (do README)
+## Smoke test
 
 1. `/` przekierowuje na `/login`; błędne hasło → „Invalid email or password.”, poprawne loguje.
 2. Utworzenie opowiadania, treść, autozapis („Saved”); po odświeżeniu treść zostaje.
 3. „Export .md” pobiera plik z frontmatterem.
 4. „Share”: link w incognito pokazuje opowiadanie bez notatek i komentarzy; po „Stop sharing” 404.
 5. Przełącznik motywu i wylogowanie.
-
-## Do uzupełnienia
-
-- Co ostatecznie rozwiązało problem z logowaniem i czy `AUTH_TRUST_HOST` zostało dodane.
-- Domena produkcyjna i ustawiony Function Region.
-- Wynik smoke testu.

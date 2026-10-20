@@ -91,3 +91,9 @@ Zamiast `mongodb-memory-server` używamy kontenera `mongo:8` z `docker-compose.y
 - Odstępstwo od „tylko desktop” w spec: edytor obsługuje wąskie ekrany. Poniżej breakpointu `md` (768 px) na górze jest przełącznik Editor / Preview / Notes (`role="tablist"`) i widoczny jest jeden panel naraz; od `md` układ bez zmian (panele obok siebie, przycisk zwijania notatek).
 - Na wąskim ekranie przyciski paska narzędzi pokazują tylko ikony (etykieta w `sr-only`), przycisk zwijania notatek jest ukryty, a pola tekstowe mają `text-base`, żeby iOS nie powiększał strony przy fokusie.
 - Panel notatek jest zawsze w DOM (ukrywany klasami), więc zwinięcie go na desktopie nie wpływa na zakładkę Notes na telefonie.
+
+## D13 – Branche i środowiska po wersji 1.0 (2026-10-20)
+
+- Wersja 1.0 na produkcji oznaczona tagiem `v1.0.0`. Taski 01–13 usunięte z `docs/tasks/`; nowe taski numerowane od 01.
+- Przepływ: `feature/NN-<slug>` (ze `staging`) → `staging` → `main`. `main` to produkcja, `staging` to środowisko testowe na Vercelu (Preview przypięty do brancha). Wydanie: merge `staging` → `main` + tag `vX.Y.Z`.
+- Staging używa osobnej bazy `story_app_staging` w tym samym klastrze Atlasa i własnego `AUTH_SECRET`. Szczegóły: [`deploy.md`](deploy.md).

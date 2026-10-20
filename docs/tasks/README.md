@@ -1,28 +1,21 @@
 # Taski
 
-Źródło wymagań: [`../spec.md`](../spec.md) + [`../decisions.md`](../decisions.md) (ma pierwszeństwo). Taski realizujemy w kolejności numerów (zależności podane w każdym pliku).
+Źródło wymagań: [`../spec.md`](../spec.md) + [`../decisions.md`](../decisions.md) (ma pierwszeństwo). Wersja 1.0 (tag `v1.0.0`) jest na produkcji; taski dotyczą zmian po 1.0. Szczegóły tasku w `NN-<slug>.md` (sekcje Zakres, Kryteria akceptacji, Testy).
 
-Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione.
+Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `staging`).
 
 | # | Task | Zależy od | Status |
 | --- | --- | --- | --- |
-| 01 | [Scaffold projektu](01-scaffold.md) | – | [x] |
-| 02 | [Połączenie z bazą i modele](02-db-models.md) | 01 | [x] |
-| 03 | [Skrypt seedujący konto](03-seed-account.md) | 02 | [x] |
-| 04 | [Logowanie i ochrona tras](04-auth.md) | 02, 03 | [x] |
-| 05 | [Infrastruktura E2E (Playwright)](05-e2e-setup.md) | 04 | [x] |
-| 06 | [Layout, nagłówek, dark mode](06-layout-theme.md) | 05 | [x] |
-| 07 | [Lista opowiadań i wyszukiwanie](07-stories-list.md) | 06 | [x] |
-| 08 | [Tworzenie i usuwanie opowiadań](08-create-delete.md) | 07 | [x] |
-| 09 | [Edytor: UI, podgląd, notatki, liczniki](09-editor-ui.md) | 08 | [x] |
-| 10 | [Zapis: saveStory, autozapis, zabezpieczenia](10-save.md) | 09 | [x] |
-| 11 | [Eksport .md](11-export.md) | 10 | [x] |
-| 12 | [Udostępnianie przez link](12-sharing.md) | 10 | [x] |
-| 13 | [Wdrożenie: Vercel + Atlas](13-deploy.md) | 01–12 | [ ] |
+
+## Branche
+
+- `main` – produkcja (Vercel Production). Tylko merge ze `staging` przy wydaniu + tag `vX.Y.Z`.
+- `staging` – środowisko testowe (Vercel Preview przypięty do brancha `staging`). Tu trafiają zakończone taski.
+- `feature/NN-<slug>` – jeden branch na task, tworzony ze `staging`.
 
 ## Definicja „zrobione” (każdy task)
 
 - Kryteria akceptacji z pliku taska spełnione, a testy z sekcji „Testy” napisane i zielone (zasady: [`../testing.md`](../testing.md)).
-- `npm run verify` przechodzi (przed taskiem 05: `lint`, `typecheck`, `test`).
+- `npm run verify` przechodzi.
 - Interfejs po angielsku.
 - Status w tej tabeli zaktualizowany.
