@@ -3,9 +3,8 @@
 import { cn } from "cn";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MarkdownEditor } from "@/components/markdown-editor";
+import { AUTOSAVE_DELAY_MS, onTabHidden } from "@/lib/autosave";
 import { saveFolderNotes } from "../actions";
-
-const AUTOSAVE_DELAY_MS = 3000;
 
 type SaveState =
   | { status: "idle" | "saving" | "saved" }
@@ -63,6 +62,8 @@ export function useFolderNotes(
     const timer = setTimeout(flush, AUTOSAVE_DELAY_MS);
     return () => clearTimeout(timer);
   }, [notes, flush]);
+
+  useEffect(() => onTabHidden(flush), [flush]);
 
   useEffect(() => {
     function handleBeforeUnload(event: BeforeUnloadEvent) {
