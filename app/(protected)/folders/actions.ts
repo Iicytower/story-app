@@ -22,7 +22,7 @@ import {
 } from "@/lib/folders/sort";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
-import { User } from "@/lib/models/user";
+import { getUserSettings, updateUserSettings } from "@/lib/settings/queries";
 
 const NOT_FOUND: ActionError = {
   ok: false,
@@ -156,28 +156,19 @@ export async function setFolderSort(mode: string): Promise<ActionResult> {
   if (!isFolderSort(mode)) return INVALID_INPUT;
 
   await connectDB();
-  const account = await User.findById(user.userId)
-    .select({ folderSort: 1, manualFolderOrder: 1 })
-    .lean();
-  if (!account) return NOT_FOUND;
-  if (mode === "manual" && !account.manualFolderOrder) {
+  const { folders } = await getUserSettings(user.userId);
+  if (mode === "manual" && !folders.manualOrder) {
     const shown = await findFoldersInOrder(
       user.userId,
-      folderOrder(account.folderSort ?? "updated"),
+      folderOrder(folders.sort),
     )
       .select({ position: 1 })
       .lean();
     await savePositions(Folder, shown);
   }
-  await User.updateOne(
-    { _id: user.userId },
-    {
-      $set: {
-        folderSort: mode,
-        ...(mode === "manual" && { manualFolderOrder: true }),
-      },
-    },
-  );
+  await updateUserSettings(user.userId, {
+    folders: { sort: mode, ...(mode === "manual" && { manualOrder: true }) },
+  });
 
   refresh();
   return { ok: true };

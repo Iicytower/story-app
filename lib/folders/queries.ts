@@ -3,14 +3,8 @@ import { connectDB } from "@/lib/db";
 import { chapterOrder, folderOrder, type Order } from "@/lib/folders/sort";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
-import { User } from "@/lib/models/user";
 import { serialize } from "@/lib/serialize";
-
-export async function getFolderSort(userId: string) {
-  const user = await User.findById(userId).select({ folderSort: 1 }).lean();
-  // lean() applies no schema defaults.
-  return user?.folderSort ?? "updated";
-}
+import { getUserSettings } from "@/lib/settings/queries";
 
 export function findFoldersInOrder(userId: string, order: Order) {
   const query = Folder.find({ userId, deletedAt: null }).sort(order.sort);
@@ -30,7 +24,7 @@ export function findChaptersInOrder(
 
 export async function listFolders(userId: string) {
   await connectDB();
-  const sort = await getFolderSort(userId);
+  const { sort } = (await getUserSettings(userId)).folders;
   const [folders, counts] = await Promise.all([
     findFoldersInOrder(userId, folderOrder(sort))
       .select({ name: 1, lastActivityAt: 1 })

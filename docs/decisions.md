@@ -131,13 +131,13 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 
 ## D17 – Tryby sortowania (2026-10-20)
 
-- `users.folderSort`: `updated` (domyślny, `lastActivityAt` malejąco) | `manual` | `alpha`. `folders.chapterSort`: `created` (domyślny, `createdAt` malejąco) | `manual` | `alpha`. Remis rozstrzyga `_id`. Specyfikacje sortowania w `lib/folders/sort.ts` (`folderOrder`, `chapterOrder`); kolejność rozdziałów w eksporcie, udostępnieniu i panelu Chapters (04, 05) bierze się z `chapterOrder` i `findChaptersInOrder`.
+- Tryb folderów (`settings.folders.sort`, D24; pierwotnie `users.folderSort`): `updated` (domyślny, `lastActivityAt` malejąco) | `manual` | `alpha`. `folders.chapterSort`: `created` (domyślny, `createdAt` malejąco) | `manual` | `alpha`. Remis rozstrzyga `_id`. Specyfikacje sortowania w `lib/folders/sort.ts` (`folderOrder`, `chapterOrder`); kolejność rozdziałów w eksporcie, udostępnieniu i panelu Chapters (04, 05) bierze się z `chapterOrder` i `findChaptersInOrder`.
 - `alpha`: kolacja `{ locale: "pl", strength: 2 }` – siła 2 ignoruje wielkość liter („a” = „A”, remis po `_id`), domyślna 3 tylko ustawia je obok siebie.
 - `position` (folder, rozdział) jest ustawiane zawsze, także poza trybem manual: nowy element i rozdział przeniesiony „Move to…” dostaje `max + 1` w swojej grupie.
-- Pierwsze przełączenie na manual zapisuje pozycje według kolejności widocznej w dotychczasowym trybie i ustawia flagę `users.manualFolderOrder` / `folders.manualChapterOrder`. Kolejne przełączenia zachowują ręczną kolejność. Pozycje z migracji same by nie wystarczyły, bo `lastActivityAt` zmienia się po migracji.
+- Pierwsze przełączenie na manual zapisuje pozycje według kolejności widocznej w dotychczasowym trybie i ustawia flagę `settings.folders.manualOrder` (D24) / `folders.manualChapterOrder`. Kolejne przełączenia zachowują ręczną kolejność. Pozycje z migracji same by nie wystarczyły, bo `lastActivityAt` zmienia się po migracji.
 - Move up / down przenumerowuje całą listę (0..n-1) zamiast zamieniać dwie wartości, bo pozycje mogą być równe (równoległe tworzenie) albo ich brak (dokumenty starego deploymentu). Na końcach listy akcja nic nie zmienia i zwraca `ok`. Przyciski są widoczne tylko w trybie manual.
 - Zmiana trybu i kolejności nie zmienia `updatedAt` rozdziałów, `lastActivityAt` ani `notesUpdatedAt` folderu (pozycje zapisuje natywny `bulkWrite`, tryb rozdziałów `timestamps: false`). Nowy kod błędu `INVALID_INPUT` dla nieznanego trybu lub kierunku.
-- Migracja `003-positions` (kopia `stories`, `folders`, `users`) jest powtarzalna jak `002`: uzupełnia brakujące `folderSort`/`chapterSort` (z flagą `false`) i dopisuje `position` dokumentom bez niej, za istniejącymi pozycjami grupy, w kolejności trybów domyślnych. Dokumenty starego deploymentu z okna builda dostają pozycje przy kolejnym deployu; do tego czasu w trybie manual są na początku listy.
+- Migracja `003-positions` (kopia `stories`, `folders`, `users`) jest powtarzalna jak `002`: uzupełnia brakujące `folderSort`/`chapterSort` (z flagą `false`) i dopisuje `position` dokumentom bez niej, za istniejącymi pozycjami grupy, w kolejności trybów domyślnych. Od D24 nie dotyka już `users` (brak trybu = domyślny). Dokumenty starego deploymentu z okna builda dostają pozycje przy kolejnym deployu; do tego czasu w trybie manual są na początku listy.
 - Domyślny folder w „New story” na `/stories` to nadal folder z największym `lastActivityAt`, niezależnie od trybu listy.
 
 ## D18 – Eksport i udostępnianie folderu (2026-10-20)
@@ -172,3 +172,25 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 
 - Opowiadania tylko po polsku; tekst nie opuszcza przeglądarki; bez kosztów. Stąd tylko wbudowany spellcheck przeglądarki (`lang="pl"`, `spellcheck`) na polach tekstu opowiadania; UI zostaje `lang="en"`.
 - Gramatyka i interpunkcja (LanguageTool – publiczne API, Premium lub własny serwer; LLM) odłożone do backlogu: wymagają wysłania tekstu poza przeglądarkę albo płatnego hostingu.
+
+## D22 – Rzadszy autozapis (2026-10-21)
+
+- Zmienia spec („około 3 s”): autozapis 20 s po ostatnim naciśnięciu klawisza (`AUTOSAVE_DELAY_MS` w `lib/autosave.ts`) w edytorze rozdziału i w notatkach folderu. Przy ciągłym pisaniu zapis czeka na przerwę.
+- Ukrycie karty (`visibilitychange` → `hidden`) zapisuje od razu przez tę samą kolejkę; bez zmian i przy pustym tytule nie wysyła żądania. Ctrl+S, `beforeunload` i zapis przed zmianą rozdziału bez zmian.
+- E2E przewijają czas `page.clock` zamiast czekać.
+
+## D23 – Ustawienia użytkownika (2026-10-21)
+
+- Zmienia D19 (układ w `localStorage`) i zapis motywu. Ustawienia (od D24 w kolekcji `settings`): `editor.layout` (desktop), `editor.mobileView` (Story / Notes / Chapters), `appearance.theme` (`light` / `dark`, brak = systemowy). Bez strony ustawień: brak pola = wartości domyślne, stary klucz `story-app:editor-layout` jest ignorowany.
+- Odczyt: `getUserSettings` (React `cache`, raz na żądanie) + `normalizeSettings` pole po polu; `normalizeLayout` dodatkowo odrzuca szerokości dla nieznanych zestawów kolumn i id paneli. Zapis: `saveSettings(patch)` – tylko przesłane pola (`$set` po ścieżce pola), nieznany motyw / widok → `INVALID_INPUT`, układ normalizowany.
+- Układ: serwer renderuje z ustawień (bez mignięcia, bez remontu po hydratacji). Magazyn na poziomie modułu, kluczowany `userId`, żeby przejście do innego rozdziału nie cofało układu, gdy zapis jeszcze trwa. Zapis układu z debounce 500 ms (`LAYOUT_SAVE_DELAY_MS`) i od razu przy ukryciu karty; widok mobilny zapisywany od razu. Zmiana i przeładowanie w ciągu ~0,5 s może zgubić ostatnią zmianę układu.
+- Motyw: kopia w przeglądarce w `localStorage` (`theme`) + skrypt w `<head>` – cookie nie wystarczy, bo motyw systemowy i tak wymaga `matchMedia` przed pierwszym malowaniem. Root layout ustawia `data-theme` na `<html>` dla zalogowanego (zapisany motyw albo `system`); skrypt bierze go i aktualizuje kopię w przeglądarce, a bez `data-theme` (logowanie, `/s/...`) używa kopii, inaczej `prefers-color-scheme`. `ThemeToggle` przełącza klasę, `data-theme`, kopię i wywołuje `saveSettings`.
+
+## D24 – Kolekcja `settings` (2026-10-21)
+
+- Zmienia D17 i D23. Ustawienia użytkownika w osobnej kolekcji `settings`, jeden dokument na użytkownika: `userId` (unikalny indeks, `ref: "User"`), grupy `editor` (`layout`, `mobileView`), `appearance` (`theme`), `folders` (`sort`, `manualOrder`), `createdAt`, `updatedAt`. `users` trzyma tylko dane konta.
+- Rejestr pól w `lib/settings/settings.ts` (`SETTINGS`): wartość domyślna, walidacja i czy klient może je zapisać. Z niego wynikają typ `UserSettings`, `DEFAULT_SETTINGS`, `normalizeSettings` i `parseSettingsPatch`. Nowe ustawienie = wpis w rejestrze + pole w modelu `Settings`.
+- W bazie są tylko wartości wybrane przez użytkownika (bez domyślnych w schemacie), więc zmiana domyślnej dociera do wszystkich. Brak dokumentu = same domyślne.
+- Zapis: `updateUserSettings(userId, patch)` – `$set` po ścieżkach (`editor.layout`), upsert, `runValidators`; dwa równoległe pierwsze zapisy (E11000) ponawiane raz. `saveSettings` przyjmuje tylko pola `clientWritable` – `folders.*` zapisuje wyłącznie `setFolderSort`, bo pierwsze przełączenie na manual musi zapisać pozycje. Nieznane pole w patchu → `INVALID_INPUT`.
+- Migracja `004-settings` (kopia `users`, `settings`), powtarzalna: przenosi `users.folderSort` / `manualFolderOrder` (oraz `users.settings` z niewydanych buildów taska 09) do `settings` i usuwa je z `users`. Wartość na `users` jest nowsza od tej w `settings` (stary deployment w oknie builda), więc nadpisuje. Rollback do starszej wersji = domyślne sortowanie folderów (ręczne pozycje zostają, ale pierwsze przełączenie na manual nadpisze je widoczną kolejnością).
+- `003-positions` nie ustawia już trybu na `users` – inaczej przy każdym deployu dopisywałaby `updated`, a `004` przenosiłaby go do `settings` w miejsce wyboru użytkownika.

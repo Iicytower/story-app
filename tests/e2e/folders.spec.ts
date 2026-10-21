@@ -1,6 +1,6 @@
 import { findFolder, findStory, findStoryFolder, seedFolder } from "./db";
 import { storageStatePath } from "./env";
-import { expect, test } from "./helpers";
+import { expect, hideTab, runAutosaveDelay, test } from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
@@ -80,19 +80,33 @@ test("renames a folder and rejects a duplicate name", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Final" })).toBeVisible();
 });
 
-test("autosaves folder notes and keeps them after a reload", async ({
+test("autosaves folder notes 20 seconds after the last keystroke and keeps them after a reload", async ({
   page,
 }) => {
   const id = await seedFolder("alice", "Book");
 
+  await page.clock.install();
   await page.goto(`/folders/${id}`);
   const notes = page.getByRole("textbox", { name: "Folder notes" });
+  const status = page.locator("#folder-notes-status");
   await notes.fill("World building");
-  await expect(page.locator("#folder-notes-status")).toHaveText("Saved", {
-    timeout: 10_000,
-  });
+  await runAutosaveDelay(page, 19_000);
+  await expect(status).toHaveText("");
+  expect((await findFolder("Book"))?.notes).toBe("");
+  await runAutosaveDelay(page, 1000);
+  await expect(status).toHaveText("Saved");
   expect((await findFolder("Book"))?.notes).toBe("World building");
 
   await page.reload();
   await expect(notes).toHaveText("World building");
+});
+
+test("hiding the tab saves folder notes at once", async ({ page }) => {
+  const id = await seedFolder("alice", "Book");
+  await page.goto(`/folders/${id}`);
+
+  await page.getByRole("textbox", { name: "Folder notes" }).fill("Map");
+  await hideTab(page);
+  await expect(page.locator("#folder-notes-status")).toHaveText("Saved");
+  expect((await findFolder("Book"))?.notes).toBe("Map");
 });

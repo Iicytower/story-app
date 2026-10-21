@@ -1,7 +1,13 @@
 import type { Page } from "@playwright/test";
 import { findStoryById, seedStory } from "./db";
 import { storageStatePath } from "./env";
-import { expect, test } from "./helpers";
+import {
+  countActionRequests,
+  expect,
+  hideTab,
+  runAutosaveDelay,
+  test,
+} from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
@@ -14,22 +20,66 @@ function editor(page: Page) {
   };
 }
 
-test("autosaves about 3 seconds after the last keystroke", async ({ page }) => {
+test("autosaves 20 seconds after the last keystroke", async ({ page }) => {
   const id = await seedStory("alice", { title: "Autosave" });
+  await page.clock.install();
   await page.goto(`/stories/${id}`);
   const { title, content, notes, status } = editor(page);
 
   await content.fill("Once upon a time");
   await notes.fill("A note");
   await title.fill("Autosave renamed");
-  await page.waitForTimeout(2000);
+  await runAutosaveDelay(page, 19_000);
   await expect(status).toHaveText("");
-  await expect(status).toHaveText("Saved", { timeout: 5000 });
+  expect((await findStoryById(id))?.title).toBe("Autosave");
+  await runAutosaveDelay(page, 1000);
+  await expect(status).toHaveText("Saved");
 
   await page.reload();
   await expect(title).toHaveValue("Autosave renamed");
   await expect(content).toHaveText("Once upon a time");
   await expect(notes).toHaveText("A note");
+});
+
+test("typing with pauses shorter than 20 seconds does not save", async ({
+  page,
+}) => {
+  const id = await seedStory("alice", { title: "Pauses" });
+  await page.clock.install();
+  await page.goto(`/stories/${id}`);
+  const { content, status } = editor(page);
+  const requests = countActionRequests(page);
+
+  await content.click();
+  for (const word of ["One", " two", " three", " four"]) {
+    await page.keyboard.type(word);
+    await runAutosaveDelay(page, 10_000);
+  }
+  await expect(status).toHaveText("");
+  expect(requests).toEqual([]);
+
+  await runAutosaveDelay(page, 10_000);
+  await expect(status).toHaveText("Saved");
+  expect((await findStoryById(id))?.content).toBe("One two three four");
+});
+
+test("hiding the tab saves at once, and only when something changed", async ({
+  page,
+}) => {
+  const id = await seedStory("alice", { title: "Hidden" });
+  await page.clock.install();
+  await page.goto(`/stories/${id}`);
+  const { content, status } = editor(page);
+  const requests = countActionRequests(page);
+
+  await hideTab(page);
+  await expect(content).toBeVisible();
+  expect(requests).toEqual([]);
+
+  await content.fill("Saved on leaving");
+  await hideTab(page);
+  await expect(status).toHaveText("Saved");
+  expect((await findStoryById(id))?.content).toBe("Saved on leaving");
 });
 
 test("Ctrl+S saves immediately", async ({ page }) => {
@@ -70,13 +120,15 @@ test("does not save with an empty title and saves once a title is entered", asyn
   page,
 }) => {
   const id = await seedStory("alice", { title: "Untitled soon" });
+  await page.clock.install();
   await page.goto(`/stories/${id}`);
   const { title, content, status } = editor(page);
 
   await title.fill("");
   await content.fill("Written without a title");
   await page.keyboard.press("Control+s");
-  await page.waitForTimeout(4000);
+  await hideTab(page);
+  await runAutosaveDelay(page);
 
   await expect(status).toHaveText("");
   expect(await findStoryById(id)).toMatchObject({
@@ -85,7 +137,8 @@ test("does not save with an empty title and saves once a title is entered", asyn
   });
 
   await title.fill("Titled again");
-  await expect(status).toHaveText("Saved", { timeout: 5000 });
+  await runAutosaveDelay(page);
+  await expect(status).toHaveText("Saved");
   expect(await findStoryById(id)).toMatchObject({
     title: "Titled again",
     content: "Written without a title",
