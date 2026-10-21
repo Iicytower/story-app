@@ -72,7 +72,7 @@ describe("003-positions", () => {
     expect(await positionOf("stories", other)).toBe(0);
   });
 
-  it("sets default sort modes", async () => {
+  it("sets default chapter sort modes and leaves users alone", async () => {
     const { insertedId: user } = await db()
       .collection("users")
       .insertOne({ email: "a@example.com", passwordHash: "x" });
@@ -80,9 +80,11 @@ describe("003-positions", () => {
 
     await run();
 
-    expect(await db().collection("users").findOne({ _id: user })).toMatchObject(
-      { folderSort: "updated", manualFolderOrder: false },
-    );
+    expect(await db().collection("users").findOne({ _id: user })).toEqual({
+      _id: user,
+      email: "a@example.com",
+      passwordHash: "x",
+    });
     expect(
       await db().collection("folders").findOne({ _id: folder }),
     ).toMatchObject({ chapterSort: "created", manualChapterOrder: false });

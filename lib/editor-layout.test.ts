@@ -5,29 +5,9 @@ import {
   DEFAULT_LAYOUT,
   type EditorLayout,
   moveColumn,
-  parseLayout,
-  readLayout,
+  normalizeLayout,
   visibleColumns,
-  writeLayout,
 } from "./editor-layout";
-
-function memoryStorage(initial: Record<string, string> = {}): Storage {
-  const data = new Map(Object.entries(initial));
-  return {
-    get length() {
-      return data.size;
-    },
-    clear: () => data.clear(),
-    getItem: (key) => data.get(key) ?? null,
-    key: (index) => [...data.keys()][index] ?? null,
-    removeItem: (key) => void data.delete(key),
-    setItem: (key, value) => void data.set(key, value),
-  };
-}
-
-const throwing = () => {
-  throw new DOMException("Access denied", "SecurityError");
-};
 
 const custom: EditorLayout = {
   split: true,
@@ -38,52 +18,47 @@ const custom: EditorLayout = {
   notesHeights: { "folder-notes-panel": 30, "chapter-notes-panel": 70 },
 };
 
-describe("readLayout / writeLayout", () => {
-  it("round-trips a layout through storage", () => {
-    const storage = memoryStorage();
-    expect(writeLayout(() => storage, custom)).toBe(true);
-    expect(readLayout(() => storage)).toEqual(custom);
+describe("normalizeLayout", () => {
+  it("keeps a valid layout", () => {
+    expect(normalizeLayout(custom)).toEqual(custom);
   });
 
-  it("returns the default layout when nothing is stored", () => {
-    expect(readLayout(() => memoryStorage())).toEqual(DEFAULT_LAYOUT);
-  });
-
-  it("falls back to the default when accessing storage throws", () => {
-    expect(readLayout(throwing)).toEqual(DEFAULT_LAYOUT);
-    expect(writeLayout(throwing, custom)).toBe(false);
-  });
-
-  it("falls back when getItem or setItem throws", () => {
-    const storage = memoryStorage();
-    storage.getItem = throwing;
-    storage.setItem = throwing;
-    expect(readLayout(() => storage)).toEqual(DEFAULT_LAYOUT);
-    expect(writeLayout(() => storage, custom)).toBe(false);
-  });
-});
-
-describe("parseLayout", () => {
-  it("returns the default for invalid JSON or a non-object", () => {
-    for (const raw of ["{", "null", "[]", '"text"', "42"]) {
-      expect(parseLayout(raw)).toEqual(DEFAULT_LAYOUT);
+  it("returns the default for a missing value or a non-object", () => {
+    for (const data of [undefined, null, [], "text", 42]) {
+      expect(normalizeLayout(data)).toEqual(DEFAULT_LAYOUT);
     }
   });
 
   it("replaces malformed fields one by one", () => {
-    const raw = JSON.stringify({
-      split: "yes",
-      tab: "preview",
-      order: ["notes", "notes"],
-      collapsed: { notes: 1, chapters: true },
-      widths: { good: { story: 70, notes: 30 }, bad: { story: "70" } },
-      notesHeights: { "folder-notes": 150 },
-    });
-    expect(parseLayout(raw)).toEqual({
+    expect(
+      normalizeLayout({
+        split: "yes",
+        tab: "preview",
+        order: ["notes", "notes"],
+        collapsed: { notes: 1, chapters: true },
+        widths: {
+          "story,notes": { "story-column": 70, "notes-column": 30 },
+          "story,chapters": { "story-column": "70" },
+        },
+        notesHeights: { "folder-notes-panel": 150 },
+      }),
+    ).toEqual({
       ...DEFAULT_LAYOUT,
       collapsed: { notes: false, chapters: true },
-      widths: { good: { story: 70, notes: 30 } },
+      widths: { "story,notes": { "story-column": 70, "notes-column": 30 } },
     });
+  });
+
+  it("drops sizes for unknown column sets and panel ids", () => {
+    expect(
+      normalizeLayout({
+        widths: {
+          anything: { "story-column": 50 },
+          story: { "story-column": 100, other: 0 },
+        },
+        notesHeights: { "folder-notes-panel": 40, extra: 60 },
+      }),
+    ).toMatchObject({ widths: {}, notesHeights: null });
   });
 });
 

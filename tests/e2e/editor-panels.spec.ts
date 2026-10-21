@@ -2,13 +2,14 @@ import type { Page } from "@playwright/test";
 import mongoose from "mongoose";
 import {
   findFolder,
+  findSettings,
   findStory,
   findStoryById,
   seedStory,
   withE2EDb,
 } from "./db";
 import { storageStatePath } from "./env";
-import { expect, test } from "./helpers";
+import { expect, runAutosaveDelay, test } from "./helpers";
 
 test.use({
   storageState: storageStatePath("alice"),
@@ -82,6 +83,12 @@ test("separators resize the columns and the notes split, and the layout survives
 
   const resizedWidth = await width(page, "Notes");
   const resizedHeight = (await e.folderNotes.boundingBox())!.height;
+  await expect
+    .poll(async () => (await findSettings("alice"))?.editor?.layout)
+    .toMatchObject({
+      widths: { "story,notes": expect.any(Object) },
+      notesHeights: expect.any(Object),
+    });
   await page.reload();
   await expect(e.notes).toBeVisible();
   await expect.poll(() => width(page, "Notes")).toBeCloseTo(resizedWidth, -1);
@@ -124,6 +131,9 @@ test("splits the side panel, reorders and collapses the columns", async ({
   const contentWidth = (await e.content.boundingBox())!.width;
   expect(contentWidth).toBeGreaterThan(500);
 
+  await expect
+    .poll(async () => (await findSettings("alice"))?.editor?.layout)
+    .toMatchObject({ collapsed: { notes: true, chapters: true } });
   await page.reload();
   await expect(e.content).toBeVisible();
   await expect(e.notes).toBeHidden();
@@ -138,17 +148,20 @@ test("folder and chapter notes save separately; folder notes show in another cha
   page,
 }) => {
   const { first, second } = await seedBook();
+  await page.clock.install();
   await page.goto(`/stories/${first}`);
   const e = editor(page);
 
   await e.folderNotes.fill("Shared world");
-  await expect(e.folderStatus).toHaveText("Saved", { timeout: 10_000 });
+  await runAutosaveDelay(page);
+  await expect(e.folderStatus).toHaveText("Saved");
   await expect(e.status).toHaveText("");
   expect((await findFolder("Book"))?.notes).toBe("Shared world");
   expect((await findStoryById(first))?.notes).toBe("First notes");
 
   await e.notes.fill("Only for the first");
-  await expect(e.status).toHaveText("Saved", { timeout: 10_000 });
+  await runAutosaveDelay(page);
+  await expect(e.status).toHaveText("Saved");
   expect((await findFolder("Book"))?.notes).toBe("Shared world");
 
   await page.goto(`/stories/${second}`);
@@ -161,21 +174,25 @@ test("folder notes edited in two chapters conflict, chapter autosave does not", 
   context,
 }) => {
   const { first, second } = await seedBook();
+  await page.clock.install();
   await page.goto(`/stories/${first}`);
   const other = await context.newPage();
+  await other.clock.install();
   await other.goto(`/stories/${second}`);
   const a = editor(page);
   const b = editor(other);
 
   await b.content.fill("Second content, edited");
-  await expect(b.status).toHaveText("Saved", { timeout: 10_000 });
+  await runAutosaveDelay(other);
+  await expect(b.status).toHaveText("Saved");
   await b.folderNotes.fill("From the second chapter");
-  await expect(b.folderStatus).toHaveText("Saved", { timeout: 10_000 });
+  await runAutosaveDelay(other);
+  await expect(b.folderStatus).toHaveText("Saved");
 
   await a.folderNotes.fill("From the first chapter");
+  await runAutosaveDelay(page);
   await expect(a.folderStatus).toHaveText(
     /changed in another tab or on another device/,
-    { timeout: 10_000 },
   );
   expect((await findFolder("Book"))?.notes).toBe("From the second chapter");
 });
@@ -225,6 +242,10 @@ test("Chapters panel stays on the chapter when saving fails or the title is empt
   );
   await expect(page).toHaveURL(`/stories/${first}`);
 
+  // The Chapters tab must be saved, or the reload opens Notes.
+  await expect
+    .poll(async () => (await findSettings("alice"))?.editor?.layout)
+    .toMatchObject({ tab: "chapters" });
   await page.reload();
   await e.title.fill("");
   await e.chapters.getByRole("link", { name: "Second" }).click();
@@ -287,6 +308,7 @@ test("works with the default layout when localStorage throws", async ({
     });
   });
   const { first } = await seedBook();
+  await page.clock.install();
   await page.goto(`/stories/${first}`);
   expect(
     await page.evaluate(() => {
@@ -305,5 +327,6 @@ test("works with the default layout when localStorage throws", async ({
   await page.getByRole("button", { name: "Split" }).click();
   await expect(e.chapters).toBeVisible();
   await e.content.fill("Saved without storage");
-  await expect(e.status).toHaveText("Saved", { timeout: 10_000 });
+  await runAutosaveDelay(page);
+  await expect(e.status).toHaveText("Saved");
 });

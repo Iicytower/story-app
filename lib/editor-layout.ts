@@ -24,9 +24,11 @@ export const DEFAULT_LAYOUT: EditorLayout = {
   notesHeights: null,
 };
 
-export const LAYOUT_STORAGE_KEY = "story-app:editor-layout";
-
 const SIDE_PANELS: SidePanel[] = ["notes", "chapters"];
+
+// Ids of the resizable panels (editor.tsx); anything else in stored sizes is dropped.
+const COLUMN_IDS = ["story-column", "notes-column", "chapters-column"];
+const NOTES_PANEL_IDS = ["folder-notes-panel", "chapter-notes-panel"];
 
 const isSidePanel = (value: unknown): value is SidePanel =>
   SIDE_PANELS.includes(value as SidePanel);
@@ -34,23 +36,25 @@ const isSidePanel = (value: unknown): value is SidePanel =>
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-function isSizes(value: unknown): value is PanelSizes {
+function isSizes(value: unknown, ids: string[]): value is PanelSizes {
   return (
     isRecord(value) &&
-    Object.values(value).every(
-      (size) => typeof size === "number" && size >= 0 && size <= 100,
+    Object.entries(value).every(
+      ([id, size]) =>
+        ids.includes(id) && typeof size === "number" && size >= 0 && size <= 100,
     )
   );
 }
 
+// Every set of visible columns columnsKey can produce.
+const COLUMN_KEYS = new Set(
+  [[], ["notes"], ["chapters"], ["notes", "chapters"], ["chapters", "notes"]].map(
+    (columns) => columnsKey(columns as SidePanel[]),
+  ),
+);
+
 // Anything malformed falls back field by field, so an old or edited value never breaks the editor.
-export function parseLayout(raw: string | null): EditorLayout {
-  let data: unknown;
-  try {
-    data = raw === null ? null : JSON.parse(raw);
-  } catch {
-    return DEFAULT_LAYOUT;
-  }
+export function normalizeLayout(data: unknown): EditorLayout {
   if (!isRecord(data)) return DEFAULT_LAYOUT;
 
   const order =
@@ -62,42 +66,25 @@ export function parseLayout(raw: string | null): EditorLayout {
   const collapsed = isRecord(data.collapsed) ? data.collapsed : {};
   const widths = isRecord(data.widths)
     ? Object.fromEntries(
-        Object.entries(data.widths).filter(([, sizes]) => isSizes(sizes)),
+        Object.entries(data.widths).filter(
+          ([key, sizes]) => COLUMN_KEYS.has(key) && isSizes(sizes, COLUMN_IDS),
+        ),
       )
     : {};
 
   return {
     split: typeof data.split === "boolean" ? data.split : DEFAULT_LAYOUT.split,
     tab: isSidePanel(data.tab) ? data.tab : DEFAULT_LAYOUT.tab,
-    order,
+    order: [...order],
     collapsed: {
       notes: collapsed.notes === true,
       chapters: collapsed.chapters === true,
     },
     widths: widths as Record<string, PanelSizes>,
-    notesHeights: isSizes(data.notesHeights) ? data.notesHeights : null,
+    notesHeights: isSizes(data.notesHeights, NOTES_PANEL_IDS)
+      ? data.notesHeights
+      : null,
   };
-}
-
-// Takes a getter: in some browsers merely reading window.localStorage throws.
-export function readLayout(storage: () => Storage): EditorLayout {
-  try {
-    return parseLayout(storage().getItem(LAYOUT_STORAGE_KEY));
-  } catch {
-    return DEFAULT_LAYOUT;
-  }
-}
-
-export function writeLayout(
-  storage: () => Storage,
-  layout: EditorLayout,
-): boolean {
-  try {
-    storage().setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout));
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 export function moveColumn(

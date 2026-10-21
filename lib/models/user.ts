@@ -1,12 +1,9 @@
 import mongoose, { Schema, type Model } from "mongoose";
-import { FOLDER_SORTS, type FolderSort } from "@/lib/folders/sort";
 
+// Preferences live in the settings collection (lib/models/settings.ts).
 export interface UserFields {
   email: string;
   passwordHash: string;
-  folderSort: FolderSort;
-  // Set on the first switch to manual, which takes positions from the order shown until then.
-  manualFolderOrder: boolean;
   createdAt: Date;
 }
 
@@ -20,8 +17,6 @@ const userSchema = new Schema<UserFields>(
       trim: true,
     },
     passwordHash: { type: String, required: true },
-    folderSort: { type: String, enum: FOLDER_SORTS, default: "updated" },
-    manualFolderOrder: { type: Boolean, default: false },
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 );

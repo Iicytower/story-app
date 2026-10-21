@@ -18,13 +18,7 @@ export function clearStories(): Promise<void> {
   return withE2EDb(async (connection) => {
     await connection.collection("stories").deleteMany({});
     await connection.collection("folders").deleteMany({});
-    // Sort modes live on users, which every test shares.
-    await connection
-      .collection("users")
-      .updateMany(
-        {},
-        { $set: { folderSort: "updated", manualFolderOrder: false } },
-      );
+    await connection.collection("settings").deleteMany({});
   });
 }
 
@@ -151,4 +145,14 @@ export function findStoryFolder(title: string): Promise<string | undefined> {
     const story = await connection.collection("stories").findOne({ title });
     return story?.folderId?.toString();
   });
+}
+
+export function findSettings(
+  user: UserName,
+): Promise<Record<string, Record<string, unknown> | undefined> | null> {
+  return withE2EDb(async (connection) =>
+    connection
+      .collection("settings")
+      .findOne({ userId: await userId(connection, user) }),
+  );
 }
