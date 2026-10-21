@@ -1,4 +1,5 @@
 import mongoose, { Schema, type Model, type Types } from "mongoose";
+import { CHAPTER_SORTS, type ChapterSort } from "@/lib/folders/sort";
 
 export interface VersionChapter {
   storyId: Types.ObjectId;
@@ -13,7 +14,8 @@ export interface FolderVersionFields {
   folderId: Types.ObjectId;
   number: number;
   name: string;
-  folderNotes: string;
+  // Restored with the whole version, together with the chapters' order.
+  chapterSort: ChapterSort;
   chapters: VersionChapter[];
   createdAt: Date;
 }
@@ -24,7 +26,7 @@ const folderVersionSchema = new Schema<FolderVersionFields>(
     folderId: { type: Schema.Types.ObjectId, ref: "Folder", required: true },
     number: { type: Number, required: true },
     name: { type: String, required: true },
-    folderNotes: { type: String, default: "" },
+    chapterSort: { type: String, enum: CHAPTER_SORTS, required: true },
     chapters: [
       {
         _id: false,

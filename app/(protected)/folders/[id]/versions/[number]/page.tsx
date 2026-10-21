@@ -5,7 +5,6 @@ import { LocalDate } from "@/components/local-date";
 import { requireUser } from "@/lib/auth/session";
 import { getFolderVersion } from "@/lib/versions/queries";
 import { RestoreForm } from "./restore-form";
-import { TextDiff } from "./text-diff";
 
 export const metadata: Metadata = { title: "Version – Story App" };
 
@@ -43,16 +42,6 @@ export default async function FolderVersionPage({
         number={version.number}
         comparison={version.comparison}
       />
-      {version.folderNotesDiff !== undefined && (
-        <section className="flex flex-col gap-2">
-          <h2 className="font-medium">Folder notes</h2>
-          <p className="text-muted-foreground text-sm">
-            Changed since this version. Restoring does not change the folder
-            notes.
-          </p>
-          <TextDiff parts={version.folderNotesDiff} />
-        </section>
-      )}
     </div>
   );
 }

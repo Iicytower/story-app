@@ -49,13 +49,13 @@ export function textDiff(before: string, after: string): DiffPart[] | null {
   );
 }
 
+// Notes (the chapter's and the folder's) are not part of versions.
 export interface ChapterState {
   title: string;
   content: string;
-  notes: string;
 }
 
-const FIELDS = ["title", "content", "notes"] as const;
+const FIELDS = ["title", "content"] as const;
 export type ChapterField = (typeof FIELDS)[number];
 
 export type FieldDiff = { field: ChapterField; parts: DiffPart[] | null };
@@ -66,7 +66,7 @@ export type ComparedChapter =
 
 export interface VersionComparison {
   chapters: ComparedChapter[];
-  // Current chapters the version does not have; restoring never touches them.
+  // Current chapters the version does not have: restoring the whole version removes them.
   added: { id: string; title: string }[];
 }
 
@@ -94,5 +94,16 @@ export function compareVersion(
     added: current
       .filter((chapter) => !savedIds.has(chapter.id))
       .map(({ id, title }) => ({ id, title })),
+  };
+}
+
+// What restoring the whole version does, for the confirmation.
+export function restoreSummary({ chapters, added }: VersionComparison) {
+  const count = (status: ComparedChapter["status"]) =>
+    chapters.filter((chapter) => chapter.status === status).length;
+  return {
+    reverted: count("changed"),
+    returned: count("deleted"),
+    removed: added.length,
   };
 }

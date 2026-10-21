@@ -5,7 +5,7 @@ import { chapterOrder } from "@/lib/folders/sort";
 import { ChapterContent } from "@/lib/models/chapter-content";
 import { Folder } from "@/lib/models/folder";
 import { FolderVersion } from "@/lib/models/folder-version";
-import { compareVersion, textDiff } from "./versions";
+import { compareVersion } from "./versions";
 
 // The caller has checked that the folder is the user's active folder.
 export async function listFolderVersions(userId: string, folderId: string) {
@@ -38,7 +38,7 @@ export async function getFolderVersion(
   }
   await connectDB();
   const folder = await Folder.findOne({ _id: folderId, userId, deletedAt: null })
-    .select({ name: 1, notes: 1, chapterSort: 1 })
+    .select({ name: 1, chapterSort: 1 })
     .lean();
   if (!folder) return null;
   const version = await FolderVersion.findOne({
@@ -58,20 +58,19 @@ export async function getFolderVersion(
       folderId,
       chapterOrder(folder.chapterSort ?? "created"),
     )
-      .select({ title: 1, content: 1, notes: 1 })
+      .select({ title: 1, content: 1 })
       .lean(),
   ]);
   const byId = new Map(contents.map((content) => [content._id, content]));
   const comparison = compareVersion(
     version.chapters.map((chapter) => {
-      const { title, content, notes } = byId.get(chapter.contentId)!;
-      return { storyId: chapter.storyId.toString(), title, content, notes };
+      const { title, content } = byId.get(chapter.contentId)!;
+      return { storyId: chapter.storyId.toString(), title, content };
     }),
-    current.map(({ _id, title, content, notes }) => ({
+    current.map(({ _id, title, content }) => ({
       id: _id.toString(),
       title,
       content,
-      notes,
     })),
   );
 
@@ -81,11 +80,6 @@ export async function getFolderVersion(
     name: version.name,
     createdAt: version.createdAt.toISOString(),
     comparison,
-    // undefined: unchanged since the version; null: too many changes to compare.
-    folderNotesDiff:
-      version.folderNotes === folder.notes
-        ? undefined
-        : textDiff(version.folderNotes, folder.notes),
   };
 }
 

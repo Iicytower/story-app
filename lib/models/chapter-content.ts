@@ -1,6 +1,7 @@
 import mongoose, { Schema, type Model, type Types } from "mongoose";
 
-// One document per chapter state, shared by every version that saw it unchanged.
+// One document per chapter state (title and content; notes are not versioned), shared by
+// every version that saw it unchanged.
 // _id is the hash of the state (contentHash), so saving the same state again reuses it.
 export interface ChapterContentFields {
   _id: string;
@@ -8,7 +9,6 @@ export interface ChapterContentFields {
   storyId: Types.ObjectId;
   title: string;
   content: string;
-  notes: string;
   // Set on every save that points to it; deleting a version spares contents used since it started.
   usedAt: Date;
 }
@@ -20,7 +20,6 @@ const chapterContentSchema = new Schema<ChapterContentFields>(
     storyId: { type: Schema.Types.ObjectId, ref: "Story", required: true },
     title: { type: String, required: true },
     content: { type: String, default: "" },
-    notes: { type: String, default: "" },
     usedAt: { type: Date, required: true },
   },
   { collection: "chapterContents" },

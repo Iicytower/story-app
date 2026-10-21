@@ -8,18 +8,14 @@ import { ChapterContent } from "@/lib/models/chapter-content";
 import { Folder } from "@/lib/models/folder";
 import { FolderVersion } from "@/lib/models/folder-version";
 import { Story } from "@/lib/models/story";
+import type { ChapterSort } from "@/lib/folders/sort";
 import { type ChapterState, numberedTitle } from "./versions";
 
 // JSON keeps the fields apart, so "a" + "bc" and "ab" + "c" hash differently.
 function contentHash(storyId: Types.ObjectId, state: ChapterState): string {
   return createHash("sha256")
     .update(
-      JSON.stringify([
-        storyId.toString(),
-        state.title,
-        state.content,
-        state.notes,
-      ]),
+      JSON.stringify([storyId.toString(), state.title, state.content]),
     )
     .digest("hex");
 }
@@ -37,25 +33,25 @@ export async function saveVersion(
     {
       returnDocument: "after",
       timestamps: false,
-      projection: { versionCounter: 1, notes: 1, chapterSort: 1 },
+      projection: { versionCounter: 1, chapterSort: 1 },
     },
   ).lean();
   if (!folder) return null;
   const number = folder.versionCounter!;
+  const chapterSort = folder.chapterSort ?? "created";
   const stories = await findChaptersInOrder(
     userId,
     folderId,
-    chapterOrder(folder.chapterSort ?? "created"),
+    chapterOrder(chapterSort),
   )
-    .select({ title: 1, content: 1, notes: 1 })
+    .select({ title: 1, content: 1 })
     .lean();
-  const contents = stories.map(({ _id, title, content, notes }) => ({
-    _id: contentHash(_id, { title, content, notes }),
+  const contents = stories.map(({ _id, title, content }) => ({
+    _id: contentHash(_id, { title, content }),
     userId: new Types.ObjectId(userId),
     storyId: _id,
     title,
     content,
-    notes,
   }));
 
   await FolderVersion.create({
@@ -63,7 +59,7 @@ export async function saveVersion(
     folderId,
     number,
     name,
-    folderNotes: folder.notes,
+    chapterSort,
     chapters: stories.map((story, position) => ({
       storyId: story._id,
       title: story.title,
@@ -133,31 +129,41 @@ async function withFreeTitle(
   }
 }
 
-// A chapter still in the folder gets the saved state with a new updatedAt, so an open editor
-// gets CONFLICT instead of overwriting it. A deleted one comes back (same id, so later
-// comparisons still match it); one moved to another folder is copied back.
+// A chapter still in the folder gets the saved title and content with a new updatedAt, so an
+// open editor gets CONFLICT instead of overwriting it; an unchanged one is left alone. A
+// deleted one comes back (same id, so later comparisons still match it); one moved to another
+// folder is copied back. Notes stay as they are. Returns the restored chapter's id.
 async function restoreChapter(
   userId: string,
   folderId: string,
   storyId: Types.ObjectId,
-  { title, content, notes }: ChapterState,
-): Promise<void> {
+  { title, content }: ChapterState,
+): Promise<Types.ObjectId> {
   const story = await Story.findOne({ _id: storyId, userId })
-    .select({ folderId: 1, deletedAt: 1, updatedAt: 1 })
+    .select({
+      folderId: 1,
+      title: 1,
+      content: 1,
+      notes: 1,
+      deletedAt: 1,
+      updatedAt: 1,
+    })
     .lean();
   const updatedAt = new Date(
     Math.max(Date.now(), (story?.updatedAt.getTime() ?? 0) + 1),
   );
 
   if (story && story.deletedAt === null && story.folderId.equals(folderId)) {
-    await withFreeTitle(title, (free) =>
-      Story.updateOne(
-        { _id: storyId },
-        { $set: { title: free, content, notes, updatedAt } },
-        { timestamps: false },
-      ),
-    );
-    return;
+    if (story.title !== title || story.content !== content) {
+      await withFreeTitle(title, (free) =>
+        Story.updateOne(
+          { _id: storyId },
+          { $set: { title: free, content, updatedAt } },
+          { timestamps: false },
+        ),
+      );
+    }
+    return storyId;
   }
 
   const position = await nextChapterPosition(userId, folderId);
@@ -171,7 +177,6 @@ async function restoreChapter(
             position,
             title: free,
             content,
-            notes,
             updatedAt,
             deletedAt: null,
           },
@@ -181,31 +186,89 @@ async function restoreChapter(
         { timestamps: false },
       ),
     );
-    return;
+    return storyId;
   }
 
-  await withFreeTitle(title, (free) =>
-    Story.create({ userId, folderId, position, title: free, content, notes }),
-  );
+  let id = storyId;
+  await withFreeTitle(title, async (free) => {
+    const copy = await Story.create({
+      userId,
+      folderId,
+      position,
+      title: free,
+      content,
+      notes: story?.notes ?? "",
+    });
+    id = copy._id;
+  });
+  return id;
 }
 
-// The caller has checked the folder and that storyIds are in the version.
-export async function restoreChapters(
+export interface Restore {
+  // Chapters of the version to bring back.
+  chapters: { storyId: Types.ObjectId; contentId: string }[];
+  // Current chapters of the folder to delete.
+  remove: Types.ObjectId[];
+  // Set when restoring the whole version: its sort mode and order, as all version chapters.
+  order?: {
+    chapterSort: ChapterSort;
+    chapters: { storyId: Types.ObjectId }[];
+  };
+}
+
+// The caller has checked the folder and that every id belongs to the version or the folder.
+export async function restore(
   userId: string,
   folderId: string,
-  chapters: { storyId: Types.ObjectId; contentId: string }[],
+  { chapters, remove, order }: Restore,
 ): Promise<void> {
+  if (remove.length > 0) {
+    await Story.updateMany(
+      { _id: { $in: remove }, userId, folderId, deletedAt: null },
+      { $set: { deletedAt: new Date() } },
+    );
+  }
+
   const contents = await ChapterContent.find({
     _id: { $in: chapters.map((chapter) => chapter.contentId) },
     userId,
   }).lean();
   const byId = new Map(contents.map((content) => [content._id, content]));
+  const restoredIds = new Map<string, Types.ObjectId>();
   for (const chapter of chapters) {
-    await restoreChapter(
-      userId,
-      folderId,
-      chapter.storyId,
-      byId.get(chapter.contentId)!,
+    restoredIds.set(
+      chapter.storyId.toString(),
+      await restoreChapter(
+        userId,
+        folderId,
+        chapter.storyId,
+        byId.get(chapter.contentId)!,
+      ),
+    );
+  }
+
+  if (order) {
+    const manual = order.chapterSort === "manual";
+    if (manual) {
+      // Native driver: positions are organizational and keep updatedAt.
+      await Story.collection.bulkWrite(
+        order.chapters.map((chapter, position) => ({
+          updateOne: {
+            filter: { _id: restoredIds.get(chapter.storyId.toString())! },
+            update: { $set: { position } },
+          },
+        })),
+      );
+    }
+    await Folder.updateOne(
+      { _id: folderId },
+      {
+        $set: {
+          chapterSort: order.chapterSort,
+          ...(manual && { manualChapterOrder: true }),
+        },
+      },
+      { timestamps: false },
     );
   }
   await touchFolder(folderId);

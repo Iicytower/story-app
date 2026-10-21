@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createFolderVersion,
   deleteFolderVersion,
+  restoreEntireVersion,
   restoreFolderVersion,
 } from "@/app/(protected)/folders/[id]/versions/actions";
 import { deleteFolder } from "@/app/(protected)/folders/actions";
@@ -81,12 +82,15 @@ async function edit(id: Types.ObjectId, fields: Record<string, unknown>) {
 }
 
 describe("createFolderVersion", () => {
-  it("saves every active chapter in the order shown and the folder notes", async () => {
+  it("saves every active chapter's title and content in the order shown, without notes", async () => {
     const folderId = await seedFolder();
     const other = await seedFolder("Other");
     const second = await seedStory(folderId, "Second");
     const first = await seedStory(folderId, "First");
-    await Story.collection.updateOne({ _id: first }, { $set: { position: -1 } });
+    await Story.collection.updateOne(
+      { _id: first },
+      { $set: { position: -1 } },
+    );
     const deleted = await seedStory(folderId, "Deleted");
     await edit(deleted, { deletedAt: new Date() });
     await seedStory(other, "Elsewhere");
@@ -98,8 +102,9 @@ describe("createFolderVersion", () => {
     expect(version).toMatchObject({
       userId: alice,
       name: "Draft",
-      folderNotes: "Folder notes v1",
+      chapterSort: "manual",
     });
+    expect(version).not.toHaveProperty("folderNotes");
     expect(
       version!.chapters.map(({ storyId, title, position }) => [
         storyId,
@@ -113,14 +118,13 @@ describe("createFolderVersion", () => {
     const contents = await ChapterContent.find({
       _id: { $in: version!.chapters.map((c) => c.contentId) },
     }).lean();
-    expect(
-      contents.map(({ title, content, notes }) => ({ title, content, notes })),
-    ).toEqual(
+    expect(contents.map(({ title, content }) => ({ title, content }))).toEqual(
       expect.arrayContaining([
-        { title: "First", content: "First content", notes: "First notes" },
-        { title: "Second", content: "Second content", notes: "Second notes" },
+        { title: "First", content: "First content" },
+        { title: "Second", content: "Second content" },
       ]),
     );
+    expect(contents.some((content) => "notes" in content)).toBe(false);
   });
 
   it("does not change the folder's or chapters' updatedAt", async () => {
@@ -140,9 +144,10 @@ describe("createFolderVersion", () => {
   it("requires a name", async () => {
     const folderId = await seedFolder();
 
-    expect(await createFolderVersion(folderId.toString(), "  ")).toMatchObject(
-      { ok: false, error: "EMPTY_NAME" },
-    );
+    expect(await createFolderVersion(folderId.toString(), "  ")).toMatchObject({
+      ok: false,
+      error: "EMPTY_NAME",
+    });
     expect(await FolderVersion.countDocuments()).toBe(0);
     expect(await createFolderVersion(folderId.toString(), "Next")).toEqual({
       ok: true,
@@ -157,6 +162,7 @@ describe("createFolderVersion", () => {
 
     await createFolderVersion(folderId.toString(), "One");
     await edit(changed, { content: "Rewritten" });
+    await edit(same, { notes: "Notes are not versioned" });
     await createFolderVersion(folderId.toString(), "Two");
 
     const [one, two] = [
@@ -233,7 +239,7 @@ describe("getFolderVersion", () => {
     await edit(deleted, { deletedAt: new Date() });
     await edit(moved, { folderId: other });
     const added = await seedStory(folderId, "Added");
-    await Folder.updateOne({ _id: folderId }, { notes: "Folder notes v2" });
+    await edit(same, { notes: "Edited notes" });
 
     const view = await getFolderVersion(
       alice.toString(),
@@ -263,11 +269,6 @@ describe("getFolderVersion", () => {
     expect(view!.comparison.added).toEqual([
       { id: added.toString(), title: "Added" },
     ]);
-    expect(view!.folderNotesDiff).toEqual([
-      { value: "Folder notes ", added: false, removed: false },
-      { value: "v1", added: false, removed: true },
-      { value: "v2", added: true, removed: false },
-    ]);
   });
 });
 
@@ -277,18 +278,25 @@ describe("restoreFolderVersion", () => {
     const a = await seedStory(folderId, "A");
     const b = await seedStory(folderId, "B");
     await createFolderVersion(folderId.toString(), "One");
-    await edit(a, { title: "A renamed", content: "A new", notes: "A new notes" });
+    await edit(a, {
+      title: "A renamed",
+      content: "A new",
+      notes: "A new notes",
+    });
     await edit(b, { content: "B new" });
 
-    const result = await restoreFolderVersion(folderId.toString(), 1, [
-      a.toString(),
-    ]);
+    const result = await restoreFolderVersion(
+      folderId.toString(),
+      1,
+      [a.toString()],
+      [],
+    );
 
     expect(result).toEqual({ ok: true, savedNumber: 2 });
     expect(await story(a)).toMatchObject({
       title: "A",
       content: "A content",
-      notes: "A notes",
+      notes: "A new notes",
       deletedAt: null,
     });
     expect((await story(a))!.updatedAt.getTime()).toBeGreaterThan(
@@ -322,35 +330,85 @@ describe("restoreFolderVersion", () => {
     await createFolderVersion(folderId.toString(), "One");
     for (const id of ids) await edit(id, { content: "edited" });
 
-    await restoreFolderVersion(folderId.toString(), 1, [
-      ids[0].toString(),
-      ids[2].toString(),
+    await restoreFolderVersion(
+      folderId.toString(),
+      1,
+      [ids[0].toString(), ids[2].toString()],
+      [],
+    );
+    expect((await Promise.all(ids.map(story))).map((s) => s!.content)).toEqual([
+      "A content",
+      "edited",
+      "C content",
     ]);
-    expect(
-      (await Promise.all(ids.map(story))).map((s) => s!.content),
-    ).toEqual(["A content", "edited", "C content"]);
 
     await restoreFolderVersion(
       folderId.toString(),
       1,
       ids.map((id) => id.toString()),
+      [],
     );
-    expect(
-      (await Promise.all(ids.map(story))).map((s) => s!.content),
-    ).toEqual(["A content", "B content", "C content"]);
+    expect((await Promise.all(ids.map(story))).map((s) => s!.content)).toEqual([
+      "A content",
+      "B content",
+      "C content",
+    ]);
   });
 
   it("makes an open editor's next save a conflict", async () => {
     const folderId = await seedFolder();
     const id = await seedStory(folderId, "A");
     await createFolderVersion(folderId.toString(), "One");
+    // Saved by the editor, which keeps OLD as the expected updatedAt.
+    await edit(id, { content: "A edited" });
 
-    await restoreFolderVersion(folderId.toString(), 1, [id.toString()]);
+    await restoreFolderVersion(folderId.toString(), 1, [id.toString()], []);
 
     expect(
       await saveStory(id.toString(), "A", "typed", "", OLD.toISOString()),
     ).toMatchObject({ ok: false, error: "CONFLICT" });
     expect((await story(id))!.content).toBe("A content");
+  });
+
+  it("leaves a chapter that did not change alone", async () => {
+    const folderId = await seedFolder();
+    const id = await seedStory(folderId, "A");
+    await createFolderVersion(folderId.toString(), "One");
+    await edit(id, { notes: "New notes" });
+
+    await restoreFolderVersion(folderId.toString(), 1, [id.toString()], []);
+
+    expect(await story(id)).toMatchObject({
+      updatedAt: OLD,
+      notes: "New notes",
+    });
+  });
+
+  it("removes the selected chapters added since", async () => {
+    const folderId = await seedFolder();
+    const kept = await seedStory(folderId, "Kept");
+    await createFolderVersion(folderId.toString(), "One");
+    const removed = await seedStory(folderId, "Removed");
+    const stays = await seedStory(folderId, "Stays");
+
+    expect(
+      await restoreFolderVersion(
+        folderId.toString(),
+        1,
+        [],
+        [removed.toString()],
+      ),
+    ).toEqual({ ok: true, savedNumber: 2 });
+
+    expect((await story(removed))!.deletedAt).toBeInstanceOf(Date);
+    expect((await story(stays))!.deletedAt).toBeNull();
+    expect(await story(kept)).toMatchObject({
+      deletedAt: null,
+      updatedAt: OLD,
+    });
+    expect(
+      (await versionDoc(folderId, 2))!.chapters.map((c) => c.title),
+    ).toEqual(["Kept", "Removed", "Stays"]);
   });
 
   it("brings back a deleted chapter at the end of the folder", async () => {
@@ -360,7 +418,12 @@ describe("restoreFolderVersion", () => {
     await createFolderVersion(folderId.toString(), "One");
     await edit(deleted, { deletedAt: new Date(), shareToken: "token" });
 
-    await restoreFolderVersion(folderId.toString(), 1, [deleted.toString()]);
+    await restoreFolderVersion(
+      folderId.toString(),
+      1,
+      [deleted.toString()],
+      [],
+    );
 
     const restored = await story(deleted);
     expect(restored).toMatchObject({
@@ -389,7 +452,7 @@ describe("restoreFolderVersion", () => {
     await createFolderVersion(folderId.toString(), "One");
     await edit(moved, { folderId: other, content: "Moved and edited" });
 
-    await restoreFolderVersion(folderId.toString(), 1, [moved.toString()]);
+    await restoreFolderVersion(folderId.toString(), 1, [moved.toString()], []);
 
     expect(await story(moved)).toMatchObject({
       folderId: other,
@@ -397,7 +460,11 @@ describe("restoreFolderVersion", () => {
     });
     expect(
       await Story.findOne({ folderId, deletedAt: null }).lean(),
-    ).toMatchObject({ title: "Moved", content: "Moved content", userId: alice });
+    ).toMatchObject({
+      title: "Moved",
+      content: "Moved content",
+      userId: alice,
+    });
   });
 
   it("adds a number when the title is taken in the folder", async () => {
@@ -407,7 +474,7 @@ describe("restoreFolderVersion", () => {
     await edit(old, { deletedAt: new Date() });
     const taken = await seedStory(folderId, "Title");
 
-    await restoreFolderVersion(folderId.toString(), 1, [old.toString()]);
+    await restoreFolderVersion(folderId.toString(), 1, [old.toString()], []);
 
     expect((await story(old))!.title).toBe("Title (2)");
     expect((await story(taken))!.title).toBe("Title");
@@ -418,13 +485,106 @@ describe("restoreFolderVersion", () => {
     const id = await seedStory(folderId, "A");
     await createFolderVersion(folderId.toString(), "One");
     const later = await seedStory(folderId, "Later");
+    const elsewhere = await seedStory(await seedFolder("Other"), "Elsewhere");
 
-    for (const ids of [[], [id.toString(), later.toString()], ["x"]]) {
+    for (const [ids, removeIds] of [
+      [[], []],
+      [[id.toString(), later.toString()], []],
+      [["x"], []],
+      [[], [id.toString()]],
+      [[], [elsewhere.toString()]],
+    ]) {
       expect(
-        await restoreFolderVersion(folderId.toString(), 1, ids),
+        await restoreFolderVersion(folderId.toString(), 1, ids, removeIds),
       ).toMatchObject({ ok: false, error: "INVALID_INPUT" });
     }
+    expect((await story(id))!.deletedAt).toBeNull();
+    expect((await story(elsewhere))!.deletedAt).toBeNull();
     expect(await FolderVersion.countDocuments()).toBe(1);
+  });
+});
+
+describe("restoreEntireVersion", () => {
+  it("makes the folder match the version, except for notes", async () => {
+    const folderId = await seedFolder();
+    const other = await seedFolder("Other");
+    const changed = await seedStory(folderId, "Changed");
+    const deleted = await seedStory(folderId, "Deleted");
+    const moved = await seedStory(folderId, "Moved");
+    const same = await seedStory(folderId, "Same");
+    await createFolderVersion(folderId.toString(), "One");
+    await edit(changed, { content: "Rewritten", notes: "Kept notes" });
+    await edit(deleted, { deletedAt: new Date() });
+    await edit(moved, { folderId: other });
+    const added = await seedStory(folderId, "Added");
+    // Reverse the manual order and switch the sort mode.
+    for (const [i, id] of [same, changed].entries()) {
+      await edit(id, { position: i });
+    }
+    await Folder.updateOne(
+      { _id: folderId },
+      { chapterSort: "alpha", notes: "Folder notes v2" },
+    );
+
+    expect(await restoreEntireVersion(folderId.toString(), 1)).toEqual({
+      ok: true,
+      savedNumber: 2,
+    });
+
+    expect(await story(changed)).toMatchObject({
+      content: "Changed content",
+      notes: "Kept notes",
+    });
+    expect((await story(deleted))!.deletedAt).toBeNull();
+    expect((await story(added))!.deletedAt).toBeInstanceOf(Date);
+    expect((await story(moved))!.folderId).toEqual(other);
+    expect(await story(same)).toMatchObject({ updatedAt: OLD });
+    const folder = await Folder.findById(folderId).lean();
+    expect(folder).toMatchObject({
+      chapterSort: "manual",
+      manualChapterOrder: true,
+      notes: "Folder notes v2",
+    });
+    const view = await getFolderVersion(
+      alice.toString(),
+      folderId.toString(),
+      1,
+    );
+    // The moved chapter came back as a copy, so it is compared as a new chapter.
+    expect(
+      view!.comparison.chapters.map(({ title, status }) => [title, status]),
+    ).toEqual([
+      ["Changed", "unchanged"],
+      ["Deleted", "unchanged"],
+      ["Moved", "deleted"],
+      ["Same", "unchanged"],
+    ]);
+    const shown = await Story.find({ folderId, deletedAt: null })
+      .sort({ position: 1 })
+      .lean();
+    expect(shown.map((s) => s.title)).toEqual([
+      "Changed",
+      "Deleted",
+      "Moved",
+      "Same",
+    ]);
+  });
+
+  it("brings back a sort mode other than manual without touching positions", async () => {
+    const folderId = await seedFolder();
+    await Folder.updateOne({ _id: folderId }, { chapterSort: "alpha" });
+    const b = await seedStory(folderId, "B");
+    const a = await seedStory(folderId, "A");
+    await createFolderVersion(folderId.toString(), "Alphabetical");
+    await Folder.updateOne({ _id: folderId }, { chapterSort: "manual" });
+
+    await restoreEntireVersion(folderId.toString(), 1);
+
+    expect((await Folder.findById(folderId).lean())!.chapterSort).toBe("alpha");
+    expect([(await story(b))!.position, (await story(a))!.position]).toEqual([
+      position - 2,
+      position - 1,
+    ]);
   });
 });
 
@@ -487,7 +647,8 @@ describe("access", () => {
     expect(await listFolderVersions(bob.toString(), folder)).toEqual([]);
     for (const result of [
       await createFolderVersion(folder, "Mine"),
-      await restoreFolderVersion(folder, 1, [id.toString()]),
+      await restoreFolderVersion(folder, 1, [id.toString()], []),
+      await restoreEntireVersion(folder, 1),
       await deleteFolderVersion(folder, 1),
     ]) {
       expect(result).toMatchObject({ ok: false, error: "NOT_FOUND" });
@@ -505,7 +666,8 @@ describe("access", () => {
     expect(await getFolderVersion(alice.toString(), folder, 1)).toBeNull();
     for (const result of [
       await createFolderVersion(folder, "Two"),
-      await restoreFolderVersion(folder, 1, [id.toString()]),
+      await restoreFolderVersion(folder, 1, [id.toString()], []),
+      await restoreEntireVersion(folder, 1),
       await deleteFolderVersion(folder, 1),
     ]) {
       expect(result).toMatchObject({ ok: false, error: "NOT_FOUND" });
@@ -520,7 +682,7 @@ describe("access", () => {
     expect(await createFolderVersion(folderId.toString(), "One")).toEqual(
       unauthorized,
     );
-    expect(await restoreFolderVersion(folderId.toString(), 1, [])).toEqual(
+    expect(await restoreFolderVersion(folderId.toString(), 1, [], [])).toEqual(
       unauthorized,
     );
     expect(await deleteFolderVersion(folderId.toString(), 1)).toEqual(

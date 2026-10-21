@@ -31,16 +31,12 @@ import type { VersionListItem } from "@/lib/versions/queries";
 import { VERSION_NAME_MAX_LENGTH } from "@/lib/versions/versions";
 import { createFolderVersion, deleteFolderVersion } from "./actions";
 
-type SaveNotes = () => Promise<{ ok: true } | { ok: false; message: string }>;
-
 export function FolderVersions({
   folderId,
   versions,
-  saveNotes,
 }: {
   folderId: string;
   versions: VersionListItem[];
-  saveNotes: SaveNotes;
 }) {
   return (
     <section aria-labelledby="versions-heading" className="flex flex-col gap-2">
@@ -48,7 +44,7 @@ export function FolderVersions({
         <h2 id="versions-heading" className="text-sm font-medium">
           Versions
         </h2>
-        <SaveVersionDialog folderId={folderId} saveNotes={saveNotes} />
+        <SaveVersionDialog folderId={folderId} />
       </div>
       {versions.length === 0 ? (
         <p className="text-muted-foreground text-sm">No versions yet.</p>
@@ -81,13 +77,7 @@ export function FolderVersions({
   );
 }
 
-function SaveVersionDialog({
-  folderId,
-  saveNotes,
-}: {
-  folderId: string;
-  saveNotes: SaveNotes;
-}) {
+function SaveVersionDialog({ folderId }: { folderId: string }) {
   const [open, setOpen] = useState(false);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -98,11 +88,7 @@ function SaveVersionDialog({
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <SaveVersionForm
-          folderId={folderId}
-          saveNotes={saveNotes}
-          onDone={() => setOpen(false)}
-        />
+        <SaveVersionForm folderId={folderId} onDone={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   );
@@ -110,11 +96,9 @@ function SaveVersionDialog({
 
 function SaveVersionForm({
   folderId,
-  saveNotes,
   onDone,
 }: {
   folderId: string;
-  saveNotes: SaveNotes;
   onDone: () => void;
 }) {
   const [name, setName] = useState("");
@@ -124,12 +108,6 @@ function SaveVersionForm({
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     startTransition(async () => {
-      // The version takes the notes from the database.
-      const notes = await saveNotes();
-      if (!notes.ok) {
-        setError(notes.message);
-        return;
-      }
       const result = await createFolderVersion(folderId, name);
       if (result.ok) onDone();
       else setError(result.message);
@@ -142,8 +120,8 @@ function SaveVersionForm({
         <DialogTitle>Save version</DialogTitle>
       </DialogHeader>
       <p className="text-muted-foreground text-sm">
-        Saves the folder&apos;s chapters as they are stored now, with the
-        folder notes.
+        Saves the titles and contents of the folder&apos;s chapters as they
+        are stored now, with their order. Notes are not part of versions.
       </p>
       <div className="flex flex-col gap-2">
         <Label htmlFor="version-name">Name</Label>

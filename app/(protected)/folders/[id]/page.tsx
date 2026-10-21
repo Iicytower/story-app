@@ -13,10 +13,11 @@ import { setChapterSort } from "../actions";
 import { ReorderButtons } from "../reorder-buttons";
 import { SortSelect } from "../sort-select";
 import { DeleteFolderButton } from "./delete-folder-button";
+import { FolderNotes } from "./folder-notes";
 import { FolderShare } from "./folder-share";
-import { FolderSidebar } from "./folder-sidebar";
 import { MoveStoryDialog } from "./move-story-dialog";
 import { RenameFolderDialog } from "./rename-folder-dialog";
+import { FolderVersions } from "./versions/folder-versions";
 
 const SORT_OPTIONS = [
   { value: "created", label: "Newest first" },
@@ -116,13 +117,15 @@ export default async function FolderPage({
             })}
           </ul>
         )}
-        <FolderSidebar
-          key={folder.id}
-          folderId={folder.id}
-          initialNotes={folder.notes}
-          initialNotesUpdatedAt={folder.notesUpdatedAt}
-          versions={versions}
-        />
+        <div className="flex flex-col gap-6">
+          <FolderNotes
+            key={folder.id}
+            folderId={folder.id}
+            initialNotes={folder.notes}
+            initialNotesUpdatedAt={folder.notesUpdatedAt}
+          />
+          <FolderVersions folderId={folder.id} versions={versions} />
+        </div>
       </div>
     </div>
   );
