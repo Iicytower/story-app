@@ -21,3 +21,7 @@ Ustalenia z użytkownikiem (2026-10-21): opowiadania tylko po polsku, tekst nie 
 
 - E2E: atrybuty `lang` i `spellcheck` na tytule, treści w Preview i Source, notatkach rozdziału i folderu, polach tytułu w dialogach (kryterium 1); przycisk paska narzędzi i pole „Share link” bez `lang="pl"` (kryterium 2).
 - `manual`: kryterium 3 (podkreślenia rysuje przeglądarka, Playwright ich nie widzi).
+
+## Weryfikacja manual
+
+- 2026-10-21, Chrome: kryterium 3 potwierdzone przez użytkownika. Warunek: polski włączony w `chrome://settings/languages` → Sprawdzanie pisowni; bez tego Chrome sprawdza polski tekst słownikiem angielskim (`lang` nie wybiera słownika).
