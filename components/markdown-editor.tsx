@@ -97,6 +97,9 @@ export function MarkdownEditor({
         role: "textbox",
         "aria-multiline": "true",
         "aria-label": label,
+        // Stories are Polish; the rest of the UI stays English.
+        lang: "pl",
+        spellcheck: "true",
         ...(placeholder && { "aria-placeholder": placeholder }),
         class: cn(
           "prose dark:prose-invert max-w-none min-h-full outline-none px-4 py-4 md:px-6",
@@ -158,6 +161,8 @@ export function MarkdownEditor({
           onChange={(event) => onChange(event.target.value)}
           aria-label={label}
           placeholder={placeholder}
+          lang="pl"
+          spellCheck
           className={cn(
             "min-h-0 flex-1 resize-none bg-transparent px-4 py-4 font-mono text-base leading-relaxed outline-none md:px-6 md:text-sm",
             compact && "py-3 md:px-4",

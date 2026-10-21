@@ -418,6 +418,8 @@ export function Editor({
           onChange={(event) => setTitle(event.target.value)}
           aria-label="Title"
           placeholder="Title"
+          lang="pl"
+          spellCheck
           className="h-9 w-full text-lg font-semibold md:w-auto md:flex-1 md:text-lg"
         />
         <span
