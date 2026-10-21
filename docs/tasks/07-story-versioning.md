@@ -12,8 +12,8 @@ Ustalenia z użytkownikiem (2026-10-21):
 
 - **Model.**
   - Kolekcja `folderVersions`: `userId`, `folderId`, `number`, `name`, `folderNotes`, `chapters` (`storyId`, `title`, `position`, `contentId`), `createdAt`. Unikalny indeks `{ folderId, number }`.
-  - Kolekcja `chapterContents`: `userId`, `storyId`, `title`, `content`, `notes`, `hash`. Jeden dokument na stan rozdziału, więc duży folder nie zbliża się do limitu 16 MB dokumentu.
-  - Rozdział, który nie zmienił się od poprzedniej wersji (ten sam `hash`), wskazuje istniejący dokument zamiast tworzyć kopię.
+  - Kolekcja `chapterContents`: `_id` (hash stanu), `userId`, `storyId`, `title`, `content`, `notes`, `usedAt`. Jeden dokument na stan rozdziału, więc duży folder nie zbliża się do limitu 16 MB dokumentu.
+  - Rozdział, który nie zmienił się od poprzedniej wersji (ten sam hash), wskazuje istniejący dokument zamiast tworzyć kopię.
   - Każde zapytanie filtruje po `userId` z sesji. Cudza wersja albo wersja usuniętego folderu daje `NOT_FOUND`.
 - **Numer.** Kolejny w obrębie folderu: maksymalny dotąd użyty numer + 1. Licznik jest w folderze (`versionCounter`, `$inc`), więc po usunięciu wersji numer nie wraca, a dwa równoległe zapisy nie dostaną tego samego.
 - **Zapis wersji.** Na stronie folderu przycisk „Save version” otwiera dialog z wymaganą nazwą (po `trim()`, limit długości).
@@ -27,7 +27,7 @@ Ustalenia z użytkownikiem (2026-10-21):
   - Checkboxy przy rozdziałach z wersji plus „Select all”, potem „Restore selected”.
   - Najpierw automatycznie powstaje wersja z kolejnym numerem i nazwą „Before restoring version N”, więc przywrócenie da się cofnąć.
   - Rozdział, który nadal jest w folderze: tytuł, treść i notatki wracają ze stanu z wersji. Tak jak w `saveStory` zmienia się `updatedAt`, więc otwarty edytor dostanie konflikt zamiast nadpisać przywrócony tekst.
-  - Rozdział usunięty od tamtej pory albo przeniesiony gdzie indziej: tworzony na nowo w tym folderze, na końcu listy.
+  - Rozdział usunięty od tamtej pory: wraca do folderu (ten sam dokument), na końcu listy. Przeniesiony gdzie indziej: kopiowany do tego folderu jako nowy rozdział, na końcu listy (D25).
   - Konflikt tytułu z istniejącym rozdziałem: sufiks „ (2)”, jak w migracji 002.
   - Notatki folderu i kolejność rozdziałów nie są przywracane, bo dotyczą całego folderu, a nie wybranych rozdziałów.
 - **Usuwanie wersji:** dialog potwierdzenia. Dokumenty `chapterContents`, na które nie wskazuje już żadna wersja, są usuwane.
@@ -51,7 +51,7 @@ Ustalenia z użytkownikiem (2026-10-21):
 - **Jednostkowe:** porównanie wersji (statusy changed / unchanged / deleted / added), tytuł z sufiksem przy konflikcie, walidacja nazwy (1, 4, 5).
 - **Integracyjne** (Server Actions na MongoDB z Dockera):
   - kryteria 1–3, 5, 7 i 8;
-  - deduplikacja `chapterContents` przez `hash`;
+  - deduplikacja `chapterContents` przez hash stanu;
   - równoległe zapisy wersji;
   - przywrócenie usuniętego i przeniesionego rozdziału;
   - sprzątanie treści po usunięciu wersji.
