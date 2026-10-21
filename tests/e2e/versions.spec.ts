@@ -90,30 +90,35 @@ test("saves a named version, compares it and restores one, then two chapters", a
     "rewritten",
   );
 
+  const folderUrl = `/folders/${folderId}`;
   const restore = page.getByRole("button", { name: "Restore selected" });
   await expect(restore).toBeDisabled();
   await page.getByRole("checkbox", { name: "A", exact: true }).check();
   await restore.click();
-  await expect(page.getByRole("status")).toHaveText(
-    "Restored 1 chapter. The previous state was saved as version 2.",
-  );
-  await expect(status("A", "unchanged")).toBeVisible();
+  await expect(page).toHaveURL(folderUrl);
+  await expect(versions(page).getByRole("link")).toHaveText([
+    /Version 2: Before restoring version 1/,
+    /Version 1: First draft/,
+  ]);
   expect((await findStoryById(a))?.content).toBe("A content");
   expect((await findStoryById(b))?.content).toBe("B rewritten");
 
+  await versions(page)
+    .getByRole("link", { name: /Version 1/ })
+    .click();
+  await expect(status("A", "unchanged")).toBeVisible();
   await page.getByRole("checkbox", { name: "B", exact: true }).check();
   await page.getByRole("checkbox", { name: "C", exact: true }).check();
   await restore.click();
-  await expect(page.getByRole("status")).toHaveText(
-    "Restored 2 chapters. The previous state was saved as version 3.",
-  );
+  await expect(page).toHaveURL(folderUrl);
+  await expect(
+    page.getByRole("list", { name: "Chapters" }).getByRole("listitem"),
+  ).toHaveCount(3);
   expect(await findStoryById(b)).toMatchObject({ content: "B content" });
   expect(await findStoryById(c)).toMatchObject({
     content: "C content",
     deletedAt: null,
   });
-
-  await page.getByRole("link", { name: "← Book" }).click();
   await expect(versions(page).getByRole("link")).toHaveText([
     /Version 3: Before restoring version 1/,
     /Version 2: Before restoring version 1/,
@@ -136,7 +141,7 @@ test("selects all chapters with one checkbox", async ({ page }) => {
   ).toBeChecked();
   await page.getByRole("button", { name: "Restore selected" }).click();
 
-  await expect(page.getByRole("status")).toContainText("Restored 2 chapters");
+  await expect(page).toHaveURL(`/folders/${folderId}`);
   for (const [i, id] of ids.entries()) {
     expect((await findStoryById(id))?.content).toBe(`${"AB"[i]} content`);
   }
@@ -162,7 +167,7 @@ test("an open editor gets a conflict after its chapter is restored", async ({
     .click();
   await other.getByRole("checkbox", { name: "A", exact: true }).check();
   await other.getByRole("button", { name: "Restore selected" }).click();
-  await expect(other.getByRole("status")).toContainText("Restored 1 chapter");
+  await expect(other).toHaveURL(`/folders/${folderId}`);
 
   await content.fill("Typed in the open editor");
   await page.keyboard.press("Control+s");
