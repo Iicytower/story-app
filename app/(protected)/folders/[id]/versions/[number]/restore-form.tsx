@@ -2,6 +2,7 @@
 
 import { RotateCcwIcon } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import type {
@@ -24,8 +25,6 @@ const FIELD_LABELS: Record<ChapterField, string> = {
   notes: "Notes",
 };
 
-type Message = { ok: boolean; text: string };
-
 export function RestoreForm({
   folderId,
   number,
@@ -37,7 +36,8 @@ export function RestoreForm({
 }) {
   const { chapters, added } = comparison;
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [message, setMessage] = useState<Message | null>(null);
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const allSelected = chapters.length > 0 && selected.size === chapters.length;
 
@@ -55,16 +55,9 @@ export function RestoreForm({
       const result = await restoreFolderVersion(folderId, number, [
         ...selected,
       ]);
-      if (result.ok) {
-        const count = selected.size;
-        setSelected(new Set());
-        setMessage({
-          ok: true,
-          text: `Restored ${count} ${count === 1 ? "chapter" : "chapters"}. The previous state was saved as version ${result.savedNumber}.`,
-        });
-      } else {
-        setMessage({ ok: false, text: result.message });
-      }
+      // The folder shows the restored chapters and the "Before restoring" version.
+      if (result.ok) router.push(`/folders/${folderId}`);
+      else setError(result.message);
     });
   }
 
@@ -98,12 +91,9 @@ export function RestoreForm({
           {pending ? "Restoring…" : "Restore selected"}
         </Button>
       </div>
-      {message && (
-        <p
-          role={message.ok ? "status" : "alert"}
-          className={message.ok ? "text-sm" : "text-destructive text-sm"}
-        >
-          {message.text}
+      {error && (
+        <p role="alert" className="text-destructive text-sm">
+          {error}
         </p>
       )}
       {chapters.length === 0 ? (
