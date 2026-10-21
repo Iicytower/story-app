@@ -17,6 +17,7 @@ Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 - System społecznościowy (do przemyślenia).
 - Tagowanie opowiadań i wyszukiwanie wśród publicznych opowiadań.
 - Słowniki różnego rodzaju, np: synonimów, rymów, sjp
+- Upload okładki / obrazka do opowiadania.
 
 ## Branche
 
