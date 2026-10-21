@@ -167,3 +167,8 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Komentarz: własny węzeł blokowy `comment` (wyróżniony `aside`, edytowalny, Enter = nowa linia, Enter na pustej ostatniej linii wychodzi z komentarza), w markdownie `<!-- tekst -->` w osobnym bloku. `-->` w tekście zapisywane jako `- ->`. `<!--` wewnątrz akapitu zostaje tekstem. Strony publiczne dalej usuwają komentarze `stripComments`, eksport je zachowuje.
 - Surowy HTML w źródle (np. `<script>`) nie jest renderowany w edytorze (marked → token HTML, którego żadne rozszerzenie nie obsługuje).
 - Edytor renderuje się dopiero po hydratacji (`immediatelyRender: false`). Pole ma `role="textbox"` i nazwę jak dawne textarea („Content”, „Notes”, „Folder notes”); grupa edytora ma nazwę „<etykieta> editor”. Kolumna podglądu (`MarkdownPreview`) zniknęła z edytora; komponent zostaje dla stron publicznych.
+
+## D21 – Sprawdzanie pisowni (2026-10-21)
+
+- Opowiadania tylko po polsku; tekst nie opuszcza przeglądarki; bez kosztów. Stąd tylko wbudowany spellcheck przeglądarki (`lang="pl"`, `spellcheck`) na polach tekstu opowiadania; UI zostaje `lang="en"`.
+- Gramatyka i interpunkcja (LanguageTool – publiczne API, Premium lub własny serwer; LLM) odłożone do backlogu: wymagają wysłania tekstu poza przeglądarkę albo płatnego hostingu.

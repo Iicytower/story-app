@@ -7,7 +7,7 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `deve
 | # | Task | Zależy od | Status |
 | --- | --- | --- | --- |
 | 07 | [Wersjonowanie opowiadań](07-story-versioning.md) | – | [ ] |
-| 08 | [Sprawdzanie pisowni, interpunkcji i gramatyki](08-spell-check.md) | – | [ ] |
+| 08 | [Sprawdzanie pisowni](08-spell-check.md) | – | [ ] |
 | 09 | [Ustawienia użytkownika](09-user-settings.md) | – | [ ] |
 
 ## Backlog
@@ -19,6 +19,7 @@ Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 - Tagowanie opowiadań i wyszukiwanie wśród publicznych opowiadań.
 - Słowniki różnego rodzaju, np: synonimów, rymów, sjp
 - Upload okładki / obrazka do opowiadania.
+- Sprawdzanie gramatyki i interpunkcji po polsku (LanguageTool lub LLM; wymaga wysłania tekstu poza przeglądarkę albo własnego serwera – D21).
 
 ## Branche
 
