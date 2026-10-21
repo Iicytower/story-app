@@ -88,6 +88,8 @@ function CreateStoryForm({
         <Input
           id="new-story-title"
           value={title}
+          lang="pl"
+          spellCheck
           onChange={(event) => setTitle(event.target.value)}
           aria-invalid={error !== null}
         />
