@@ -14,6 +14,9 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `deve
 Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 
 - Generatory różnego rodzaju (szczegóły do ustalenia).
+- System społecznościowy (do przemyślenia).
+- Tagowanie opowiadań i wyszukiwanie wśród publicznych opowiadań.
+- Słowniki różnego rodzaju, np: synonimów, rymów, sjp
 
 ## Branche
 
