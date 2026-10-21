@@ -31,7 +31,6 @@ export default defineConfig({
     env: {
       MONGODB_URI: E2E_MONGODB_URI,
       AUTH_SECRET: "e2e-auth-secret-not-for-production",
-      AUTH_TRUST_HOST: "true",
       NEXT_DIST_DIR: ".next-e2e",
     },
   },
