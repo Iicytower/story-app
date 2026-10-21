@@ -12,7 +12,7 @@ Decyzje użytkownika (2026-10-21): motyw też w ustawieniach; bez strony ustawie
   - Zapis z opóźnieniem (debounce) – przeciąganie paneli nie wysyła żądania na każdy piksel.
   - Walidacja na serwerze tak jak `parseLayout` (błędne pola → wartości domyślne).
 - Układ mobilny osobno: wybrany widok (Story / Notes / Chapters), dziś niezapamiętywany. Serwer wysyła oba układy, klient wybiera po `matchMedia` jak teraz.
-- Motyw: klasa `dark` renderowana na serwerze z ustawień (koniec `themeScript` z `localStorage`), przełącznik zapisuje przez Server Action. Strony bez sesji (logowanie, publiczne `/s/...`) – motyw do ustalenia przy implementacji (np. cookie albo domyślny).
+- Motyw: klasa `dark` renderowana na serwerze z ustawień (koniec `themeScript` z `localStorage`), przełącznik zapisuje przez Server Action. Strona logowania ma motyw systemowy (`prefers-color-scheme`). Publiczne `/s/...` – do ustalenia.
 - `localStorage` dla układu i motywu przestaje być używany; stare klucze są ignorowane.
 - Decyzja w `decisions.md` (zmienia część D19 i zapis motywu).
 
