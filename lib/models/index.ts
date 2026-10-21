@@ -3,3 +3,5 @@ import "./folder";
 import "./story";
 import "./user";
 import "./settings";
+import "./folder-version";
+import "./chapter-content";

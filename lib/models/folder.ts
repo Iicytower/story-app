@@ -14,6 +14,8 @@ export interface FolderFields {
   // Set on the first switch to manual, which takes positions from the order shown until then.
   manualChapterOrder: boolean;
   shareToken?: string;
+  // Last version number handed out; never decreases, so a deleted version's number is not reused.
+  versionCounter?: number;
   deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -30,6 +32,7 @@ const folderSchema = new Schema<FolderFields>(
     chapterSort: { type: String, enum: CHAPTER_SORTS, default: "created" },
     manualChapterOrder: { type: Boolean, default: false },
     shareToken: { type: String },
+    versionCounter: { type: Number },
     deletedAt: { type: Date, default: null },
   },
   { timestamps: true },
