@@ -2,6 +2,7 @@ import type { Page } from "@playwright/test";
 import mongoose from "mongoose";
 import {
   findFolder,
+  findSettings,
   findStory,
   findStoryById,
   seedStory,
@@ -82,6 +83,12 @@ test("separators resize the columns and the notes split, and the layout survives
 
   const resizedWidth = await width(page, "Notes");
   const resizedHeight = (await e.folderNotes.boundingBox())!.height;
+  await expect
+    .poll(async () => (await findSettings("alice"))?.editorLayout)
+    .toMatchObject({
+      widths: { "story,notes": expect.any(Object) },
+      notesHeights: expect.any(Object),
+    });
   await page.reload();
   await expect(e.notes).toBeVisible();
   await expect.poll(() => width(page, "Notes")).toBeCloseTo(resizedWidth, -1);
@@ -124,6 +131,9 @@ test("splits the side panel, reorders and collapses the columns", async ({
   const contentWidth = (await e.content.boundingBox())!.width;
   expect(contentWidth).toBeGreaterThan(500);
 
+  await expect
+    .poll(async () => (await findSettings("alice"))?.editorLayout)
+    .toMatchObject({ collapsed: { notes: true, chapters: true } });
   await page.reload();
   await expect(e.content).toBeVisible();
   await expect(e.notes).toBeHidden();
@@ -232,6 +242,10 @@ test("Chapters panel stays on the chapter when saving fails or the title is empt
   );
   await expect(page).toHaveURL(`/stories/${first}`);
 
+  // The Chapters tab must be saved, or the reload opens Notes.
+  await expect
+    .poll(async () => (await findSettings("alice"))?.editorLayout)
+    .toMatchObject({ tab: "chapters" });
   await page.reload();
   await e.title.fill("");
   await e.chapters.getByRole("link", { name: "Second" }).click();

@@ -1,3 +1,4 @@
+import { findSettings } from "./db";
 import { storageStatePath } from "./env";
 import { expect, test } from "./helpers";
 
@@ -10,11 +11,13 @@ test("dark theme survives a reload", async ({ page }) => {
 
   await page.getByRole("button", { name: "Toggle theme" }).click();
   await expect(html).toHaveClass(/\bdark\b/);
+  await expect.poll(async () => (await findSettings("alice"))?.theme).toBe("dark");
 
   await page.reload();
   await expect(html).toHaveClass(/\bdark\b/);
 
   await page.getByRole("button", { name: "Toggle theme" }).click();
+  await expect.poll(async () => (await findSettings("alice"))?.theme).toBe("light");
   await page.reload();
   await expect(html).not.toHaveClass(/\bdark\b/);
 });
