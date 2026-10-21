@@ -116,3 +116,16 @@ export function FolderNotesField({
     </section>
   );
 }
+
+export function FolderNotes({
+  folderId,
+  initialNotes,
+  initialNotesUpdatedAt,
+}: {
+  folderId: string;
+  initialNotes: string;
+  initialNotesUpdatedAt: string;
+}) {
+  const state = useFolderNotes(folderId, initialNotes, initialNotesUpdatedAt);
+  return <FolderNotesField state={state} className="h-96 rounded-lg border" />;
+}

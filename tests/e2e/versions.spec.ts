@@ -52,8 +52,6 @@ test("saves a named version, compares it and restores one, then two chapters", a
   } = await seedBook("A", "B", "C");
   await page.goto(`/folders/${folderId}`);
 
-  // Typed just before saving: the version must still get these notes.
-  await page.getByRole("textbox", { name: "Folder notes" }).fill("Plan");
   await page.getByRole("button", { name: "Save version" }).click();
   const dialog = page.getByRole("dialog", { name: "Save version" });
   await expect(dialog.getByRole("button", { name: "Save" })).toBeDisabled();
@@ -64,10 +62,7 @@ test("saves a named version, compares it and restores one, then two chapters", a
   await expect(dialog).toBeHidden();
   await expect(versions(page)).toContainText("Version 1: First draft");
   await expect(versions(page)).toContainText("3 chapters");
-  expect(await findFolderVersion(1)).toMatchObject({
-    name: "First draft",
-    folderNotes: "Plan",
-  });
+  expect(await findFolderVersion(1)).toMatchObject({ name: "First draft" });
 
   await updateStoryById(a, { content: "A rewritten" });
   await updateStoryById(b, { content: "B rewritten" });
@@ -162,6 +157,8 @@ test("an open editor gets a conflict after its chapter is restored", async ({
   const other = await context.newPage();
   await other.goto(`/folders/${folderId}`);
   await saveVersion(other, "Before edits");
+  // Saved meanwhile without the open editor knowing (it keeps its updatedAt).
+  await updateStoryById(a, { content: "Edited elsewhere" });
   await versions(other)
     .getByRole("link", { name: /Version 1/ })
     .click();
@@ -176,6 +173,71 @@ test("an open editor gets a conflict after its chapter is restored", async ({
     /changed in another tab or on another device/,
   );
   expect((await findStoryById(a))?.content).toBe("A content");
+});
+
+test("restores the entire version after confirmation, removing chapters added since", async ({
+  page,
+}) => {
+  const {
+    folderId,
+    ids: [a],
+  } = await seedBook("A", "B");
+  await page.goto(`/folders/${folderId}`);
+  await saveVersion(page, "Two chapters");
+  await updateStoryById(a, { content: "A rewritten", notes: "A notes" });
+  const added = await seedStory("alice", { title: "C", folder: "Book" });
+
+  await versions(page)
+    .getByRole("link", { name: /Version 1/ })
+    .click();
+  await expect(
+    versionChapter(page, "C").getByText("added since", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Restore entire version" }).click();
+  const dialog = page.getByRole("alertdialog", {
+    name: "Restore entire version?",
+  });
+  await expect(dialog.getByRole("listitem")).toHaveText([
+    "1 chapter will be reverted.",
+    "1 chapter added since will be removed.",
+    "The chapter order and sort mode will be restored.",
+  ]);
+  await dialog.getByRole("button", { name: "Restore" }).click();
+
+  await expect(page).toHaveURL(`/folders/${folderId}`);
+  await expect(
+    page.getByRole("list", { name: "Chapters" }).getByRole("link"),
+  ).toHaveText([/^B/, /^A/]);
+  expect(await findStoryById(a)).toMatchObject({
+    content: "A content",
+    notes: "A notes",
+  });
+  expect((await findStoryById(added))?.deletedAt).toBeInstanceOf(Date);
+  await expect(versions(page).getByRole("link").first()).toHaveText(
+    /Version 2: Before restoring version 1/,
+  );
+});
+
+test("removes a selected chapter added since", async ({ page }) => {
+  const { folderId } = await seedBook("A");
+  await page.goto(`/folders/${folderId}`);
+  await saveVersion(page, "One chapter");
+  const added = await seedStory("alice", { title: "New", folder: "Book" });
+
+  await versions(page)
+    .getByRole("link", { name: /Version 1/ })
+    .click();
+  await expect(
+    page.getByRole("checkbox", { name: "A", exact: true }),
+  ).toBeDisabled();
+  await page.getByRole("checkbox", { name: "New", exact: true }).check();
+  await expect(
+    versionChapter(page, "New").getByText("will be removed"),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Restore selected" }).click();
+
+  await expect(page).toHaveURL(`/folders/${folderId}`);
+  expect((await findStoryById(added))?.deletedAt).toBeInstanceOf(Date);
 });
 
 test("deletes a version after confirmation", async ({ page }) => {

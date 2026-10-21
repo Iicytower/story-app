@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   compareVersion,
   numberedTitle,
+  restoreSummary,
   textDiff,
   validateVersionName,
   VERSION_NAME_MAX_LENGTH,
@@ -10,7 +11,6 @@ import {
 const chapter = (id: string, content = `${id} content`) => ({
   title: id,
   content,
-  notes: "",
 });
 
 describe("validateVersionName", () => {
@@ -71,16 +71,38 @@ describe("compareVersion", () => {
     expect(added).toEqual([{ id: "d", title: "d" }]);
   });
 
-  it("compares title, content and notes separately", () => {
+  it("compares title and content separately", () => {
     const [changed] = compareVersion(
-      [{ storyId: "a", title: "Old", content: "same", notes: "one two" }],
-      [{ id: "a", title: "New", content: "same", notes: "one three" }],
+      [{ storyId: "a", title: "Old", content: "same" }],
+      [{ id: "a", title: "New", content: "same" }],
     ).chapters;
 
     expect(changed.status).toBe("changed");
     expect(
       changed.status === "changed" && changed.diffs.map((d) => d.field),
-    ).toEqual(["title", "notes"]);
+    ).toEqual(["title"]);
+  });
+});
+
+describe("restoreSummary", () => {
+  it("counts what restoring the whole version changes", () => {
+    expect(
+      restoreSummary(
+        compareVersion(
+          [
+            { storyId: "a", ...chapter("a") },
+            { storyId: "b", ...chapter("b") },
+            { storyId: "c", ...chapter("c") },
+          ],
+          [
+            { id: "a", ...chapter("a", "edited") },
+            { id: "b", ...chapter("b") },
+            { id: "d", ...chapter("d") },
+            { id: "e", ...chapter("e") },
+          ],
+        ),
+      ),
+    ).toEqual({ reverted: 1, returned: 1, removed: 2 });
   });
 });
 
