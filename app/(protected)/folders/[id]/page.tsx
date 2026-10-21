@@ -5,6 +5,7 @@ import { LocalDate } from "@/components/local-date";
 import { requireUser } from "@/lib/auth/session";
 import { getFolder, listFolders } from "@/lib/folders/queries";
 import { buildSnippet } from "@/lib/stories/search";
+import { listFolderVersions } from "@/lib/versions/queries";
 import { CreateStoryDialog } from "../../stories/create-story-dialog";
 import { reorderChapter } from "../../stories/actions";
 import { DeleteStoryButton } from "../../stories/delete-story-button";
@@ -12,8 +13,8 @@ import { setChapterSort } from "../actions";
 import { ReorderButtons } from "../reorder-buttons";
 import { SortSelect } from "../sort-select";
 import { DeleteFolderButton } from "./delete-folder-button";
-import { FolderNotes } from "./folder-notes";
 import { FolderShare } from "./folder-share";
+import { FolderSidebar } from "./folder-sidebar";
 import { MoveStoryDialog } from "./move-story-dialog";
 import { RenameFolderDialog } from "./rename-folder-dialog";
 
@@ -37,6 +38,7 @@ export default async function FolderPage({
     listFolders(user.userId),
   ]);
   if (!folder) notFound();
+  const versions = await listFolderVersions(user.userId, folder.id);
   const otherFolders = folders.filter((other) => other.id !== folder.id);
 
   return (
@@ -114,11 +116,12 @@ export default async function FolderPage({
             })}
           </ul>
         )}
-        <FolderNotes
+        <FolderSidebar
           key={folder.id}
           folderId={folder.id}
           initialNotes={folder.notes}
           initialNotesUpdatedAt={folder.notesUpdatedAt}
+          versions={versions}
         />
       </div>
     </div>
