@@ -19,7 +19,7 @@ export function ThemeToggle() {
       : "light";
     document.documentElement.setAttribute("data-theme", theme);
     rememberTheme(theme);
-    void saveSettings({ theme });
+    void saveSettings({ appearance: { theme } });
   }
 
   return (

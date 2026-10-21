@@ -1,7 +1,7 @@
 import type { mongo } from "mongoose";
 
 export const id = "003-positions";
-export const collections = ["stories", "folders", "users"];
+export const collections = ["stories", "folders"];
 // The old deployment keeps creating folders and stories without positions during
 // the build, and 002 keeps assigning such stories to Unsorted on every run.
 export const repeatable = true;
@@ -14,12 +14,8 @@ type Positioned = {
 };
 
 export async function up(db: mongo.Db): Promise<void> {
-  await db
-    .collection("users")
-    .updateMany(
-      { folderSort: { $exists: false } },
-      { $set: { folderSort: "updated", manualFolderOrder: false } },
-    );
+  // Sort modes of users are no longer set here: they moved to the settings collection
+  // (004), where a missing value means the default.
   await db
     .collection("folders")
     .updateMany(

@@ -10,6 +10,7 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `deve
 | 08 | [Sprawdzanie pisowni](08-spell-check.md) | – | [x] |
 | 09 | [Ustawienia użytkownika](09-user-settings.md) | – | [x] |
 | 10 | [Rzadszy autozapis](10-autosave-delay.md) | – | [x] |
+| 11 | [Kolekcja ustawień](11-settings-collection.md) | 09 | [x] |
 
 ## Backlog
 

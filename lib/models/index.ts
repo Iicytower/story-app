@@ -2,3 +2,4 @@
 import "./folder";
 import "./story";
 import "./user";
+import "./settings";
