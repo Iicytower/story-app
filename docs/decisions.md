@@ -178,3 +178,10 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Zmienia spec („około 3 s”): autozapis 20 s po ostatnim naciśnięciu klawisza (`AUTOSAVE_DELAY_MS` w `lib/autosave.ts`) w edytorze rozdziału i w notatkach folderu. Przy ciągłym pisaniu zapis czeka na przerwę.
 - Ukrycie karty (`visibilitychange` → `hidden`) zapisuje od razu przez tę samą kolejkę; bez zmian i przy pustym tytule nie wysyła żądania. Ctrl+S, `beforeunload` i zapis przed zmianą rozdziału bez zmian.
 - E2E przewijają czas `page.clock` zamiast czekać.
+
+## D23 – Ustawienia użytkownika (2026-10-21)
+
+- Zmienia D19 (układ w `localStorage`) i zapis motywu. Ustawienia w `users.settings` (`Mixed`): `editorLayout` (desktop), `mobileView` (Story / Notes / Chapters), `theme` (`light` / `dark`, brak = systemowy). Bez strony ustawień i bez migracji: brak pola = wartości domyślne, stary klucz `story-app:editor-layout` jest ignorowany.
+- Odczyt: `getUserSettings` (React `cache`, raz na żądanie) + `normalizeSettings` pole po polu; `normalizeLayout` dodatkowo odrzuca szerokości dla nieznanych zestawów kolumn i id paneli. Zapis: `saveSettings(patch)` – tylko przesłane pola (`$set settings.<pole>`), nieznany motyw / widok → `INVALID_INPUT`, układ normalizowany.
+- Układ: serwer renderuje z ustawień (bez mignięcia, bez remontu po hydratacji). Magazyn na poziomie modułu, kluczowany `userId`, żeby przejście do innego rozdziału nie cofało układu, gdy zapis jeszcze trwa. Zapis układu z debounce 500 ms (`LAYOUT_SAVE_DELAY_MS`) i od razu przy ukryciu karty; widok mobilny zapisywany od razu. Zmiana i przeładowanie w ciągu ~0,5 s może zgubić ostatnią zmianę układu.
+- Motyw: kopia w przeglądarce w `localStorage` (`theme`) + skrypt w `<head>` – cookie nie wystarczy, bo motyw systemowy i tak wymaga `matchMedia` przed pierwszym malowaniem. Root layout ustawia `data-theme` na `<html>` dla zalogowanego (zapisany motyw albo `system`); skrypt bierze go i aktualizuje kopię w przeglądarce, a bez `data-theme` (logowanie, `/s/...`) używa kopii, inaczej `prefers-color-scheme`. `ThemeToggle` przełącza klasę, `data-theme`, kopię i wywołuje `saveSettings`.

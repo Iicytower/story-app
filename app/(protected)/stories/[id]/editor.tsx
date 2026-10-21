@@ -44,6 +44,7 @@ import {
   countWords,
   formatReadAloudTime,
 } from "@/lib/stories/count";
+import type { MobileView, UserSettings } from "@/lib/settings/settings";
 import type { EditorStory } from "@/lib/stories/queries";
 import {
   FolderNotesField,
@@ -53,16 +54,14 @@ import { saveStory, setSharing } from "../actions";
 import { DeleteStoryButton } from "../delete-story-button";
 import { ChaptersPanel } from "./chapters-panel";
 import {
+  flushLayoutSave,
+  setMobileView,
   updateEditorLayout,
-  useEditorLayout,
-  useHydrated,
+  useEditorSettings,
   useIsDesktop,
 } from "./layout-store";
 
 type Values = { title: string; content: string; notes: string };
-
-// Below the md breakpoint only one panel is shown at a time.
-type MobileView = "story" | SidePanel;
 
 const MOBILE_VIEWS: { value: MobileView; label: string }[] = [
   { value: "story", label: "Story" },
@@ -88,18 +87,23 @@ const subscribeNever = () => () => {};
 export function Editor({
   story,
   folder,
+  userId,
+  settings,
 }: {
   story: EditorStory;
   folder: EditorFolder | null;
+  userId: string;
+  settings: Pick<UserSettings, "editorLayout" | "mobileView">;
 }) {
   const router = useRouter();
   const [title, setTitle] = useState(story.title);
   const [content, setContent] = useState(story.content);
   const [notes, setNotes] = useState(story.notes);
-  const [mobileView, setMobileView] = useState<MobileView>("story");
-  const layout = useEditorLayout();
+  const { editorLayout: layout, mobileView } = useEditorSettings(
+    userId,
+    settings,
+  );
   const isDesktop = useIsDesktop();
-  const hydrated = useHydrated();
   // Without a folder the hook still runs (hooks cannot be conditional) but never saves.
   const folderNotes = useFolderNotes(
     folder?.id ?? "",
@@ -243,6 +247,8 @@ export function Editor({
 
   useEffect(() => onTabHidden(() => save()), [save]);
 
+  useEffect(() => onTabHidden(flushLayoutSave), []);
+
   useEffect(() => {
     function handleBeforeUnload(event: BeforeUnloadEvent) {
       if (!isSame(latest.current, saved.current)) event.preventDefault();
@@ -295,7 +301,6 @@ export function Editor({
 
   const desktopNotes = folder ? (
     <ResizablePanelGroup
-      key={String(hydrated)}
       id="editor-notes"
       orientation="vertical"
       defaultLayout={layout.notesHeights ?? undefined}
@@ -499,9 +504,8 @@ export function Editor({
       {isDesktop ? (
         <div className="flex min-h-0 flex-1">
           <ResizablePanelGroup
-            // defaultLayout is read on mount only: remount once the stored layout
-            // is available after hydration, and whenever the set of columns changes.
-            key={`${hydrated}:${columnKey}`}
+            // defaultLayout is read on mount only: remount whenever the set of columns changes.
+            key={columnKey}
             id="editor-columns"
             defaultLayout={layout.widths[columnKey]}
             onLayoutChanged={(_, meta) => {

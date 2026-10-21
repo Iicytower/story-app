@@ -2,25 +2,24 @@
 
 import { useLayoutEffect } from "react";
 import { MoonIcon, SunIcon } from "lucide-react";
+import { saveSettings } from "@/app/(protected)/actions";
 import { Button } from "@/components/ui/button";
-import { THEME_STORAGE_KEY } from "@/lib/theme";
+import { applyTheme, rememberTheme } from "@/lib/theme";
 
 export function ThemeToggle() {
-  // React's dev-mode remount resets <html> attributes set by the inline script; no-op in production.
-  // Storage access throws when the browser blocks it; the theme then lasts until a reload.
+  // React's dev-mode remount resets <html> attributes set by the inline script, and a
+  // client-side sign-in brings another user's data-theme without running the script again.
   useLayoutEffect(() => {
-    try {
-      if (localStorage.getItem(THEME_STORAGE_KEY) === "dark") {
-        document.documentElement.classList.add("dark");
-      }
-    } catch {}
+    applyTheme();
   }, []);
 
   function toggle() {
-    const dark = document.documentElement.classList.toggle("dark");
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, dark ? "dark" : "light");
-    } catch {}
+    const theme = document.documentElement.classList.toggle("dark")
+      ? "dark"
+      : "light";
+    document.documentElement.setAttribute("data-theme", theme);
+    rememberTheme(theme);
+    void saveSettings({ theme });
   }
 
   return (

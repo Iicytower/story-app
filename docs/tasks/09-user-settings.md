@@ -15,7 +15,7 @@ Decyzje użytkownika (2026-10-21): motyw też w ustawieniach; bez strony ustawie
 - Motyw: domyślnie systemowy (`prefers-color-scheme`). Wybór użytkownika zapisywany w ustawieniach (Server Action) i dodatkowo w przeglądarce.
   - Zalogowany: motyw z ustawień, renderowany na serwerze (klasa `dark`), wartość w przeglądarce aktualizowana do ustawień.
   - Bez sesji (logowanie, publiczne `/s/...`): motyw z przeglądarki, jeśli zapisany, inaczej systemowy.
-  - Sposób zapisu w przeglądarce (cookie czytane przez serwer vs `localStorage` + skrypt) – do wyboru przy implementacji, bez mignięcia przy ładowaniu.
+  - Zapis w przeglądarce: `localStorage` + skrypt w `<head>` (D23).
 - `localStorage` dla układu edytora przestaje być używany; stary klucz jest ignorowany.
 - Decyzja w `decisions.md` (zmienia część D19 i zapis motywu).
 

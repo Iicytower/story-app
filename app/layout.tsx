@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { themeScript } from "@/lib/theme";
+import { auth } from "@/auth";
+import { getUserSettings } from "@/lib/settings/queries";
+import { type ThemeAttribute, themeScript } from "@/lib/theme";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,11 +19,18 @@ export const metadata: Metadata = {
   title: "Story App",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const userId = (await auth())?.user?.id;
+  const theme: ThemeAttribute | undefined = userId
+    ? ((await getUserSettings(userId)).theme ?? "system")
+    : undefined;
+
   return (
-    // The inline script may add the "dark" class before hydration.
+    // The inline script adds the "dark" class before hydration, from data-theme,
+    // the browser's saved choice or the system preference.
     <html
       lang="en"
+      data-theme={theme}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
