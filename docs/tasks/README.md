@@ -9,6 +9,7 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `deve
 | 07 | [Wersjonowanie opowiadań](07-story-versioning.md) | – | [ ] |
 | 08 | [Sprawdzanie pisowni](08-spell-check.md) | – | [x] |
 | 09 | [Ustawienia użytkownika](09-user-settings.md) | – | [ ] |
+| 10 | [Rzadszy autozapis](10-autosave-delay.md) | – | [ ] |
 
 ## Backlog
 
