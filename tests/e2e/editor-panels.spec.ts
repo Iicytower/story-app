@@ -8,7 +8,7 @@ import {
   withE2EDb,
 } from "./db";
 import { storageStatePath } from "./env";
-import { expect, test } from "./helpers";
+import { expect, runAutosaveDelay, test } from "./helpers";
 
 test.use({
   storageState: storageStatePath("alice"),
@@ -138,17 +138,20 @@ test("folder and chapter notes save separately; folder notes show in another cha
   page,
 }) => {
   const { first, second } = await seedBook();
+  await page.clock.install();
   await page.goto(`/stories/${first}`);
   const e = editor(page);
 
   await e.folderNotes.fill("Shared world");
-  await expect(e.folderStatus).toHaveText("Saved", { timeout: 10_000 });
+  await runAutosaveDelay(page);
+  await expect(e.folderStatus).toHaveText("Saved");
   await expect(e.status).toHaveText("");
   expect((await findFolder("Book"))?.notes).toBe("Shared world");
   expect((await findStoryById(first))?.notes).toBe("First notes");
 
   await e.notes.fill("Only for the first");
-  await expect(e.status).toHaveText("Saved", { timeout: 10_000 });
+  await runAutosaveDelay(page);
+  await expect(e.status).toHaveText("Saved");
   expect((await findFolder("Book"))?.notes).toBe("Shared world");
 
   await page.goto(`/stories/${second}`);
@@ -161,21 +164,25 @@ test("folder notes edited in two chapters conflict, chapter autosave does not", 
   context,
 }) => {
   const { first, second } = await seedBook();
+  await page.clock.install();
   await page.goto(`/stories/${first}`);
   const other = await context.newPage();
+  await other.clock.install();
   await other.goto(`/stories/${second}`);
   const a = editor(page);
   const b = editor(other);
 
   await b.content.fill("Second content, edited");
-  await expect(b.status).toHaveText("Saved", { timeout: 10_000 });
+  await runAutosaveDelay(other);
+  await expect(b.status).toHaveText("Saved");
   await b.folderNotes.fill("From the second chapter");
-  await expect(b.folderStatus).toHaveText("Saved", { timeout: 10_000 });
+  await runAutosaveDelay(other);
+  await expect(b.folderStatus).toHaveText("Saved");
 
   await a.folderNotes.fill("From the first chapter");
+  await runAutosaveDelay(page);
   await expect(a.folderStatus).toHaveText(
     /changed in another tab or on another device/,
-    { timeout: 10_000 },
   );
   expect((await findFolder("Book"))?.notes).toBe("From the second chapter");
 });
@@ -287,6 +294,7 @@ test("works with the default layout when localStorage throws", async ({
     });
   });
   const { first } = await seedBook();
+  await page.clock.install();
   await page.goto(`/stories/${first}`);
   expect(
     await page.evaluate(() => {
@@ -305,5 +313,6 @@ test("works with the default layout when localStorage throws", async ({
   await page.getByRole("button", { name: "Split" }).click();
   await expect(e.chapters).toBeVisible();
   await e.content.fill("Saved without storage");
-  await expect(e.status).toHaveText("Saved", { timeout: 10_000 });
+  await runAutosaveDelay(page);
+  await expect(e.status).toHaveText("Saved");
 });

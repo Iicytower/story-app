@@ -30,6 +30,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { AUTOSAVE_DELAY_MS, onTabHidden } from "@/lib/autosave";
 import {
   collapsedColumns,
   columnsKey,
@@ -57,8 +58,6 @@ import {
   useHydrated,
   useIsDesktop,
 } from "./layout-store";
-
-const AUTOSAVE_DELAY_MS = 3000;
 
 type Values = { title: string; content: string; notes: string };
 
@@ -241,6 +240,8 @@ export function Editor({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [save]);
+
+  useEffect(() => onTabHidden(() => save()), [save]);
 
   useEffect(() => {
     function handleBeforeUnload(event: BeforeUnloadEvent) {
