@@ -7,6 +7,13 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `deve
 | # | Task | Zależy od | Status |
 | --- | --- | --- | --- |
 | 07 | [Wersjonowanie opowiadań](07-story-versioning.md) | – | [ ] |
+| 08 | [Sprawdzanie pisowni, interpunkcji i gramatyki](08-spell-check.md) | – | [ ] |
+
+## Backlog
+
+Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
+
+- Generatory różnego rodzaju (szczegóły do ustalenia).
 
 ## Branche
 
