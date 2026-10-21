@@ -19,6 +19,8 @@ export function clearStories(): Promise<void> {
     await connection.collection("stories").deleteMany({});
     await connection.collection("folders").deleteMany({});
     await connection.collection("settings").deleteMany({});
+    await connection.collection("folderVersions").deleteMany({});
+    await connection.collection("chapterContents").deleteMany({});
   });
 }
 
@@ -127,6 +129,17 @@ export function findStoryById(id: string): Promise<StoryDoc | null> {
   );
 }
 
+export function updateStoryById(
+  id: string,
+  fields: Partial<StoryDoc>,
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    await connection
+      .collection("stories")
+      .updateOne({ _id: new mongoose.Types.ObjectId(id) }, { $set: fields });
+  });
+}
+
 type FolderDoc = {
   _id: mongoose.Types.ObjectId;
   name: string;
@@ -154,5 +167,15 @@ export function findSettings(
     connection
       .collection("settings")
       .findOne({ userId: await userId(connection, user) }),
+  );
+}
+
+export function findFolderVersion(
+  number: number,
+): Promise<{ name: string; folderNotes: string } | null> {
+  return withE2EDb((connection) =>
+    connection
+      .collection<{ name: string; folderNotes: string }>("folderVersions")
+      .findOne({ number }),
   );
 }
