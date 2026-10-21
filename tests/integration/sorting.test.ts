@@ -15,6 +15,7 @@ import {
 import { requireUser } from "@/lib/auth/session";
 import { getFolder, listFolders } from "@/lib/folders/queries";
 import { Folder } from "@/lib/models/folder";
+import { Settings } from "@/lib/models/settings";
 import { Story } from "@/lib/models/story";
 import { User } from "@/lib/models/user";
 import { setupTestDb } from "./test-db";
@@ -102,10 +103,10 @@ describe("folder sort modes", () => {
     expect(await folderNames()).toEqual(["cherry", "banana", "Apple"]);
   });
 
-  it("stores the mode on the user", async () => {
+  it("stores the mode in the user's settings", async () => {
     await setFolderSort("alpha");
-    expect(await User.findById(alice).lean()).toMatchObject({
-      folderSort: "alpha",
+    expect(await Settings.findOne({ userId: alice }).lean()).toMatchObject({
+      folders: { sort: "alpha" },
     });
     expect((await listFolders(bob.toString())).sort).toBe("updated");
   });

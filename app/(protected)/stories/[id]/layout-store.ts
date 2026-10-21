@@ -6,7 +6,7 @@ import type { MobileView, UserSettings } from "@/lib/settings/settings";
 // Dragging a separator reports many sizes; only the last one in this window is saved.
 export const LAYOUT_SAVE_DELAY_MS = 500;
 
-type EditorSettings = Pick<UserSettings, "editorLayout" | "mobileView">;
+type EditorSettings = UserSettings["editor"];
 
 // Module-level, so the layout survives the editor remounting for another chapter while a
 // save is still pending (the server copy may be a moment old). Keyed by user: another
@@ -48,21 +48,21 @@ export function flushLayoutSave(): void {
   if (!saveTimer || !current) return;
   clearTimeout(saveTimer);
   saveTimer = null;
-  void saveSettings({ editorLayout: current.settings.editorLayout });
+  void saveSettings({ editor: { layout: current.settings.layout } });
 }
 
 export function updateEditorLayout(
   change: (layout: EditorLayout) => EditorLayout,
 ): void {
   if (!current) return;
-  update({ editorLayout: change(current.settings.editorLayout) });
+  update({ layout: change(current.settings.layout) });
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(flushLayoutSave, LAYOUT_SAVE_DELAY_MS);
 }
 
 export function setMobileView(mobileView: MobileView): void {
   update({ mobileView });
-  void saveSettings({ mobileView });
+  void saveSettings({ editor: { mobileView } });
 }
 
 const DESKTOP_QUERY = "(min-width: 768px)";

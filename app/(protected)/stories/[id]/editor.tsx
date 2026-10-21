@@ -93,13 +93,13 @@ export function Editor({
   story: EditorStory;
   folder: EditorFolder | null;
   userId: string;
-  settings: Pick<UserSettings, "editorLayout" | "mobileView">;
+  settings: UserSettings["editor"];
 }) {
   const router = useRouter();
   const [title, setTitle] = useState(story.title);
   const [content, setContent] = useState(story.content);
   const [notes, setNotes] = useState(story.notes);
-  const { editorLayout: layout, mobileView } = useEditorSettings(
+  const { layout, mobileView } = useEditorSettings(
     userId,
     settings,
   );

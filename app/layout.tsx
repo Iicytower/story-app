@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const userId = (await auth())?.user?.id;
   const theme: ThemeAttribute | undefined = userId
-    ? ((await getUserSettings(userId)).theme ?? "system")
+    ? ((await getUserSettings(userId)).appearance.theme ?? "system")
     : undefined;
 
   return (

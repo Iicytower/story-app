@@ -84,7 +84,7 @@ test("separators resize the columns and the notes split, and the layout survives
   const resizedWidth = await width(page, "Notes");
   const resizedHeight = (await e.folderNotes.boundingBox())!.height;
   await expect
-    .poll(async () => (await findSettings("alice"))?.editorLayout)
+    .poll(async () => (await findSettings("alice"))?.editor?.layout)
     .toMatchObject({
       widths: { "story,notes": expect.any(Object) },
       notesHeights: expect.any(Object),
@@ -132,7 +132,7 @@ test("splits the side panel, reorders and collapses the columns", async ({
   expect(contentWidth).toBeGreaterThan(500);
 
   await expect
-    .poll(async () => (await findSettings("alice"))?.editorLayout)
+    .poll(async () => (await findSettings("alice"))?.editor?.layout)
     .toMatchObject({ collapsed: { notes: true, chapters: true } });
   await page.reload();
   await expect(e.content).toBeVisible();
@@ -244,7 +244,7 @@ test("Chapters panel stays on the chapter when saving fails or the title is empt
 
   // The Chapters tab must be saved, or the reload opens Notes.
   await expect
-    .poll(async () => (await findSettings("alice"))?.editorLayout)
+    .poll(async () => (await findSettings("alice"))?.editor?.layout)
     .toMatchObject({ tab: "chapters" });
   await page.reload();
   await e.title.fill("");

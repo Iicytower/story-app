@@ -3,8 +3,7 @@
 import { signOut } from "@/auth";
 import type { ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
-import { connectDB } from "@/lib/db";
-import { User } from "@/lib/models/user";
+import { updateUserSettings } from "@/lib/settings/queries";
 import { parseSettingsPatch } from "@/lib/settings/settings";
 
 export async function logout() {
@@ -24,14 +23,6 @@ export async function saveSettings(patch: unknown): Promise<ActionResult> {
     };
   }
 
-  await connectDB();
-  await User.updateOne(
-    { _id: user.userId },
-    {
-      $set: Object.fromEntries(
-        Object.entries(parsed).map(([key, value]) => [`settings.${key}`, value]),
-      ),
-    },
-  );
+  await updateUserSettings(user.userId, parsed);
   return { ok: true };
 }

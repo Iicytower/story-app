@@ -31,7 +31,7 @@ export default async function StoryPage({
       story={story}
       folder={folder}
       userId={user.userId}
-      settings={settings}
+      settings={settings.editor}
     />
   );
 }

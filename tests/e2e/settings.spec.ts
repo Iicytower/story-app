@@ -37,7 +37,7 @@ test("the desktop layout is restored in another browser and rendered by the serv
   await split(page).click();
   await page.getByRole("button", { name: "Move notes right" }).click();
   await expect
-    .poll(async () => (await findSettings("alice"))?.editorLayout)
+    .poll(async () => (await findSettings("alice"))?.editor?.layout)
     .toMatchObject({ split: true, order: ["chapters", "notes"] });
 
   const other = await newBrowser(browser, "alice");
@@ -70,7 +70,10 @@ test("another user keeps the default layout and theme", async ({
   await page.getByRole("button", { name: "Toggle theme" }).click();
   await expect
     .poll(() => findSettings("alice"))
-    .toMatchObject({ theme: "dark", editorLayout: { split: true } });
+    .toMatchObject({
+      appearance: { theme: "dark" },
+      editor: { layout: { split: true } },
+    });
 
   const bobId = await seedStory("bob", { title: "Bob's", folder: "Bob" });
   const bob = await newBrowser(browser, "bob");
@@ -87,7 +90,7 @@ test("the theme follows the settings in another browser, from the first paint", 
   await page.goto("/stories");
   await page.getByRole("button", { name: "Toggle theme" }).click();
   await expect
-    .poll(async () => (await findSettings("alice"))?.theme)
+    .poll(async () => (await findSettings("alice"))?.appearance?.theme)
     .toBe("dark");
 
   const other = await newBrowser(browser, "alice");
@@ -151,7 +154,7 @@ test("dragging a separator sends only a few saves", async ({ page }) => {
   await page.mouse.up();
 
   await expect
-    .poll(async () => (await findSettings("alice"))?.editorLayout)
+    .poll(async () => (await findSettings("alice"))?.editor?.layout)
     .toMatchObject({ widths: { "story,notes": expect.any(Object) } });
   await page.waitForTimeout(1000);
   expect(requests.length).toBeGreaterThanOrEqual(1);
@@ -172,7 +175,7 @@ test.describe("on a narrow screen", () => {
 
     await tab(page, "Chapters").click();
     await expect
-      .poll(async () => (await findSettings("alice"))?.mobileView)
+      .poll(async () => (await findSettings("alice"))?.editor?.mobileView)
       .toBe("chapters");
     await page.reload();
     await expect(tab(page, "Chapters")).toHaveAttribute(

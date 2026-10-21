@@ -4,58 +4,109 @@ import {
   DEFAULT_SETTINGS,
   normalizeSettings,
   parseSettingsPatch,
+  settingsUpdate,
 } from "./settings";
+
+describe("DEFAULT_SETTINGS", () => {
+  it("groups the defaults", () => {
+    expect(DEFAULT_SETTINGS).toEqual({
+      editor: { layout: DEFAULT_LAYOUT, mobileView: "story" },
+      appearance: { theme: null },
+      folders: { sort: "updated", manualOrder: false },
+    });
+  });
+});
 
 describe("normalizeSettings", () => {
   it("returns the defaults when nothing is stored", () => {
-    for (const data of [undefined, null, "dark", []]) {
+    for (const data of [undefined, null, "dark", [], { editor: "wide" }]) {
       expect(normalizeSettings(data)).toEqual(DEFAULT_SETTINGS);
     }
   });
 
-  it("falls back field by field", () => {
+  it("falls back field by field and ignores unknown fields", () => {
     expect(
       normalizeSettings({
-        theme: "dark",
-        mobileView: "preview",
-        editorLayout: { split: true, tab: 3 },
+        userId: "x",
+        appearance: { theme: "dark" },
+        editor: { mobileView: "preview", layout: { split: true, tab: 3 } },
+        folders: { sort: "alpha", manualOrder: "yes" },
+        other: { a: 1 },
       }),
     ).toEqual({
-      theme: "dark",
-      mobileView: "story",
-      editorLayout: { ...DEFAULT_LAYOUT, split: true },
+      editor: {
+        layout: { ...DEFAULT_LAYOUT, split: true },
+        mobileView: "story",
+      },
+      appearance: { theme: "dark" },
+      folders: { sort: "alpha", manualOrder: false },
     });
-    expect(normalizeSettings({ theme: "blue", mobileView: "notes" })).toEqual(
-      { ...DEFAULT_SETTINGS, mobileView: "notes" },
-    );
+    expect(
+      normalizeSettings({
+        appearance: { theme: "blue" },
+        folders: { manualOrder: true },
+      }),
+    ).toEqual({
+      ...DEFAULT_SETTINGS,
+      folders: { sort: "updated", manualOrder: true },
+    });
   });
 });
 
 describe("parseSettingsPatch", () => {
-  it("keeps only the fields sent", () => {
-    expect(parseSettingsPatch({ theme: "light" })).toEqual({ theme: "light" });
-    expect(parseSettingsPatch({ theme: null })).toEqual({ theme: null });
-    expect(parseSettingsPatch({ mobileView: "chapters", other: 1 })).toEqual({
-      mobileView: "chapters",
+  it("keeps the fields sent", () => {
+    expect(parseSettingsPatch({ appearance: { theme: "light" } })).toEqual({
+      appearance: { theme: "light" },
+    });
+    expect(parseSettingsPatch({ appearance: { theme: null } })).toEqual({
+      appearance: { theme: null },
+    });
+    expect(
+      parseSettingsPatch({
+        editor: { mobileView: "chapters" },
+        appearance: { theme: "dark" },
+      }),
+    ).toEqual({
+      editor: { mobileView: "chapters" },
+      appearance: { theme: "dark" },
     });
   });
 
   it("normalizes the layout like stored data", () => {
     expect(
-      parseSettingsPatch({ editorLayout: { split: true, widths: { x: {} } } }),
-    ).toEqual({ editorLayout: { ...DEFAULT_LAYOUT, split: true } });
+      parseSettingsPatch({
+        editor: { layout: { split: true, widths: { x: {} } } },
+      }),
+    ).toEqual({ editor: { layout: { ...DEFAULT_LAYOUT, split: true } } });
   });
 
-  it("rejects an unknown theme or view and an empty patch", () => {
+  it("rejects invalid values, unknown fields, folder settings and an empty patch", () => {
     for (const data of [
-      { theme: "blue" },
-      { mobileView: "preview", theme: "dark" },
+      { appearance: { theme: "blue" } },
+      { editor: { mobileView: "preview" }, appearance: { theme: "dark" } },
+      { editor: { mobileView: "notes", width: 3 } },
+      { other: { a: 1 } },
+      { editor: "wide" },
+      { folders: { sort: "alpha" } },
+      { folders: { manualOrder: true } },
+      { editor: { toString: "x" } },
       {},
-      { other: 1 },
+      { editor: {} },
       null,
       "dark",
     ]) {
-      expect(parseSettingsPatch(data)).toBeNull();
+      expect(parseSettingsPatch(data), JSON.stringify(data)).toBeNull();
     }
+  });
+});
+
+describe("settingsUpdate", () => {
+  it("sets each field by its path", () => {
+    expect(
+      settingsUpdate({
+        editor: { mobileView: "notes" },
+        appearance: { theme: null },
+      }),
+    ).toEqual({ "editor.mobileView": "notes", "appearance.theme": null });
   });
 });
