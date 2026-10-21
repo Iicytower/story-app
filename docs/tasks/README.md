@@ -19,7 +19,11 @@ Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 - Tagowanie opowiadań i wyszukiwanie wśród publicznych opowiadań.
 - Słowniki różnego rodzaju, np: synonimów, rymów, sjp
 - Upload okładki / obrazka do opowiadania.
-- Sprawdzanie gramatyki i interpunkcji po polsku (LanguageTool lub LLM; wymaga wysłania tekstu poza przeglądarkę albo własnego serwera – D21).
+- Pełne sprawdzanie tekstu niezależne od ustawień przeglądarki (do przemyślenia). Dziś pisownię sprawdza przeglądarka i tylko z włączonym polskim słownikiem (D21). Docelowo:
+  - pisownia, gramatyka, stylistyka i interpunkcja;
+  - opcjonalnie zaznaczanie powtórzeń, z możliwością włączenia w ustawieniach użytkownika.
+
+  Możliwości: LanguageTool (publiczne API, Premium, własny serwer), LLM, Hunspell w aplikacji. Każda wymaga albo wysłania tekstu poza przeglądarkę, albo płatnego hostingu, albo nowych pakietów (D21).
 
 ## Branche
 
