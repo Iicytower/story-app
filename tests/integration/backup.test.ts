@@ -84,7 +84,7 @@ function restoreArchive(backup: string, db: string) {
   );
 }
 
-function restoreDump(backup: string, db: string) {
+function restoreJson(backup: string, db: string, collection: string) {
   execFileSync(
     "docker",
     [
@@ -95,17 +95,18 @@ function restoreDump(backup: string, db: string) {
       "-v",
       `${backup}:/backup:ro`,
       "mongo:8",
-      "mongorestore",
+      "mongoimport",
       "--uri",
       `${HOST}/${db}`,
-      "--gzip",
-      `--dir=/backup/dump/${SOURCE_DB}`,
+      `--collection=${collection}`,
+      "--jsonArray",
+      `--file=/backup/json/${collection}.json`,
     ],
     { stdio: "pipe" },
   );
 }
 
-async function snapshot(db: string) {
+async function snapshot(db: string, withIndexes = true) {
   const database = connection.useDb(db).db!;
   const names = (await database.listCollections().toArray())
     .map((c) => c.name)
@@ -115,7 +116,7 @@ async function snapshot(db: string) {
     const collection = database.collection(name);
     result[name] = {
       documents: await collection.find().sort({ _id: 1 }).toArray(),
-      indexes: await collection.indexes(),
+      ...(withIndexes ? { indexes: await collection.indexes() } : {}),
     };
   }
   return result;
@@ -174,7 +175,7 @@ afterAll(async () => {
 });
 
 describe("scripts/backup.sh", { timeout: 60_000 }, () => {
-  it("dumps every collection to an archive and a dump directory that restore identically", async () => {
+  it("dumps every collection to an archive and JSON files that restore identically", async () => {
     const { code, output } = run({ uri: SOURCE_URI });
     expect(code, output).toBe(0);
 
@@ -182,13 +183,28 @@ describe("scripts/backup.sh", { timeout: 60_000 }, () => {
     expect(name).toMatch(TIMESTAMP);
     const backup = path.join(backupDir, name);
     expect(fs.readdirSync(backup).sort()).toEqual([
-      "dump",
+      "json",
       `${SOURCE_DB}.archive.gz`,
     ]);
-    expect(fs.readdirSync(path.join(backup, "dump"))).toEqual([SOURCE_DB]);
-    expect(fs.statSync(path.join(backup, "dump", SOURCE_DB)).uid).toBe(
+    expect(fs.readdirSync(path.join(backup, "json")).sort()).toEqual([
+      "settings.json",
+      "stories.json",
+      "users.json",
+    ]);
+    expect(fs.statSync(path.join(backup, "json", "users.json")).uid).toBe(
       process.getuid!(),
     );
+    expect(
+      JSON.parse(
+        fs.readFileSync(path.join(backup, "json", "users.json"), "utf8"),
+      ),
+    ).toEqual([
+      {
+        _id: { $oid: expect.any(String) },
+        email: "a@example.com",
+        createdAt: { $date: "2026-01-02T03:04:05.678Z" },
+      },
+    ]);
     expect(fs.statSync(path.join(backup, `${SOURCE_DB}.archive.gz`)).uid).toBe(
       process.getuid!(),
     );
@@ -200,8 +216,12 @@ describe("scripts/backup.sh", { timeout: 60_000 }, () => {
     expect(await snapshot(RESTORE_DB)).toEqual(expected);
 
     await connection.useDb(RESTORE_DB).dropDatabase();
-    restoreDump(backup, RESTORE_DB);
-    expect(await snapshot(RESTORE_DB)).toEqual(expected);
+    for (const collection of Object.keys(expected)) {
+      restoreJson(backup, RESTORE_DB, collection);
+    }
+    expect(await snapshot(RESTORE_DB, false)).toEqual(
+      await snapshot(SOURCE_DB, false),
+    );
   });
 
   it("creates a new timestamped directory on every run", () => {
