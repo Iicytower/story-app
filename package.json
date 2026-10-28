@@ -15,7 +15,8 @@
     "db:up": "docker compose up -d --wait mongo",
     "db:down": "docker compose down",
     "create-account": "tsx --env-file=.env.local scripts/create-account.ts",
-    "migrate": "tsx --env-file=.env.local scripts/migrate.ts"
+    "migrate": "tsx --env-file=.env.local scripts/migrate.ts",
+    "backup": "bash scripts/backup.sh"
   },
   "dependencies": {
     "@tiptap/markdown": "^3.32.0",

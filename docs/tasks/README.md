@@ -10,7 +10,7 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `deve
 | 13 | [Myślniki dialogowe zamiast listy](13-dialogue-dashes.md) | – | [ ] |
 | 14 | [Mniejszy górny pasek](14-compact-header.md) | – | [ ] |
 | 15 | [Przewijanie poza początek i koniec tekstu](15-scroll-past-edges.md) | 12 | [ ] |
-| 16 | [Lokalny backup bazy](16-local-backup.md) | – | [ ] |
+| 16 | [Lokalny backup bazy](16-local-backup.md) | – | [x] |
 
 ## Backlog
 
