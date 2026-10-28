@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Backup of the MongoDB database via mongodump in a mongo:8 container (bash + Docker only).
 # URI: MONGODB_URI from .env.prod next to the repo root (ENV_FILE overrides), otherwise asked for.
-# Result: $BACKUP_DIR/<UTC timestamp>/ with <db>.archive.gz and dump/<db>/; the newest 5 are kept.
+# Result: $BACKUP_DIR/<UTC timestamp>/ with <db>.archive.gz and json/<collection>.json; the newest 5 are kept.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -108,7 +108,14 @@ if ! docker run --rm --network host --user "$(id -u):$(id -g)" \
   "$IMAGE" bash -c '
     set -e
     mongodump --config=/config.yaml --db="$1" --gzip --archive="/backup/$1.archive.gz"
-    mongodump --config=/config.yaml --db="$1" --gzip --out=/backup/dump
+    # mongoexport needs collection names; a throwaway dump inside the container lists them without mongosh, which would need the URI as an argument.
+    mongodump --config=/config.yaml --db="$1" --out=/tmp/dump --quiet
+    mkdir /backup/json
+    for file in /tmp/dump/"$1"/*.bson; do
+      collection="$(basename "$file" .bson)"
+      mongoexport --config=/config.yaml --db="$1" --collection="$collection" \
+        --jsonArray --pretty --out="/backup/json/$collection.json"
+    done
   ' _ "$db" 2>&1 | mask; then
   fail "mongodump failed, backup removed."
 fi
