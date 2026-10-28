@@ -1,16 +1,16 @@
 # Taski
 
-Źródło wymagań: [`../spec.md`](../spec.md) + [`../decisions.md`](../decisions.md) (ma pierwszeństwo). Wersja 1.0 (tag `v1.0.0`) jest na produkcji; taski dotyczą zmian po 1.0. Szczegóły tasku w `NN-<slug>.md` (sekcje Zakres, Kryteria akceptacji, Testy).
+Źródło wymagań: [`../spec.md`](../spec.md) + [`../decisions.md`](../decisions.md) (ma pierwszeństwo). Wersja 1.0 (tag `v1.0.0`) jest na produkcji; taski dotyczą zmian po 1.0. Szczegóły tasku w `NN-<slug>.md` (sekcje Zakres, Kryteria akceptacji, Testy). Zakończone taski usuwamy z tabeli i z katalogu (zostają w historii gita); numeracja rośnie dalej, żeby nie powtarzać nazw branchy.
 
 Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `develop`).
 
 | # | Task | Zależy od | Status |
 | --- | --- | --- | --- |
-| 07 | [Wersjonowanie folderów](07-story-versioning.md) | – | [x] |
-| 08 | [Sprawdzanie pisowni](08-spell-check.md) | – | [x] |
-| 09 | [Ustawienia użytkownika](09-user-settings.md) | – | [x] |
-| 10 | [Rzadszy autozapis](10-autosave-delay.md) | – | [x] |
-| 11 | [Kolekcja ustawień](11-settings-collection.md) | 09 | [x] |
+| 12 | [Pozycja przewijania przy przełączaniu widoków](12-keep-scroll-position.md) | – | [ ] |
+| 13 | [Myślniki dialogowe zamiast listy](13-dialogue-dashes.md) | – | [ ] |
+| 14 | [Mniejszy górny pasek](14-compact-header.md) | – | [ ] |
+| 15 | [Przewijanie poza początek i koniec tekstu](15-scroll-past-edges.md) | 12 | [ ] |
+| 16 | [Lokalny backup bazy](16-local-backup.md) | – | [ ] |
 
 ## Backlog
 
