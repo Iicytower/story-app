@@ -16,6 +16,7 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `deve
 | 19 | [Zip z osobnym plikiem na rozdział](19-chapter-files-zip.md) | 17 | [x] |
 | 20 | [Tylko przycisk „Export as…”](20-export-as-only.md) | 19 | [x] |
 | 21 | [Aktualizacja unpdf do 2.x](21-unpdf-2.md) | 18 | [x] |
+| 22 | [Wyszukiwanie i zamiana w polu](22-find-replace.md) | – | [x] |
 
 ## Backlog
 
