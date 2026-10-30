@@ -12,6 +12,7 @@ import {
   PanelRightOpenIcon,
   Share2Icon,
 } from "lucide-react";
+import { cn } from "cn";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -31,6 +32,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { AUTOSAVE_DELAY_MS, onTabHidden } from "@/lib/autosave";
+import { flushScrollSave } from "@/lib/editor/scroll-memory";
 import {
   collapsedColumns,
   columnsKey,
@@ -99,10 +101,7 @@ export function Editor({
   const [title, setTitle] = useState(story.title);
   const [content, setContent] = useState(story.content);
   const [notes, setNotes] = useState(story.notes);
-  const { layout, mobileView } = useEditorSettings(
-    userId,
-    settings,
-  );
+  const { layout, mobileView } = useEditorSettings(userId, settings);
   const isDesktop = useIsDesktop();
   // Without a folder the hook still runs (hooks cannot be conditional) but never saves.
   const folderNotes = useFolderNotes(
@@ -249,6 +248,8 @@ export function Editor({
 
   useEffect(() => onTabHidden(flushLayoutSave), []);
 
+  useEffect(() => onTabHidden(flushScrollSave), []);
+
   useEffect(() => {
     function handleBeforeUnload(event: BeforeUnloadEvent) {
       if (!isSame(latest.current, saved.current)) event.preventDefault();
@@ -277,6 +278,7 @@ export function Editor({
         label="Content"
         placeholder="Write your story…"
         className="flex-1"
+        scrollMemory={{ storyId: story.id, field: "content" }}
       />
       <p className="text-muted-foreground border-t px-4 py-2 text-xs md:px-6">
         {words} words · {countCharacters(content)} characters ·{" "}
@@ -295,6 +297,7 @@ export function Editor({
         placeholder="Notes for this chapter…"
         className="flex-1"
         compact
+        scrollMemory={{ storyId: story.id, field: "notes" }}
       />
     </div>
   );
@@ -312,7 +315,11 @@ export function Editor({
       className="min-h-0 flex-1"
     >
       <ResizablePanel id="folder-notes-panel" minSize="15%" defaultSize="40%">
-        <FolderNotesField state={folderNotes} className="h-full" />
+        <FolderNotesField
+          state={folderNotes}
+          className="h-full"
+          scrollMemory={{ storyId: story.id, field: "folderNotes" }}
+        />
       </ResizablePanel>
       <ResizableHandle withHandle aria-label="Resize folder notes" />
       <ResizablePanel id="chapter-notes-panel" minSize="15%" defaultSize="60%">
@@ -505,7 +512,8 @@ export function Editor({
         <div className="flex min-h-0 flex-1">
           <ResizablePanelGroup
             // defaultLayout is read on mount only: remount whenever the set of columns changes.
-            key={columnKey}
+            // Not for another tab, though: that would remount the story editor and lose its scroll.
+            key={layout.split ? columnKey : columns.length}
             id="editor-columns"
             defaultLayout={layout.widths[columnKey]}
             onLayoutChanged={(_, meta) => {
@@ -526,7 +534,7 @@ export function Editor({
               <div className="flex h-full">{storyEditor}</div>
             </ResizablePanel>
             {columns.map((panel, index) => (
-              <Fragment key={panel}>
+              <Fragment key={layout.split ? panel : "side"}>
                 <ResizableHandle
                   withHandle
                   aria-label={`Resize ${PANEL_LABELS[panel].toLowerCase()} column`}
@@ -539,7 +547,22 @@ export function Editor({
                 >
                   <div className="flex h-full flex-col">
                     {sideHeader(panel, index)}
-                    {panel === "notes" ? desktopNotes : chaptersPanel}
+                    {layout.split ? (
+                      panel === "notes" ? (
+                        desktopNotes
+                      ) : (
+                        chaptersPanel
+                      )
+                    ) : (
+                      <div className="relative min-h-0 flex-1">
+                        <KeptView active={panel === "notes"}>
+                          {desktopNotes}
+                        </KeptView>
+                        <KeptView active={panel === "chapters"}>
+                          {chaptersPanel}
+                        </KeptView>
+                      </div>
+                    )}
                   </div>
                 </ResizablePanel>
               </Fragment>
@@ -582,21 +605,51 @@ export function Editor({
               </button>
             ))}
           </div>
-          {mobileView === "story" && storyEditor}
-          {mobileView === "notes" && (
-            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <div className="relative min-h-0 flex-1">
+            <KeptView active={mobileView === "story"}>{storyEditor}</KeptView>
+            <KeptView
+              active={mobileView === "notes"}
+              className="overflow-y-auto"
+            >
               {folder && (
                 <FolderNotesField
                   state={folderNotes}
                   className="min-h-64 border-b"
+                  scrollMemory={{ storyId: story.id, field: "folderNotes" }}
                 />
               )}
               {chapterNotes("min-h-64 flex-1")}
-            </div>
-          )}
-          {mobileView === "chapters" && chaptersPanel}
+            </KeptView>
+            <KeptView active={mobileView === "chapters"}>
+              {chaptersPanel}
+            </KeptView>
+          </div>
         </>
       )}
+    </div>
+  );
+}
+
+// Views behind tabs stay mounted, so they keep their scroll position, mode and undo history.
+// Hidden with visibility, not display: none, which may reset the scroll offset.
+function KeptView({
+  active,
+  className,
+  children,
+}: {
+  active: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "absolute inset-0 flex flex-col",
+        !active && "invisible",
+        className,
+      )}
+    >
+      {children}
     </div>
   );
 }
