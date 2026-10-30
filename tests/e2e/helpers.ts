@@ -73,3 +73,9 @@ export function countActionRequests(page: Page) {
   });
   return requests;
 }
+
+// Stories, the theme and logging out live in the account menu of every protected page.
+export async function accountAction(page: Page, name: string) {
+  await page.getByRole("button", { name: "Account" }).click();
+  await page.getByRole("menuitem", { name }).click();
+}

@@ -412,8 +412,8 @@ export function Editor({
   }
 
   return (
-    <div className="flex h-[calc(100dvh-3.5rem-1px)] flex-col">
-      <div className="flex flex-wrap items-center gap-2 border-b px-4 py-3 md:flex-nowrap md:gap-3 md:px-6">
+    <div className="flex h-dvh flex-col">
+      <div className="flex flex-wrap items-center gap-2 border-b px-9 py-3 md:flex-nowrap md:gap-3">
         {story.folderName !== null && (
           <Button variant="ghost" size="sm" asChild>
             <Link
