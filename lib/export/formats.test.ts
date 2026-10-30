@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { strFromU8, unzipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 import { parseBlocks, splitLines } from "./blocks";
-import { buildExport } from "./build";
+import { buildChapterFilesZip, buildExport } from "./build";
 import { toExportDocument, type ExportSource } from "./document";
 import { EXPORT_FORMATS } from "./formats";
 import { buildPdf, PDF_FONTS, type PdfFonts } from "./formats/pdf";
@@ -105,6 +105,31 @@ describe("XML formats", () => {
     const nav = zipText(data, "OEBPS/nav.xhtml");
     expect(nav).toContain('href="chapter-1.xhtml"');
     expect(nav).toContain('href="chapter-2.xhtml"');
+  });
+});
+
+describe("buildChapterFilesZip", () => {
+  const names = async (includeExtras: boolean) =>
+    Object.keys(
+      unzipSync(await buildChapterFilesZip("docx", folder, includeExtras)),
+    );
+
+  it("creates one numbered file per chapter, in folder order", async () => {
+    expect(await names(false)).toEqual([
+      "01-pierwszy-rozdzial.docx",
+      "02-drugi.docx",
+    ]);
+  });
+
+  it("adds folder notes only with extras", async () => {
+    expect(await names(true)).toContain("notes.docx");
+  });
+
+  it("keeps each chapter's text in its own file", async () => {
+    const files = unzipSync(await buildChapterFilesZip("txt", folder, false));
+    const second = strFromU8(files["02-drugi.txt"]);
+    expect(second).toContain("Tekst");
+    expect(second).not.toContain("Cytat");
   });
 });
 

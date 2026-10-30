@@ -13,6 +13,7 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `deve
 | 16 | [Lokalny backup bazy](16-local-backup.md) | – | [x] |
 | 17 | [Nowe formaty eksportu](17-export-formats.md) | – | [x] |
 | 18 | [Import opowiadań](18-import.md) | 17 | [ ] |
+| 19 | [Zip z osobnym plikiem na rozdział](19-chapter-files-zip.md) | 17 | [x] |
 
 ## Backlog
 

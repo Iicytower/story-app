@@ -1,5 +1,7 @@
+import { strToU8, zipSync } from "fflate";
+import { chapterFileName } from "@/lib/folders/export";
 import { toExportDocument, type ExportSource } from "./document";
-import type { ExportFormatId } from "./formats";
+import { EXPORT_FORMATS, type ExportFormatId } from "./formats";
 
 // Generators are imported on demand so their packages stay out of the page bundle.
 export async function buildExport(
@@ -42,4 +44,41 @@ export async function buildExport(
       return buildPdf(document, await fetchPdfFonts());
     }
   }
+}
+
+export async function buildChapterFilesZip(
+  format: ExportFormatId,
+  source: ExportSource,
+  includeExtras: boolean,
+): Promise<Uint8Array> {
+  const { extension } = EXPORT_FORMATS.find(({ id }) => id === format)!;
+  const toBytes = async (title: string, content: string, notes: string) => {
+    const data = await buildExport(
+      format,
+      {
+        kind: "story",
+        title,
+        notes: "",
+        chapters: [{ title, content, notes }],
+      },
+      includeExtras,
+    );
+    return typeof data === "string" ? strToU8(data) : data;
+  };
+
+  const files: Record<string, Uint8Array> = {};
+  for (const [index, chapter] of source.chapters.entries()) {
+    const { title, content, notes } = chapter;
+    const name = chapterFileName(
+      title,
+      index,
+      source.chapters.length,
+      extension,
+    );
+    files[name] = await toBytes(title, content, notes);
+  }
+  if (includeExtras && source.notes.trim()) {
+    files[`notes.${extension}`] = await toBytes(source.title, source.notes, "");
+  }
+  return zipSync(files);
 }

@@ -84,3 +84,33 @@ test("exports a folder as one document", async ({ page }) => {
   const files = unzipSync(await readFile(await download.path()));
   expect(strFromU8(files["OEBPS/chapter-1.xhtml"])).toContain("Treść „polska”");
 });
+
+for (const id of ["docx", "pdf"] as const) {
+  test(`exports a folder as a zip of .${id} files`, async ({ page }) => {
+    await seedStory("alice", { title: "Jeden", folder: "Książka" });
+    await seedStory("alice", { title: "Dwa", folder: "Książka" });
+    const folder = await findFolder("Książka");
+    await page.goto(`/folders/${folder!._id}`);
+
+    await page.getByRole("button", { name: "Export as…" }).click();
+    await page.getByLabel("Format").selectOption(id);
+    await page.getByLabel("One file per chapter (.zip)").check();
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export", exact: true }).click();
+    const download = await downloadPromise;
+
+    expect(download.suggestedFilename()).toBe("ksiazka.zip");
+    const files = unzipSync(await readFile(await download.path()));
+    expect(Object.keys(files).sort()).toEqual([
+      `01-dwa.${id}`,
+      `02-jeden.${id}`,
+    ]);
+  });
+}
+
+test("offers separate chapter files only for folders", async ({ page }) => {
+  const id = await seedStory("alice", { title: "Solo" });
+  await page.goto(`/stories/${id}`);
+  await page.getByRole("button", { name: "Export as…" }).click();
+  await expect(page.getByLabel("One file per chapter (.zip)")).toHaveCount(0);
+});
