@@ -14,7 +14,16 @@ Zgłoszenie użytkownika (2026-10-30), wydzielone z taska 17. Formaty eksportu: 
 
 ## Kryteria akceptacji
 
-Do uzupełnienia przy starcie taska.
+1. Na `/stories` i w widoku folderu jest przycisk „Import…”, dialog przyjmuje wszystkie formaty z zakresu.
+2. Plik z jednym rozdziałem na `/stories`: wybór folderu i edycja tytułu; po imporcie otwiera się rozdział.
+3. `.zip` i plik z wieloma rozdziałami na `/stories` tworzą nowy folder z kolejnością z pliku.
+4. Rozdziały wykryte z nagłówków mają przełącznik „Split into N chapters”, domyślnie włączony.
+5. W widoku folderu rozdziały trafiają do tego folderu, notatki z pliku są dopisywane na końcu notatek folderu.
+6. Zajęty tytuł lub nazwa folderu dostają sufiks „ (2)”.
+7. Sekcje „Notes” i „Folder notes” z eksportu wracają do notatek; `.md` z frontmatterem odzyskuje tytuł i notatki. Rozdziały dostają datę importu.
+8. Import `.pdf` pokazuje ostrzeżenie o utracie formatowania.
+9. Plik ponad 50 MB, nieobsługiwany format lub zbyt duży tekst dają czytelny błąd.
+10. Akcja sama waliduje wejście: sesja, właściciel folderu (D1), liczba rozdziałów, tytuły, rozmiar w bajtach. Odrzucony import niczego nie zapisuje.
 
 ## Testy
 

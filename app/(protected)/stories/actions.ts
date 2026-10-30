@@ -1,7 +1,7 @@
 "use server";
 
 import { randomBytes } from "node:crypto";
-import { isObjectIdOrHexString } from "mongoose";
+import { isObjectIdOrHexString, Types } from "mongoose";
 import { refresh } from "next/cache";
 import type { ActionError, ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
@@ -10,13 +10,22 @@ import {
   findOrCreateFolder,
   moveInList,
   nextChapterPosition,
+  nextFolderPosition,
   savePositions,
   touchFolder,
 } from "@/lib/folders/mutations";
 import { findChaptersInOrder } from "@/lib/folders/queries";
 import { chapterOrder, isDirection, type Direction } from "@/lib/folders/sort";
+import {
+  importTextBytes,
+  MAX_IMPORT_CHAPTERS,
+  MAX_IMPORT_TEXT_BYTES,
+  MAX_IMPORT_TITLE_LENGTH,
+  type ImportedChapter,
+} from "@/lib/import/limits";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
+import { numberedTitle } from "@/lib/versions/versions";
 
 const NOT_FOUND: ActionError = {
   ok: false,
@@ -69,6 +78,195 @@ export async function createStory(
     if (isDuplicateKeyError(error)) return DUPLICATE_TITLE;
     throw error;
   }
+}
+
+export type ImportTarget =
+  // Adds to a folder the user is looking at.
+  | { kind: "folder"; id: string }
+  // A picked or typed name, as in createStory.
+  | { kind: "named"; name: string }
+  // Always a new folder, with " (2)" when the name is taken.
+  | { kind: "new"; name: string };
+
+function invalidImport(message: string): ActionError {
+  return { ok: false, error: "INVALID_INPUT", message };
+}
+
+// The browser parses the file, so nothing here can be taken from it on trust.
+function checkImport(
+  chapters: ImportedChapter[],
+  folderNotes: string,
+): ActionError | null {
+  const isText = (value: unknown) => typeof value === "string";
+  const valid =
+    Array.isArray(chapters) &&
+    isText(folderNotes) &&
+    chapters.every(
+      (chapter) =>
+        isText(chapter?.title) &&
+        isText(chapter?.content) &&
+        isText(chapter?.notes),
+    );
+  if (!valid || chapters.length === 0) {
+    return invalidImport("There is nothing to import.");
+  }
+  if (chapters.length > MAX_IMPORT_CHAPTERS) {
+    return invalidImport(
+      `A file can have at most ${MAX_IMPORT_CHAPTERS} chapters.`,
+    );
+  }
+  if (chapters.some(({ title }) => !title.trim())) {
+    return { ok: false, error: "EMPTY_TITLE", message: "Title is required." };
+  }
+  if (chapters.some(({ title }) => title.length > MAX_IMPORT_TITLE_LENGTH)) {
+    return invalidImport(
+      `A title can have at most ${MAX_IMPORT_TITLE_LENGTH} characters.`,
+    );
+  }
+  if (importTextBytes(chapters, folderNotes) > MAX_IMPORT_TEXT_BYTES) {
+    return {
+      ok: false,
+      error: "TOO_LARGE",
+      message: "This text is too large to import.",
+    };
+  }
+  return null;
+}
+
+async function createNumberedFolder(
+  userId: string,
+  name: string,
+  notes: string,
+): Promise<Types.ObjectId> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const folder = await Folder.create({
+        userId,
+        name: numberedTitle(name, attempt),
+        notes,
+        position: await nextFolderPosition(userId),
+        // Keeps the file's order, which "Newest first" would reverse.
+        chapterSort: "manual",
+        manualChapterOrder: true,
+      });
+      return folder._id;
+    } catch (error) {
+      if (!isDuplicateKeyError(error)) throw error;
+    }
+  }
+}
+
+async function insertChapters(
+  userId: string,
+  folderId: Types.ObjectId,
+  chapters: ImportedChapter[],
+): Promise<Types.ObjectId[]> {
+  const existing = await Story.find({ userId, folderId, deletedAt: null })
+    .select({ title: 1 })
+    .lean();
+  const taken = new Set(existing.map(({ title }) => title));
+  const start = await nextChapterPosition(userId, folderId);
+  const now = Date.now();
+  const documents = chapters.map(({ title, content, notes }, index) => {
+    const trimmed = title.trim();
+    let attempt = 1;
+    while (taken.has(numberedTitle(trimmed, attempt))) attempt++;
+    const unique = numberedTitle(trimmed, attempt);
+    taken.add(unique);
+    return {
+      _id: new Types.ObjectId(),
+      userId,
+      folderId,
+      title: unique,
+      content,
+      notes,
+      position: start + index,
+      // Separate times keep the order in "Newest first" reproducible.
+      createdAt: new Date(now + index),
+      updatedAt: new Date(now + index),
+    };
+  });
+  const ids = documents.map(({ _id }) => _id);
+  try {
+    await Story.insertMany(documents, { timestamps: false });
+  } catch (error) {
+    // A title taken in the meantime must not leave half of the file behind.
+    await Story.deleteMany({ _id: { $in: ids } });
+    throw error;
+  }
+  return ids;
+}
+
+export async function importStories(
+  target: ImportTarget,
+  chapters: ImportedChapter[],
+  folderNotes: string,
+): Promise<ActionResult<{ folderId: string; storyId: string }>> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  const problem = checkImport(chapters, folderNotes);
+  if (problem) return problem;
+
+  await connectDB();
+  let folderId: Types.ObjectId;
+  let notesToAppend = folderNotes.trim();
+  if (target?.kind === "folder") {
+    if (!isObjectIdOrHexString(target.id)) return FOLDER_NOT_FOUND;
+    const folder = await Folder.exists({
+      _id: target.id,
+      userId: user.userId,
+      deletedAt: null,
+    });
+    if (!folder) return FOLDER_NOT_FOUND;
+    folderId = folder._id;
+  } else {
+    const name = typeof target?.name === "string" ? target.name.trim() : "";
+    if (!name) {
+      return { ok: false, error: "EMPTY_NAME", message: "Folder is required." };
+    }
+    if (target.kind === "new") {
+      folderId = await createNumberedFolder(user.userId, name, notesToAppend);
+      notesToAppend = "";
+    } else {
+      folderId = await findOrCreateFolder(user.userId, name);
+    }
+  }
+
+  let ids: Types.ObjectId[];
+  try {
+    ids = await insertChapters(user.userId, folderId, chapters);
+  } catch (error) {
+    if (isDuplicateKeyError(error)) return DUPLICATE_TITLE;
+    throw error;
+  }
+  if (notesToAppend) {
+    await Folder.updateOne(
+      { _id: folderId },
+      [
+        {
+          $set: {
+            notes: {
+              $cond: [
+                { $eq: [{ $trim: { input: "$notes" } }, ""] },
+                notesToAppend,
+                { $concat: ["$notes", "\n\n", notesToAppend] },
+              ],
+            },
+            notesUpdatedAt: "$$NOW",
+          },
+        },
+      ],
+      { updatePipeline: true },
+    );
+  }
+  await touchFolder(folderId);
+
+  refresh();
+  return {
+    ok: true,
+    folderId: folderId.toString(),
+    storyId: ids[0].toString(),
+  };
 }
 
 // Organizational change: keeps the story's updatedAt, so an open editor does not get CONFLICT.
