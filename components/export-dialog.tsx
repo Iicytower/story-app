@@ -30,14 +30,17 @@ export function ExportDialog({
   dataUrl,
   fallbackName,
   beforeExport,
+  chapterFiles = false,
 }: {
   dataUrl: string;
   fallbackName: string;
   beforeExport?: () => Promise<boolean>;
+  chapterFiles?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [formatId, setFormatId] = useState<ExportFormatId>("docx");
   const [includeExtras, setIncludeExtras] = useState(false);
+  const [separateFiles, setSeparateFiles] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,10 +59,16 @@ export function ExportDialog({
         return;
       }
       const source: ExportSource = await response.json();
-      const { buildExport } = await import("@/lib/export/build");
-      const data = await buildExport(formatId, source, includeExtras);
-      const name = `${safeFileName(source.title, fallbackName)}.${format.extension}`;
-      download(data, name, format.mime);
+      const { buildChapterFilesZip, buildExport } =
+        await import("@/lib/export/build");
+      const baseName = safeFileName(source.title, fallbackName);
+      if (separateFiles) {
+        const zip = await buildChapterFilesZip(formatId, source, includeExtras);
+        download(zip, `${baseName}.zip`, "application/zip");
+      } else {
+        const data = await buildExport(formatId, source, includeExtras);
+        download(data, `${baseName}.${format.extension}`, format.mime);
+      }
       setOpen(false);
     } catch {
       setError("The file could not be created.");
@@ -105,6 +114,16 @@ export function ExportDialog({
           />
           Include comments and notes
         </Label>
+        {chapterFiles && (
+          <Label className="font-normal">
+            <input
+              type="checkbox"
+              checked={separateFiles}
+              onChange={(event) => setSeparateFiles(event.target.checked)}
+            />
+            One file per chapter (.zip)
+          </Label>
+        )}
         {error && (
           <p role="alert" className="text-destructive text-sm">
             {error}

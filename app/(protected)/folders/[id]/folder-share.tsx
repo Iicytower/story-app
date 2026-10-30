@@ -68,6 +68,7 @@ export function FolderShare({
         <ExportDialog
           dataUrl={`/folders/${id}/export/data`}
           fallbackName="folder"
+          chapterFiles
         />
         <Button variant="outline" onClick={toggleSharing} disabled={pending}>
           <Share2Icon />
