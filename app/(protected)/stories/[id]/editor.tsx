@@ -1,5 +1,6 @@
 "use client";
 
+import { ExportDialog } from "@/components/export-dialog";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -167,12 +168,16 @@ export function Editor({
     [story.id],
   );
 
-  async function exportStory() {
+  async function saveForExport(): Promise<boolean> {
     if (!latest.current.title.trim()) {
       setSaveState({ status: "error", message: "Title is required." });
-      return;
+      return false;
     }
-    if (!(await save(true))) return;
+    return Boolean(await save(true));
+  }
+
+  async function exportStory() {
+    if (!(await saveForExport())) return;
     const link = document.createElement("a");
     link.href = `/stories/${story.id}/export`;
     link.download = "";
@@ -451,6 +456,11 @@ export function Editor({
           <DownloadIcon />
           <span className="sr-only md:not-sr-only">Export .md</span>
         </Button>
+        <ExportDialog
+          dataUrl={`/stories/${story.id}/export/data`}
+          fallbackName="story"
+          beforeExport={saveForExport}
+        />
         <Button
           variant="outline"
           onClick={toggleSharing}
