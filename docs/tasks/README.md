@@ -9,9 +9,13 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `deve
 | 12 | [Pozycja przewijania przy przełączaniu widoków](12-keep-scroll-position.md) | – | [x] |
 | 13 | [Myślniki dialogowe zamiast listy](13-dialogue-dashes.md) | – | [x] |
 | 14 | [Mniejszy górny pasek](14-compact-header.md) | – | [x] |
-| 15 | [Przewijanie poza początek i koniec tekstu](15-scroll-past-edges.md) | 12 | [ ] |
+| 15 | [Przewijanie poza początek i koniec tekstu](15-scroll-past-edges.md) | 12 | [x] |
 | 16 | [Lokalny backup bazy](16-local-backup.md) | – | [x] |
-| 17 | [Nowe formaty eksportu i import](17-export-formats-import.md) | – | [ ] |
+| 17 | [Nowe formaty eksportu](17-export-formats.md) | – | [x] |
+| 18 | [Import opowiadań](18-import.md) | 17 | [x] |
+| 19 | [Zip z osobnym plikiem na rozdział](19-chapter-files-zip.md) | 17 | [x] |
+| 20 | [Tylko przycisk „Export as…”](20-export-as-only.md) | 19 | [x] |
+| 21 | [Aktualizacja unpdf do 2.x](21-unpdf-2.md) | 18 | [x] |
 
 ## Backlog
 

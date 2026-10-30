@@ -1,12 +1,7 @@
 "use client";
 
-import {
-  CheckIcon,
-  CopyIcon,
-  DownloadIcon,
-  LinkIcon,
-  Share2Icon,
-} from "lucide-react";
+import { ExportDialog } from "@/components/export-dialog";
+import { CheckIcon, CopyIcon, LinkIcon, Share2Icon } from "lucide-react";
 import { useState, useSyncExternalStore, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,12 +53,11 @@ export function FolderShare({
   return (
     <>
       <div className="flex items-center gap-2">
-        <Button variant="outline" asChild>
-          <a href={`/folders/${id}/export`} download>
-            <DownloadIcon />
-            Export .zip
-          </a>
-        </Button>
+        <ExportDialog
+          dataUrl={`/folders/${id}/export/data`}
+          fallbackName="folder"
+          chapterFiles
+        />
         <Button variant="outline" onClick={toggleSharing} disabled={pending}>
           <Share2Icon />
           {sharePath ? "Stop sharing" : "Share"}

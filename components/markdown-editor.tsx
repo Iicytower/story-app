@@ -81,6 +81,7 @@ export function MarkdownEditor({
   const openLinkRef = useRef(() => setLinkOpen(true));
   // The markdown the editor last produced or loaded; anything else in `value` came from Source.
   const synced = useRef(value);
+  const rootRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   // Where the view that is being shown should scroll to, set on switching modes.
   const anchor = useRef<Anchor | null>(null);
@@ -119,8 +120,8 @@ export function MarkdownEditor({
         spellcheck: "true",
         ...(placeholder && { "aria-placeholder": placeholder }),
         class: cn(
-          "prose dark:prose-invert max-w-none min-h-full outline-none px-4 py-4 md:px-6",
-          compact && "prose-sm py-3 md:px-4",
+          "prose dark:prose-invert max-w-none min-h-full outline-none px-4 py-(--scroll-gap) md:px-6",
+          compact && "prose-sm md:px-4",
         ),
       },
     },
@@ -170,6 +171,20 @@ export function MarkdownEditor({
     [],
   );
 
+  // Scrolling stops with the first or last line at the far edge of the view.
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current;
+    const scroller = textarea
+      ? sourceScroller(textarea)
+      : editor?.view.dom.parentElement;
+    if (!scroller || !editor) return;
+    return trackScrollGap(
+      rootRef.current!,
+      scroller,
+      textarea ?? editor.view.dom,
+    );
+  }, [mode, editor]);
+
   // The editor opens in Preview once it exists (after hydration).
   useLayoutEffect(() => {
     if (!editor || !storyId || !field) return;
@@ -213,6 +228,7 @@ export function MarkdownEditor({
 
   return (
     <div
+      ref={rootRef}
       role="group"
       aria-label={`${label} editor`}
       className={cn("flex min-h-0 flex-col", className)}
@@ -240,20 +256,32 @@ export function MarkdownEditor({
         )}
       </div>
       {mode === "source" ? (
-        <textarea
-          ref={textareaRef}
+        // A box cannot be shorter than its padding, so the textarea grows with the text
+        // and an outer element scrolls it, the same way as in Preview.
+        <div
           onScroll={handleScroll}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          aria-label={label}
-          placeholder={placeholder}
-          lang="pl"
-          spellCheck
-          className={cn(
-            "min-h-0 flex-1 resize-none bg-transparent px-4 py-4 font-mono text-base leading-relaxed outline-none md:px-6 md:text-sm",
-            compact && "py-3 md:px-4",
-          )}
-        />
+          onClick={(event) => {
+            if (event.target !== textareaRef.current)
+              textareaRef.current?.focus({ preventScroll: true });
+          }}
+          className="min-h-0 flex-1 cursor-text overflow-y-auto"
+        >
+          <div className="py-(--scroll-gap)">
+            <textarea
+              ref={textareaRef}
+              value={value}
+              onChange={(event) => onChange(event.target.value)}
+              aria-label={label}
+              placeholder={placeholder}
+              lang="pl"
+              spellCheck
+              className={cn(
+                "block field-sizing-content w-full resize-none overflow-hidden bg-transparent px-4 font-mono text-base leading-relaxed outline-none md:px-6 md:text-sm",
+                compact && "md:px-4",
+              )}
+            />
+          </div>
+        </div>
       ) : (
         <EditorContent
           editor={editor}
@@ -270,6 +298,26 @@ export function MarkdownEditor({
       )}
     </div>
   );
+}
+
+function trackScrollGap(
+  root: HTMLElement,
+  scroller: HTMLElement,
+  line: Element,
+) {
+  const update = () => {
+    const gap = Math.max(
+      scroller.clientHeight - parseFloat(getComputedStyle(line).lineHeight),
+      0,
+    );
+    const previous = parseFloat(root.style.getPropertyValue("--scroll-gap"));
+    root.style.setProperty("--scroll-gap", `${gap}px`);
+    if (scroller.scrollTop > 0) scroller.scrollTop += gap - previous;
+  };
+  update();
+  const observer = new ResizeObserver(update);
+  observer.observe(scroller);
+  return () => observer.disconnect();
 }
 
 const clamp = (value: number) => Math.min(Math.max(value, 0), 1);
@@ -311,14 +359,19 @@ function scrollPreviewTo(editor: Editor, { index, fraction }: Anchor) {
     rect.top - container.getBoundingClientRect().top + fraction * rect.height;
 }
 
+function sourceScroller(textarea: HTMLTextAreaElement) {
+  return textarea.parentElement!.parentElement!;
+}
+
 function sourceAnchor(
   textarea: HTMLTextAreaElement,
   starts: number[],
 ): Anchor | null {
-  if (textarea.scrollTop === 0 || starts.length === 0) return null;
+  const scroller = sourceScroller(textarea);
+  if (scroller.scrollTop === 0 || starts.length === 0) return null;
   const tops = lineTops(textarea, [...starts, textarea.value.length]);
   const top =
-    textarea.scrollTop + parseFloat(getComputedStyle(textarea).paddingTop);
+    scroller.getBoundingClientRect().top - textarea.getBoundingClientRect().top;
   let index = 0;
   while (index < starts.length - 1 && tops[index + 1] <= top) index++;
   const height = tops[index + 1] - tops[index];
@@ -337,13 +390,15 @@ function scrollSourceTo(
   const start = starts[Math.min(index, starts.length - 1)];
   const end = starts[index + 1] ?? textarea.value.length;
   const [from, to] = lineTops(textarea, [start, end]);
-  textarea.scrollTop =
+  const scroller = sourceScroller(textarea);
+  scroller.scrollTop +=
+    textarea.getBoundingClientRect().top -
+    scroller.getBoundingClientRect().top +
     from +
-    fraction * (to - from) -
-    parseFloat(getComputedStyle(textarea).paddingTop);
+    fraction * (to - from);
 }
 
-// Distance from the top of the textarea content (padding included) to the line holding
+// Distance from the top of the textarea to the line holding
 // each offset, wrapping counted. A textarea cannot measure that, so a hidden copy of it does.
 function lineTops(textarea: HTMLTextAreaElement, offsets: number[]): number[] {
   const style = getComputedStyle(textarea);

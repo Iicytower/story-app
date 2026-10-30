@@ -20,15 +20,29 @@ type ExportedFolder = {
 };
 
 // The number prefix keeps the folder order in a file manager and makes equal titles unique.
+export function chapterFileName(
+  title: string,
+  index: number,
+  total: number,
+  extension: string,
+): string {
+  const digits = Math.max(2, String(total).length);
+  const number = String(index + 1).padStart(digits, "0");
+  return `${number}-${safeFileName(title, "chapter")}.${extension}`;
+}
+
 export function folderZipEntries(
   folder: ExportedFolder,
 ): Record<string, string> {
-  const digits = Math.max(2, String(folder.chapters.length).length);
   const entries: Record<string, string> = {};
   folder.chapters.forEach((chapter, index) => {
-    const number = String(index + 1).padStart(digits, "0");
-    entries[`${number}-${safeFileName(chapter.title, "chapter")}.md`] =
-      toMarkdownExport(chapter);
+    const name = chapterFileName(
+      chapter.title,
+      index,
+      folder.chapters.length,
+      "md",
+    );
+    entries[name] = toMarkdownExport(chapter);
   });
   entries["notes.md"] = withFrontmatter(
     {

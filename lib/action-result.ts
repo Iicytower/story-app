@@ -7,7 +7,8 @@ export type ErrorCode =
   | "EMPTY_NAME"
   | "EMPTY_TITLE"
   | "EMPTY_CONTENT"
-  | "INVALID_INPUT";
+  | "INVALID_INPUT"
+  | "TOO_LARGE";
 
 export type ActionError = { ok: false; error: ErrorCode; message: string };
 

@@ -238,3 +238,43 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Przycisk jest `absolute` w prawym górnym rogu: odjeżdża z przewijaną stroną i nie zasłania treści. Mieści się w górnym paddingu stron (32 px), a w edytorze wiersz tytułu rezerwuje na niego miejsce. Edytor ma wysokość `h-dvh`.
 - Ikona „Home” (`/stories`) w lewym górnym rogu, w layoucie i pozycjonowana tak samo jak przycisk menu. Wiersz tytułu edytora ma miejsce po obu stronach (`px-9`). Pozycja Stories w menu zostaje.
 - `components/ui/dropdown-menu.tsx`: Radix z istniejącego pakietu `radix-ui`, bez nowej zależności. `ThemeToggle` zastąpiony pozycją menu; `applyTheme` wywołuje `AccountMenu`, bo treść menu jest montowana dopiero po otwarciu.
+
+## D30 – Przewijanie poza tekst (2026-10-30)
+
+- Dotyczy każdego `MarkdownEditor`: treści, notatek rozdziału i notatek folderu. Odstęp nad pierwszą i pod ostatnią linią to wysokość widoku minus jedna linia (`--scroll-gap`, liczone w `trackScrollGap`, `ResizeObserver` na elemencie przewijanym). Wysokość linii pochodzi z pola, więc dłuższy nagłówek jako ostatnia linia jest przy maksymalnym przewinięciu widoczny częściowo.
+- Po otwarciu `scrollTop` to 0, czyli pierwsza linia stoi przy dolnej krawędzi. To decyzja użytkownika, tak samo nad tekstem w notatkach i przy zapamiętanej pozycji „na początku” (D27).
+- Element nie może być niższy niż jego padding, więc textarea w Source nie przewija się sama: rośnie z tekstem (`field-sizing: content`), a przewija ją zewnętrzny element, jak w Preview. Kliknięcie w pusty obszar ustawia fokus w polu. `field-sizing` nie ma fallbacku, Source wymaga przeglądarki, która go obsługuje (testy: Chromium).
+- Pozycja nad pierwszą linią nie jest kotwicą: przełączenie Preview/Source z tego obszaru (`scrollTop` > 0) ustawia pierwszą linię przy górnej krawędzi.
+
+## D31 – Eksport do nowych formatów w przeglądarce (2026-10-30)
+
+- Formaty: `.docx`, `.odt`, `.pdf`, `.epub`, `.fb2`, `.html`, `.txt`, `.md` (jeden plik). Dotyczą rozdziału i folderu; folder to jeden dokument z rozdziałami w kolejności folderu. „Export .md” (D10) i „Export .zip” (D18) zostają bez zmian jako pełny backup.
+- Limit 4,5 MB obejmuje na Vercelu też odpowiedzi, na każdym planie. Dlatego `GET /stories/[id]/export/data` i `/folders/[id]/export/data` zwracają tylko tekst w JSON, a plik buduje przeglądarka. Limit dotyczy samego tekstu. Generatory są ładowane przez `import()` po kliknięciu, więc nie powiększają stron.
+- Model: `parseBlocks` (`lib/export/blocks.ts`, lexer `marked` z `breaks` i `gfm`, jak D20) daje wspólne bloki dla rendererów w `lib/export/formats/`. Surowy HTML jest pomijany (D8, D20), linki tylko `http:`, `https:`, `mailto:`. Nagłówki `h4`–`h6` ze Source spadają do poziomu 3. `.md` to surowe źródło, więc zawiera też surowy HTML, jak D10.
+- Dialog „Export as…”: przełącznik „Include comments and notes”, domyślnie wyłączony. Włączony dodaje komentarze w nawiasach kwadratowych kursywą, notatki rozdziału pod jego tekstem i notatki folderu na końcu.
+- `.epub` i `.odt` bez pakietu: ręczne XML + `fflate`. `.docx` przez `docx`, `.pdf` przez `pdfkit` (build przeglądarkowy wybierany przez `exports`). Typy `pdfkit` we własnym `types/pdfkit.d.ts`. PDF osadza DejaVu Serif z `public/fonts/` (polskie znaki, licencja obok plików); znaki spoza fontu, np. emoji, nie zostaną poprawnie narysowane.
+- Rozdział: „Export as…” przed pobraniem danych zapisuje przez tę samą kolejkę co „Export .md” (D10).
+
+## D32 – Zip z osobnym plikiem na rozdział (2026-10-30)
+
+- Uzupełnia D31. W dialogu „Export as…” na stronie folderu przełącznik „One file per chapter (.zip)” działa dla każdego formatu. Plik `<nazwa folderu>.zip` budowany w przeglądarce (`buildChapterFilesZip`), rozdziały nazwane jak w D18 (`NN-<nazwa>.<rozszerzenie>`).
+- Każdy rozdział to osobny dokument z tytułem rozdziału, także przy `.epub`, `.fb2`, `.pdf`. Przełącznik „Include comments and notes” działa jak w D31, a notatki folderu trafiają do `notes.<rozszerzenie>`.
+- „Export .zip” (D18) zostaje bez zmian: tylko on daje `.md` z frontmatterem i zawsze zawiera notatki.
+
+## D33 – Tylko przycisk „Export as…” (2026-10-30)
+
+- Decyzja użytkownika: z UI znikają przyciski „Export .md” i „Export .zip”. W edytorze i na stronie folderu zostaje „Export as…” (D31, D32). Zmiana dotyczy wyłącznie przycisków.
+- Wszystkie formaty zostają. Trasy `GET /stories/[id]/export` i `GET /folders/[id]/export` (D10, D18) oraz frontmatter działają bez zmian, ale UI do nich nie prowadzi.
+- Zapis przed eksportem, konflikt z inną kartą i pusty tytuł sprawdzają testy dialogu.
+
+## D34 – Import opowiadań (2026-10-30)
+
+- Formaty jak w D31 oraz `.zip` (D18, D32), plik do 50 MB. Parsowanie w przeglądarce (`lib/import/`, ładowane przez `import()`), Server Action `importStories` dostaje tylko tekst. `serverActions.bodySizeLimit` to 4 MB, tekst do 3,5 MB w bajtach (reszta na kodowanie żądania). Akcja waliduje wszystko sama, także przed utworzeniem folderu. Większy tekst trzeba podzielić ręcznie.
+- Wszystkie formaty z nagłówkami przechodzą przez markdown (`structureMarkdown`). Pojedyncze `# ` na początku to tytuł, rozdziały to `## `, a bez tytułu i z kilkoma `# ` rozdziały to `# `. Folderu z rozdziałami nie da się pewnie odróżnić od opowiadania z nagłówkami, więc dialog pokazuje listę i przełącznik „Split into N chapters”, domyślnie włączony. `.epub`, `.fb2` i `.zip` mają rozdziały w strukturze, `.pdf` to zawsze jeden rozdział.
+- `.md` z eksportu z własnym `# ` w tekście wygląda jak kilka rozdziałów, trzeba wyłączyć przełącznik. W `.zip` plik to zawsze jeden rozdział.
+- Decyzja użytkownika: ostatni nagłówek „Notes” rozdziału i końcowa sekcja „Folder notes” wracają do notatek, więc taki sam własny nagłówek też tam trafi. Komentarze zostają w tekście jako `[tekst]` kursywą. `.md` z frontmatterem odzyskuje tytuł i notatki.
+- Daty: zawsze data importu, także z frontmatterem. Kolejne rozdziały różnią się o 1 ms, żeby „Newest first” było powtarzalne.
+- Nowy folder ma tryb manual z kolejnością z pliku. Na `/stories` jeden rozdział idzie do wybranego folderu (nowa nazwa go tworzy), więcej rozdziałów do nowego folderu. Na stronie folderu do tego folderu, a notatki z pliku są dopisywane pod istniejącymi.
+- Sufiksy jak D25 (`numberedTitle`), także w obrębie pliku. Tytuł z równoległego zapisu daje `DUPLICATE_TITLE`, a wstawione rozdziały są usuwane.
+- Treść przez `turndown`: pojedynczy Enter to `\n` (D20), `\- ` na początku linii to `– ` (D28), obrazki są pomijane. `.txt` traktujemy jak markdown, pierwsza krótka linia z pustą linią pod spodem to tytuł. `.pdf`: akapity z odstępu między liniami, bez formatowania, nagłówków i pojedynczych Enterów, stąd ostrzeżenie. `.fb2` nie ma pojedynczego Entera, więc takie linie wracają jako akapity. Cytaty z `.docx` wracają jako zwykłe akapity.
+- `unpdf` w wersji 2.x wymaga Node 24: taką wersję ma Vercel i domyślny nvm.
