@@ -277,4 +277,4 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Nowy folder ma tryb manual z kolejnością z pliku. Na `/stories` jeden rozdział idzie do wybranego folderu (nowa nazwa go tworzy), więcej rozdziałów do nowego folderu. Na stronie folderu do tego folderu, a notatki z pliku są dopisywane pod istniejącymi.
 - Sufiksy jak D25 (`numberedTitle`), także w obrębie pliku. Tytuł z równoległego zapisu daje `DUPLICATE_TITLE`, a wstawione rozdziały są usuwane.
 - Treść przez `turndown`: pojedynczy Enter to `\n` (D20), `\- ` na początku linii to `– ` (D28), obrazki są pomijane. `.txt` traktujemy jak markdown, pierwsza krótka linia z pustą linią pod spodem to tytuł. `.pdf`: akapity z odstępu między liniami, bez formatowania, nagłówków i pojedynczych Enterów, stąd ostrzeżenie. `.fb2` nie ma pojedynczego Entera, więc takie linie wracają jako akapity. Cytaty z `.docx` wracają jako zwykłe akapity.
-- `unpdf` zostaje w wersji 1.x, bo 2.x wymaga Node 24.
+- `unpdf` w wersji 2.x wymaga Node 24: taką wersję ma Vercel i domyślny nvm.

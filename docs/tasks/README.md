@@ -15,6 +15,7 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `deve
 | 18 | [Import opowiadań](18-import.md) | 17 | [x] |
 | 19 | [Zip z osobnym plikiem na rozdział](19-chapter-files-zip.md) | 17 | [x] |
 | 20 | [Tylko przycisk „Export as…”](20-export-as-only.md) | 19 | [x] |
+| 21 | [Aktualizacja unpdf do 2.x](21-unpdf-2.md) | 18 | [x] |
 
 ## Backlog
 
