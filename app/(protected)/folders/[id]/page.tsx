@@ -9,6 +9,7 @@ import { listFolderVersions } from "@/lib/versions/queries";
 import { CreateStoryDialog } from "../../stories/create-story-dialog";
 import { reorderChapter } from "../../stories/actions";
 import { DeleteStoryButton } from "../../stories/delete-story-button";
+import { ImportDialog } from "../../stories/import-dialog";
 import { setChapterSort } from "../actions";
 import { ReorderButtons } from "../reorder-buttons";
 import { SortSelect } from "../sort-select";
@@ -66,6 +67,7 @@ export default async function FolderPage({
             name={folder.name}
             chapterCount={folder.chapters.length}
           />
+          <ImportDialog folderId={folder.id} />
           <CreateStoryDialog
             folderNames={folders.map((f) => f.name)}
             defaultFolder={folder.name}
