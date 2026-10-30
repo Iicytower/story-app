@@ -238,3 +238,10 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Przycisk jest `absolute` w prawym górnym rogu: odjeżdża z przewijaną stroną i nie zasłania treści. Mieści się w górnym paddingu stron (32 px), a w edytorze wiersz tytułu rezerwuje na niego miejsce. Edytor ma wysokość `h-dvh`.
 - Ikona „Home” (`/stories`) w lewym górnym rogu, w layoucie i pozycjonowana tak samo jak przycisk menu. Wiersz tytułu edytora ma miejsce po obu stronach (`px-9`). Pozycja Stories w menu zostaje.
 - `components/ui/dropdown-menu.tsx`: Radix z istniejącego pakietu `radix-ui`, bez nowej zależności. `ThemeToggle` zastąpiony pozycją menu; `applyTheme` wywołuje `AccountMenu`, bo treść menu jest montowana dopiero po otwarciu.
+
+## D30 – Przewijanie poza tekst (2026-10-30)
+
+- Dotyczy każdego `MarkdownEditor`: treści, notatek rozdziału i notatek folderu. Odstęp nad pierwszą i pod ostatnią linią to wysokość widoku minus jedna linia (`--scroll-gap`, liczone w `trackScrollGap`, `ResizeObserver` na elemencie przewijanym). Wysokość linii pochodzi z pola, więc dłuższy nagłówek jako ostatnia linia jest przy maksymalnym przewinięciu widoczny częściowo.
+- Po otwarciu `scrollTop` to 0, czyli pierwsza linia stoi przy dolnej krawędzi. To decyzja użytkownika, tak samo nad tekstem w notatkach i przy zapamiętanej pozycji „na początku” (D27).
+- Element nie może być niższy niż jego padding, więc textarea w Source nie przewija się sama: rośnie z tekstem (`field-sizing: content`), a przewija ją zewnętrzny element, jak w Preview. Kliknięcie w pusty obszar ustawia fokus w polu. `field-sizing` nie ma fallbacku, Source wymaga przeglądarki, która go obsługuje (testy: Chromium).
+- Pozycja nad pierwszą linią nie jest kotwicą: przełączenie Preview/Source z tego obszaru (`scrollTop` > 0) ustawia pierwszą linię przy górnej krawędzi.
