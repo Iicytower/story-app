@@ -1,6 +1,7 @@
 import type { AnyExtension } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import { Comment } from "./comment";
+import { DialogueDash, DialogueParagraph } from "./dialogue";
 
 const ALLOWED_PROTOCOLS = ["http:", "https:", "mailto:"];
 
@@ -19,6 +20,7 @@ export const contentExtensions: AnyExtension[] = [
     codeBlock: false,
     strike: false,
     underline: false,
+    paragraph: false,
     heading: { levels: [1, 2, 3] },
     link: {
       openOnClick: false,
@@ -26,6 +28,8 @@ export const contentExtensions: AnyExtension[] = [
       isAllowedUri: (url) => isAllowedLink(url),
     },
   }),
+  DialogueParagraph,
+  DialogueDash,
   Comment,
 ];
 
