@@ -17,6 +17,10 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `deve
 | 20 | [Tylko przycisk „Export as…”](20-export-as-only.md) | 19 | [x] |
 | 21 | [Aktualizacja unpdf do 2.x](21-unpdf-2.md) | 18 | [x] |
 | 22 | [Wyszukiwanie i zamiana w polu](22-find-replace.md) | – | [x] |
+| 23 | [Rozwinięcie sprawdzania tekstu](23-text-checking.md) | – | [ ] |
+| 24 | [Tagi i wyszukiwanie publicznych opowiadań](24-tags-public-search.md) | – | [ ] |
+| 25 | [Słowniki](25-dictionaries.md) | – | [ ] |
+| 26 | [Okładki](26-covers.md) | – | [ ] |
 
 ## Backlog
 
@@ -24,14 +28,8 @@ Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 
 - Generatory różnego rodzaju (szczegóły do ustalenia).
 - System społecznościowy (do przemyślenia).
-- Tagowanie opowiadań i wyszukiwanie wśród publicznych opowiadań.
-- Słowniki różnego rodzaju, np: synonimów, rymów, sjp
-- Upload okładki / obrazka do opowiadania.
-- Pełne sprawdzanie tekstu niezależne od ustawień przeglądarki (do przemyślenia). Dziś pisownię sprawdza przeglądarka i tylko z włączonym polskim słownikiem (D21). Docelowo:
-  - pisownia, gramatyka, stylistyka i interpunkcja;
-  - opcjonalnie zaznaczanie powtórzeń, z możliwością włączenia w ustawieniach użytkownika.
-
-  Możliwości: LanguageTool (publiczne API, Premium, własny serwer), LLM, Hunspell w aplikacji. Każda wymaga albo wysłania tekstu poza przeglądarkę, albo płatnego hostingu, albo nowych pakietów (D21).
+- Obrazki w tekście opowiadania (po tasku 26).
+- Opcjonalne zaznaczanie powtórzeń, z możliwością włączenia w ustawieniach użytkownika (uzupełnienie taska 23).
 
 ## Branche
 
