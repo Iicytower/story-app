@@ -261,3 +261,10 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Każdy rozdział to osobny dokument z tytułem rozdziału, także przy `.epub`, `.fb2`, `.pdf`. Przełącznik „Include comments and notes” działa jak w D31, a notatki folderu trafiają do `notes.<rozszerzenie>`.
 - „Export .zip” (D18) zostaje bez zmian: tylko on daje `.md` z frontmatterem i zawsze zawiera notatki.
 
+## D33 – Tylko „Export as…” (2026-10-30)
+
+- Zmienia D10, D18, D31, D32. Decyzja użytkownika: przyciski „Export .md” i „Export .zip” usunięte, a z nimi trasy `GET /stories/[id]/export` i `GET /folders/[id]/export` oraz frontmatter (`withFrontmatter`, `toMarkdownExport`). Jedyny eksport to dialog „Export as…” (D31, D32) z trasami `.../export/data`.
+- Eksport nie zawiera już dat ani metadanych. Odpowiednik dawnego zipa: `.md`, „One file per chapter (.zip)” i „Include comments and notes”; notatki rozdziału są w tekście pod nagłówkiem „Notes”.
+- Dawne gwarancje „Export .md” przechodzą na dialog: zapis przed eksportem, konflikt z inną kartą i pusty tytuł przerywają eksport.
+- Pełna kopia danych to `npm run backup` (D26).
+

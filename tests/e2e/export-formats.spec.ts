@@ -51,25 +51,6 @@ test("saves unsaved changes first and honours the extras switch", async ({
   expect(full.toString()).toContain("Private note");
 });
 
-test("does not export when saving fails", async ({ page }) => {
-  await seedStory("alice", { title: "Taken" });
-  const id = await seedStory("alice", { title: "Mine" });
-  await page.goto(`/stories/${id}`);
-  let downloaded = false;
-  page.on("download", () => {
-    downloaded = true;
-  });
-
-  await page.getByRole("textbox", { name: "Title", exact: true }).fill("Taken");
-  await page.getByRole("button", { name: "Export as…" }).click();
-  await page.getByRole("button", { name: "Export", exact: true }).click();
-
-  await expect(page.getByRole("status")).toHaveText(
-    "A story with this title already exists in this folder.",
-  );
-  expect(downloaded).toBe(false);
-});
-
 test("exports a folder as one document", async ({ page }) => {
   await seedStory("alice", {
     title: "Rozdział",

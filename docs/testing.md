@@ -7,7 +7,7 @@ Obowiązuje dla każdego taska. Cel: kryteria akceptacji sprawdzane automatyczni
 | Warstwa | Narzędzie | Co testuje | Gdzie |
 | --- | --- | --- | --- |
 | Statyczna | ESLint, Prettier, `tsc --noEmit` | Styl, typy | cały kod |
-| Jednostkowe | Vitest | Czyste funkcje: `stripComments`, frontmatter YAML, bezpieczna nazwa pliku, escapowanie regex, fragment z trafieniem, liczniki słów/znaków | `*.test.ts` obok kodu |
+| Jednostkowe | Vitest | Czyste funkcje: `stripComments`, formaty eksportu, bezpieczna nazwa pliku, escapowanie regex, fragment z trafieniem, liczniki słów/znaków | `*.test.ts` obok kodu |
 | Integracyjne | Vitest + MongoDB w Dockerze | Server Actions i zapytania na prawdziwej bazie testowej: kody błędów, indeksy unikalne, soft delete, izolacja użytkowników, `authorize` | `tests/integration/` |
 | E2E | Playwright (Chromium) | Przepływy w przeglądarce na działającej aplikacji | `tests/e2e/` |
 

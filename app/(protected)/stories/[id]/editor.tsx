@@ -7,7 +7,6 @@ import {
   CheckIcon,
   Columns3Icon,
   CopyIcon,
-  DownloadIcon,
   LinkIcon,
   PanelRightCloseIcon,
   PanelRightOpenIcon,
@@ -174,14 +173,6 @@ export function Editor({
       return false;
     }
     return Boolean(await save(true));
-  }
-
-  async function exportStory() {
-    if (!(await saveForExport())) return;
-    const link = document.createElement("a");
-    link.href = `/stories/${story.id}/export`;
-    link.download = "";
-    link.click();
   }
 
   async function beforeLeave(): Promise<string | null> {
@@ -452,10 +443,6 @@ export function Editor({
           {saveState.status === "saved" && "Saved"}
           {saveState.status === "error" && saveState.message}
         </span>
-        <Button variant="outline" onClick={exportStory}>
-          <DownloadIcon />
-          <span className="sr-only md:not-sr-only">Export .md</span>
-        </Button>
         <ExportDialog
           dataUrl={`/stories/${story.id}/export/data`}
           fallbackName="story"

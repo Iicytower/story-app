@@ -14,6 +14,7 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `deve
 | 17 | [Nowe formaty eksportu](17-export-formats.md) | – | [x] |
 | 18 | [Import opowiadań](18-import.md) | 17 | [ ] |
 | 19 | [Zip z osobnym plikiem na rozdział](19-chapter-files-zip.md) | 17 | [x] |
+| 20 | [Tylko „Export as…”](20-export-as-only.md) | 19 | [x] |
 
 ## Backlog
 
