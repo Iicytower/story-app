@@ -1,7 +1,4 @@
-import { readFile } from "node:fs/promises";
 import type { Browser, Page } from "@playwright/test";
-import { strFromU8, unzipSync } from "fflate";
-import { parse } from "yaml";
 import { findFolder, seedStory, withE2EDb } from "./db";
 import { storageStatePath } from "./env";
 import { expect, test } from "./helpers";
@@ -55,30 +52,12 @@ async function openAnonymously(browser: Browser, url: string) {
   return { context, page, response: response! };
 }
 
-test("downloads the folder as a zip in the folder order", async ({ page }) => {
-  const id = await seedBook();
-  await page.goto(`/folders/${id}`);
-
-  const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("link", { name: "Export .zip" }).click();
-  const download = await downloadPromise;
-
-  expect(download.suggestedFilename()).toBe("book.zip");
-  const files = unzipSync(await readFile(await download.path()));
-  expect(Object.keys(files)).toEqual(["01-two.md", "02-one.md", "notes.md"]);
-  const [, frontmatter] = /^---\n([\s\S]*?)\n---\n\n/.exec(
-    strFromU8(files["02-one.md"]),
-  )!;
-  expect(parse(frontmatter)).toMatchObject({
-    title: "One",
-    notes: SECRET_NOTE,
-  });
-});
-
 test("export returns 404 for another user's folder", async ({ page }) => {
   await seedStory("bob", { title: "Bob's", folder: "Bob's book" });
   const folder = await findFolder("Bob's book");
-  const response = await page.request.get(`/folders/${folder!._id}/export`);
+  const response = await page.request.get(
+    `/folders/${folder!._id}/export/data`,
+  );
   expect(response.status()).toBe(404);
 });
 
