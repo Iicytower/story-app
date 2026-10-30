@@ -1,5 +1,6 @@
 "use client";
 
+import { ExportDialog } from "@/components/export-dialog";
 import {
   CheckIcon,
   CopyIcon,
@@ -64,6 +65,10 @@ export function FolderShare({
             Export .zip
           </a>
         </Button>
+        <ExportDialog
+          dataUrl={`/folders/${id}/export/data`}
+          fallbackName="folder"
+        />
         <Button variant="outline" onClick={toggleSharing} disabled={pending}>
           <Share2Icon />
           {sharePath ? "Stop sharing" : "Share"}
