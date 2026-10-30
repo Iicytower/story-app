@@ -22,9 +22,11 @@ import {
   MinusIcon,
   QuoteIcon,
   Redo2Icon,
+  SearchIcon,
   Undo2Icon,
 } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { FindPanel } from "@/components/find-panel";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -43,6 +45,24 @@ import {
   trimMarkdown,
 } from "@/lib/editor/extensions";
 import {
+  compileFind,
+  expandMatch,
+  findMatches,
+  type FindOptions,
+  type Match,
+  nearestMatch,
+  replacementTemplate,
+  replaceMatches,
+} from "@/lib/editor/find";
+import {
+  CURRENT_MATCH_CLASS,
+  docMatches,
+  FindHighlight,
+  MATCH_CLASS,
+  replaceInDoc,
+  showMatches,
+} from "@/lib/editor/find-highlight";
+import {
   type Anchor,
   recallScroll,
   rememberScroll,
@@ -53,6 +73,13 @@ type Mode = "preview" | "source";
 
 // Measuring Source copies the whole text, so the position is read once scrolling pauses.
 const SCROLL_READ_DELAY_MS = 200;
+
+// Shared by the textarea and the highlights under it, which must wrap the same way.
+const sourceTextClass = (compact: boolean) =>
+  cn(
+    "px-4 font-mono text-base leading-relaxed md:px-6 md:text-sm",
+    compact && "md:px-4",
+  );
 
 export function MarkdownEditor({
   value,
@@ -77,6 +104,19 @@ export function MarkdownEditor({
   // Always Preview on open; the choice is not remembered.
   const [mode, setMode] = useState<Mode>("preview");
   const [linkOpen, setLinkOpen] = useState(false);
+  const [find, setFind] = useState<"find" | "replace" | null>(null);
+  const [findOptions, setFindOptions] = useState<FindOptions>({
+    query: "",
+    matchCase: false,
+    wholeWord: false,
+    regex: false,
+  });
+  const [replacement, setReplacement] = useState("");
+  const [matchIndex, setMatchIndex] = useState(0);
+  const findInputRef = useRef<HTMLInputElement>(null);
+  const focusFind = useRef(false);
+  // Edits keep the view where it is; only finding moves it to the current match.
+  const revealMatch = useRef(false);
   const onChangeRef = useRef(onChange);
   const openLinkRef = useRef(() => setLinkOpen(true));
   // The markdown the editor last produced or loaded; anything else in `value` came from Source.
@@ -98,6 +138,7 @@ export function MarkdownEditor({
     extensions: [
       ...contentExtensions,
       Markdown.configure({ markedOptions: MARKED_OPTIONS }),
+      FindHighlight,
       Extension.create({
         name: "linkShortcut",
         addKeyboardShortcuts: () => ({
@@ -132,6 +173,180 @@ export function MarkdownEditor({
       onChangeRef.current(markdown);
     },
   });
+
+  // Compares by identity: the default deep comparison would walk the document on every transaction.
+  const doc = useEditorState({
+    editor,
+    selector: ({ editor }) => editor?.state.doc ?? null,
+    equalityFn: Object.is,
+  });
+  const compiled = useMemo(() => compileFind(findOptions), [findOptions]);
+  const regex = find && compiled instanceof RegExp ? compiled : null;
+  const matches = useMemo(
+    () =>
+      !regex
+        ? []
+        : mode === "source"
+          ? findMatches(value, regex)
+          : doc
+            ? docMatches(doc, regex)
+            : [],
+    [regex, mode, value, doc],
+  );
+  // Modulo: replacing the last match moves on to the first.
+  const current = matches.length > 0 ? matchIndex % matches.length : -1;
+
+  useLayoutEffect(() => {
+    if (editor && mode === "preview")
+      showMatches(editor.view, matches, current);
+  }, [editor, mode, matches, current]);
+
+  useLayoutEffect(() => {
+    if (!revealMatch.current) return;
+    revealMatch.current = false;
+    rootRef.current
+      ?.querySelector("[data-find-current]")
+      ?.scrollIntoView({ block: "center" });
+  });
+
+  useEffect(() => {
+    if (!focusFind.current) return;
+    focusFind.current = false;
+    findInputRef.current?.focus();
+    findInputRef.current?.select();
+  });
+
+  const textMatches = (pattern: RegExp) =>
+    mode === "source"
+      ? findMatches(value, pattern)
+      : docMatches(editor!.state.doc, pattern);
+
+  function caret() {
+    if (mode === "source") return textareaRef.current?.selectionStart ?? 0;
+    return editor?.state.selection.from ?? 0;
+  }
+
+  function selectedText() {
+    const textarea = textareaRef.current;
+    if (mode === "source" && textarea)
+      return value.slice(textarea.selectionStart, textarea.selectionEnd);
+    if (!editor) return "";
+    const { from, to } = editor.state.selection;
+    return editor.state.doc.textBetween(from, to, "\n", "\n");
+  }
+
+  function updateFind(next: FindOptions) {
+    setFindOptions(next);
+    const pattern = compileFind(next);
+    if (!(pattern instanceof RegExp)) return;
+    setMatchIndex(nearestMatch(textMatches(pattern), caret()));
+    revealMatch.current = true;
+  }
+
+  function openFind(kind: "find" | "replace") {
+    const selected = selectedText();
+    if (selected && !selected.includes("\n"))
+      updateFind({ ...findOptions, query: selected });
+    setFind((open) => (open === "replace" ? open : kind));
+    focusFind.current = true;
+  }
+
+  // Leaves the current match selected, so typing continues from there.
+  function closeFind() {
+    const match = matches[current];
+    setFind(null);
+    if (mode === "source") {
+      const textarea = textareaRef.current!;
+      textarea.focus({ preventScroll: true });
+      if (match) textarea.setSelectionRange(match.from, match.to);
+    } else if (match) {
+      editor?.chain().setTextSelection(match).focus().run();
+    } else {
+      editor?.commands.focus();
+    }
+  }
+
+  function stepMatch(direction: 1 | -1) {
+    if (matches.length === 0) return;
+    setMatchIndex((current + direction + matches.length) % matches.length);
+    revealMatch.current = true;
+  }
+
+  function handleFindKeys(event: React.KeyboardEvent<HTMLDivElement>) {
+    // Events from the link dialog bubble through its portal.
+    if (!event.currentTarget.contains(event.target as Node)) return;
+    if (event.key === "Escape" && find) {
+      event.preventDefault();
+      closeFind();
+    }
+    if (!(event.ctrlKey || event.metaKey) || event.shiftKey || event.altKey)
+      return;
+    const key = event.key.toLowerCase();
+    if (key !== "f" && key !== "h") return;
+    event.preventDefault();
+    openFind(key === "f" ? "find" : "replace");
+  }
+
+  // Goes through the browser's editing command, which keeps native Undo in the textarea.
+  function replaceInTextarea(from: number, to: number, text: string) {
+    const textarea = textareaRef.current!;
+    const scroller = sourceScroller(textarea);
+    const { scrollTop } = scroller;
+    textarea.focus({ preventScroll: true });
+    textarea.setSelectionRange(from, to);
+    document.execCommand(text ? "insertText" : "delete", false, text);
+    scroller.scrollTop = scrollTop;
+  }
+
+  function replaceCurrent() {
+    const match = matches[current];
+    if (!match || !regex) return;
+    const template = replacementTemplate(findOptions, replacement);
+    let end: number;
+    let next: Match[];
+    if (mode === "source") {
+      const text = expandMatch(value, match, regex, template);
+      replaceInTextarea(match.from, match.to, text);
+      end = match.from + text.length;
+      next = findMatches(
+        value.slice(0, match.from) + text + value.slice(match.to),
+        regex,
+      );
+    } else {
+      const { view, state } = editor!;
+      const single = docMatches(state.doc, regex).filter(
+        ({ from }) => from === match.from,
+      );
+      const tr = replaceInDoc(state.tr, single, regex, template);
+      end = tr.mapping.map(match.to);
+      view.dispatch(tr);
+      next = docMatches(view.state.doc, regex);
+    }
+    // Past the new text, so a replacement that contains the query is not found again.
+    setMatchIndex(nearestMatch(next, end));
+    revealMatch.current = true;
+    findInputRef.current?.focus({ preventScroll: true });
+  }
+
+  function replaceAll() {
+    if (!regex || matches.length === 0) return;
+    const template = replacementTemplate(findOptions, replacement);
+    if (mode === "source") {
+      replaceInTextarea(
+        0,
+        value.length,
+        replaceMatches(value, matches, regex, template),
+      );
+    } else {
+      const { view, state } = editor!;
+      view.dispatch(
+        replaceInDoc(state.tr, docMatches(state.doc, regex), regex, template),
+      );
+    }
+    setMatchIndex(0);
+    // The button gets disabled with no matches left, which would drop the focus.
+    findInputRef.current?.focus({ preventScroll: true });
+  }
 
   const storyId = scrollMemory?.storyId;
   const field = scrollMemory?.field;
@@ -231,6 +446,7 @@ export function MarkdownEditor({
       ref={rootRef}
       role="group"
       aria-label={`${label} editor`}
+      onKeyDown={handleFindKeys}
       className={cn("flex min-h-0 flex-col", className)}
     >
       <div className="flex flex-wrap items-center gap-0.5 border-b px-2 py-1">
@@ -254,7 +470,36 @@ export function MarkdownEditor({
         {mode === "preview" && editor && (
           <Toolbar editor={editor} onLink={() => setLinkOpen(true)} />
         )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Find and replace"
+          title="Find and replace"
+          aria-pressed={find !== null}
+          onClick={() => (find ? closeFind() : openFind("replace"))}
+          className="aria-pressed:bg-muted"
+        >
+          <SearchIcon />
+        </Button>
       </div>
+      {find && (
+        <FindPanel
+          options={findOptions}
+          onOptionsChange={updateFind}
+          replacement={replacement}
+          onReplacementChange={setReplacement}
+          showReplace={find === "replace"}
+          matchCount={matches.length}
+          current={current}
+          invalid={compiled === "invalid"}
+          findInputRef={findInputRef}
+          onStep={stepMatch}
+          onReplace={replaceCurrent}
+          onReplaceAll={replaceAll}
+          onClose={closeFind}
+        />
+      )}
       {mode === "source" ? (
         // A box cannot be shorter than its padding, so the textarea grows with the text
         // and an outer element scrolls it, the same way as in Preview.
@@ -266,7 +511,15 @@ export function MarkdownEditor({
           }}
           className="min-h-0 flex-1 cursor-text overflow-y-auto"
         >
-          <div className="py-(--scroll-gap)">
+          <div className="relative py-(--scroll-gap)">
+            {matches.length > 0 && (
+              <SourceHighlights
+                text={value}
+                matches={matches}
+                current={current}
+                className={sourceTextClass(compact)}
+              />
+            )}
             <textarea
               ref={textareaRef}
               value={value}
@@ -276,8 +529,8 @@ export function MarkdownEditor({
               lang="pl"
               spellCheck
               className={cn(
-                "block field-sizing-content w-full resize-none overflow-hidden bg-transparent px-4 font-mono text-base leading-relaxed outline-none md:px-6 md:text-sm",
-                compact && "md:px-4",
+                "relative block field-sizing-content w-full resize-none overflow-hidden bg-transparent outline-none",
+                sourceTextClass(compact),
               )}
             />
           </div>
@@ -296,6 +549,45 @@ export function MarkdownEditor({
           onOpenChange={setLinkOpen}
         />
       )}
+    </div>
+  );
+}
+
+// A textarea cannot style parts of its text, so a copy under it, with invisible text, marks them.
+function SourceHighlights({
+  text,
+  matches,
+  current,
+  className,
+}: {
+  text: string;
+  matches: Match[];
+  current: number;
+  className: string;
+}) {
+  return (
+    <div
+      aria-hidden
+      className={cn(
+        "pointer-events-none absolute inset-x-0 top-(--scroll-gap) break-words whitespace-pre-wrap text-transparent",
+        className,
+      )}
+    >
+      {matches.map((match, index) => (
+        <span key={match.from}>
+          {text.slice(index === 0 ? 0 : matches[index - 1].to, match.from)}
+          <mark
+            data-find-current={index === current ? "" : undefined}
+            className={cn(
+              "text-transparent",
+              index === current ? CURRENT_MATCH_CLASS : MATCH_CLASS,
+            )}
+          >
+            {text.slice(match.from, match.to)}
+          </mark>
+        </span>
+      ))}
+      {text.slice(matches.at(-1)!.to)}
     </div>
   );
 }
