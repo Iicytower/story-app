@@ -56,7 +56,7 @@ test("export returns 404 for another user's folder", async ({ page }) => {
   await seedStory("bob", { title: "Bob's", folder: "Bob's book" });
   const folder = await findFolder("Bob's book");
   const response = await page.request.get(
-    `/folders/${folder!._id}/export/data`,
+    `/folders/${folder!._id}/export`,
   );
   expect(response.status()).toBe(404);
 });

@@ -76,6 +76,6 @@ test("does not download with an empty title", async ({ page }) => {
 
 test("returns 404 for another user's story", async ({ page }) => {
   const id = await seedStory("bob", { title: "Bob's" });
-  const response = await page.request.get(`/stories/${id}/export/data`);
+  const response = await page.request.get(`/stories/${id}/export`);
   expect(response.status()).toBe(404);
 });

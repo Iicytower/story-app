@@ -1,12 +1,18 @@
+import { unzipSync } from "fflate";
 import { Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { GET } from "@/app/(protected)/folders/[id]/export/route";
 import {
   deleteFolder,
   setFolderSharing,
 } from "@/app/(protected)/folders/actions";
 import { deleteStory, setSharing } from "@/app/(protected)/stories/actions";
 import { requireUser } from "@/lib/auth/session";
-import { getSharedChapter, getSharedFolder } from "@/lib/folders/queries";
+import {
+  getFolderForExport,
+  getSharedChapter,
+  getSharedFolder,
+} from "@/lib/folders/queries";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
 import { getSharedStory } from "@/lib/stories/queries";
@@ -182,5 +188,45 @@ describe("shared folder pages", () => {
 
   it("returns nothing for an unknown token", async () => {
     expect(await getSharedFolder("unknown-token-1234567")).toBeNull();
+  });
+});
+
+describe("GET /folders/[id]/export", () => {
+  const exportFolder = (id: string) =>
+    GET(new Request(`http://localhost/folders/${id}/export`), {
+      params: Promise.resolve({ id }),
+    });
+
+  it("returns a zip with numbered chapters in the folder order and notes.md", async () => {
+    const { folderId } = await seedFolder();
+    const response = await exportFolder(folderId);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("application/zip");
+    expect(response.headers.get("Content-Disposition")).toBe(
+      'attachment; filename="book.zip"',
+    );
+    const files = unzipSync(new Uint8Array(await response.arrayBuffer()));
+    expect(Object.keys(files)).toEqual([
+      "01-third.md",
+      "02-second.md",
+      "03-first.md",
+      "notes.md",
+    ]);
+  });
+
+  it("returns 401 without a session and 404 for another user's or a deleted folder", async () => {
+    const { folderId } = await seedFolder();
+    const bobs = await seedFolder(bob);
+
+    signInAs(null);
+    expect((await exportFolder(folderId)).status).toBe(401);
+
+    signInAs(alice);
+    expect((await exportFolder(bobs.folderId)).status).toBe(404);
+    expect((await exportFolder("not-an-id")).status).toBe(404);
+    await deleteFolder(folderId);
+    expect((await exportFolder(folderId)).status).toBe(404);
+    expect(await getFolderForExport(alice.toString(), folderId)).toBeNull();
   });
 });
