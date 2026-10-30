@@ -68,16 +68,13 @@ async function isInView(container: Locator, target: Locator) {
 // Whether the textarea shows the line starting with `text` (lines never wrap here).
 function sourceShowsLine(textarea: Locator, text: string) {
   return textarea.evaluate((element: HTMLTextAreaElement, text) => {
-    const style = getComputedStyle(element);
-    const lineHeight = parseFloat(style.lineHeight);
+    const lineHeight = parseFloat(getComputedStyle(element).lineHeight);
     const line =
       element.value.slice(0, element.value.indexOf(text)).split("\n").length -
       1;
-    const top = parseFloat(style.paddingTop) + line * lineHeight;
-    return (
-      top >= element.scrollTop &&
-      top + lineHeight <= element.scrollTop + element.clientHeight
-    );
+    const view = element.parentElement!.parentElement!.getBoundingClientRect();
+    const top = element.getBoundingClientRect().top + line * lineHeight;
+    return top >= view.top - lineHeight / 2 && top + lineHeight <= view.bottom;
   }, text);
 }
 
@@ -96,8 +93,11 @@ async function expectSameTextAfterSwitching(page: Page) {
   const line =
     CONTENT.slice(0, CONTENT.indexOf("Paragraph 89")).split("\n").length - 1;
   await textarea.evaluate((element: HTMLTextAreaElement, line) => {
-    const style = getComputedStyle(element);
-    element.scrollTop = line * parseFloat(style.lineHeight);
+    const scroller = element.parentElement!.parentElement!;
+    scroller.scrollTop +=
+      element.getBoundingClientRect().top -
+      scroller.getBoundingClientRect().top +
+      line * parseFloat(getComputedStyle(element).lineHeight);
   }, line);
   await content.button("Preview").click();
   await expect
@@ -137,8 +137,13 @@ function sourceLineOffset(textarea: Locator, text: string) {
       parseFloat(style.paddingBottom) -
       parseFloat(style.lineHeight);
     copy.remove();
+    const view = element.parentElement!.parentElement!.getBoundingClientRect();
     return {
-      offset: lineTop - parseFloat(style.paddingTop) - element.scrollTop,
+      offset:
+        element.getBoundingClientRect().top +
+        lineTop -
+        parseFloat(style.paddingTop) -
+        view.top,
       lineHeight: parseFloat(style.lineHeight),
     };
   }, text);

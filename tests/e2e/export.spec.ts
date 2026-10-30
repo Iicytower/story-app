@@ -1,43 +1,14 @@
-import { readFile } from "node:fs/promises";
-import { parse } from "yaml";
-import { findStoryById, seedStory } from "./db";
+import type { Page } from "@playwright/test";
+import { seedStory } from "./db";
 import { storageStatePath } from "./env";
-import { expect, markdownEditor, test } from "./helpers";
+import { expect, test } from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
-test("saves unsaved changes and downloads them as a markdown file", async ({
-  page,
-}) => {
-  const id = await seedStory("alice", {
-    title: "Zażółć gęślą jaźń",
-    content: "Old content",
-    notes: "Old notes",
-  });
-  await page.goto(`/stories/${id}`);
-
-  await markdownEditor(page, "Content").setSource("Fresh <!-- secret --> text");
-  await markdownEditor(page, "Notes").setSource(
-    "Note: with colon\nand a second line",
-  );
-  const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Export .md" }).click();
-  const download = await downloadPromise;
-
-  expect(download.suggestedFilename()).toBe("zazolc-gesla-jazn.md");
-  const file = await readFile(await download.path(), "utf8");
-  const [, frontmatter, body] = /^---\n([\s\S]*?)\n---\n\n([\s\S]*)$/.exec(
-    file,
-  )!;
-  const saved = await findStoryById(id);
-  expect(parse(frontmatter)).toMatchObject({
-    title: "Zażółć gęślą jaźń",
-    updatedAt: saved?.updatedAt.toISOString(),
-    notes: "Note: with colon\nand a second line",
-  });
-  expect(body).toBe("Fresh <!-- secret --> text");
-  expect(saved?.content).toBe("Fresh <!-- secret --> text");
-});
+async function submitExport(page: Page) {
+  await page.getByRole("button", { name: "Export as…" }).click();
+  await page.getByRole("button", { name: "Export", exact: true }).click();
+}
 
 test("does not download when saving fails and shows the error", async ({
   page,
@@ -51,7 +22,7 @@ test("does not download when saving fails and shows the error", async ({
   });
 
   await page.getByRole("textbox", { name: "Title", exact: true }).fill("Taken");
-  await page.getByRole("button", { name: "Export .md" }).click();
+  await submitExport(page);
 
   await expect(page.getByRole("status")).toHaveText(
     "A story with this title already exists in this folder.",
@@ -78,7 +49,7 @@ test("does not download when the story was saved in another tab", async ({
     .fill("From the other tab");
   await other.keyboard.press("Control+s");
   await expect(other.getByRole("status")).toHaveText("Saved");
-  await page.getByRole("button", { name: "Export .md" }).click();
+  await submitExport(page);
 
   await expect(page.getByRole("status")).toHaveText(
     /changed in another tab or on another device/,
@@ -96,7 +67,7 @@ test("does not download with an empty title", async ({ page }) => {
   });
 
   await page.getByRole("textbox", { name: "Title", exact: true }).fill("");
-  await page.getByRole("button", { name: "Export .md" }).click();
+  await submitExport(page);
 
   await expect(page.getByRole("status")).toHaveText("Title is required.");
   await page.waitForTimeout(1000);

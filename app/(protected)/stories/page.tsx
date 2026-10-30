@@ -14,6 +14,7 @@ import { ReorderButtons } from "../folders/reorder-buttons";
 import { SortSelect } from "../folders/sort-select";
 import { CreateStoryDialog } from "./create-story-dialog";
 import { DeleteStoryButton } from "./delete-story-button";
+import { ImportDialog } from "./import-dialog";
 
 const SORT_OPTIONS = [
   { value: "updated", label: "Last updated" },
@@ -52,6 +53,10 @@ export default async function StoriesPage({
           action={setFolderSort}
         />
         <CreateFolderDialog />
+        <ImportDialog
+          folderNames={folders.map((folder) => folder.name)}
+          defaultFolder={defaultFolder?.name ?? ""}
+        />
         <CreateStoryDialog
           folderNames={folders.map((folder) => folder.name)}
           defaultFolder={defaultFolder?.name ?? ""}
