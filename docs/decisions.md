@@ -90,7 +90,7 @@ Zamiast `mongodb-memory-server` używamy kontenera `mongo:8` z `docker-compose.y
 
 - Odstępstwo od „tylko desktop” w spec: edytor obsługuje wąskie ekrany. Poniżej breakpointu `md` (768 px) na górze jest przełącznik Story / Notes / Chapters (`role="tablist"`, nazwa „View”) i widoczny jest jeden panel naraz. Zakładka Story pokazuje edytor WYSIWYG (D20); Notes – notatki folderu nad notatkami rozdziału, bez separatora.
 - Na wąskim ekranie przyciski paska narzędzi pokazują tylko ikony (etykieta w `sr-only`), przyciski zwijania i Split są ukryte, a pola tekstowe mają `text-base`, żeby iOS nie powiększał strony przy fokusie.
-- Układ (desktop lub mobile) wybiera `matchMedia` (`useSyncExternalStore`, serwer renderuje desktop), więc w DOM jest tylko jedno drzewo paneli i każde pole występuje raz. Treść, notatki i notatki folderu trzyma komponent nad oboma drzewami, więc zmiana szerokości okna ich nie gubi.
+- Układ (desktop lub mobile) wybiera `matchMedia` (`useSyncExternalStore`, serwer renderuje desktop), więc w DOM jest tylko jedno drzewo paneli i każde pole występuje raz. Widoki Story / Notes / Chapters są zamontowane jednocześnie, a nieaktywne ukryte (D27). Treść, notatki i notatki folderu trzyma komponent nad oboma drzewami, więc zmiana szerokości okna ich nie gubi.
 
 ## D13 – Branche i środowiska po wersji 1.0 (2026-10-20)
 
@@ -208,3 +208,33 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
   - „Restore selected” (jak `git restore --source`): zaznaczone rozdziały z wersji wracają, zaznaczone „added since” są usuwane. Niezmienionych nie da się zaznaczyć. Kolejność i tryb sortowania bez zmian.
 - Przywrócony rozdział w folderze dostaje tytuł i treść z wersji z nowym `updatedAt` (otwarty edytor dostaje `CONFLICT`); niezmieniony nie jest zapisywany. Usunięty wraca jako ten sam dokument (`deletedAt: null`, na końcu kolejności ręcznej, bez starego linku udostępniania), więc dalsze porównania go rozpoznają. Przeniesiony do innego folderu jest kopiowany jako nowy rozdział (z bieżącymi notatkami oryginału). Zajęty tytuł → „Tytuł (2)”, „(3)”…; przy zamianie tytułów między dwoma przywracanymi rozdziałami jeden dostanie sufiks.
 - Wersje cudzego i usuniętego folderu: `NOT_FOUND` / 404. Eksport i strony publiczne nie pokazują wersji.
+
+## D26 – Lokalny backup bazy (2026-10-28)
+
+- Zmienia zakres taska 16. Skrypt `scripts/backup.sh` (bash + Docker) zamiast `scripts/backup.ts` przez `tsx`: ma działać niezależnie od aplikacji (docelowo także na VPS, automatyzacja później i poza repo). Bash nie mówi protokołem MongoDB, więc `mongodump` działa w kontenerze `mongo:8`; bez Dockera trzeba by instalować MongoDB Database Tools.
+- URI z `MONGODB_URI` w `.env.prod` (plik nie jest wczytywany przez `source`, bo URI Atlasa zawiera `&`); brak pliku lub zmiennej → pytanie o URI. Nazwa bazy w URI wymagana, `mongodump` dostaje ją jawnie (`--db`).
+- Katalog docelowy poza repo: `/home/$USER/backups/story_app/<czas UTC>/` (UTC, żeby nazwy sortowały się chronologicznie także przy zmianie czasu), więc nic do `.gitignore`. W środku: `<baza>.archive.gz` (pełny backup z indeksami) i `json/<kolekcja>.json` (`mongoexport`, tablica, relaxed Extended JSON) do czytania i odtwarzania pojedynczych kolekcji. Nazwy kolekcji z tymczasowego `mongodump` wewnątrz kontenera, bo `mongosh` przyjmuje URI tylko w argumencie.
+- Zostaje 5 najnowszych backupów. Odtwarzanie tylko jako instrukcja w `deploy.md` (bez `npm run restore`).
+- Testy uruchamiają skrypt z `ENV_FILE` i `BACKUP_DIR` wskazującymi na katalog tymczasowy i bazy `story_app_test_*`; nigdy `.env.prod`.
+
+## D27 – Pozycja przewijania przy przełączaniu widoków (2026-10-30)
+
+- Preview ↔ Source: dopasowanie po bloku. `blockStarts` (`lib/editor/source-blocks.ts`) wylicza, gdzie w markdownie zaczyna się każdy węzeł najwyższego poziomu (tokeny lexera `MarkdownManager`, w tym puste akapity z dodatkowych pustych linii, jak w `@tiptap/markdown`). Przy przełączeniu zapamiętywany jest blok przy górnej krawędzi widoku i ułamek jego wysokości; nowy widok przewija się do tego samego miejsca przed odmalowaniem (`useLayoutEffect`). Wysokość linii w textarea (z zawijaniem) mierzy ukryta kopia pola. Widok przewinięty na sam początek zostaje na początku.
+- Zakładki Notes / Chapters (desktop, bez Split) i Story / Notes / Chapters (wąski ekran) są zamontowane jednocześnie; nieaktywne mają `visibility: hidden` (nie `display: none`, które może wyzerować przewinięcie). Zostaje więc też tryb Preview/Source i historia Undo. Przy Split i Hide/Show grupa kolumn nadal się remontuje, a pozycję przywraca pamięć opisana niżej.
+- Zmiana zakładki nie remontuje grupy kolumn (klucz grupy bez nazwy zakładki), więc edytor treści zostaje nietknięty. Panel boczny zmienia tylko `id` (`notes-column` / `chapters-column`), a biblioteka stosuje wtedy `defaultLayout` – szerokości per zakładka (D19) działają dalej.
+- Pamięć pozycji (`lib/editor/scroll-memory.ts`): `localStorage` pod `story-app:scroll`, nie w bazie ani w ustawieniach. Jeden wpis na rozdział (`savedAt`, pozycje pól `content`, `notes`, `folderNotes` jako blok + ułamek oraz `chapters` jako `scrollTop`). Edytor odczytuje pozycję 200 ms po zakończeniu przewijania (pomiar Source kopiuje cały tekst) i przy odmontowaniu (cleanup `useLayoutEffect` widzi jeszcze DOM). Zapis do `localStorage` następuje 300 ms później albo od razu przy ukryciu karty. Kopia w module pozwala przywrócić pozycję przy remoncie przed zapisem. Po otwarciu (zawsze Preview) edytor przewija się do zapamiętanego bloku. Zostaje 50 ostatnio zapisanych rozdziałów, wpisy starsze niż 30 dni są pomijane. Każdy dostęp do `localStorage` jest w `try/catch`, błędne wpisy są odrzucane pole po polu. Notatki folderu na stronie folderu nie są pamiętane.
+
+## D28 – Myślniki dialogowe (2026-10-30)
+
+- Zmienia D20 (`- ` nie tworzy już listy). Dialog zapisujemy w źródle z półpauzą: `– Tekst` to zwykły akapit, więc podgląd, strony publiczne i eksport działają bez specjalnego renderowania.
+- `DialogueDash` (`lib/editor/dialogue.ts`): wpisanie `- ` na początku bloku daje `– `. Reguła ma wyższy priorytet niż reguła listy ze StarterKit. W komentarzu nie działa (`code: true`).
+- `DialogueParagraph`: serializer zamienia `- ` na początku linii akapitu na `– `, bo taki tekst (wklejenie, cofnięcie reguły, linia po Shift+Enter) wróciłby z markdownu jako lista. W edytorze myślnik zostaje do ponownego wczytania.
+- Listy punktowane zostają: przycisk i `* ` (także `+ `). Serializer dalej zapisuje je jako `- `, a `- ` wpisane w Source to lista.
+- Bez migracji: istniejące linie `- ` zostają listą, użytkownik poprawi je ręcznie (jak w D20). Zmienia kryterium 4 taska 13.
+
+## D29 – Menu konta zamiast górnego paska (2026-10-30)
+
+- Górny pasek `h-14` usunięty ze wszystkich stron chronionych. Stories, Toggle theme i Log out są w menu konta (`app/(protected)/account-menu.tsx`, przycisk „Account”) renderowanym w layoucie, więc działa na każdej stronie chronionej, także na 404.
+- Przycisk jest `absolute` w prawym górnym rogu: odjeżdża z przewijaną stroną i nie zasłania treści. Mieści się w górnym paddingu stron (32 px), a w edytorze wiersz tytułu rezerwuje na niego miejsce. Edytor ma wysokość `h-dvh`.
+- Ikona „Home” (`/stories`) w lewym górnym rogu, w layoucie i pozycjonowana tak samo jak przycisk menu. Wiersz tytułu edytora ma miejsce po obu stronach (`px-9`). Pozycja Stories w menu zostaje.
+- `components/ui/dropdown-menu.tsx`: Radix z istniejącego pakietu `radix-ui`, bez nowej zależności. `ThemeToggle` zastąpiony pozycją menu; `applyTheme` wywołuje `AccountMenu`, bo treść menu jest montowana dopiero po otwarciu.

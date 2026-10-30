@@ -19,7 +19,8 @@ describe("markdown round trip", () => {
   it.each([
     ["paragraphs and inline marks", "First *italic* and **bold**\n\nSecond"],
     ["headings", "# One\n\n## Two\n\n### Three"],
-    ["lists for dialogue", "- Hello.\n- Hi!\n\n1. First\n2. Second"],
+    ["lists", "- Hello.\n- Hi!\n\n1. First\n2. Second"],
+    ["dialogue", "– Hello.\n\n– Hi!\n\n– And you?  \n– Fine."],
     ["quote and horizontal line", "> Quoted\n\n---\n\nAfter"],
     ["links", "[site](https://example.com) and [mail](mailto:a@b.pl)"],
     ["a line break", "first  \nsecond"],
@@ -38,6 +39,33 @@ describe("markdown round trip", () => {
       ],
     });
     expect(roundTrip("first\nsecond")).toBe("first  \nsecond");
+  });
+
+  it("keeps dialogue as paragraphs, not a list", () => {
+    expect(manager.parse("– Hello.\n\n– Hi!").content).toMatchObject([
+      { type: "paragraph" },
+      { type: "paragraph" },
+    ]);
+  });
+
+  it("saves a hyphen opening a line as a dash, which cannot become a list", () => {
+    const text = (value: string) => ({ type: "text", text: value });
+    const doc = {
+      type: "doc",
+      content: [
+        { type: "paragraph", content: [text("- Hello.")] },
+        {
+          type: "paragraph",
+          content: [text("Who?"), { type: "hardBreak" }, text("- Me.")],
+        },
+      ],
+    };
+    const markdown = manager.serialize(doc);
+    expect(markdown).toBe("– Hello.\n\nWho?  \n– Me.");
+    expect(manager.parse(markdown).content).toMatchObject([
+      { type: "paragraph" },
+      { type: "paragraph" },
+    ]);
   });
 
   it("parses a comment as an editable block with its text", () => {

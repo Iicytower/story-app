@@ -136,6 +136,74 @@ test("Source and Preview keep the text and unsaved changes", async ({
   );
 });
 
+test("typed dialogue stays paragraphs in the editor, Source and on the public page", async ({
+  page,
+  browser,
+}) => {
+  const id = await seedStory("alice", { title: "Dialogue" });
+  await page.goto(`/stories/${id}`);
+  const content = markdownEditor(page, "Content");
+  await content.field.click();
+  await page.keyboard.type("- Hello.");
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("- Hi!");
+
+  await expect(content.field.locator("ul, li")).toHaveCount(0);
+  await expect(content.field.locator("p")).toHaveText(["– Hello.", "– Hi!"]);
+  await expect(content.field.locator("p").first()).toHaveCSS(
+    "padding-left",
+    "0px",
+  );
+
+  const markdown = "– Hello.\n\n– Hi!";
+  expect(await content.source()).toBe(markdown);
+  await content.button("Preview").click();
+  await expect(content.field.locator("ul, li")).toHaveCount(0);
+
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status")).toHaveText("Saved");
+  expect((await findStoryById(id))?.content).toBe(markdown);
+
+  await page.reload();
+  await expect(content.field.locator("p")).toHaveText(["– Hello.", "– Hi!"]);
+  await expect(content.field.locator("ul, li")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Share", exact: true }).click();
+  const url = await page
+    .getByRole("textbox", { name: "Share link" })
+    .inputValue();
+  const visitor = await browser.newContext({
+    storageState: { cookies: [], origins: [] },
+  });
+  const publicPage = await visitor.newPage();
+  await publicPage.goto(url);
+  await expect(publicPage.getByText("– Hello.")).toBeVisible();
+  await expect(publicPage.getByText("– Hi!")).toBeVisible();
+  await expect(publicPage.locator("article li, .prose li")).toHaveCount(0);
+  await visitor.close();
+});
+
+test("a list started with * still works and old - lists stay lists", async ({
+  page,
+}) => {
+  const id = await seedStory("alice", {
+    title: "Lists",
+    content: "- Old one\n- Old two",
+  });
+  await page.goto(`/stories/${id}`);
+  const content = markdownEditor(page, "Content");
+  await expect(content.field.getByRole("listitem")).toHaveText([
+    "Old one",
+    "Old two",
+  ]);
+
+  await content.setSource("");
+  await content.field.click();
+  await page.keyboard.type("* item");
+  await expect(content.field.getByRole("listitem")).toHaveText(["item"]);
+  expect(await content.source()).toBe("- item");
+});
+
 test("opening a story without editing does not save it", async ({ page }) => {
   // Markdown the serializer would write differently (`__` instead of `**`).
   const id = await seedStory("alice", {

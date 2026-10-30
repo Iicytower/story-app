@@ -24,7 +24,7 @@ import {
   Redo2Icon,
   Undo2Icon,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -42,8 +42,17 @@ import {
   MARKED_OPTIONS,
   trimMarkdown,
 } from "@/lib/editor/extensions";
+import {
+  type Anchor,
+  recallScroll,
+  rememberScroll,
+} from "@/lib/editor/scroll-memory";
+import { blockStarts } from "@/lib/editor/source-blocks";
 
 type Mode = "preview" | "source";
+
+// Measuring Source copies the whole text, so the position is read once scrolling pauses.
+const SCROLL_READ_DELAY_MS = 200;
 
 export function MarkdownEditor({
   value,
@@ -52,6 +61,7 @@ export function MarkdownEditor({
   placeholder,
   className,
   compact = false,
+  scrollMemory,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -61,6 +71,8 @@ export function MarkdownEditor({
   className?: string;
   // Smaller text for the notes panels.
   compact?: boolean;
+  // Remembers the scroll position under this chapter and field (see scroll-memory).
+  scrollMemory?: { storyId: string; field: string };
 }) {
   // Always Preview on open; the choice is not remembered.
   const [mode, setMode] = useState<Mode>("preview");
@@ -69,6 +81,11 @@ export function MarkdownEditor({
   const openLinkRef = useRef(() => setLinkOpen(true));
   // The markdown the editor last produced or loaded; anything else in `value` came from Source.
   const synced = useRef(value);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Where the view that is being shown should scroll to, set on switching modes.
+  const anchor = useRef<Anchor | null>(null);
+  const scrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rememberRef = useRef(() => {});
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -115,17 +132,84 @@ export function MarkdownEditor({
     },
   });
 
+  const storyId = scrollMemory?.storyId;
+  const field = scrollMemory?.field;
+
+  useEffect(() => {
+    rememberRef.current = () => {
+      if (!storyId || !field || !editor) return;
+      rememberScroll(
+        storyId,
+        field,
+        mode === "preview"
+          ? previewAnchor(editor)
+          : textareaRef.current &&
+              sourceAnchor(
+                textareaRef.current,
+                blockStarts(editor.markdown!, value),
+              ),
+      );
+    };
+  });
+
+  function handleScroll() {
+    if (scrollTimer.current) clearTimeout(scrollTimer.current);
+    scrollTimer.current = setTimeout(() => {
+      scrollTimer.current = null;
+      rememberRef.current();
+    }, SCROLL_READ_DELAY_MS);
+  }
+
+  // A layout cleanup still sees the DOM, so a remount (Split, Hide/Show) keeps the latest position.
+  useLayoutEffect(
+    () => () => {
+      if (!scrollTimer.current) return;
+      clearTimeout(scrollTimer.current);
+      rememberRef.current();
+    },
+    [],
+  );
+
+  // The editor opens in Preview once it exists (after hydration).
+  useLayoutEffect(() => {
+    if (!editor || !storyId || !field) return;
+    const position = recallScroll(storyId, field);
+    if (typeof position === "object" && position)
+      scrollPreviewTo(editor, position);
+  }, [editor, storyId, field]);
+
   function switchMode(next: Mode) {
     if (next === mode) return;
-    if (next === "preview" && editor && value !== synced.current) {
-      editor.commands.setContent(value, {
-        contentType: "markdown",
-        emitUpdate: false,
-      });
-      synced.current = value;
+    if (next === "preview" && editor) {
+      anchor.current =
+        textareaRef.current &&
+        sourceAnchor(textareaRef.current, blockStarts(editor.markdown!, value));
+      if (value !== synced.current) {
+        editor.commands.setContent(value, {
+          contentType: "markdown",
+          emitUpdate: false,
+        });
+        synced.current = value;
+      }
+    } else if (editor) {
+      anchor.current = previewAnchor(editor);
     }
     setMode(next);
   }
+
+  // Before paint, so the new view never shows its top first. Edits re-run it with no anchor.
+  useLayoutEffect(() => {
+    const target = anchor.current;
+    anchor.current = null;
+    if (!target || !editor) return;
+    if (mode === "preview") scrollPreviewTo(editor, target);
+    else
+      scrollSourceTo(
+        textareaRef.current!,
+        blockStarts(editor.markdown!, value),
+        target,
+      );
+  }, [mode, editor, value]);
 
   return (
     <div
@@ -157,6 +241,8 @@ export function MarkdownEditor({
       </div>
       {mode === "source" ? (
         <textarea
+          ref={textareaRef}
+          onScroll={handleScroll}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           aria-label={label}
@@ -171,6 +257,7 @@ export function MarkdownEditor({
       ) : (
         <EditorContent
           editor={editor}
+          onScroll={handleScroll}
           className="min-h-0 flex-1 cursor-text overflow-y-auto [&>div]:min-h-full"
         />
       )}
@@ -183,6 +270,122 @@ export function MarkdownEditor({
       )}
     </div>
   );
+}
+
+const clamp = (value: number) => Math.min(Math.max(value, 0), 1);
+
+// Top-level block elements with their index in the document.
+function* previewBlocks(editor: Editor) {
+  const { doc } = editor.state;
+  let pos = 0;
+  for (let index = 0; index < doc.childCount; index++) {
+    const dom = editor.view.nodeDOM(pos);
+    if (dom instanceof HTMLElement) yield { index, dom };
+    pos += doc.child(index).nodeSize;
+  }
+}
+
+function previewAnchor(editor: Editor): Anchor | null {
+  const container = editor.view.dom.parentElement!;
+  if (container.scrollTop === 0) return null;
+  const top = container.getBoundingClientRect().top;
+  for (const { index, dom } of previewBlocks(editor)) {
+    const rect = dom.getBoundingClientRect();
+    if (rect.bottom > top)
+      return { index, fraction: clamp((top - rect.top) / rect.height) };
+  }
+  return null;
+}
+
+function scrollPreviewTo(editor: Editor, { index, fraction }: Anchor) {
+  const container = editor.view.dom.parentElement!;
+  let target: HTMLElement | null = null;
+  // The editor may hold one more block than the source (an empty paragraph after a final comment or list).
+  for (const block of previewBlocks(editor)) {
+    if (block.index > index) break;
+    target = block.dom;
+  }
+  if (!target) return;
+  const rect = target.getBoundingClientRect();
+  container.scrollTop +=
+    rect.top - container.getBoundingClientRect().top + fraction * rect.height;
+}
+
+function sourceAnchor(
+  textarea: HTMLTextAreaElement,
+  starts: number[],
+): Anchor | null {
+  if (textarea.scrollTop === 0 || starts.length === 0) return null;
+  const tops = lineTops(textarea, [...starts, textarea.value.length]);
+  const top =
+    textarea.scrollTop + parseFloat(getComputedStyle(textarea).paddingTop);
+  let index = 0;
+  while (index < starts.length - 1 && tops[index + 1] <= top) index++;
+  const height = tops[index + 1] - tops[index];
+  return {
+    index,
+    fraction: height > 0 ? clamp((top - tops[index]) / height) : 0,
+  };
+}
+
+function scrollSourceTo(
+  textarea: HTMLTextAreaElement,
+  starts: number[],
+  { index, fraction }: Anchor,
+) {
+  if (starts.length === 0) return;
+  const start = starts[Math.min(index, starts.length - 1)];
+  const end = starts[index + 1] ?? textarea.value.length;
+  const [from, to] = lineTops(textarea, [start, end]);
+  textarea.scrollTop =
+    from +
+    fraction * (to - from) -
+    parseFloat(getComputedStyle(textarea).paddingTop);
+}
+
+// Distance from the top of the textarea content (padding included) to the line holding
+// each offset, wrapping counted. A textarea cannot measure that, so a hidden copy of it does.
+function lineTops(textarea: HTMLTextAreaElement, offsets: number[]): number[] {
+  const style = getComputedStyle(textarea);
+  const mirror = document.createElement("div");
+  for (const property of [
+    "fontFamily",
+    "fontSize",
+    "fontWeight",
+    "fontStyle",
+    "lineHeight",
+    "letterSpacing",
+    "wordSpacing",
+    "tabSize",
+    "paddingTop",
+    "paddingRight",
+    "paddingBottom",
+    "paddingLeft",
+  ] as const)
+    mirror.style[property] = style[property];
+  Object.assign(mirror.style, {
+    position: "absolute",
+    top: "0",
+    left: "0",
+    visibility: "hidden",
+    boxSizing: "border-box",
+    // clientWidth leaves out the scrollbar, which takes no room from the text in the copy.
+    width: `${textarea.clientWidth}px`,
+    whiteSpace: "pre-wrap",
+    overflowWrap: "break-word",
+  });
+  const text = textarea.value;
+  let last = 0;
+  const markers = offsets.map((offset) => {
+    mirror.append(text.slice(last, offset));
+    last = offset;
+    return mirror.appendChild(document.createElement("span"));
+  });
+  mirror.append(text.slice(last));
+  document.body.append(mirror);
+  const tops = markers.map((marker) => marker.offsetTop);
+  mirror.remove();
+  return tops;
 }
 
 function Toolbar({ editor, onLink }: { editor: Editor; onLink: () => void }) {
