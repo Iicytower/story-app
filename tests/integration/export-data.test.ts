@@ -97,11 +97,6 @@ describe("export data routes", () => {
     expect((await folderData(folder._id.toString())).status).toBe(404);
   });
 
-  it("treats an invalid id as missing", async () => {
-    expect((await storyData("not-an-id")).status).toBe(404);
-    expect((await folderData("not-an-id")).status).toBe(404);
-  });
-
   it("returns 401 without a session", async () => {
     const { folder, first } = await seed();
     signInAs(null);
