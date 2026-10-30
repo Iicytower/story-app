@@ -1,26 +1,23 @@
+import { HouseIcon } from "lucide-react";
 import Link from "next/link";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { logout } from "./actions";
+import { AccountMenu } from "./account-menu";
 
 export default function ProtectedLayout({ children }: LayoutProps<"/">) {
   return (
     <>
-      <header className="border-b">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
-          <Link href="/stories" className="font-semibold">
-            Stories
-          </Link>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <form action={logout}>
-              <Button type="submit" variant="outline">
-                Log out
-              </Button>
-            </form>
-          </div>
-        </div>
-      </header>
+      {/* Like AccountMenu: in the padding above page content, scrolling away with the page. */}
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        asChild
+        className="absolute top-1 left-1 z-40"
+      >
+        <Link href="/stories" aria-label="Home" title="Home">
+          <HouseIcon />
+        </Link>
+      </Button>
+      <AccountMenu />
       <main className="flex w-full flex-1 flex-col">{children}</main>
     </>
   );

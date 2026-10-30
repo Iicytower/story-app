@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useLayoutEffect, useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { recallScroll, rememberScroll } from "@/lib/editor/scroll-memory";
 import type { EditorFolder } from "@/lib/folders/queries";
 import { ReorderButtons } from "../../folders/reorder-buttons";
 import { createStory, reorderChapter } from "../actions";
@@ -31,6 +32,13 @@ export function ChaptersPanel({
   beforeLeave: () => Promise<string | null>;
 }) {
   const router = useRouter();
+  const listRef = useRef<HTMLUListElement>(null);
+
+  useLayoutEffect(() => {
+    const position = recallScroll(currentId, "chapters");
+    if (listRef.current && typeof position === "number")
+      listRef.current.scrollTop = position;
+  }, [currentId]);
 
   if (!folder) {
     return (
@@ -50,7 +58,18 @@ export function ChaptersPanel({
         <span className="truncate text-sm font-medium">{folder.name}</span>
         <NewChapterDialog folderName={folder.name} beforeLeave={beforeLeave} />
       </div>
-      <ul aria-label="Chapters" className="min-h-0 flex-1 overflow-y-auto py-1">
+      <ul
+        ref={listRef}
+        aria-label="Chapters"
+        onScroll={(event) =>
+          rememberScroll(
+            currentId,
+            "chapters",
+            event.currentTarget.scrollTop || null,
+          )
+        }
+        className="min-h-0 flex-1 overflow-y-auto py-1"
+      >
         {folder.chapters.map((chapter, index) => {
           const current = chapter.id === currentId;
           const href = `/stories/${chapter.id}`;

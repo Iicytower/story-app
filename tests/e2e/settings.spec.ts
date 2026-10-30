@@ -1,7 +1,7 @@
 import type { Browser, Page } from "@playwright/test";
 import { findSettings, seedStory } from "./db";
 import { storageStatePath, type UserName } from "./env";
-import { countActionRequests, expect, test } from "./helpers";
+import { accountAction, countActionRequests, expect, test } from "./helpers";
 
 test.use({
   storageState: storageStatePath("alice"),
@@ -67,7 +67,7 @@ test("another user keeps the default layout and theme", async ({
   const id = await seedChapter();
   await page.goto(`/stories/${id}`);
   await split(page).click();
-  await page.getByRole("button", { name: "Toggle theme" }).click();
+  await accountAction(page, "Toggle theme");
   await expect
     .poll(() => findSettings("alice"))
     .toMatchObject({
@@ -88,7 +88,7 @@ test("the theme follows the settings in another browser, from the first paint", 
   browser,
 }) => {
   await page.goto("/stories");
-  await page.getByRole("button", { name: "Toggle theme" }).click();
+  await accountAction(page, "Toggle theme");
   await expect
     .poll(async () => (await findSettings("alice"))?.appearance?.theme)
     .toBe("dark");

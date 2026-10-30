@@ -81,9 +81,11 @@ export type FolderNotesState = ReturnType<typeof useFolderNotes>;
 export function FolderNotesField({
   state,
   className,
+  scrollMemory,
 }: {
   state: FolderNotesState;
   className?: string;
+  scrollMemory?: { storyId: string; field: string };
 }) {
   const { notes, setNotes, saveState } = state;
   return (
@@ -112,6 +114,7 @@ export function FolderNotesField({
         placeholder="Notes for this folder…"
         className="flex-1"
         compact
+        scrollMemory={scrollMemory}
       />
     </section>
   );
