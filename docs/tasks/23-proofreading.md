@@ -34,6 +34,8 @@ Stan z 2026-10-31. **[pomiar]** to wynik policzony na pobranym pliku, **[wniosek
 
 ### Czego oczekiwać od LanguageTool 6.8
 
+Czas odpowiedzi w teście na Coolify (task 29) **[pomiar]**: 6000 słów na 1 CPU to 18–23 s na ciepło, a pierwsze żądanie po starcie 66 s. Dialog musi to obsłużyć.
+
 Test na prozie z dialogami, myślnikami, mową potoczną i celowymi błędami:
 
 - Wykrywa: pisownię (Napewno, Wziąść, wejde, włanczałem), łączną i rozdzielną (nie miły, W pośród, z przed), interpunkcję („Mimo, że”, brak przecinka przed „tylko”), pleonazmy (cofnąć się do tyłu, wróciliśmy z powrotem, na dzień dzisiejszy), odmianę i składnię (tą książkę, półtorej roku, „Mi” na początku zdania, w każdym bądź razie), powtórzenie w zdaniu po włączeniu `PL_WORD_REPEAT`.

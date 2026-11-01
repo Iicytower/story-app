@@ -49,7 +49,8 @@ Wieloznaczność **[pomiar]**: 2,9% form ma więcej niż jeden lemat. Przykłady
 
 ### Miejsce i rozmiar danych
 
-- Mikrus 3.5: 4 GB RAM, 40 GB dysku, dzielone z Coolify i LT (LT ok. 350–450 MB).
+- Mikrus 3.5: 4 GB RAM, 40 GB dysku, dzielone z Coolify i LT. W teście na Coolify (task 28) stos z LT zajmował ok. 1,2–1,4 GB RAM, a LT do 666 MB.
+- Test infrastruktury na Coolify (2026-11-01, kod atrapy w tasku 28) **[pomiar]**: atrapa z SQLite na wolumenie `/data` za bramką z sekretem zajmuje ok. 12 MB RAM przy limicie 128 MB, zwraca wiele lematów (`kota` → kot, kota), a dopisany wiersz przetrwał restart usługi i serwera. To nie jest pomiar prawdziwej bazy ani docelowego serwisu.
 - Rozmiar SQLite niezmierzony; baza nie musi siedzieć w pamięci. Budowa lokalnie, bo przetwarza gigabajtowy JSONL obok działającego LT.
 - Odrzucone miejsca: Atlas M0 (0,5 GB z indeksami, dzielone przez produkcję i staging, 100 ops/s; form→lemat to ok. 254 MB BSON przed indeksami), plik w paczce funkcji Vercela, Vercel Blob (po przekroczeniu blokada na 30 dni), Edge Config (1 MB), dane w przeglądarce (pobieranie i kopia danych u każdego użytkownika), żywe API Wikimedia.
 

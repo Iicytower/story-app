@@ -17,9 +17,9 @@ Wynik researchu. Silnik dla dialogu z taska 23.
 
 Do decyzji przy starcie taska:
 
-- Limit czasu wywołania. Propozycja: 30 s, po sprawdzeniu limitu funkcji na Vercelu.
+- Limit czasu wywołania. Propozycja: 30 s, po sprawdzeniu limitu funkcji na Vercelu i pomiarze na Mikrusie, bo test na 1 CPU go przekroczył (sekcja „Test na Coolify”).
 - Limit rozmiaru treści akcji (`bodySizeLimit`) dla najdłuższych rozdziałów.
-- Obraz Dockera (`erikvl87/languagetool` albo `meyay/languagetool`) i `-Xmx`.
+- Obraz Dockera (`erikvl87/languagetool` albo `meyay/languagetool`). `-Xmx` co najmniej 512 MB po teście na Coolify.
 
 ## Dane z researchu
 
@@ -37,11 +37,33 @@ Stan z 2026-10-31. **[pomiar]** to wynik policzony na pobranym pliku, **[wniosek
 
 ### Wyniki testu (`org.languagetool:language-pl:6.8`)
 
-- Wydajność ~6100 słów: 5,9 s na zimno, ~3 s na ciepło, inicjalizacja ~1,5 s. Działa z `-Xmx256m`, szczytowe RSS ~335 MB w trybie biblioteki; serwer HTTP trochę więcej, w sumie ok. 350–450 MB.
+- Wydajność ~6100 słów: 5,9 s na zimno, ~3 s na ciepło, inicjalizacja ~1,5 s. Działa z `-Xmx256m`, szczytowe RSS ~335 MB w trybie biblioteki. Serwer HTTP potrzebuje więcej, patrz „Test na Coolify”.
 - Sklejone linie dają fałszywe alarmy, więc tekst musi mieć `\n\n` albo iść blok po bloku.
 - Hałaśliwa reguła do oceny: `ZDANIA_ZLOZONE`.
 - Wykrywa pisownię, pisownię łączną, interpunkcję, pleonazmy, odmianę i składnię. Złe podpowiedzi: Wogóle → „Ogóle”, Przyszłem → „Przyszłej”. Przeocza m.in. Poszłem, na rozcież, ogromna ilość ludzi, powtórzenia między zdaniami.
 - Fałszywe alarmy: „Brak przecinka w zdaniu złożonym” przez kropkę, imiesłów bez orzeczenia po nierozpoznanym „Poszłem”. Potoczne kwestie i myślniki dialogowe bez szumu.
+
+### Test na Coolify (2026-11-01)
+
+Serwer HTTP w kontenerze `erikvl87/languagetool:latest`, wersja 6.8 z 2026-06-15, `mem_limit: 800m`, `-Xms128m`. Konfiguracja usługi i bramki: task 28.
+
+Tekst: fragmenty *Pana Tadeusza*, 6001 słów (41 397 bajtów, 653 uwagi) i 19 995 słów (140 105 bajtów, 2309 uwag), w blokach po 4 wiersze rozdzielonych `\n\n`. Parametry: `text`, `language=pl-PL`, `enabledRules=PL_WORD_REPEAT`. Liczba uwag była taka sama w każdej konfiguracji. Każdy czas to jedna próba, a seria szła od pierwszego żądania po starcie.
+
+| Konfiguracja **[pomiar]** | 6000 słów: 1. | 2. | 3. | 20 000 słów | RSS |
+| --- | --- | --- | --- | --- | --- |
+| `-Xmx512m`, bez limitu CPU (8 rdzeni) | 14,3 s | 6,6 s | 5,8 s | 17,3 s | 473 MB przed, ok. 658 MB po |
+| `-Xmx512m`, `cpus: 1` | 65,9 s | 23,0 s | 18,0 s | 31,4 s | 583–666 MB |
+| `-Xmx512m`, `cpus: 0.5` | 152,6 s | 38,0 s | nie mierzono | nie mierzono | 629–643 MB |
+| `-Xmx256m`, bez limitu CPU | 40,7 s | 33,5 s | nie mierzono | 176,0 s | 469–487 MB, bez OOM i restartów |
+
+**[wniosek]**
+
+- `-Xmx256m` nie wystarcza do pracy serwera, bo tekst sprawdza się kilka razy wolniej. Potrzeba co najmniej 512 MB, a limit kontenera 800 MB zostawia niewielki zapas.
+- Limit 30 s jest ryzykowny. Na 1 CPU przekracza go pierwsze żądanie po starcie i rozdział 20 000 słów, a na 0,5 CPU także 6000 słów na ciepło. Mikrus nie gwarantuje mocy CPU, a limity 1 i 0,5 to założenia testu. Limit trzeba zmierzyć na Mikrusie.
+- Po starcie kontenera trzeba rozgrzać LT, bo pierwsze żądanie jest kilka razy wolniejsze.
+- Obraz przypiąć do wersji zamiast `:latest`.
+
+Parametr `data` **[pomiar]**: na próbce z `**` i `# ` „bląd” ma offset 10, czyli pozycję w źródle ze znacznikami, a znaczniki nie były zgłaszane. `MORFOLOGIK_RULE_PL_PL`, `WORD_REPEAT_RULE` i `PL_WORD_REPEAT` zgłosiły błędy. Dla „Kot kot” jest podpowiedź „Kot”, a `PL_WORD_REPEAT` nie daje podpowiedzi.
 
 ### API
 

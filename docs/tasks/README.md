@@ -36,12 +36,13 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `deve
 | 39 | [Publiczna wyszukiwarka](39-public-search.md) | 24, 37, 38 | [ ] |
 | 40 | [Wyświetlanie okładek](40-cover-display.md) | 26 | [ ] |
 | 41 | [Zmiana nicku i hasła](41-account-settings.md) | 36 | [ ] |
+| 42 | [Generator nazw](42-name-generator.md) | – | [ ] |
 
 ## Backlog
 
 Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 
-- Generatory różnego rodzaju (szczegóły do ustalenia).
+- Inne generatory niż generator nazw z taska 42 (szczegóły do ustalenia).
 - System społecznościowy (do przemyślenia).
 - Obrazki w tekście opowiadania (po tasku 26).
 - Powtórzenia między zdaniami w korekcie (powtórzenia w zdaniu są w tasku 23).
