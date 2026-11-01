@@ -11,7 +11,7 @@ describe("DEFAULT_SETTINGS", () => {
   it("groups the defaults", () => {
     expect(DEFAULT_SETTINGS).toEqual({
       editor: { layout: DEFAULT_LAYOUT, mobileView: "story" },
-      appearance: { theme: null },
+      appearance: { sidebarCollapsed: false, theme: null },
       folders: { sort: "updated", manualOrder: false },
     });
   });
@@ -38,7 +38,7 @@ describe("normalizeSettings", () => {
         layout: { ...DEFAULT_LAYOUT, split: true },
         mobileView: "story",
       },
-      appearance: { theme: "dark" },
+      appearance: { sidebarCollapsed: false, theme: "dark" },
       folders: { sort: "alpha", manualOrder: false },
     });
     expect(

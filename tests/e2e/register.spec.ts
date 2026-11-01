@@ -23,23 +23,28 @@ function submit(page: Page) {
 const alert = (page: Page) => page.getByRole("alert").filter({ hasText: /\S/ });
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/register");
+  await page.goto("/");
+  await page.getByRole("button", { name: "Log in / Create account" }).click();
+  await page.getByRole("button", { name: "Create one" }).click();
 });
 
-test("/login and /register link to each other", async ({ page }) => {
-  await page.getByRole("link", { name: "Sign in" }).click();
-  await expect(page).toHaveURL("/login");
-  await page.getByRole("link", { name: "Create one" }).click();
-  await expect(page).toHaveURL("/register");
+test("the dialog switches between the two forms", async ({ page }) => {
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("heading")).toHaveText("Create account");
+  await dialog.getByRole("button", { name: "Sign in" }).click();
+  await expect(dialog.getByRole("heading")).toHaveText("Sign in");
+  await dialog.getByRole("button", { name: "Create one" }).click();
+  await expect(dialog.getByRole("heading")).toHaveText("Create account");
 });
 
 test("registering signs in and shows an empty account", async ({ page }) => {
   await fillForm(page, "Dave", PASSWORD);
   await submit(page);
 
-  await expect(page).toHaveURL("/stories");
+  await expect(page.getByRole("navigation", { name: "Main" })).toBeVisible();
+  await page.goto("/stories");
   await expect(page.getByRole("button", { name: "New story" })).toBeVisible();
-  await expect(page.getByRole("listitem")).toHaveCount(0);
+  await expect(page.getByRole("list", { name: "Folders" })).toHaveCount(0);
 });
 
 test("requirements update live, one by one", async ({ page }) => {
@@ -64,7 +69,7 @@ test("a weak password is refused by the server", async ({ page }) => {
   await submit(page);
 
   await expect(alert(page)).toHaveText(/at least 17/);
-  await expect(page).toHaveURL("/register");
+  await expect(page).toHaveURL("/");
   await expect(page.getByLabel("Nickname")).toHaveValue("Dave");
 });
 
@@ -88,7 +93,7 @@ test("a taken nickname gives a message in any case", async ({ page }) => {
   await submit(page);
 
   await expect(alert(page)).toHaveText("This nickname is already taken.");
-  await expect(page).toHaveURL("/register");
+  await expect(page).toHaveURL("/");
 });
 
 test("the page says the password cannot be recovered", async ({ page }) => {

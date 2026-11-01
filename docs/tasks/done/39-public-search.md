@@ -11,11 +11,8 @@ Wydzielone z dawnego taska 24 (zgłoszenie z 2026-10-30).
 
 - Wyszukiwanie obejmuje tytuł, tagi i treść oraz tagi z obu poziomów (decyzja użytkownika).
 
-Do decyzji przy starcie taska (wynik jako nowa decyzja w `decisions.md`):
-
-- Sposób wyszukiwania w treści: indeks tekstowy MongoDB, Atlas Search albo wektoryzacja całości. Porównanie obejmuje polską odmianę, limity Atlas M0, koszt embeddingów, moment ich liczenia i prywatność tekstu wysyłanego do dostawcy.
-- Czy tagi folderu są dziedziczone w wynikach.
-- Czy strona jest indeksowana przez wyszukiwarki.
+- Regex, tagi folderu dziedziczone, strona indeksowana (D42).
+- Rozszerzenie zakresu (decyzja użytkownika): wyszukiwarka na `/`, dialog logowania i rejestracji zamiast `/login` i `/register`, sidebar zamiast menu konta (D42).
 
 ## Kryteria akceptacji
 

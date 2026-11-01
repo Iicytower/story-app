@@ -7,7 +7,7 @@ import { MOBILE_VIEWS, THEMES } from "@/lib/settings/settings";
 export interface SettingsFields {
   userId: Types.ObjectId;
   editor?: { layout?: unknown; mobileView?: string };
-  appearance?: { theme?: string | null };
+  appearance?: { theme?: string | null; sidebarCollapsed?: boolean };
   folders?: { sort?: string; manualOrder?: boolean };
   createdAt: Date;
   updatedAt: Date;
@@ -28,6 +28,7 @@ const settingsSchema = new Schema<SettingsFields>(
     },
     appearance: {
       theme: { type: String, enum: [...THEMES, null] },
+      sidebarCollapsed: { type: Boolean },
     },
     folders: {
       sort: { type: String, enum: FOLDER_SORTS },

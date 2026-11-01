@@ -31,7 +31,7 @@ export default async function StoriesPage({
   searchParams,
 }: PageProps<"/stories">) {
   const user = await requireUser();
-  if (!user.ok) redirect("/login");
+  if (!user.ok) redirect("/");
 
   const { q, tag } = await searchParams;
   const query = typeof q === "string" ? q.trim() : "";

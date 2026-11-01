@@ -13,7 +13,7 @@ export async function login(
     await signIn("credentials", {
       nickname: formData.get("nickname"),
       password: formData.get("password"),
-      redirectTo: formData.get("callbackUrl")?.toString() || "/stories",
+      redirectTo: formData.get("callbackUrl")?.toString() || "/",
     });
   } catch (error) {
     if (error instanceof LoginRateLimited) {

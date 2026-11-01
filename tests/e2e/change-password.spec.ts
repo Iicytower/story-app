@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { PASSWORD_REQUIREMENTS } from "@/lib/credentials";
 import { restorePassword } from "./db";
 import { USERS } from "./env";
-import { accountAction, expect, login, test } from "./helpers";
+import { expect, expectSignedOut, login, sidebarAction, test } from "./helpers";
 
 const NEW_PASSWORD = "Carol-new-password-678";
 
@@ -19,7 +19,7 @@ async function submitPasswords(
 }
 
 async function signIn(page: Page, password: string) {
-  await page.goto("/login");
+  await page.goto("/?auth=login");
   await page.getByLabel("Nickname").fill(USERS.carol.nickname);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
@@ -28,7 +28,7 @@ async function signIn(page: Page, password: string) {
 test.beforeEach(async ({ page }) => {
   await restorePassword("carol");
   await login(page, "carol");
-  await accountAction(page, "Change password");
+  await sidebarAction(page, "Change password");
 });
 
 test("the dialog lists the password requirements at the new password field", async ({
@@ -70,9 +70,9 @@ test("after the change only the new password signs in", async ({ page }) => {
 
   // The menu still responds after the dialog, and this session outlives the change.
   await page.reload();
-  await expect(page).toHaveURL("/stories");
-  await accountAction(page, "Log out");
-  await expect(page).toHaveURL("/login");
+  await expect(page).toHaveURL("/");
+  await sidebarAction(page, "Log out");
+  await expectSignedOut(page);
 
   await signIn(page, USERS.carol.password);
   await expect(
@@ -82,7 +82,7 @@ test("after the change only the new password signs in", async ({ page }) => {
   ).toBeVisible();
 
   await signIn(page, NEW_PASSWORD);
-  await expect(page).toHaveURL("/stories");
+  await expect(page).toHaveURL("/");
 });
 
 test("closing the dialog clears what was typed", async ({ page }) => {
@@ -90,6 +90,6 @@ test("closing the dialog clears what was typed", async ({ page }) => {
   await page.getByRole("button", { name: "Cancel" }).click();
   await expect(page.getByRole("dialog")).toBeHidden();
 
-  await accountAction(page, "Change password");
+  await sidebarAction(page, "Change password");
   await expect(page.getByLabel("Current password")).toHaveValue("");
 });

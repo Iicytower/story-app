@@ -4,11 +4,11 @@ import { clearStories } from "./db";
 import { USERS, type UserName } from "./env";
 
 export async function login(page: Page, user: UserName) {
-  await page.goto("/login");
+  await page.goto("/?auth=login");
   await page.getByLabel("Nickname").fill(USERS[user].nickname);
   await page.getByLabel("Password").fill(USERS[user].password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL("/stories");
+  await expect(page).toHaveURL("/");
 }
 
 export const test = base.extend<{ cleanStories: void }>({
@@ -22,6 +22,13 @@ export const test = base.extend<{ cleanStories: void }>({
 });
 
 export { expect };
+
+// A sign-out from "/" keeps the address, so the URL alone does not show that it finished.
+export async function expectSignedOut(page: Page) {
+  await expect(
+    page.getByRole("button", { name: "Log in / Create account" }),
+  ).toBeVisible();
+}
 
 // The rich text editor has no value; tests read and write its markdown through Source mode.
 export function markdownEditor(page: Page, label: string) {
@@ -74,8 +81,14 @@ export function countActionRequests(page: Page) {
   return requests;
 }
 
-// Stories, the theme and logging out live in the account menu of every protected page.
-export async function accountAction(page: Page, name: string) {
-  await page.getByRole("button", { name: "Account" }).click();
-  await page.getByRole("menuitem", { name }).click();
+// Views, the theme and logging out live in the sidebar, a drawer on narrow screens.
+export async function sidebarAction(page: Page, name: string) {
+  const menu = page.getByRole("button", { name: "Menu", exact: true });
+  // The drawer of a previous action may still be animating away.
+  await expect(page.getByRole("dialog")).toBeHidden();
+  if (await menu.isVisible()) await menu.click();
+  await page
+    .getByRole("navigation", { name: "Main" })
+    .getByRole(name === "Folders" ? "link" : "button", { name, exact: true })
+    .click();
 }

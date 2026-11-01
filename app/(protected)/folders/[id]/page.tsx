@@ -37,7 +37,7 @@ export default async function FolderPage({
   params,
 }: PageProps<"/folders/[id]">) {
   const user = await requireUser();
-  if (!user.ok) redirect("/login");
+  if (!user.ok) redirect("/");
 
   const { id } = await params;
   const [folder, { folders }, userTags] = await Promise.all([

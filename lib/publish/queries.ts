@@ -7,13 +7,17 @@ import { chapterOrder, type ChapterSort } from "@/lib/folders/sort";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
 import { User } from "@/lib/models/user";
+import { buildSnippet, type Snippet } from "@/lib/stories/search";
+import { stripComments } from "@/lib/stories/strip-comments";
+import { inheritedOnly } from "@/lib/tags/tags";
+import { buildPublicFilter, matchesPublicText, MAX_RESULTS } from "./search";
 import {
   CHAPTER_SLUG_FALLBACK,
   FOLDER_SLUG_FALLBACK,
   slugsById,
 } from "./slugs";
 
-function folderSlugs(folders: { _id: Types.ObjectId; name: string }[]) {
+export function folderSlugs(folders: { _id: Types.ObjectId; name: string }[]) {
   return slugsById(
     folders.map(({ _id, name }) => ({ id: _id.toString(), text: name })),
     FOLDER_SLUG_FALLBACK,
@@ -21,7 +25,9 @@ function folderSlugs(folders: { _id: Types.ObjectId; name: string }[]) {
 }
 
 // Hidden chapters count too, so hiding one does not change its neighbour's address.
-function chapterSlugs(chapters: { _id: Types.ObjectId; title: string }[]) {
+export function chapterSlugs(
+  chapters: { _id: Types.ObjectId; title: string }[],
+) {
   return slugsById(
     chapters.map(({ _id, title }) => ({ id: _id.toString(), text: title })),
     CHAPTER_SLUG_FALLBACK,
@@ -149,4 +155,142 @@ export async function chapterPublicPath(
       .lean(),
   ]);
   return `${base}/${chapterSlugs(chapters).get(storyId)}`;
+}
+
+// Accounts from before task 36 may have no nickname yet, so they have no public address.
+async function findSearchableFolders() {
+  const folders = await Folder.find({ published: true, deletedAt: null })
+    .select({ userId: 1, name: 1, tags: 1 })
+    .lean();
+  const authors = await User.find({
+    _id: { $in: folders.map(({ userId }) => userId) },
+    nickname: { $type: "string" },
+  })
+    .select({ nickname: 1 })
+    .lean();
+  const nicknames = new Map(
+    authors.map(({ _id, nickname }) => [_id.toString(), nickname]),
+  );
+  return folders
+    .filter(({ userId }) => nicknames.has(userId.toString()))
+    .map((folder) => ({
+      ...folder,
+      nickname: nicknames.get(folder.userId.toString())!,
+    }));
+}
+
+// Only tags of public chapters: anything else would reveal unpublished work.
+export async function listPublicTags(): Promise<string[]> {
+  await connectDB();
+  const folders = await findSearchableFolders();
+  const chapters = await Story.find(buildPublicFilter("", [], folders))
+    .select({ folderId: 1, tags: 1 })
+    .lean();
+  const tagsOfFolder = new Map(
+    folders.map(({ _id, tags }) => [_id.toString(), tags ?? []]),
+  );
+  const tags = chapters.flatMap(({ folderId, tags: own }) => [
+    ...(own ?? []),
+    ...(tagsOfFolder.get(folderId.toString()) ?? []),
+  ]);
+  return [...new Set(tags)].toSorted((a, b) => a.localeCompare(b, "pl"));
+}
+
+export interface PublicSearchResult {
+  title: string;
+  folderName: string;
+  nickname: string;
+  path: string;
+  tags: string[];
+  folderTags: string[];
+  snippet: Snippet;
+}
+
+// Addresses come from the same slugs as the reader pages, which count private neighbours too.
+async function findChapterPaths(
+  chapters: {
+    _id: Types.ObjectId;
+    userId: Types.ObjectId;
+    folderId: Types.ObjectId;
+  }[],
+  nicknames: Map<string, string>,
+) {
+  const [folders, siblings] = await Promise.all([
+    Folder.find({
+      userId: { $in: chapters.map(({ userId }) => userId) },
+      deletedAt: null,
+    })
+      .select({ userId: 1, name: 1 })
+      .lean(),
+    Story.find({
+      folderId: { $in: chapters.map(({ folderId }) => folderId) },
+      deletedAt: null,
+    })
+      .select({ folderId: 1, title: 1 })
+      .lean(),
+  ]);
+  const slugsOfFolder = (userId: Types.ObjectId) =>
+    folderSlugs(folders.filter((folder) => folder.userId.equals(userId)));
+  const slugsOfChapter = (folderId: Types.ObjectId) =>
+    chapterSlugs(
+      siblings.filter((sibling) => sibling.folderId.equals(folderId)),
+    );
+  return new Map(
+    chapters.map(({ _id, userId, folderId }) => {
+      const nickname = nicknames.get(userId.toString());
+      const folder = slugsOfFolder(userId).get(folderId.toString());
+      const chapter = slugsOfChapter(folderId).get(_id.toString());
+      return [_id.toString(), `/p/${nickname}/${folder}/${chapter}`];
+    }),
+  );
+}
+
+export async function searchPublishedChapters(
+  query: string,
+  tags: string[],
+): Promise<PublicSearchResult[]> {
+  await connectDB();
+  const folders = await findSearchableFolders();
+  const folderById = new Map(
+    folders.map((folder) => [folder._id.toString(), folder]),
+  );
+
+  const hits = [];
+  const cursor = Story.find(buildPublicFilter(query, tags, folders))
+    .select({ userId: 1, folderId: 1, title: 1, content: 1, tags: 1 })
+    .sort({ updatedAt: -1, _id: 1 })
+    .lean()
+    .cursor();
+  for await (const chapter of cursor) {
+    const folder = folderById.get(chapter.folderId.toString())!;
+    const text = stripComments(chapter.content);
+    const own = chapter.tags ?? [];
+    const folderTags = inheritedOnly(own, folder.tags);
+    if (
+      matchesPublicText(query, {
+        title: chapter.title,
+        text,
+        tags: [...own, ...folderTags],
+      })
+    ) {
+      hits.push({ chapter, folder, text, own, folderTags });
+      if (hits.length === MAX_RESULTS) break;
+    }
+  }
+
+  const paths = await findChapterPaths(
+    hits.map(({ chapter }) => chapter),
+    new Map(
+      folders.map(({ userId, nickname }) => [userId.toString(), nickname]),
+    ),
+  );
+  return hits.map(({ chapter, folder, text, own, folderTags }) => ({
+    title: chapter.title,
+    folderName: folder.name,
+    nickname: folder.nickname,
+    path: paths.get(chapter._id.toString())!,
+    tags: own,
+    folderTags,
+    snippet: buildSnippet(text, query),
+  }));
 }

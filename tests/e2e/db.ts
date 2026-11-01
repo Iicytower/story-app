@@ -38,6 +38,14 @@ export function exhaustLoginLimit(): Promise<void> {
   });
 }
 
+export function exhaustSearchLimit(): Promise<void> {
+  return withE2EDb(async (connection) => {
+    await connection
+      .collection<{ _id: string }>("rateLimits")
+      .updateMany({ _id: /^search:/ }, { $set: { count: 1000 } });
+  });
+}
+
 export function restorePassword(user: UserName): Promise<void> {
   return withE2EDb(async (connection) => {
     await connection

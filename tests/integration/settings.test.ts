@@ -71,8 +71,15 @@ describe("saveSettings", () => {
     expect(await getUserSettings(alice.toString())).toEqual({
       ...DEFAULT_SETTINGS,
       editor: { layout, mobileView: "notes" },
-      appearance: { theme: "dark" },
+      appearance: { sidebarCollapsed: false, theme: "dark" },
     });
+  });
+
+  it("saves the collapsed sidebar", async () => {
+    await saveSettings({ appearance: { sidebarCollapsed: true } });
+
+    const { appearance } = await getUserSettings(alice.toString());
+    expect(appearance.sidebarCollapsed).toBe(true);
   });
 
   it("creates one document when the first saves run in parallel", async () => {

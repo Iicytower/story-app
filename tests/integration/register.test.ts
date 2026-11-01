@@ -2,7 +2,7 @@ import { AuthError } from "next-auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { register } from "@/app/register/actions";
+import { register } from "@/app/auth/register-actions";
 import { signIn } from "@/auth";
 import { createOrUpdateUser, verifyPassword } from "@/lib/accounts";
 import { getUserSettings } from "@/lib/settings/queries";
@@ -16,6 +16,9 @@ import { setupTestDb } from "./test-db";
 vi.mock("next/headers", () => ({ headers: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 vi.mock("@/auth", () => ({ signIn: vi.fn() }));
+
+// bcrypt takes seconds when every test file runs in parallel.
+vi.setConfig({ testTimeout: 30_000 });
 
 setupTestDb();
 
@@ -44,7 +47,7 @@ describe("register", () => {
     expect(signIn).toHaveBeenCalledWith("credentials", {
       nickname: "Alice",
       password: PASSWORD,
-      redirectTo: "/stories",
+      redirectTo: "/",
     });
   });
 
@@ -189,7 +192,7 @@ describe("register", () => {
       "NEXT_REDIRECT",
     );
 
-    expect(redirect).toHaveBeenCalledWith("/login");
+    expect(redirect).toHaveBeenCalledWith("/?auth=login");
     await expect(User.countDocuments()).resolves.toBe(1);
   });
 });

@@ -26,7 +26,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-01): najp
 | 37 | [Rejestracja](done/37-registration.md) | 36 | [x] |
 | 27 | [Zakładka Tools](done/27-tools-tab.md) | – | [x] |
 | 42 | [Generator nazw](42-name-generator.md) | 27 | [ ] |
-| 39 | [Publiczna wyszukiwarka](39-public-search.md) | 24, 37, 38 | [ ] |
+| 39 | [Publiczna wyszukiwarka](done/39-public-search.md) | 24, 37, 38 | [x] |
 | 26 | [Upload okładek](26-cover-upload.md) | – | [ ] |
 | 40 | [Wyświetlanie okładek](40-cover-display.md) | 26 | [ ] |
 | 28 | [Serwer na Mikrusie](28-mikrus-server.md) | – | [ ] |
