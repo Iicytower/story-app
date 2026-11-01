@@ -59,25 +59,6 @@ describe("Story indexes", () => {
     ).resolves.toBeDefined();
   });
 
-  it("allows many stories without shareToken and rejects a duplicate token", async () => {
-    await Story.create({ folderId, userId: alice, title: "A" });
-    await Story.create({ folderId, userId: alice, title: "B" });
-    await Story.create({
-      folderId,
-      userId: bob,
-      title: "C",
-      shareToken: "token-1234567890ab",
-    });
-    await expect(
-      Story.create({
-        folderId,
-        userId: alice,
-        title: "D",
-        shareToken: "token-1234567890ab",
-      }),
-    ).rejects.toMatchObject(DUPLICATE_KEY);
-  });
-
   it("stores deletedAt as null on a new document", async () => {
     const { _id } = await Story.create({
       folderId,
@@ -137,11 +118,6 @@ describe("Story index definitions", () => {
           partialFilterExpression: { deletedAt: { $type: "null" } },
         }),
         expect.objectContaining({ key: { userId: 1, updatedAt: -1 } }),
-        expect.objectContaining({
-          key: { shareToken: 1 },
-          unique: true,
-          partialFilterExpression: { shareToken: { $type: "string" } },
-        }),
       ]),
     );
   });

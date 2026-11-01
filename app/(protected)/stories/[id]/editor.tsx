@@ -7,10 +7,10 @@ import {
   CheckIcon,
   Columns3Icon,
   CopyIcon,
+  GlobeIcon,
   LinkIcon,
   PanelRightCloseIcon,
   PanelRightOpenIcon,
-  Share2Icon,
 } from "lucide-react";
 import { cn } from "cn";
 import Link from "next/link";
@@ -52,7 +52,7 @@ import {
   FolderNotesField,
   useFolderNotes,
 } from "../../folders/[id]/folder-notes";
-import { saveStory, setSharing } from "../actions";
+import { saveStory, setChapterPublished } from "../actions";
 import { DeleteStoryButton } from "../delete-story-button";
 import { ChaptersPanel } from "./chapters-panel";
 import {
@@ -110,10 +110,8 @@ export function Editor({
     folder?.notesUpdatedAt ?? "",
   );
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
-  const [sharePath, setSharePath] = useState(
-    story.shareToken ? `/s/${story.shareToken}` : null,
-  );
-  const [sharingPending, setSharingPending] = useState(false);
+  const [publicPath, setPublicPath] = useState(story.publicPath);
+  const [publishPending, setPublishPending] = useState(false);
   const [copied, setCopied] = useState(false);
   // Empty during SSR, so the absolute link is only rendered after hydration.
   const origin = useSyncExternalStore(
@@ -121,7 +119,7 @@ export function Editor({
     () => window.location.origin,
     () => "",
   );
-  const shareUrl = sharePath && origin + sharePath;
+  const publicUrl = publicPath && origin + publicPath;
   const latest = useRef<Values>(story);
   const saved = useRef<Values>(story);
   const updatedAt = useRef(story.updatedAt);
@@ -196,12 +194,12 @@ export function Editor({
       : "The chapter was not saved. See the message above.";
   }
 
-  async function toggleSharing() {
-    setSharingPending(true);
+  async function togglePublished() {
+    setPublishPending(true);
     try {
-      const result = await setSharing(story.id, !sharePath);
+      const result = await setChapterPublished(story.id, !publicPath);
       if (result.ok) {
-        setSharePath(result.sharePath);
+        setPublicPath(result.publicPath);
         setCopied(false);
       } else {
         setSaveState({ status: "error", message: result.message });
@@ -212,12 +210,12 @@ export function Editor({
         message: "Could not reach the server. Check your connection.",
       });
     }
-    setSharingPending(false);
+    setPublishPending(false);
   }
 
-  async function copyShareUrl() {
-    if (!shareUrl) return;
-    await navigator.clipboard.writeText(shareUrl);
+  async function copyPublicUrl() {
+    if (!publicUrl) return;
+    await navigator.clipboard.writeText(publicUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -450,12 +448,12 @@ export function Editor({
         />
         <Button
           variant="outline"
-          onClick={toggleSharing}
-          disabled={sharingPending}
+          onClick={togglePublished}
+          disabled={publishPending}
         >
-          <Share2Icon />
+          <GlobeIcon />
           <span className="sr-only md:not-sr-only">
-            {sharePath ? "Stop sharing" : "Share"}
+            {publicPath ? "Unpublish" : "Publish"}
           </span>
         </Button>
         <DeleteStoryButton
@@ -484,20 +482,20 @@ export function Editor({
           Split
         </Button>
       </div>
-      {shareUrl && (
+      {publicUrl && (
         <div className="flex items-center gap-2 border-b px-4 py-2 text-sm md:px-6">
           <LinkIcon className="text-muted-foreground size-4 shrink-0" />
           <span className="text-muted-foreground hidden md:inline">
-            Anyone with this link can read the story:
+            This chapter is public:
           </span>
           <Input
             readOnly
-            value={shareUrl}
-            aria-label="Share link"
+            value={publicUrl}
+            aria-label="Public link"
             onFocus={(event) => event.target.select()}
             className="h-8 max-w-xl min-w-0"
           />
-          <Button variant="outline" size="sm" onClick={copyShareUrl}>
+          <Button variant="outline" size="sm" onClick={copyPublicUrl}>
             {copied ? <CheckIcon /> : <CopyIcon />}
             <span className="sr-only md:not-sr-only">
               {copied ? "Copied" : "Copy link"}

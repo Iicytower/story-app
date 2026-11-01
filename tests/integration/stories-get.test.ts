@@ -29,6 +29,7 @@ describe("getStory", () => {
       folderId: folderId.toString(),
       // No such folder in this test.
       folderName: null,
+      publicPath: null,
       updatedAt: story.updatedAt.toISOString(),
     });
   });

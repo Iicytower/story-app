@@ -6,6 +6,7 @@ import { TagChips } from "@/components/tag-chips";
 import { TagsDialog } from "@/components/tags-dialog";
 import { requireUser } from "@/lib/auth/session";
 import { getFolder, listFolders } from "@/lib/folders/queries";
+import { folderPublicPath } from "@/lib/publish/queries";
 import { buildSnippet } from "@/lib/stories/search";
 import { listUserTags } from "@/lib/tags/queries";
 import { listFolderVersions } from "@/lib/versions/queries";
@@ -18,8 +19,9 @@ import { ReorderButtons } from "../reorder-buttons";
 import { SortSelect } from "../sort-select";
 import { DeleteFolderButton } from "./delete-folder-button";
 import { FolderNotes } from "./folder-notes";
-import { FolderShare } from "./folder-share";
+import { FolderPublish } from "./folder-publish";
 import { MoveStoryDialog } from "./move-story-dialog";
+import { PublishChapterButton } from "./publish-chapter-button";
 import { RenameFolderDialog } from "./rename-folder-dialog";
 import { FolderVersions } from "./versions/folder-versions";
 
@@ -46,6 +48,12 @@ export default async function FolderPage({
   if (!folder) notFound();
   const versions = await listFolderVersions(user.userId, folder.id);
   const otherFolders = folders.filter((other) => other.id !== folder.id);
+  const publicPath = folder.published
+    ? await folderPublicPath(user.userId, folder.id)
+    : null;
+  const hiddenCount = folder.chapters.filter(
+    ({ publication }) => publication !== "public",
+  ).length;
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
@@ -70,7 +78,11 @@ export default async function FolderPage({
             suggestions={userTags}
             action={setFolderTags.bind(null, folder.id)}
           />
-          <FolderShare id={folder.id} shareToken={folder.shareToken} />
+          <FolderPublish
+            id={folder.id}
+            publicPath={publicPath}
+            hiddenCount={hiddenCount}
+          />
           <RenameFolderDialog id={folder.id} name={folder.name} />
           <DeleteFolderButton
             id={folder.id}
@@ -120,6 +132,14 @@ export default async function FolderPage({
                       action={reorderChapter.bind(null, chapter.id)}
                     />
                   )}
+                  <PublishChapterButton
+                    id={chapter.id}
+                    title={chapter.title}
+                    isPublic={
+                      Boolean(folder.published) &&
+                      chapter.publication === "public"
+                    }
+                  />
                   <TagsDialog
                     compact
                     name={chapter.title}

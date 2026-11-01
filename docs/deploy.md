@@ -100,6 +100,6 @@ docker run --rm --network host -v "$BACKUP:/backup:ro" mongo:8 mongoimport --uri
 1. `/` przekierowuje na `/login`; błędne hasło → „Invalid nickname or password.”, poprawne loguje.
 2. Utworzenie opowiadania, treść, autozapis („Saved”); po odświeżeniu treść zostaje.
 3. „Export as…” pobiera plik w wybranym formacie.
-4. „Share”: link w incognito pokazuje opowiadanie bez notatek i komentarzy; po „Stop sharing” 404.
+4. „Publish”: adres `/p/...` w incognito pokazuje opowiadanie z nickiem, bez notatek i komentarzy; po „Unpublish” 404.
 5. Przełącznik motywu i wylogowanie.
 6. Foldery: nowy folder, rozdział o tym samym tytule w dwóch folderach, przeniesienie rozdziału, notatki folderu z autozapisem.

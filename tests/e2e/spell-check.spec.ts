@@ -54,9 +54,9 @@ test("the rest of the UI is not marked as Polish", async ({ page }) => {
   await expect(
     markdownEditor(page, "Content").button("Bold"),
   ).not.toHaveAttribute("lang", "pl");
-  await page.getByRole("button", { name: "Share", exact: true }).click();
+  await page.getByRole("button", { name: "Publish", exact: true }).click();
   await expect(
-    page.getByRole("textbox", { name: "Share link" }),
+    page.getByRole("textbox", { name: "Public link" }),
   ).not.toHaveAttribute("lang", "pl");
   const polish = page.locator('[lang="pl"]');
   await expect(polish).toHaveCount(4);

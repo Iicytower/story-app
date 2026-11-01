@@ -2,6 +2,7 @@ import { isObjectIdOrHexString } from "mongoose";
 import { connectDB } from "@/lib/db";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
+import { chapterPublicPath } from "@/lib/publish/queries";
 import { serialize } from "@/lib/serialize";
 import { buildStoryFilter } from "./search";
 
@@ -43,7 +44,7 @@ export async function getStory(userId: string, id: string) {
       title: 1,
       content: 1,
       notes: 1,
-      shareToken: 1,
+      publication: 1,
       folderId: 1,
       updatedAt: 1,
     })
@@ -53,9 +54,16 @@ export async function getStory(userId: string, id: string) {
   const folder =
     story.folderId &&
     (await Folder.findOne({ _id: story.folderId, deletedAt: null })
-      .select({ name: 1 })
+      .select({ name: 1, published: 1 })
       .lean());
-  return { ...serialize(story), folderName: folder ? folder.name : null };
+  return {
+    ...serialize(story),
+    folderName: folder ? folder.name : null,
+    publicPath:
+      folder && folder.published && story.publication === "public"
+        ? await chapterPublicPath(userId, folder._id.toString(), id)
+        : null,
+  };
 }
 
 export type EditorStory = NonNullable<Awaited<ReturnType<typeof getStory>>>;
@@ -67,11 +75,4 @@ export async function getStoryForExport(userId: string, id: string) {
     .select({ title: 1, content: 1, notes: 1, createdAt: 1, updatedAt: 1 })
     .lean();
   return story && serialize(story);
-}
-
-export async function getSharedStory(token: string) {
-  await connectDB();
-  return Story.findOne({ shareToken: token, deletedAt: null })
-    .select({ _id: 0, title: 1, content: 1 })
-    .lean<{ title: string; content: string }>();
 }

@@ -1,8 +1,7 @@
 const PUBLIC_PATHS = [
   /^\/login$/,
   /^\/api\/auth(\/|$)/,
-  /^\/s\/[^/]+$/,
-  /^\/s\/f\/[^/]+(\/\d+)?$/,
+  /^\/p\/[^/]+\/[^/]+(\/[^/]+)?$/,
 ];
 
 export function isPublicPath(pathname: string): boolean {

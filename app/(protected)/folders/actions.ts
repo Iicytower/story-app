@@ -1,6 +1,5 @@
 "use server";
 
-import { randomBytes } from "node:crypto";
 import { isObjectIdOrHexString } from "mongoose";
 import { refresh } from "next/cache";
 import type { ActionError, ActionResult } from "@/lib/action-result";
@@ -22,6 +21,7 @@ import {
 } from "@/lib/folders/sort";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
+import { rememberFolderSlug } from "@/lib/publish/mutations";
 import { getUserSettings, updateUserSettings } from "@/lib/settings/queries";
 import { exceedsTagLimit, MAX_TAGS, normalizeTags } from "@/lib/tags/tags";
 
@@ -83,11 +83,15 @@ export async function renameFolder(
 
   await connectDB();
   try {
-    const { matchedCount } = await Folder.updateOne(
+    const folder = await Folder.findOneAndUpdate(
       { _id: id, userId: user.userId, deletedAt: null },
       { $set: { name: trimmed } },
-    );
-    if (matchedCount === 0) return NOT_FOUND;
+      { projection: { name: 1, published: 1 } },
+    ).lean();
+    if (!folder) return NOT_FOUND;
+    if (folder.published && folder.name !== trimmed) {
+      await rememberFolderSlug(id, user.userId, folder.name);
+    }
   } catch (error) {
     if (isDuplicateKeyError(error)) return DUPLICATE_NAME;
     throw error;
@@ -278,32 +282,56 @@ export async function reorderFolder(
   return { ok: true };
 }
 
-// Independent of chapter sharing (D11): its own token, and it never touches chapters.
-export async function setFolderSharing(
+// Organizational change, like tags. Chapters keep their explicit state, so unpublishing and
+// publishing again brings back the same set.
+export async function setFolderPublished(
   id: string,
   enabled: boolean,
-): Promise<ActionResult<{ sharePath: string | null }>> {
+): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
   if (!isObjectIdOrHexString(id)) return NOT_FOUND;
 
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };
-  if (!enabled) {
-    const { matchedCount } = await Folder.updateOne(
-      owned,
-      { $unset: { shareToken: 1 } },
+  const folder = await Folder.findOne(owned).select({ published: 1 }).lean();
+  if (!folder) return NOT_FOUND;
+  if (enabled && !folder.published) {
+    await Story.updateMany(
+      {
+        userId: user.userId,
+        folderId: id,
+        deletedAt: null,
+        publication: { $exists: false },
+      },
+      { $set: { publication: "public" } },
       { timestamps: false },
     );
-    return matchedCount === 0 ? NOT_FOUND : { ok: true, sharePath: null };
   }
-
   await Folder.updateOne(
-    { ...owned, shareToken: { $exists: false } },
-    { $set: { shareToken: randomBytes(16).toString("base64url") } },
+    owned,
+    { $set: { published: enabled } },
     { timestamps: false },
   );
-  const folder = await Folder.findOne(owned).select({ shareToken: 1 }).lean();
-  if (!folder?.shareToken) return NOT_FOUND;
-  return { ok: true, sharePath: `/s/f/${folder.shareToken}` };
+
+  refresh();
+  return { ok: true };
+}
+
+export async function publishAllChapters(id: string): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+
+  await connectDB();
+  const owned = { _id: id, userId: user.userId, deletedAt: null };
+  if (!(await Folder.exists({ ...owned, published: true }))) return NOT_FOUND;
+  await Story.updateMany(
+    { userId: user.userId, folderId: id, deletedAt: null },
+    { $set: { publication: "public" } },
+    { timestamps: false },
+  );
+
+  refresh();
+  return { ok: true };
 }
