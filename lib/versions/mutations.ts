@@ -145,6 +145,7 @@ async function restoreChapter(
       title: 1,
       content: 1,
       notes: 1,
+      tags: 1,
       deletedAt: 1,
       updatedAt: 1,
     })
@@ -198,6 +199,7 @@ async function restoreChapter(
       title: free,
       content,
       notes: story?.notes ?? "",
+      tags: story?.tags ?? [],
     });
     id = copy._id;
   });

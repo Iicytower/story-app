@@ -10,6 +10,8 @@ export interface FolderFields {
   lastActivityAt: Date;
   // Missing on folders created by older deployments until migration 003 runs again.
   position?: number;
+  // Missing on folders created by older deployments until migration 005 runs again.
+  tags?: string[];
   chapterSort: ChapterSort;
   // Set on the first switch to manual, which takes positions from the order shown until then.
   manualChapterOrder: boolean;
@@ -29,6 +31,7 @@ const folderSchema = new Schema<FolderFields>(
     notesUpdatedAt: { type: Date, default: Date.now },
     lastActivityAt: { type: Date, default: Date.now },
     position: { type: Number },
+    tags: { type: [String] },
     chapterSort: { type: String, enum: CHAPTER_SORTS, default: "created" },
     manualChapterOrder: { type: Boolean, default: false },
     shareToken: { type: String },

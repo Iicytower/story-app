@@ -2,15 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { LocalDate } from "@/components/local-date";
+import { TagChips } from "@/components/tag-chips";
+import { TagsDialog } from "@/components/tags-dialog";
 import { requireUser } from "@/lib/auth/session";
 import { getFolder, listFolders } from "@/lib/folders/queries";
 import { buildSnippet } from "@/lib/stories/search";
+import { listUserTags } from "@/lib/tags/queries";
 import { listFolderVersions } from "@/lib/versions/queries";
 import { CreateStoryDialog } from "../../stories/create-story-dialog";
-import { reorderChapter } from "../../stories/actions";
+import { reorderChapter, setStoryTags } from "../../stories/actions";
 import { DeleteStoryButton } from "../../stories/delete-story-button";
 import { ImportDialog } from "../../stories/import-dialog";
-import { setChapterSort } from "../actions";
+import { setChapterSort, setFolderTags } from "../actions";
 import { ReorderButtons } from "../reorder-buttons";
 import { SortSelect } from "../sort-select";
 import { DeleteFolderButton } from "./delete-folder-button";
@@ -35,9 +38,10 @@ export default async function FolderPage({
   if (!user.ok) redirect("/login");
 
   const { id } = await params;
-  const [folder, { folders }] = await Promise.all([
+  const [folder, { folders }, userTags] = await Promise.all([
     getFolder(user.userId, id),
     listFolders(user.userId),
+    listUserTags(user.userId),
   ]);
   if (!folder) notFound();
   const versions = await listFolderVersions(user.userId, folder.id);
@@ -60,6 +64,12 @@ export default async function FolderPage({
             options={SORT_OPTIONS}
             action={setChapterSort.bind(null, folder.id)}
           />
+          <TagsDialog
+            name={folder.name}
+            tags={folder.tags}
+            suggestions={userTags}
+            action={setFolderTags.bind(null, folder.id)}
+          />
           <FolderShare id={folder.id} shareToken={folder.shareToken} />
           <RenameFolderDialog id={folder.id} name={folder.name} />
           <DeleteFolderButton
@@ -73,6 +83,7 @@ export default async function FolderPage({
             defaultFolder={folder.name}
           />
         </div>
+        <TagChips tags={folder.tags} />
       </div>
       <div className="grid gap-6 md:grid-cols-[1fr_20rem]">
         {folder.chapters.length === 0 ? (
@@ -96,6 +107,7 @@ export default async function FolderPage({
                     <span className="text-muted-foreground line-clamp-2 text-sm">
                       {snippet.before}
                     </span>
+                    <TagChips tags={chapter.tags} folderTags={folder.tags} />
                     <span className="text-muted-foreground text-xs">
                       <LocalDate iso={chapter.updatedAt} />
                     </span>
@@ -108,6 +120,14 @@ export default async function FolderPage({
                       action={reorderChapter.bind(null, chapter.id)}
                     />
                   )}
+                  <TagsDialog
+                    compact
+                    name={chapter.title}
+                    tags={chapter.tags}
+                    folderTags={folder.tags}
+                    suggestions={userTags}
+                    action={setStoryTags.bind(null, chapter.id)}
+                  />
                   <MoveStoryDialog
                     id={chapter.id}
                     title={chapter.title}

@@ -27,7 +27,7 @@ export async function listFolders(userId: string) {
   const { sort } = (await getUserSettings(userId)).folders;
   const [folders, counts] = await Promise.all([
     findFoldersInOrder(userId, folderOrder(sort))
-      .select({ name: 1, lastActivityAt: 1 })
+      .select({ name: 1, tags: 1, lastActivityAt: 1 })
       .lean(),
     // aggregate() does not cast, so userId has to be an ObjectId here.
     Story.aggregate<{ _id: Types.ObjectId; count: number }>([
@@ -60,6 +60,7 @@ export async function getFolder(userId: string, id: string) {
       notes: 1,
       notesUpdatedAt: 1,
       chapterSort: 1,
+      tags: 1,
       shareToken: 1,
     })
     .lean();
@@ -70,7 +71,7 @@ export async function getFolder(userId: string, id: string) {
     id,
     chapterOrder(chapterSort),
   )
-    .select({ title: 1, content: 1, updatedAt: 1 })
+    .select({ title: 1, content: 1, tags: 1, updatedAt: 1 })
     .lean();
   return {
     ...serialize(folder),

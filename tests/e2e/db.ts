@@ -79,6 +79,7 @@ export function seedStory(
     folder?: string;
     content?: string;
     notes?: string;
+    tags?: string[];
     createdAt?: Date;
     updatedAt?: Date;
     deletedAt?: Date;
@@ -99,6 +100,7 @@ export function seedStory(
       title: story.title,
       content: story.content ?? "",
       notes: story.notes ?? "",
+      tags: story.tags ?? [],
       deletedAt: story.deletedAt ?? null,
       createdAt: story.createdAt ?? now,
       updatedAt: story.updatedAt ?? now,

@@ -25,6 +25,11 @@ import {
 } from "@/lib/import/limits";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
+import {
+  exceedsTagLimit,
+  normalizeTags,
+  TAG_LIMIT_MESSAGE,
+} from "@/lib/tags/tags";
 import { numberedTitle } from "@/lib/versions/versions";
 
 const NOT_FOUND: ActionError = {
@@ -280,12 +285,25 @@ export async function moveStory(
   if (!isObjectIdOrHexString(folderId)) return FOLDER_NOT_FOUND;
 
   await connectDB();
-  const folder = await Folder.exists({
+  const folder = await Folder.findOne({
     _id: folderId,
     userId: user.userId,
     deletedAt: null,
-  });
+  })
+    .select({ tags: 1 })
+    .lean();
   if (!folder) return FOLDER_NOT_FOUND;
+  const story = await Story.findOne({
+    _id: id,
+    userId: user.userId,
+    deletedAt: null,
+  })
+    .select({ tags: 1 })
+    .lean();
+  if (!story) return NOT_FOUND;
+  if (exceedsTagLimit(story.tags, folder.tags)) {
+    return { ok: false, error: "INVALID_INPUT", message: TAG_LIMIT_MESSAGE };
+  }
   try {
     const { matchedCount } = await Story.updateOne(
       { _id: id, userId: user.userId, deletedAt: null },
@@ -303,6 +321,41 @@ export async function moveStory(
     throw error;
   }
   await touchFolder(folderId);
+
+  refresh();
+  return { ok: true };
+}
+
+// Organizational change, like moveStory: an open editor must not get CONFLICT.
+export async function setStoryTags(
+  id: string,
+  tags: string[],
+): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+  const normalized = normalizeTags(tags);
+  if (!normalized.ok) return normalized;
+
+  await connectDB();
+  const owned = { _id: id, userId: user.userId, deletedAt: null };
+  const story = await Story.findOne(owned).select({ folderId: 1 }).lean();
+  if (!story) return NOT_FOUND;
+  const folder = await Folder.findOne({
+    _id: story.folderId,
+    deletedAt: null,
+  })
+    .select({ tags: 1 })
+    .lean();
+  if (exceedsTagLimit(normalized.tags, folder?.tags)) {
+    return { ok: false, error: "INVALID_INPUT", message: TAG_LIMIT_MESSAGE };
+  }
+  const { matchedCount } = await Story.updateOne(
+    owned,
+    { $set: { tags: normalized.tags } },
+    { timestamps: false },
+  );
+  if (matchedCount === 0) return NOT_FOUND;
 
   refresh();
   return { ok: true };

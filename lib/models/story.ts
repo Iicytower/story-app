@@ -8,6 +8,8 @@ export interface StoryFields {
   notes: string;
   // Order in the folder's manual mode; missing on stories created by older deployments.
   position?: number;
+  // Missing on stories created by older deployments until migration 005 runs again.
+  tags?: string[];
   shareToken?: string;
   deletedAt: Date | null;
   createdAt: Date;
@@ -22,6 +24,7 @@ const storySchema = new Schema<StoryFields>(
     content: { type: String, default: "" },
     notes: { type: String, default: "" },
     position: { type: Number },
+    tags: { type: [String] },
     shareToken: { type: String },
     // Always stored: a partial index filter cannot express "field does not exist".
     deletedAt: { type: Date, default: null },
