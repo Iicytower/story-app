@@ -13,7 +13,7 @@ Zgłoszenie użytkownika (2026-11-01). Rezygnacja z e-maila przy logowaniu: kont
 ## Ustalenia
 
 - Nick: 3–30 znaków, litery, cyfry, `_` i `-` (decyzja użytkownika).
-- Nick jest też publicznym podpisem autora w taskach 38 i 39 (decyzja użytkownika). Nick z migracji można zmienić w tasku 41.
+- Nick jest też publicznym podpisem autora w taskach 38 i 39 (decyzja użytkownika). Zmiany nicku nie ma (D39).
 - Wielkość liter: wyświetlany jak wpisany, a unikalność i logowanie bez rozróżniania wielkości liter.
 - Nick z liter a-z, bez Unicode (decyzja użytkownika).
 - Hasło: 17–256 znaków, mała i wielka litera, cyfra, znak specjalny ASCII (decyzja użytkownika).

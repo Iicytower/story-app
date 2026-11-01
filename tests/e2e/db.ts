@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { hashPassword } from "@/lib/accounts";
 import { E2E_MONGODB_URI, USERS, type UserName } from "./env";
 
 export async function withE2EDb<T>(
@@ -21,6 +22,17 @@ export function clearStories(): Promise<void> {
     await connection.collection("settings").deleteMany({});
     await connection.collection("folderVersions").deleteMany({});
     await connection.collection("chapterContents").deleteMany({});
+  });
+}
+
+export function restorePassword(user: UserName): Promise<void> {
+  return withE2EDb(async (connection) => {
+    await connection
+      .collection("users")
+      .updateOne(
+        { nickname: USERS[user].nickname },
+        { $set: { passwordHash: await hashPassword(USERS[user].password) } },
+      );
   });
 }
 

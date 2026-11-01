@@ -6,6 +6,8 @@ export const E2E_MONGODB_URI = "mongodb://127.0.0.1:27017/story_app_e2e";
 export const USERS = {
   alice: { nickname: "Alice", password: "Alice-password-12345" },
   bob: { nickname: "Bob", password: "Bob-password-1234567" },
+  // Only for changing the password: everyone else's must stay valid for other tests.
+  carol: { nickname: "Carol", password: "Carol-password-12345" },
 } as const;
 
 export type UserName = keyof typeof USERS;
