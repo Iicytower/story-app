@@ -20,8 +20,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-01): najp
 | 21 | [Aktualizacja unpdf do 2.x](done/21-unpdf-2.md) | 18 | [x] |
 | 22 | [Wyszukiwanie i zamiana w polu](done/22-find-replace.md) | – | [x] |
 | 24 | [Tagi](done/24-tags.md) | – | [x] |
-| 31 | [Język folderu i pisownia na bieżąco](31-folder-language.md) | – | [ ] |
-| 36 | [Logowanie przez nick](36-nickname-login.md) | – | [ ] |
+| 36 | [Logowanie przez nick](done/36-nickname-login.md) | – | [x] |
 | 38 | [Publikacja opowiadań](38-publish.md) | 36 | [ ] |
 | 41 | [Zmiana nicku i hasła](41-account-settings.md) | 36 | [ ] |
 | 37 | [Rejestracja](37-registration.md) | 36 | [ ] |
@@ -32,12 +31,13 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-01): najp
 | 40 | [Wyświetlanie okładek](40-cover-display.md) | 26 | [ ] |
 | 28 | [Serwer na Mikrusie](28-mikrus-server.md) | – | [ ] |
 | 25 | [Serwis słownikowy i tabela form](25-dictionary-service.md) | 28 | [ ] |
-| 32 | [Definicje](32-definitions.md) | 25, 27 | [ ] |
-| 33 | [Synonimy](33-synonyms.md) | 25, 27 | [ ] |
-| 34 | [Rymy](34-rhymes.md) | 25, 27 | [ ] |
+| 31 | [Język folderu i pisownia na bieżąco](31-folder-language.md) | – | [ ] |
+| 32 | [Definicje](32-definitions.md) | 25, 27, 31 | [ ] |
+| 33 | [Synonimy](33-synonyms.md) | 25, 27, 31 | [ ] |
+| 34 | [Rymy](34-rhymes.md) | 25, 27, 31 | [ ] |
 | 35 | [Filtry rymów](35-rhyme-filters.md) | 34 | [ ] |
-| 29 | [LanguageTool na serwerze i akcja sprawdzania](29-languagetool.md) | 28 | [ ] |
-| 23 | [Korekta tekstu w dialogu](23-proofreading.md) | 27, 29 | [ ] |
+| 29 | [LanguageTool na serwerze i akcja sprawdzania](29-languagetool.md) | 28, 31 | [ ] |
+| 23 | [Korekta tekstu w dialogu](23-proofreading.md) | 27, 29, 31 | [ ] |
 | 30 | [Słownik użytkownika w korekcie](30-user-dictionary.md) | 23 | [ ] |
 
 ## Backlog

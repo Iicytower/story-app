@@ -6,7 +6,7 @@ import { isPublicPath } from "@/lib/auth/public-paths";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
-      credentials: { email: {}, password: {} },
+      credentials: { nickname: {}, password: {} },
       authorize: authorizeCredentials,
     }),
   ],

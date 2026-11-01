@@ -18,7 +18,7 @@ it("does not create indexes when the app connects", async () => {
   await connection.dropDatabase();
 
   await Promise.all([Story.init(), User.init()]);
-  const user = await User.create({ email: "a@example.com", passwordHash: "x" });
+  const user = await User.create({ nickname: "alice", passwordHash: "x" });
   await Story.create({
     folderId: new Types.ObjectId(),
     userId: user._id,

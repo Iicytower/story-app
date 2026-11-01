@@ -297,3 +297,11 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Filtr na `/stories`: parametry `?tag=a&tag=b`, wartości normalizowane jak przy zapisie. Wybrany tag zmienia widok folderów na listę rozdziałów, ten sam co wyniki wyszukiwania. Kilka tagów działa jak AND, a rozdział dziedziczy tagi folderu, więc każdy tag może pasować przez rozdział albo przez jego folder. Przeniesienie rozdziału zmienia odziedziczone tagi. Pusty folder z tagiem nie pojawia się w wynikach.
 - Wybór tagów to klikalne chipy (linki zachowujące `q`), a formularz wyszukiwania zachowuje wybrane tagi w ukrytych polach.
 - Edycja w dialogu „Tags”: folder na swojej stronie, rozdział w wierszu listy rozdziałów, nie w edytorze. Listy folderów, rozdziałów i wyników pokazują tagi elementu, a przy rozdziałach także odziedziczone, w odróżnionym stylu. Dialog rozdziału pokazuje odziedziczone bez przycisku usuwania, usuwa się je na folderze.
+
+## D37 – Logowanie przez nick, bez migracji danych (2026-11-01)
+
+- Zmienia D1 i D4. Konto to `nickname` i hasło, komunikat błędu: „Invalid nickname or password.”. Bez fallbacku na e-mail w formularzu.
+- `email` usunięty ze schematu `User`, ale zostaje w dokumentach (decyzja użytkownika): pliku migracji nie ma, a nicki istniejącym kontom właściciel ustawia ręcznie przed wydaniem (`deploy.md`). `syncIndexes()` w buildzie sam usuwa `email_1`, więc nowe konta nie kolidują na braku e-maila.
+- Nick: jedno pole `nickname` z unikalnym indeksem z collation `{ locale: "en", strength: 2 }`, żeby ręczna zmiana w bazie dotyczyła jednego pola. Zapytania o nick muszą podawać tę collation. Indeks częściowy (`$type: "string"`), żeby konta jeszcze bez nicku nie wywracały builda kolizją na `null`.
+- Nick: 3–30 znaków, `A-Za-z0-9_-`. Hasło: 17–256 znaków (punktów kodowych), mała i wielka litera (także Unicode), cyfra, znak specjalny ASCII. Walidacja w `lib/credentials.ts`, egzekwowana też w `createOrUpdateUser`. Istniejące hasła nie są sprawdzane.
+- bcrypt uwzględnia tylko 72 bajty, więc nowe hasła idą przez SHA-256 (hex), a hash ma prefiks `sha256$`. Hash bez prefiksu to bcrypt surowego hasła sprzed D37 i działa dalej. Bez nowych pakietów.
