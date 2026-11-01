@@ -61,6 +61,7 @@ export function tagFilterHref(
   query: string,
   selected: string[],
   tag: string,
+  path = "/stories",
 ): string {
   const params = new URLSearchParams();
   if (query) params.set("q", query);
@@ -69,5 +70,5 @@ export function tagFilterHref(
     : [...selected, tag];
   for (const value of tags) params.append("tag", value);
   const search = params.toString();
-  return search ? `/stories?${search}` : "/stories";
+  return search ? `${path}?${search}` : path;
 }

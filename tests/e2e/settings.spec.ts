@@ -1,7 +1,7 @@
 import type { Browser, Page } from "@playwright/test";
 import { findSettings, seedStory } from "./db";
 import { storageStatePath, type UserName } from "./env";
-import { accountAction, countActionRequests, expect, test } from "./helpers";
+import { sidebarAction, countActionRequests, expect, test } from "./helpers";
 
 test.use({
   storageState: storageStatePath("alice"),
@@ -67,7 +67,7 @@ test("another user keeps the default layout and theme", async ({
   const id = await seedChapter();
   await page.goto(`/stories/${id}`);
   await split(page).click();
-  await accountAction(page, "Toggle theme");
+  await sidebarAction(page, "Toggle theme");
   await expect
     .poll(() => findSettings("alice"))
     .toMatchObject({
@@ -88,7 +88,7 @@ test("the theme follows the settings in another browser, from the first paint", 
   browser,
 }) => {
   await page.goto("/stories");
-  await accountAction(page, "Toggle theme");
+  await sidebarAction(page, "Toggle theme");
   await expect
     .poll(async () => (await findSettings("alice"))?.appearance?.theme)
     .toBe("dark");
@@ -128,7 +128,7 @@ test("the sign-in page uses the browser's saved theme, otherwise the system one"
     colorScheme: "dark",
   });
   const page = await visitor.newPage();
-  await page.goto("/login");
+  await page.goto("/");
   await expect(html(page)).toHaveClass(/\bdark\b/);
 
   await page.evaluate(() => localStorage.setItem("theme", "light"));

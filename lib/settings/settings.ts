@@ -41,6 +41,9 @@ const SETTINGS = {
   },
   appearance: {
     // null: follow the system theme.
+    sidebarCollapsed: field(false, (value) =>
+      typeof value === "boolean" ? value : undefined,
+    ),
     theme: field<Theme | null>(null, (value) =>
       value === null ? null : oneOf(THEMES)(value),
     ),

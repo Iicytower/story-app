@@ -97,7 +97,7 @@ docker run --rm --network host -v "$BACKUP:/backup:ro" mongo:8 mongoimport --uri
 
 ## Smoke test
 
-1. `/` przekierowuje na `/login`; błędne hasło → „Invalid nickname or password.”, poprawne loguje.
+1. `/` pokazuje wyszukiwarkę bez logowania; „Log in / Create account” otwiera dialog, błędne hasło → „Invalid nickname or password.”, poprawne loguje.
 2. Utworzenie opowiadania, treść, autozapis („Saved”); po odświeżeniu treść zostaje.
 3. „Export as…” pobiera plik w wybranym formacie.
 4. „Publish”: adres `/p/...` w incognito pokazuje opowiadanie z nickiem, bez notatek i komentarzy; po „Unpublish” 404.

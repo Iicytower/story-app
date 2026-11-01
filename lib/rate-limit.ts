@@ -21,6 +21,12 @@ export const LOGIN_LIMIT: RateLimitRule = {
   windowMs: 15 * 60 * 1000,
 };
 
+export const SEARCH_LIMIT: RateLimitRule = {
+  name: "search",
+  max: 30,
+  windowMs: 60 * 1000,
+};
+
 // One subscriber usually owns a whole IPv6 /64, so single addresses would not limit anyone.
 function ipv6Network(ip: string): string {
   const [head, tail] = ip.split("::");

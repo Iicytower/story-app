@@ -3,6 +3,7 @@ import { isPublicPath } from "./public-paths";
 
 describe("isPublicPath", () => {
   it.each([
+    "/",
     "/login",
     "/register",
     "/api/auth/session",
@@ -12,7 +13,6 @@ describe("isPublicPath", () => {
   ])("%s is public", (path) => expect(isPublicPath(path)).toBe(true));
 
   it.each([
-    "/",
     "/stories",
     "/stories/123",
     "/stories/123/export",

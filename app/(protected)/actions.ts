@@ -11,7 +11,7 @@ import { updateUserSettings } from "@/lib/settings/queries";
 import { parseSettingsPatch } from "@/lib/settings/settings";
 
 export async function logout() {
-  await signOut({ redirectTo: "/login" });
+  await signOut({ redirectTo: "/" });
 }
 
 // Saves only the fields sent, so the layout and the theme can change independently.

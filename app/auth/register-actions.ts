@@ -71,11 +71,11 @@ export async function register(
     await signIn("credentials", {
       nickname: trimmed,
       password,
-      redirectTo: "/stories",
+      redirectTo: "/",
     });
   } catch (error) {
     // The account exists; only the automatic sign-in hit the login limit.
-    if (error instanceof AuthError) redirect("/login");
+    if (error instanceof AuthError) redirect("/?auth=login");
     // signIn signals success by throwing Next.js's redirect, which must propagate.
     throw error;
   }

@@ -10,6 +10,9 @@ import { setupTestDb } from "./test-db";
 vi.mock("@/lib/auth/session", () => ({ requireUser: vi.fn() }));
 vi.mock("@/auth", () => ({ signOut: vi.fn() }));
 
+// bcrypt takes seconds when every test file runs in parallel.
+vi.setConfig({ testTimeout: 30_000 });
+
 setupTestDb();
 
 const PASSWORD = "Correct-horse-12345";
