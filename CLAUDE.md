@@ -9,7 +9,7 @@ Prywatna aplikacja webowa do pisania opowiadań w markdown (Next.js App Router, 
 - `docs/spec.md` – specyfikacja funkcjonalna (kopia dokumentu z Claude Docs, nie edytować bez prośby).
 - `docs/decisions.md` – decyzje i odstępstwa od spec; **ma pierwszeństwo nad spec**. Nową decyzję dopisz tutaj.
 - `docs/testing.md` – strategia testów (unit / integracyjne z MongoDB w Dockerze / E2E Playwright). **Obowiązkowa przy każdym tasku.**
-- `docs/tasks/README.md` – lista tasków ze statusami, branche i definicja „zrobione”; szczegóły w `docs/tasks/NN-*.md` (sekcje Zakres, Kryteria akceptacji, Testy).
+- `docs/tasks/README.md` – lista tasków ze statusami, branche i definicja „zrobione”; szczegóły otwartych tasków w `docs/tasks/NN-*.md` (sekcje Zakres, Kryteria akceptacji, Testy), zakończonych w `docs/tasks/done/`. Otwarte taski są w tabeli w kolejności realizacji.
 - `docs/deploy.md` – środowiska (produkcja, staging), wydania, ustalenia z Vercela i Atlasa.
 
 ## Praca z taskami
@@ -20,7 +20,7 @@ Prywatna aplikacja webowa do pisania opowiadań w markdown (Next.js App Router, 
 4. Napisz testy z sekcji „Testy” taska razem z kodem (nie na końcu). Każde kryterium akceptacji musi mieć test albo oznaczenie `manual`.
 5. `npm run verify` musi przechodzić. Nie zamykaj taska z czerwonymi lub pominiętymi testami.
 6. W odpowiedzi do użytkownika podaj mapowanie: kryterium akceptacji → test (lub wynik weryfikacji `manual`).
-7. Status `[x]`, potem jeden commit na task na branchu taska (wiadomość: `NN: <krótki opis>`). Merge do `develop` po zakończeniu taska; push `develop` oraz merge `develop` → `staging` i push `staging` tylko na prośbę użytkownika. **Nigdy nie pushuj na `main` lub `master`** (D13, D15).
+7. Status `[x]`, plik taska przenieś do `docs/tasks/done/` (`git mv`) i popraw link w tabeli, potem jeden commit na task na branchu taska (wiadomość: `NN: <krótki opis>`). Merge do `develop` po zakończeniu taska; push `develop` oraz merge `develop` → `staging` i push `staging` tylko na prośbę użytkownika. **Nigdy nie pushuj na `main` lub `master`** (D13, D15).
 
 ## Komendy
 

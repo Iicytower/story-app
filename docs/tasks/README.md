@@ -1,37 +1,55 @@
 # Taski
 
-Źródło wymagań: [`../spec.md`](../spec.md) + [`../decisions.md`](../decisions.md) (ma pierwszeństwo). Wersja 1.0 (tag `v1.0.0`) jest na produkcji; taski dotyczą zmian po 1.0. Szczegóły tasku w `NN-<slug>.md` (sekcje Zakres, Kryteria akceptacji, Testy). Zakończone taski usuwamy z tabeli i z katalogu (zostają w historii gita); numeracja rośnie dalej, żeby nie powtarzać nazw branchy.
+Źródło wymagań: [`../spec.md`](../spec.md) + [`../decisions.md`](../decisions.md) (ma pierwszeństwo). Wersja 1.0 (tag `v1.0.0`) jest na produkcji; taski dotyczą zmian po 1.0. Szczegóły otwartego tasku w `NN-<slug>.md` (sekcje Zakres, Kryteria akceptacji, Testy). Zakończone taski: wiersz zostaje w tabeli ze statusem `[x]`, a plik przenosimy do [`done/`](done/) (`git mv`, w commicie taska) i poprawiamy link w tabeli. Numeracja rośnie dalej, żeby nie powtarzać nazw branchy.
 
 Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `develop`).
 
+Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-01): najpierw proste i krótkie, potem system Tools i narzędzia bez serwera, na końcu integracje zewnętrzne (R2) i wszystko, co wymaga Mikrusa.
+
 | # | Task | Zależy od | Status |
 | --- | --- | --- | --- |
-| 12 | [Pozycja przewijania przy przełączaniu widoków](12-keep-scroll-position.md) | – | [x] |
-| 13 | [Myślniki dialogowe zamiast listy](13-dialogue-dashes.md) | – | [x] |
-| 14 | [Mniejszy górny pasek](14-compact-header.md) | – | [x] |
-| 15 | [Przewijanie poza początek i koniec tekstu](15-scroll-past-edges.md) | 12 | [x] |
-| 16 | [Lokalny backup bazy](16-local-backup.md) | – | [x] |
-| 17 | [Nowe formaty eksportu](17-export-formats.md) | – | [x] |
-| 18 | [Import opowiadań](18-import.md) | 17 | [x] |
-| 19 | [Zip z osobnym plikiem na rozdział](19-chapter-files-zip.md) | 17 | [x] |
-| 20 | [Tylko przycisk „Export as…”](20-export-as-only.md) | 19 | [x] |
-| 21 | [Aktualizacja unpdf do 2.x](21-unpdf-2.md) | 18 | [x] |
-| 22 | [Wyszukiwanie i zamiana w polu](22-find-replace.md) | – | [x] |
+| 12 | [Pozycja przewijania przy przełączaniu widoków](done/12-keep-scroll-position.md) | – | [x] |
+| 13 | [Myślniki dialogowe zamiast listy](done/13-dialogue-dashes.md) | – | [x] |
+| 14 | [Mniejszy górny pasek](done/14-compact-header.md) | – | [x] |
+| 15 | [Przewijanie poza początek i koniec tekstu](done/15-scroll-past-edges.md) | 12 | [x] |
+| 16 | [Lokalny backup bazy](done/16-local-backup.md) | – | [x] |
+| 17 | [Nowe formaty eksportu](done/17-export-formats.md) | – | [x] |
+| 18 | [Import opowiadań](done/18-import.md) | 17 | [x] |
+| 19 | [Zip z osobnym plikiem na rozdział](done/19-chapter-files-zip.md) | 17 | [x] |
+| 20 | [Tylko przycisk „Export as…”](done/20-export-as-only.md) | 19 | [x] |
+| 21 | [Aktualizacja unpdf do 2.x](done/21-unpdf-2.md) | 18 | [x] |
+| 22 | [Wyszukiwanie i zamiana w polu](done/22-find-replace.md) | – | [x] |
+| 24 | [Tagi](24-tags.md) | – | [ ] |
+| 31 | [Język folderu i pisownia na bieżąco](31-folder-language.md) | – | [ ] |
+| 36 | [Logowanie przez nick](36-nickname-login.md) | – | [ ] |
+| 38 | [Publikacja opowiadań](38-publish.md) | 36 | [ ] |
+| 41 | [Zmiana nicku i hasła](41-account-settings.md) | 36 | [ ] |
+| 37 | [Rejestracja](37-registration.md) | 36 | [ ] |
+| 27 | [Zakładka Tools](27-tools-tab.md) | – | [ ] |
+| 42 | [Generator nazw](42-name-generator.md) | 27 | [ ] |
+| 39 | [Publiczna wyszukiwarka](39-public-search.md) | 24, 37, 38 | [ ] |
+| 26 | [Upload okładek](26-cover-upload.md) | – | [ ] |
+| 40 | [Wyświetlanie okładek](40-cover-display.md) | 26 | [ ] |
+| 28 | [Serwer na Mikrusie](28-mikrus-server.md) | – | [ ] |
+| 25 | [Serwis słownikowy i tabela form](25-dictionary-service.md) | 28 | [ ] |
+| 32 | [Definicje](32-definitions.md) | 25, 27 | [ ] |
+| 33 | [Synonimy](33-synonyms.md) | 25, 27 | [ ] |
+| 34 | [Rymy](34-rhymes.md) | 25, 27 | [ ] |
+| 35 | [Filtry rymów](35-rhyme-filters.md) | 34 | [ ] |
+| 29 | [LanguageTool na serwerze i akcja sprawdzania](29-languagetool.md) | 28 | [ ] |
+| 23 | [Korekta tekstu w dialogu](23-proofreading.md) | 27, 29 | [ ] |
+| 30 | [Słownik użytkownika w korekcie](30-user-dictionary.md) | 23 | [ ] |
 
 ## Backlog
 
 Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 
-- Generatory różnego rodzaju (szczegóły do ustalenia).
+- Inne generatory niż generator nazw z taska 42 (szczegóły do ustalenia).
 - System społecznościowy (do przemyślenia).
-- Tagowanie opowiadań i wyszukiwanie wśród publicznych opowiadań.
-- Słowniki różnego rodzaju, np: synonimów, rymów, sjp
-- Upload okładki / obrazka do opowiadania.
-- Pełne sprawdzanie tekstu niezależne od ustawień przeglądarki (do przemyślenia). Dziś pisownię sprawdza przeglądarka i tylko z włączonym polskim słownikiem (D21). Docelowo:
-  - pisownia, gramatyka, stylistyka i interpunkcja;
-  - opcjonalnie zaznaczanie powtórzeń, z możliwością włączenia w ustawieniach użytkownika.
-
-  Możliwości: LanguageTool (publiczne API, Premium, własny serwer), LLM, Hunspell w aplikacji. Każda wymaga albo wysłania tekstu poza przeglądarkę, albo płatnego hostingu, albo nowych pakietów (D21).
+- Obrazki w tekście opowiadania (po tasku 26).
+- Powtórzenia między zdaniami w korekcie (powtórzenia w zdaniu są w tasku 23).
+- Kafelek odmiany: paradygmat z tabeli form zapytaniem po lemacie, wymaga indeksu po lemacie i czytelnego układu tagów (Morfologik ma ich 1336) (po tasku 25).
+- Asonans w rymach, zwinięty pod wynikami; 271 kluczy na 4,2 mln form, wyniki bliskie losowym (po tasku 34).
 
 ## Branche
 
