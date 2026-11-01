@@ -51,7 +51,7 @@ export default async function FolderPage({
   const publicPath = folder.published
     ? await folderPublicPath(user.userId, folder.id)
     : null;
-  const hiddenCount = folder.chapters.filter(
+  const unpublishedCount = folder.chapters.filter(
     ({ publication }) => publication !== "public",
   ).length;
 
@@ -81,7 +81,7 @@ export default async function FolderPage({
           <FolderPublish
             id={folder.id}
             publicPath={publicPath}
-            hiddenCount={hiddenCount}
+            unpublishedCount={unpublishedCount}
           />
           <RenameFolderDialog id={folder.id} name={folder.name} />
           <DeleteFolderButton

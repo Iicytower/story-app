@@ -15,7 +15,7 @@ export function PublishChapterButton({
   isPublic: boolean;
 }) {
   const [pending, startTransition] = useTransition();
-  const label = `${isPublic ? "Hide" : "Publish"} "${title}"`;
+  const label = `${isPublic ? "Unpublish" : "Publish"} "${title}"`;
 
   return (
     <Button
