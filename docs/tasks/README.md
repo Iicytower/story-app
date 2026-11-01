@@ -17,10 +17,25 @@ Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `deve
 | 20 | [Tylko przycisk „Export as…”](20-export-as-only.md) | 19 | [x] |
 | 21 | [Aktualizacja unpdf do 2.x](21-unpdf-2.md) | 18 | [x] |
 | 22 | [Wyszukiwanie i zamiana w polu](22-find-replace.md) | – | [x] |
-| 23 | [Rozwinięcie sprawdzania tekstu](23-text-checking.md) | – | [ ] |
-| 24 | [Tagi i wyszukiwanie publicznych opowiadań](24-tags-public-search.md) | – | [ ] |
-| 25 | [Słowniki](25-dictionaries.md) | – | [ ] |
-| 26 | [Okładki](26-covers.md) | – | [ ] |
+| 23 | [Korekta tekstu w dialogu](23-proofreading.md) | 27, 29 | [ ] |
+| 24 | [Tagi](24-tags.md) | – | [ ] |
+| 25 | [Serwis słownikowy i tabela form](25-dictionary-service.md) | 28 | [ ] |
+| 26 | [Upload okładek](26-cover-upload.md) | – | [ ] |
+| 27 | [Zakładka Tools](27-tools-tab.md) | – | [ ] |
+| 28 | [Serwer na Mikrusie](28-mikrus-server.md) | – | [ ] |
+| 29 | [LanguageTool na serwerze i akcja sprawdzania](29-languagetool.md) | 28 | [ ] |
+| 30 | [Słownik użytkownika w korekcie](30-user-dictionary.md) | 23 | [ ] |
+| 31 | [Język folderu i pisownia na bieżąco](31-folder-language.md) | – | [ ] |
+| 32 | [Definicje](32-definitions.md) | 25, 27 | [ ] |
+| 33 | [Synonimy](33-synonyms.md) | 25, 27 | [ ] |
+| 34 | [Rymy](34-rhymes.md) | 25, 27 | [ ] |
+| 35 | [Filtry rymów](35-rhyme-filters.md) | 34 | [ ] |
+| 36 | [Logowanie przez nick](36-nickname-login.md) | – | [ ] |
+| 37 | [Rejestracja](37-registration.md) | 36 | [ ] |
+| 38 | [Publikacja opowiadań](38-publish.md) | 36 | [ ] |
+| 39 | [Publiczna wyszukiwarka](39-public-search.md) | 24, 37, 38 | [ ] |
+| 40 | [Wyświetlanie okładek](40-cover-display.md) | 26 | [ ] |
+| 41 | [Zmiana nicku i hasła](41-account-settings.md) | 36 | [ ] |
 
 ## Backlog
 
@@ -29,7 +44,9 @@ Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 - Generatory różnego rodzaju (szczegóły do ustalenia).
 - System społecznościowy (do przemyślenia).
 - Obrazki w tekście opowiadania (po tasku 26).
-- Opcjonalne zaznaczanie powtórzeń, z możliwością włączenia w ustawieniach użytkownika (uzupełnienie taska 23).
+- Powtórzenia między zdaniami w korekcie (powtórzenia w zdaniu są w tasku 23).
+- Kafelek odmiany: paradygmat z tabeli form zapytaniem po lemacie, wymaga indeksu po lemacie i czytelnego układu tagów (Morfologik ma ich 1336) (po tasku 25).
+- Asonans w rymach, zwinięty pod wynikami; 271 kluczy na 4,2 mln form, wyniki bliskie losowym (po tasku 34).
 
 ## Branche
 
