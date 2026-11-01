@@ -163,11 +163,38 @@ describe("setChapterPublished", () => {
     expect(await titles()).toEqual(["One", "Three"]);
   });
 
+  it("publishes only this chapter after the folder was unpublished", async () => {
+    const { folderId, ids } = await seedBook();
+    await setFolderPublished(folderId, true);
+    await setFolderPublished(folderId, false);
+    await setChapterPublished(ids[1], true);
+    expect(await titles()).toEqual(["Two"]);
+  });
+
   it("gives readers no folder once the last public chapter is hidden", async () => {
     const { ids } = await seedBook();
     await setChapterPublished(ids[0], true);
     await setChapterPublished(ids[0], false);
     expect(await getPublishedFolder("Alice", "ksiega")).toBeNull();
+  });
+});
+
+describe("reading order", () => {
+  it("starts from the oldest chapter in Newest first", async () => {
+    const { folderId } = await seedBook();
+    await Folder.updateOne({ _id: folderId }, { chapterSort: "created" });
+    await setFolderPublished(folderId, true);
+    expect(await titles()).toEqual(["One", "Two", "Three"]);
+    const chapter = await getPublishedChapter("Alice", "ksiega", "two");
+    expect(chapter?.previous?.title).toBe("One");
+    expect(chapter?.next?.title).toBe("Three");
+  });
+
+  it("keeps the author's order in Manual", async () => {
+    const { folderId, ids } = await seedBook();
+    await Story.updateOne({ _id: ids[0] }, { position: 9 });
+    await setFolderPublished(folderId, true);
+    expect(await titles()).toEqual(["Two", "Three", "One"]);
   });
 });
 

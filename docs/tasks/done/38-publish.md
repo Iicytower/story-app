@@ -4,7 +4,7 @@ Wydzielone z dawnego taska 24 (zgłoszenie z 2026-10-30). Publikacja zmienia za�
 
 ## Zakres
 
-- Przełącznik „Publish” na rozdziale i folderze, „Publish all” i ukrywanie rozdziałów.
+- Przełącznik „Publish” na rozdziale i folderze, „Publish all” i „Unpublish” rozdziału.
 - Strona czytania opublikowanego opowiadania z podpisem autora.
 - Całkowite usunięcie „Share” (decyzja użytkownika). Szczegóły: D38.
 
@@ -16,7 +16,7 @@ Wydzielone z dawnego taska 24 (zgłoszenie z 2026-10-30). Publikacja zmienia za�
 4. Treść publiczna nie zawiera komentarzy (`stripComments`) ani notatek, a strona pokazuje nick i nie ujawnia `userId`.
 5. Publikować może tylko właściciel; cudze opowiadanie daje `NOT_FOUND`.
 6. Eksport, wersje folderów i `updatedAt` rozdziałów nie zmieniają się przez „Publish”.
-7. Publikacja jednego rozdziału nie zmienia ustawień pozostałych w opublikowanym folderze, a nowy rozdział jest w nim ukryty.
+7. Publikacja jednego rozdziału nie zmienia ustawień pozostałych w opublikowanym folderze, a nowy rozdział jest w nim nieopublikowany.
 8. Stary adres przekierowuje po zmianie tytułu lub nazwy folderu.
 
 ## Testy

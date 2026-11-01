@@ -23,11 +23,11 @@ const subscribeNever = () => () => {};
 export function FolderPublish({
   id,
   publicPath,
-  hiddenCount,
+  unpublishedCount,
 }: {
   id: string;
   publicPath: string | null;
-  hiddenCount: number;
+  unpublishedCount: number;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -71,7 +71,7 @@ export function FolderPublish({
           <GlobeIcon />
           {publicPath ? "Unpublish" : "Publish"}
         </Button>
-        {publicPath && hiddenCount > 0 && (
+        {publicPath && unpublishedCount > 0 && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" disabled={pending}>
@@ -82,9 +82,9 @@ export function FolderPublish({
               <AlertDialogHeader>
                 <AlertDialogTitle>Publish all chapters?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  {hiddenCount} hidden{" "}
-                  {hiddenCount === 1 ? "chapter" : "chapters"} will become
-                  public.
+                  {unpublishedCount} unpublished{" "}
+                  {unpublishedCount === 1 ? "chapter" : "chapters"} will be
+                  published.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

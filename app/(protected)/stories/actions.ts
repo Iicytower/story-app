@@ -523,8 +523,8 @@ export async function setChapterPublished(
     return { ok: true, publicPath: null };
   }
 
-  // Publishing one chapter is publishing the folder with the rest off; a folder
-  // already published keeps its other chapters' settings.
+  // Publishing one chapter is publishing the folder with the rest off, also those public
+  // before an Unpublish; a folder already published keeps its other chapters' settings.
   if (!folder.published) {
     await Story.updateMany(
       {
@@ -532,7 +532,6 @@ export async function setChapterPublished(
         folderId: folder._id,
         deletedAt: null,
         _id: { $ne: id },
-        publication: { $exists: false },
       },
       { $set: { publication: "hidden" } },
       { timestamps: false },

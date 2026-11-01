@@ -15,13 +15,13 @@ async function seedBook() {
     folder: "Book",
     content: `First text <!-- ${SECRET_COMMENT} -->`,
     notes: SECRET_NOTE,
-    createdAt: new Date(Date.UTC(2026, 0, 2)),
+    createdAt: new Date(Date.UTC(2026, 0, 1)),
   });
   await seedStory("alice", {
     title: "Two",
     folder: "Book",
     content: "Second text",
-    createdAt: new Date(Date.UTC(2026, 0, 1)),
+    createdAt: new Date(Date.UTC(2026, 0, 2)),
   });
   const folder = await findFolder("Book");
   await withE2EDb((connection) =>
@@ -65,12 +65,12 @@ test("a published folder is readable without logging in until it is unpublished"
   const response = await visitor.goto(url);
   expect(response!.headers()["x-robots-tag"]).toBeUndefined();
 
-  await page.getByRole("button", { name: "Unpublish" }).click();
+  await page.getByRole("button", { name: "Unpublish", exact: true }).click();
   await expect(link).toBeHidden();
   expect((await visitor.goto(url))!.status()).toBe(404);
 });
 
-test("a chapter published alone keeps the others hidden, and Publish all reveals them", async ({
+test("a chapter published alone keeps the others unpublished, and Publish all reveals them", async ({
   page,
   browser,
 }) => {
@@ -90,7 +90,9 @@ test("a chapter published alone keeps the others hidden, and Publish all reveals
     .getByRole("alertdialog")
     .getByRole("button", { name: "Publish all" })
     .click();
-  await expect(page.getByRole("button", { name: 'Hide "Two"' })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: 'Unpublish "Two"' }),
+  ).toBeVisible();
   await visitor.reload();
   await expect(visitor.getByRole("link", { name: "2. Two" })).toBeVisible();
 });
