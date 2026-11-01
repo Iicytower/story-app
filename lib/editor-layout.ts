@@ -41,16 +41,23 @@ function isSizes(value: unknown, ids: string[]): value is PanelSizes {
     isRecord(value) &&
     Object.entries(value).every(
       ([id, size]) =>
-        ids.includes(id) && typeof size === "number" && size >= 0 && size <= 100,
+        ids.includes(id) &&
+        typeof size === "number" &&
+        size >= 0 &&
+        size <= 100,
     )
   );
 }
 
 // Every set of visible columns columnsKey can produce.
 const COLUMN_KEYS = new Set(
-  [[], ["notes"], ["chapters"], ["notes", "chapters"], ["chapters", "notes"]].map(
-    (columns) => columnsKey(columns as SidePanel[]),
-  ),
+  [
+    [],
+    ["notes"],
+    ["chapters"],
+    ["notes", "chapters"],
+    ["chapters", "notes"],
+  ].map((columns) => columnsKey(columns as SidePanel[])),
 );
 
 // Anything malformed falls back field by field, so an old or edited value never breaks the editor.

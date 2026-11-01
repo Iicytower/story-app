@@ -14,9 +14,7 @@ import { type ChapterState, numberedTitle } from "./versions";
 // JSON keeps the fields apart, so "a" + "bc" and "ab" + "c" hash differently.
 function contentHash(storyId: Types.ObjectId, state: ChapterState): string {
   return createHash("sha256")
-    .update(
-      JSON.stringify([storyId.toString(), state.title, state.content]),
-    )
+    .update(JSON.stringify([storyId.toString(), state.title, state.content]))
     .digest("hex");
 }
 

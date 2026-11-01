@@ -249,8 +249,8 @@ function RestoreEntireDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Restore entire version?</AlertDialogTitle>
           <AlertDialogDescription>
-            The folder will match this version. The current state is saved as
-            a new version first, so you can go back to it.
+            The folder will match this version. The current state is saved as a
+            new version first, so you can go back to it.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <ul className="list-disc pl-5 text-sm">

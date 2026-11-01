@@ -120,8 +120,8 @@ function SaveVersionForm({
         <DialogTitle>Save version</DialogTitle>
       </DialogHeader>
       <p className="text-muted-foreground text-sm">
-        Saves the titles and contents of the folder&apos;s chapters as they
-        are stored now, with their order. Notes are not part of versions.
+        Saves the titles and contents of the folder&apos;s chapters as they are
+        stored now, with their order. Notes are not part of versions.
       </p>
       <div className="flex flex-col gap-2">
         <Label htmlFor="version-name">Name</Label>

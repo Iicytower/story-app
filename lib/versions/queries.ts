@@ -37,7 +37,11 @@ export async function getFolderVersion(
     return null;
   }
   await connectDB();
-  const folder = await Folder.findOne({ _id: folderId, userId, deletedAt: null })
+  const folder = await Folder.findOne({
+    _id: folderId,
+    userId,
+    deletedAt: null,
+  })
     .select({ name: 1, chapterSort: 1 })
     .lean();
   if (!folder) return null;
