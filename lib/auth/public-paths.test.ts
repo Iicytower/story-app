@@ -4,6 +4,7 @@ import { isPublicPath } from "./public-paths";
 describe("isPublicPath", () => {
   it.each([
     "/login",
+    "/register",
     "/api/auth/session",
     "/api/auth/callback/credentials",
     "/p/alice/book",
@@ -16,6 +17,7 @@ describe("isPublicPath", () => {
     "/stories/123",
     "/stories/123/export",
     "/login/x",
+    "/register/x",
     "/s/abc123",
     "/s/f/abc123",
     "/s/f/abc123/2",

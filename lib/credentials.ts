@@ -12,10 +12,35 @@ export const PASSWORD_REQUIREMENTS = [
   `A special character, one of: ${PASSWORD_SPECIAL_CHARACTERS}`,
 ];
 
+const LOWERCASE = /\p{Ll}/u;
+const UPPERCASE = /\p{Lu}/u;
+const DIGIT = /[0-9]/;
+const SPECIAL = /[!-/:-@[-`{-~]/;
+
+// Same order as PASSWORD_REQUIREMENTS.
+const PASSWORD_CHECKS = [
+  (password: string) => {
+    const length = [...password].length;
+    return length >= PASSWORD_MIN_LENGTH && length <= PASSWORD_MAX_LENGTH;
+  },
+  (password: string) => LOWERCASE.test(password),
+  (password: string) => UPPERCASE.test(password),
+  (password: string) => DIGIT.test(password),
+  (password: string) => SPECIAL.test(password),
+];
+
+export function passwordChecklist(password: string) {
+  return PASSWORD_REQUIREMENTS.map((requirement, index) => ({
+    requirement,
+    met: PASSWORD_CHECKS[index](password),
+  }));
+}
+
+export const NICKNAME_REQUIREMENT =
+  "Nickname must be 3-30 characters: letters a-z, digits, _ and -.";
+
 export function nicknameError(nickname: string): string | null {
-  return NICKNAME_PATTERN.test(nickname)
-    ? null
-    : "Nickname must be 3-30 characters: letters a-z, digits, _ and -.";
+  return NICKNAME_PATTERN.test(nickname) ? null : NICKNAME_REQUIREMENT;
 }
 
 export function passwordError(password: string): string | null {
@@ -26,14 +51,14 @@ export function passwordError(password: string): string | null {
   if (length > PASSWORD_MAX_LENGTH) {
     return `Password must be at most ${PASSWORD_MAX_LENGTH} characters long.`;
   }
-  if (!/\p{Ll}/u.test(password)) {
+  if (!LOWERCASE.test(password)) {
     return "Password must contain a lowercase letter.";
   }
-  if (!/\p{Lu}/u.test(password)) {
+  if (!UPPERCASE.test(password)) {
     return "Password must contain an uppercase letter.";
   }
-  if (!/[0-9]/.test(password)) return "Password must contain a digit.";
-  if (!/[!-/:-@[-`{-~]/.test(password)) {
+  if (!DIGIT.test(password)) return "Password must contain a digit.";
+  if (!SPECIAL.test(password)) {
     return "Password must contain an ASCII special character.";
   }
   return null;

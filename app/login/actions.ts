@@ -3,6 +3,7 @@
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
 import type { ActionError } from "@/lib/action-result";
+import { LoginRateLimited } from "@/lib/auth/authorize";
 
 export async function login(
   _previous: ActionError | null,
@@ -15,6 +16,13 @@ export async function login(
       redirectTo: formData.get("callbackUrl")?.toString() || "/stories",
     });
   } catch (error) {
+    if (error instanceof LoginRateLimited) {
+      return {
+        ok: false,
+        error: "RATE_LIMITED",
+        message: "Too many attempts. Try again in a few minutes.",
+      };
+    }
     if (error instanceof AuthError) {
       return {
         ok: false,

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { nicknameError, passwordError } from "@/lib/credentials";
+import { isDuplicateKeyError } from "@/lib/db";
 import { NICKNAME_COLLATION, User } from "@/lib/models/user";
 
 // Hashes without the prefix are bcrypt of the raw password, from before task 36.
@@ -35,6 +36,21 @@ export function findUserByNickname(nickname: string) {
 
 export async function userExists(nickname: string): Promise<boolean> {
   return (await findUserByNickname(nickname)) !== null;
+}
+
+// Insert only: unlike createOrUpdateUser it must never touch an existing account.
+// The unique index decides, which also settles two simultaneous registrations.
+export async function createUser(
+  nickname: string,
+  password: string,
+): Promise<boolean> {
+  try {
+    await User.create({ nickname, passwordHash: await hashPassword(password) });
+    return true;
+  } catch (error) {
+    if (isDuplicateKeyError(error)) return false;
+    throw error;
+  }
 }
 
 export async function createOrUpdateUser(

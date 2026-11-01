@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { LoginForm } from "./login-form";
@@ -20,6 +21,12 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             typeof callbackUrl === "string" ? callbackUrl : "/stories"
           }
         />
+        <p className="text-muted-foreground text-sm">
+          No account?{" "}
+          <Link href="/register" className="underline">
+            Create one
+          </Link>
+        </p>
       </div>
     </main>
   );

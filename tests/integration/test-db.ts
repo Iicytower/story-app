@@ -9,6 +9,7 @@ const TEST_URI = `mongodb://127.0.0.1:27017/story_app_test_${process.env.VITEST_
 export function setupTestDb() {
   beforeAll(async () => {
     process.env.MONGODB_URI = TEST_URI;
+    process.env.AUTH_SECRET = "test-auth-secret";
     const { connection } = await connectDB();
     await connection.dropDatabase();
     await connection.syncIndexes();
