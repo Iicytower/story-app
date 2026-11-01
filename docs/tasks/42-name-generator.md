@@ -4,7 +4,7 @@ Zgłoszenie użytkownika (2026-11-01). Szczegóły pochodzą z rozmowy poza tym 
 
 ## Zakres
 
-Generator nazw. Zakres do ustalenia przy implementacji.
+Generator nazw jako kafelek w Tools (task 27), działający bez serwera z taska 28 (decyzja użytkownika, 2026-11-01). Reszta zakresu do ustalenia przy implementacji.
 
 ## Do ustalenia przy implementacji
 
