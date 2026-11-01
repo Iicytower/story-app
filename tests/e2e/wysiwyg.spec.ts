@@ -168,9 +168,9 @@ test("typed dialogue stays paragraphs in the editor, Source and on the public pa
   await expect(content.field.locator("p")).toHaveText(["– Hello.", "– Hi!"]);
   await expect(content.field.locator("ul, li")).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Share", exact: true }).click();
+  await page.getByRole("button", { name: "Publish", exact: true }).click();
   const url = await page
-    .getByRole("textbox", { name: "Share link" })
+    .getByRole("textbox", { name: "Public link" })
     .inputValue();
   const visitor = await browser.newContext({
     storageState: { cookies: [], origins: [] },
@@ -241,9 +241,9 @@ test("a comment written in the editor is not on the public page", async ({
   await page.keyboard.press("Control+s");
   await expect(page.getByRole("status")).toHaveText("Saved");
 
-  await page.getByRole("button", { name: "Share", exact: true }).click();
+  await page.getByRole("button", { name: "Publish", exact: true }).click();
   const url = await page
-    .getByRole("textbox", { name: "Share link" })
+    .getByRole("textbox", { name: "Public link" })
     .inputValue();
   const visitor = await browser.newContext({
     storageState: { cookies: [], origins: [] },

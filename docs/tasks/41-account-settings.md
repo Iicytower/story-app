@@ -18,6 +18,7 @@ Do decyzji przy starcie taska:
 - Dialog czy strona ustawień, bo aplikacja nie ma dziś takiej strony.
 - Czy zmiana hasła unieważnia inne sesje. JWT nie ma do tego mechanizmu, więc propozycja: nie.
 - Czy zmiana nicku wymaga hasła.
+- Co ze starymi adresami `/p/<nick>/...` po zmianie nicku (D38): 404 czy przekierowanie.
 
 ## Kryteria akceptacji
 
@@ -30,4 +31,4 @@ Do decyzji przy starcie taska:
 
 ## Testy
 
-Integracyjne: akcje, sesja, kolizje nicku, stare hasło, wymagania. E2E: zmiana nicku i hasła, ponowne logowanie. Kryterium 5: test w tasku 38, jeśli powstanie później.
+Integracyjne: akcje, sesja, kolizje nicku, stare hasło, wymagania. E2E: zmiana nicku i hasła, ponowne logowanie. Kryterium 5: test podpisu na stronie `/p/...`.

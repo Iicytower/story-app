@@ -89,7 +89,7 @@ test("keeps toolbar buttons accessible by name on a narrow screen", async ({
 
   await page.goto(`/stories/${id}`);
   await expect(page.getByRole("button", { name: "Export as…" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Share" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Publish", exact: true })).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,

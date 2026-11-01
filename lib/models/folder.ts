@@ -15,7 +15,10 @@ export interface FolderFields {
   chapterSort: ChapterSort;
   // Set on the first switch to manual, which takes positions from the order shown until then.
   manualChapterOrder: boolean;
-  shareToken?: string;
+  // Missing means not published.
+  published?: boolean;
+  // Addresses from before a rename; they redirect to the current one.
+  formerSlugs?: string[];
   // Last version number handed out; never decreases, so a deleted version's number is not reused.
   versionCounter?: number;
   deletedAt: Date | null;
@@ -34,7 +37,8 @@ const folderSchema = new Schema<FolderFields>(
     tags: { type: [String] },
     chapterSort: { type: String, enum: CHAPTER_SORTS, default: "created" },
     manualChapterOrder: { type: Boolean, default: false },
-    shareToken: { type: String },
+    published: { type: Boolean },
+    formerSlugs: { type: [String], default: undefined },
     versionCounter: { type: Number },
     deletedAt: { type: Date, default: null },
   },
@@ -46,13 +50,6 @@ folderSchema.index(
   { unique: true, partialFilterExpression: { deletedAt: { $type: "null" } } },
 );
 folderSchema.index({ userId: 1, lastActivityAt: -1 });
-folderSchema.index(
-  { shareToken: 1 },
-  {
-    unique: true,
-    partialFilterExpression: { shareToken: { $type: "string" } },
-  },
-);
 
 export const Folder: Model<FolderFields> =
   (mongoose.models.Folder as Model<FolderFields> | undefined) ??

@@ -61,7 +61,7 @@ export async function getFolder(userId: string, id: string) {
       notesUpdatedAt: 1,
       chapterSort: 1,
       tags: 1,
-      shareToken: 1,
+      published: 1,
     })
     .lean();
   if (!folder) return null;
@@ -71,7 +71,7 @@ export async function getFolder(userId: string, id: string) {
     id,
     chapterOrder(chapterSort),
   )
-    .select({ title: 1, content: 1, tags: 1, updatedAt: 1 })
+    .select({ title: 1, content: 1, tags: 1, publication: 1, updatedAt: 1 })
     .lean();
   return {
     ...serialize(folder),
@@ -103,50 +103,6 @@ export async function getFolderForExport(userId: string, id: string) {
     .select({ title: 1, content: 1, notes: 1, createdAt: 1, updatedAt: 1 })
     .lean();
   return { ...serialize(folder), chapters: chapters.map(serialize) };
-}
-
-// Public pages: never notes, and only active chapters of an active folder.
-async function findSharedFolder(token: string) {
-  await connectDB();
-  const folder = await Folder.findOne({ shareToken: token, deletedAt: null })
-    .select({ userId: 1, name: 1, chapterSort: 1 })
-    .lean();
-  if (!folder) return null;
-  const query = findChaptersInOrder(
-    folder.userId.toString(),
-    folder._id.toString(),
-    chapterOrder(folder.chapterSort ?? "created"),
-  );
-  return { folder, chapters: query };
-}
-
-export async function getSharedFolder(token: string) {
-  const shared = await findSharedFolder(token);
-  if (!shared) return null;
-  const chapters = await shared.chapters.select({ _id: 0, title: 1 }).lean();
-  return {
-    name: shared.folder.name,
-    chapters: chapters.map(({ title }) => ({ title })),
-  };
-}
-
-// n is 1-based, as in the URL.
-export async function getSharedChapter(token: string, n: number) {
-  if (!Number.isInteger(n) || n < 1) return null;
-  const shared = await findSharedFolder(token);
-  if (!shared) return null;
-  const chapters = await shared.chapters
-    .select({ _id: 0, title: 1, content: 1 })
-    .lean();
-  const chapter = chapters[n - 1];
-  if (!chapter) return null;
-  return {
-    folderName: shared.folder.name,
-    title: chapter.title,
-    content: chapter.content,
-    previous: n > 1 ? { n: n - 1, title: chapters[n - 2].title } : null,
-    next: n < chapters.length ? { n: n + 1, title: chapters[n].title } : null,
-  };
 }
 
 // The editor's side panels: folder notes and the chapter list, without chapter contents.
