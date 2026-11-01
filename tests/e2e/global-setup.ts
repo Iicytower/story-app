@@ -13,8 +13,8 @@ export default async function globalSetup() {
   const { connection } = await connectDB();
   await connection.dropDatabase();
   await connection.syncIndexes();
-  for (const { email, password } of Object.values(USERS)) {
-    await createOrUpdateUser(email, password);
+  for (const { nickname, password } of Object.values(USERS)) {
+    await createOrUpdateUser(nickname, password);
   }
   await disconnectDB();
 }

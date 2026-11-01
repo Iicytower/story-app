@@ -13,12 +13,13 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="callbackUrl" value={callbackUrl} />
       <div className="flex flex-col gap-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="nickname">Nickname</Label>
         <Input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
+          id="nickname"
+          name="nickname"
+          type="text"
+          autoComplete="username"
+          spellCheck={false}
           required
           autoFocus
         />

@@ -10,18 +10,46 @@ test.describe("signed out", () => {
 
   test("wrong password shows an error", async ({ page }) => {
     await page.goto("/login");
-    await page.getByLabel("Email").fill(USERS.alice.email);
+    await page.getByLabel("Nickname").fill(USERS.alice.nickname);
     await page.getByLabel("Password").fill("wrong-password");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(
-      page.getByRole("alert").filter({ hasText: "Invalid email or password." }),
+      page
+        .getByRole("alert")
+        .filter({ hasText: "Invalid nickname or password." }),
     ).toBeVisible();
     await expect(page).toHaveURL("/login");
   });
 
+  test("unknown nickname shows the same error", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByLabel("Nickname").fill("nobody");
+    await page.getByLabel("Password").fill(USERS.alice.password);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(
+      page
+        .getByRole("alert")
+        .filter({ hasText: "Invalid nickname or password." }),
+    ).toBeVisible();
+  });
+
+  test("the form has no email field", async ({ page }) => {
+    await page.goto("/login");
+    await expect(page.locator('input[type="email"]')).toHaveCount(0);
+    await expect(page.getByLabel("Email")).toHaveCount(0);
+  });
+
+  test("nickname case does not matter", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByLabel("Nickname").fill(USERS.alice.nickname.toUpperCase());
+    await page.getByLabel("Password").fill(USERS.alice.password);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page).toHaveURL("/stories");
+  });
+
   test("correct password redirects to /stories", async ({ page }) => {
     await page.goto("/login");
-    await page.getByLabel("Email").fill(USERS.alice.email);
+    await page.getByLabel("Nickname").fill(USERS.alice.nickname);
     await page.getByLabel("Password").fill(USERS.alice.password);
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL("/stories");

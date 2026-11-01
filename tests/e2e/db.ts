@@ -27,7 +27,7 @@ export function clearStories(): Promise<void> {
 async function userId(connection: mongoose.Connection, user: UserName) {
   const account = await connection
     .collection("users")
-    .findOne({ email: USERS[user].email });
+    .findOne({ nickname: USERS[user].nickname });
   if (!account) throw new Error(`User ${user} is not seeded`);
   return account._id;
 }

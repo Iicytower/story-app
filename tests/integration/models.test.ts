@@ -117,14 +117,11 @@ describe("Folder", () => {
 });
 
 describe("User", () => {
-  it("stores email lowercase and rejects a duplicate email", async () => {
-    const user = await User.create({
-      email: "Alice@Example.com",
-      passwordHash: "x",
-    });
-    expect(user.email).toBe("alice@example.com");
+  it("keeps the nickname case and rejects a duplicate in another case", async () => {
+    const user = await User.create({ nickname: "Alice", passwordHash: "x" });
+    expect(user.nickname).toBe("Alice");
     await expect(
-      User.create({ email: "ALICE@example.com", passwordHash: "y" }),
+      User.create({ nickname: "ALICE", passwordHash: "y" }),
     ).rejects.toMatchObject(DUPLICATE_KEY);
   });
 });

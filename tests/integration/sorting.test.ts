@@ -38,8 +38,8 @@ function signInAs(userId: Types.ObjectId) {
 beforeEach(async () => {
   [alice, bob] = (
     await User.create([
-      { email: "alice@example.com", passwordHash: "x" },
-      { email: "bob@example.com", passwordHash: "x" },
+      { nickname: "alice", passwordHash: "x" },
+      { nickname: "bob", passwordHash: "x" },
     ])
   ).map((user) => user._id);
   signInAs(alice);

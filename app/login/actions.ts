@@ -10,7 +10,7 @@ export async function login(
 ): Promise<ActionError | null> {
   try {
     await signIn("credentials", {
-      email: formData.get("email"),
+      nickname: formData.get("nickname"),
       password: formData.get("password"),
       redirectTo: formData.get("callbackUrl")?.toString() || "/stories",
     });
@@ -19,7 +19,7 @@ export async function login(
       return {
         ok: false,
         error: "UNAUTHORIZED",
-        message: "Invalid email or password.",
+        message: "Invalid nickname or password.",
       };
     }
     // signIn signals success by throwing Next.js's redirect, which must propagate.
