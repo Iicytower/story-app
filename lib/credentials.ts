@@ -2,6 +2,15 @@ const NICKNAME_PATTERN = /^[A-Za-z0-9_-]{3,30}$/;
 
 export const PASSWORD_MIN_LENGTH = 17;
 export const PASSWORD_MAX_LENGTH = 256;
+export const PASSWORD_SPECIAL_CHARACTERS = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+
+export const PASSWORD_REQUIREMENTS = [
+  `${PASSWORD_MIN_LENGTH}-${PASSWORD_MAX_LENGTH} characters`,
+  "A lowercase letter (any alphabet)",
+  "An uppercase letter (any alphabet)",
+  "A digit (0-9)",
+  `A special character, one of: ${PASSWORD_SPECIAL_CHARACTERS}`,
+];
 
 export function nicknameError(nickname: string): string | null {
   return NICKNAME_PATTERN.test(nickname)

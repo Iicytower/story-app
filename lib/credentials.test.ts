@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { nicknameError, passwordError } from "./credentials";
+import {
+  nicknameError,
+  PASSWORD_REQUIREMENTS,
+  PASSWORD_SPECIAL_CHARACTERS,
+  passwordError,
+} from "./credentials";
 
 const VALID_PASSWORD = "Abcdefghijklmno1!";
 
@@ -56,5 +61,21 @@ describe("passwordError", () => {
 
   it.each(["!", "/", ":", "@", "[", "`", "{", "~"])("accepts %s", (char) => {
     expect(passwordError(`Abcdefghijklmno1${char}`)).toBeNull();
+  });
+});
+
+describe("PASSWORD_REQUIREMENTS", () => {
+  it("states the limits passwordError enforces", () => {
+    expect(PASSWORD_REQUIREMENTS[0]).toBe("17-256 characters");
+  });
+
+  it("lists exactly the special characters passwordError accepts", () => {
+    const ascii = Array.from({ length: 127 - 32 }, (_, i) =>
+      String.fromCharCode(i + 32),
+    );
+    const accepted = ascii.filter(
+      (char) => passwordError(`Abcdefghijklmno1${char}`) === null,
+    );
+    expect(accepted.join("")).toBe(PASSWORD_SPECIAL_CHARACTERS);
   });
 });
