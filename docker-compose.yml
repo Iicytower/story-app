@@ -1,6 +1,9 @@
 services:
   mongo:
     image: mongo:8
+    # Every collection and index is a file; the test databases exceed the default 1024.
+    ulimits:
+      nofile: 64000
     ports:
       - "127.0.0.1:27017:27017"
     volumes:
