@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { buildPublicFilter, matchesPublicText } from "./search";
 
 const FOLDERS = [
-  { _id: "a", tags: ["fantasy"] },
-  { _id: "b", tags: [] },
+  { _id: "a", name: "Saga", tags: ["fantasy"] },
+  { _id: "b", name: "Fantasy notes", tags: [] },
 ];
 
 describe("buildPublicFilter", () => {
@@ -16,12 +16,12 @@ describe("buildPublicFilter", () => {
   });
 
   it("searches title, content and tags, on the chapter or its folder", () => {
-    const { $or } = buildPublicFilter(" Fantasy ", [], FOLDERS) as {
+    const { $or } = buildPublicFilter("Fantasy", [], FOLDERS) as {
       $or: Record<string, unknown>[];
     };
     expect($or.slice(2)).toEqual([
       { tags: "fantasy" },
-      { folderId: { $in: ["a"] } },
+      { folderId: { $in: ["a", "b"] } },
     ]);
   });
 
@@ -45,13 +45,15 @@ describe("buildPublicFilter", () => {
 describe("matchesPublicText", () => {
   const chapter = {
     title: "Łąka",
+    folderName: "Księga",
     text: "Zielona trawa",
     tags: ["złoty wiek"],
   };
 
-  it("accepts a hit in the title, text or a whole tag", () => {
+  it("accepts a hit in the title, folder name, text or a whole tag", () => {
     expect(matchesPublicText("ŁĄKA", chapter)).toBe(true);
     expect(matchesPublicText("trawa", chapter)).toBe(true);
+    expect(matchesPublicText("księga", chapter)).toBe(true);
     expect(matchesPublicText("Złoty  Wiek", chapter)).toBe(true);
   });
 

@@ -6,6 +6,7 @@ export const MAX_RESULTS = 50;
 
 interface PublishedFolder {
   _id: unknown;
+  name: string;
   tags?: string[];
 }
 
@@ -33,7 +34,16 @@ export function buildPublicFilter(
       { title: pattern },
       { content: pattern },
       { tags: tag },
-      { folderId: { $in: foldersWithTag(folders, tag) } },
+      {
+        folderId: {
+          $in: [
+            ...foldersWithTag(folders, tag),
+            ...folders
+              .filter(({ name }) => pattern.test(name))
+              .map(({ _id }) => _id),
+          ],
+        },
+      },
     ];
   }
   if (tags.length > 0) {
@@ -46,12 +56,13 @@ export function buildPublicFilter(
 
 export function matchesPublicText(
   query: string,
-  chapter: { title: string; text: string; tags: string[] },
+  chapter: { title: string; folderName: string; text: string; tags: string[] },
 ): boolean {
   if (!query) return true;
   const pattern = new RegExp(escapeRegex(query), "i");
   return (
     pattern.test(chapter.title) ||
+    pattern.test(chapter.folderName) ||
     pattern.test(chapter.text) ||
     chapter.tags.includes(normalizeTag(query))
   );
