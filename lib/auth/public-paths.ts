@@ -1,5 +1,6 @@
 const PUBLIC_PATHS = [
   /^\/login$/,
+  /^\/register$/,
   /^\/api\/auth(\/|$)/,
   /^\/p\/[^/]+\/[^/]+(\/[^/]+)?$/,
 ];

@@ -17,11 +17,24 @@ export async function withE2EDb<T>(
 
 export function clearStories(): Promise<void> {
   return withE2EDb(async (connection) => {
+    await connection.collection("rateLimits").deleteMany({});
+    await connection.collection("users").deleteMany({
+      nickname: { $nin: Object.values(USERS).map((user) => user.nickname) },
+    });
     await connection.collection("stories").deleteMany({});
     await connection.collection("folders").deleteMany({});
     await connection.collection("settings").deleteMany({});
     await connection.collection("folderVersions").deleteMany({});
     await connection.collection("chapterContents").deleteMany({});
+  });
+}
+
+// Requires a counted attempt: the slot id holds a keyed hash of the address.
+export function exhaustLoginLimit(): Promise<void> {
+  return withE2EDb(async (connection) => {
+    await connection
+      .collection<{ _id: string }>("rateLimits")
+      .updateMany({ _id: /^login:/ }, { $set: { count: 1000 } });
   });
 }
 
