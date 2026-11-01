@@ -19,7 +19,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-01): najp
 | 20 | [Tylko przycisk „Export as…”](done/20-export-as-only.md) | 19 | [x] |
 | 21 | [Aktualizacja unpdf do 2.x](done/21-unpdf-2.md) | 18 | [x] |
 | 22 | [Wyszukiwanie i zamiana w polu](done/22-find-replace.md) | – | [x] |
-| 24 | [Tagi](24-tags.md) | – | [ ] |
+| 24 | [Tagi](done/24-tags.md) | – | [x] |
 | 31 | [Język folderu i pisownia na bieżąco](31-folder-language.md) | – | [ ] |
 | 36 | [Logowanie przez nick](36-nickname-login.md) | – | [ ] |
 | 38 | [Publikacja opowiadań](38-publish.md) | 36 | [ ] |

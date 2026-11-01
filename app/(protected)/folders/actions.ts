@@ -23,6 +23,7 @@ import {
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
 import { getUserSettings, updateUserSettings } from "@/lib/settings/queries";
+import { exceedsTagLimit, MAX_TAGS, normalizeTags } from "@/lib/tags/tags";
 
 const NOT_FOUND: ActionError = {
   ok: false,
@@ -147,6 +148,48 @@ export async function saveFolderNotes(
     message:
       "These notes were changed in another tab or on another device. Reload the page to get the latest version.",
   };
+}
+
+// Organizational change: keeps updatedAt, lastActivityAt and notesUpdatedAt (D36).
+export async function setFolderTags(
+  id: string,
+  tags: string[],
+): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+  const normalized = normalizeTags(tags);
+  if (!normalized.ok) return normalized;
+
+  await connectDB();
+  const owned = { _id: id, userId: user.userId, deletedAt: null };
+  if (!(await Folder.exists(owned))) return NOT_FOUND;
+  const chapters = await Story.find({
+    userId: user.userId,
+    folderId: id,
+    deletedAt: null,
+  })
+    .select({ title: 1, tags: 1 })
+    .lean();
+  const over = chapters.find((chapter) =>
+    exceedsTagLimit(chapter.tags, normalized.tags),
+  );
+  if (over) {
+    return {
+      ok: false,
+      error: "INVALID_INPUT",
+      message: `"${over.title}" would have more than ${MAX_TAGS} tags, counting the ones from this folder.`,
+    };
+  }
+  const { matchedCount } = await Folder.updateOne(
+    owned,
+    { $set: { tags: normalized.tags } },
+    { timestamps: false },
+  );
+  if (matchedCount === 0) return NOT_FOUND;
+
+  refresh();
+  return { ok: true };
 }
 
 // Sort changes are organizational: they keep lastActivityAt, updatedAt and notesUpdatedAt.
