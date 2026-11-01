@@ -48,14 +48,22 @@ const titles = async (query: string, tags: string[] = []) =>
   (await searchPublishedChapters(query, tags)).map(({ title }) => title);
 
 describe("searchPublishedChapters", () => {
-  it("finds a chapter by title, own tag, folder tag and text", async () => {
+  it("finds a chapter by title, folder name, own tag, folder tag and text", async () => {
     const folder = await seedFolder({ tags: ["epika"] });
     await seedChapter(folder, { tags: ["smoki"] });
 
-    for (const query of ["rozdział", "smoki", "EPIKA", "w słońcu"]) {
+    for (const query of ["rozdział", "KSIĘGA", "smoki", "EPIKA", "w słońcu"]) {
       expect(await titles(query)).toEqual(["Rozdział"]);
     }
     expect(await titles("nic takiego")).toEqual([]);
+  });
+
+  it("lists only the public chapters for a folder name", async () => {
+    const folder = await seedFolder();
+    await seedChapter(folder, { title: "A" });
+    await seedChapter(folder, { title: "B", publication: "hidden" });
+
+    expect(await titles("księga")).toEqual(["A"]);
   });
 
   it("ignores Polish letter case in the database filter", async () => {

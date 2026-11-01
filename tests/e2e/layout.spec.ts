@@ -106,6 +106,19 @@ test("Home goes to the default view and a collapsed sidebar stays collapsed", as
 test.describe("on a narrow screen", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
+  test("the menu button stays clear of the editor's title row", async ({
+    page,
+  }) => {
+    const id = await seedStory("alice", { title: "Clear", folder: "Book" });
+    await page.goto(`/stories/${id}`);
+
+    const menu = await page
+      .getByRole("button", { name: "Menu", exact: true })
+      .boundingBox();
+    const back = await page.getByRole("link", { name: /Book/ }).boundingBox();
+    expect(menu!.x + menu!.width).toBeLessThanOrEqual(back!.x);
+  });
+
   test("the drawer closes after choosing a view", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Menu" }).click();

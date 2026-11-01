@@ -269,6 +269,7 @@ export async function searchPublishedChapters(
     if (
       matchesPublicText(query, {
         title: chapter.title,
+        folderName: folder.name,
         text,
         tags: [...own, ...folderTags],
       })
