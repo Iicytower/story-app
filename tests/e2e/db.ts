@@ -197,6 +197,17 @@ export function findSettings(
   );
 }
 
+export function seedSettings(
+  user: UserName,
+  settings: Record<string, unknown>,
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    await connection
+      .collection("settings")
+      .insertOne({ userId: await userId(connection, user), ...settings });
+  });
+}
+
 export function findFolderVersion(
   number: number,
 ): Promise<{ name: string; folderNotes: string } | null> {

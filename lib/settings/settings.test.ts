@@ -70,6 +70,9 @@ describe("parseSettingsPatch", () => {
       editor: { mobileView: "chapters" },
       appearance: { theme: "dark" },
     });
+    expect(parseSettingsPatch({ editor: { mobileView: "tools" } })).toEqual({
+      editor: { mobileView: "tools" },
+    });
   });
 
   it("normalizes the layout like stored data", () => {

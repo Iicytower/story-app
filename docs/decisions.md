@@ -86,9 +86,9 @@ Zamiast `mongodb-memory-server` używamy kontenera `mongo:8` z `docker-compose.y
 - Strona `/s/[token]` wywołuje `connection()`, żeby nie była cache'owana (inaczej link działałby po „Stop sharing”). `noindex`: `metadata.robots` (meta tag) + `X-Robots-Tag: noindex, nofollow` przez `headers()` w `next.config.ts`.
 - `stripComments`: komentarz kończy się na pierwszym `-->` (jak w HTML), więc z zagnieżdżonego `<!-- a <!-- b --> c -->` zostaje ` c -->`.
 
-## D12 – Widok mobilny edytora (2026-10-06, zmienione 2026-10-20 w D19)
+## D12 – Widok mobilny edytora (2026-10-06, zmienione 2026-10-20 w D19, 2026-11-01 w D41)
 
-- Odstępstwo od „tylko desktop” w spec: edytor obsługuje wąskie ekrany. Poniżej breakpointu `md` (768 px) na górze jest przełącznik Story / Notes / Chapters (`role="tablist"`, nazwa „View”) i widoczny jest jeden panel naraz. Zakładka Story pokazuje edytor WYSIWYG (D20); Notes – notatki folderu nad notatkami rozdziału, bez separatora.
+- Odstępstwo od „tylko desktop” w spec: edytor obsługuje wąskie ekrany. Poniżej breakpointu `md` (768 px) na górze jest przełącznik Story / Notes / Chapters / Tools (D41; `role="tablist"`, nazwa „View”) i widoczny jest jeden panel naraz. Zakładka Story pokazuje edytor WYSIWYG (D20); Notes – notatki folderu nad notatkami rozdziału, bez separatora.
 - Na wąskim ekranie przyciski paska narzędzi pokazują tylko ikony (etykieta w `sr-only`), przyciski zwijania i Split są ukryte, a pola tekstowe mają `text-base`, żeby iOS nie powiększał strony przy fokusie.
 - Układ (desktop lub mobile) wybiera `matchMedia` (`useSyncExternalStore`, serwer renderuje desktop), więc w DOM jest tylko jedno drzewo paneli i każde pole występuje raz. Widoki Story / Notes / Chapters są zamontowane jednocześnie, a nieaktywne ukryte (D27). Treść, notatki i notatki folderu trzyma komponent nad oboma drzewami, więc zmiana szerokości okna ich nie gubi.
 
@@ -148,7 +148,7 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - `/s/f/[token]`: nazwa folderu i numerowany spis. `/s/f/[token]/[n]`: rozdział `n` (od 1, w bieżącej kolejności folderu) z linkami poprzedni / „Contents” / następny; `n` spoza zakresu lub nieliczbowe → 404. Numery zmieniają się razem z kolejnością i usuwaniem rozdziałów. Obie strony: `connection()`, `metadata.robots`, `X-Robots-Tag` w `next.config.ts`, `stripComments`, bez notatek. `isPublicPath` obejmuje `/s/f/<token>` i `/s/f/<token>/<n>`.
 - Przyciski w widoku folderu: „Export .zip” (link z `download`, bez zapisu – folder nie ma niezapisanych zmian poza autozapisywanymi notatkami) i „Share” / „Stop sharing” z polem linku i „Copy link”.
 
-## D19 – Panele edytora (2026-10-20)
+## D19 – Panele edytora (2026-10-20, zmienione 2026-11-01 w D41)
 
 - Desktop: `[Story] | [panel boczny]` w `ResizablePanelGroup` (shadcn Resizable, `react-resizable-panels` v4). Story to edytor WYSIWYG (D20). Panel boczny ma zakładki Notes / Chapters (`tablist` „Side panel”, domyślnie Notes). „Split” w pasku narzędzi (`aria-pressed`) pokazuje obie kolumny; „Move left/right” w nagłówku kolumny zmienia ich kolejność (Story zawsze pierwsza). „Hide notes/chapters” zwija kolumnę, a „Show …” zostaje przy prawej krawędzi.
 - Notes: pionowa grupa – notatki folderu (`useFolderNotes`, osobna kolejka i stan zapisu, konflikt po `notesUpdatedAt`) nad notatkami rozdziału (zapisywanymi z rozdziałem przez `saveStory`, nazwa pola „Notes” bez zmian). Status notatek folderu nie ma `role="status"` (unikalny status edytora zostaje dla rozdziału), tylko `aria-live`.
@@ -217,7 +217,7 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Zostaje 5 najnowszych backupów. Odtwarzanie tylko jako instrukcja w `deploy.md` (bez `npm run restore`).
 - Testy uruchamiają skrypt z `ENV_FILE` i `BACKUP_DIR` wskazującymi na katalog tymczasowy i bazy `story_app_test_*`; nigdy `.env.prod`.
 
-## D27 – Pozycja przewijania przy przełączaniu widoków (2026-10-30)
+## D27 – Pozycja przewijania przy przełączaniu widoków (2026-10-30, zmienione 2026-11-01 w D41)
 
 - Preview ↔ Source: dopasowanie po bloku. `blockStarts` (`lib/editor/source-blocks.ts`) wylicza, gdzie w markdownie zaczyna się każdy węzeł najwyższego poziomu (tokeny lexera `MarkdownManager`, w tym puste akapity z dodatkowych pustych linii, jak w `@tiptap/markdown`). Przy przełączeniu zapamiętywany jest blok przy górnej krawędzi widoku i ułamek jego wysokości; nowy widok przewija się do tego samego miejsca przed odmalowaniem (`useLayoutEffect`). Wysokość linii w textarea (z zawijaniem) mierzy ukryta kopia pola. Widok przewinięty na sam początek zostaje na początku.
 - Zakładki Notes / Chapters (desktop, bez Split) i Story / Notes / Chapters (wąski ekran) są zamontowane jednocześnie; nieaktywne mają `visibility: hidden` (nie `display: none`, które może wyzerować przewinięcie). Zostaje więc też tryb Preview/Source i historia Undo. Przy Split i Hide/Show grupa kolumn nadal się remontuje, a pozycję przywraca pamięć opisana niżej.
@@ -342,3 +342,11 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - IP: pierwszy adres z `x-forwarded-for`, który Vercel ustawia sam. Bez nagłówka wszyscy dzielą klucz `unknown`. IPv6 liczone po sieci /64, bo pojedynczy klient zwykle ma całą taką sieć. Współdzielony adres (NAT, akademik) dzieli limit.
 - Gdy automatyczne logowanie po rejestracji trafi na limit logowania, konto już istnieje, więc akcja przekierowuje na `/login`.
 - Vitest: `next-auth` w `server.deps.inline`, bo pakiet importuje `next/server` bez rozszerzenia, a `authorize.ts` i akcje używają jego klas błędów w testach.
+
+## D41 – Zakładka Tools (2026-11-01)
+
+- Zmienia D12, D19 i D27. Trzeci panel boczny `tools`: zakładka, kolumna w Split, czwarty widok na wąskim ekranie (`editor.mobileView`). Zamontowany razem z innymi widokami (D27).
+- Zakładka to tylko siatka kafelków z rejestru `TOOLS` (`app/(protected)/stories/[id]/tools.tsx`). Kafelek otwiera narzędzie w dialogu. Otwarte narzędzie trzyma `Editor`, a `ToolDialog` jest renderowany poza drzewami układu, więc zmiana szerokości okna go nie zamyka. Zmiana rozdziału i przeładowanie je zamykają. Name generator, Synonyms i Rhymes to atrapy („Coming soon.”) do tasków 42, 33 i 34.
+- Bez Split wszystkie zakładki mają jedną szerokość: stałe id panelu `side-column` i klucz `story,side`. Zmiana zakładki nie zmienia już szerokości, co odwraca „szerokości per zakładka” z D27. `normalizeLayout` przenosi na ten klucz szerokość wybranej zakładki, a gdy jej nie ma, pierwszej zapisanej. Split ma nadal szerokości per zestaw kolumn.
+- `normalizeLayout` uzupełnia `order` o brakujące panele zamiast go odrzucać. Zapisany układ ze Split bez `tools` dostaje `collapsed.tools = true`, bo trzecia widoczna kolumna zmieniłaby klucz szerokości i wyzerowała układ. Przycisk „Show tools” stoi przy prawej krawędzi.
+- Przy trzech kolumnach bocznych domyślna szerokość to 20%, żeby Story nie spadło poniżej `minSize` 30%. `moveColumn` przeskakuje schowane kolumny, inaczej Move left/right bywałby bez widocznego efektu.
