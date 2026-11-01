@@ -5,6 +5,7 @@ import {
   findSettings,
   findStory,
   findStoryById,
+  seedSettings,
   seedStory,
   withE2EDb,
 } from "./db";
@@ -44,6 +45,7 @@ const editor = (page: Page) => ({
   folderStatus: page.locator("#folder-notes-status"),
   status: page.getByRole("status"),
   chapters: page.getByRole("list", { name: "Chapters" }),
+  tools: page.getByRole("list", { name: "Tools" }),
   sideTab: (name: string) =>
     page
       .getByRole("tablist", { name: "Side panel" })
@@ -86,7 +88,7 @@ test("separators resize the columns and the notes split, and the layout survives
   await expect
     .poll(async () => (await findSettings("alice"))?.editor?.layout)
     .toMatchObject({
-      widths: { "story,notes": expect.any(Object) },
+      widths: { "story,side": expect.any(Object) },
       notesHeights: expect.any(Object),
     });
   await page.reload();
@@ -142,6 +144,160 @@ test("splits the side panel, reorders and collapses the columns", async ({
   await expect(e.notes).toBeVisible();
   await expect(e.chapters).toBeVisible();
   expect(await x(e.chapters)).toBeLessThan(await x(e.notes));
+});
+
+test("Tools shows tiles, and a tile opens its tool in a dialog", async ({
+  page,
+}) => {
+  const { first } = await seedBook();
+  await page.goto(`/stories/${first}`);
+  const e = editor(page);
+  await e.content.fill("Kept while using tools");
+
+  await e.sideTab("Tools").click();
+  await expect(e.tools.getByRole("button")).toHaveText([
+    "Name generator",
+    "Synonyms",
+    "Rhymes",
+  ]);
+  await expect(e.notes).toBeHidden();
+
+  await e.tools.getByRole("button", { name: "Rhymes" }).click();
+  const dialog = page.getByRole("dialog", { name: "Rhymes" });
+  await expect(dialog).toContainText("Coming soon.");
+  await dialog.getByRole("button", { name: "Close" }).first().click();
+  await expect(dialog).toBeHidden();
+  await expect(e.tools).toBeVisible();
+
+  await e.sideTab("Notes").click();
+  await expect(e.notes).toBeVisible();
+  await expect(e.content).toHaveText("Kept while using tools");
+});
+
+test("an open tool survives a move to a narrow screen and back", async ({
+  page,
+}) => {
+  const { first } = await seedBook();
+  await page.goto(`/stories/${first}`);
+  const e = editor(page);
+  await e.sideTab("Tools").click();
+  await e.tools.getByRole("button", { name: "Synonyms" }).click();
+  const dialog = page.getByRole("dialog", { name: "Synonyms" });
+  await expect(dialog).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole("tablist", { name: "View" })).toBeAttached();
+  await expect(dialog).toBeVisible();
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect(dialog).toBeVisible();
+});
+
+test("the side panel keeps one width across its tabs", async ({ page }) => {
+  const { first } = await seedBook();
+  await page.goto(`/stories/${first}`);
+  const e = editor(page);
+  await expect(e.notes).toBeVisible();
+
+  const column = page.getByRole("separator", { name: "Resize notes column" });
+  await column.focus();
+  for (let i = 0; i < 5; i++) await column.press("ArrowLeft");
+  const resized = (await e.content.boundingBox())!.width;
+
+  await e.sideTab("Tools").click();
+  await expect(e.tools).toBeVisible();
+  expect((await e.content.boundingBox())!.width).toBeCloseTo(resized, 0);
+  await e.sideTab("Chapters").click();
+  await expect(e.chapters).toBeVisible();
+  expect((await e.content.boundingBox())!.width).toBeCloseTo(resized, 0);
+});
+
+test("Tools works as a Split column: move, hide, show and resize", async ({
+  page,
+}) => {
+  const { first } = await seedBook();
+  await page.goto(`/stories/${first}`);
+  const e = editor(page);
+  const x = async (locator: ReturnType<Page["getByRole"]>) =>
+    (await locator.boundingBox())!.x;
+
+  await page.getByRole("button", { name: "Split" }).click();
+  await expect(e.tools).toBeVisible();
+  expect(await x(e.chapters)).toBeLessThan(await x(e.tools));
+  expect((await e.content.boundingBox())!.width).toBeGreaterThan(300);
+  await expect(
+    page.getByRole("button", { name: "Move tools right" }),
+  ).toBeDisabled();
+
+  await page.getByRole("button", { name: "Move tools left" }).click();
+  await expect
+    .poll(async () => (await x(e.tools)) < (await x(e.chapters)))
+    .toBe(true);
+
+  // Past a hidden column, a move still has to change something on screen.
+  await page.getByRole("button", { name: "Hide chapters" }).click();
+  await page.getByRole("button", { name: "Move tools left" }).click();
+  await expect
+    .poll(async () => (await x(e.tools)) < (await x(e.notes)))
+    .toBe(true);
+  await page.getByRole("button", { name: "Show chapters" }).click();
+  await expect(e.chapters).toBeVisible();
+
+  const tile = e.tools.getByRole("button", { name: "Rhymes" });
+  const tileWidth = (await tile.boundingBox())!.width;
+  const column = page.getByRole("separator", { name: "Resize tools column" });
+  await column.focus();
+  for (let i = 0; i < 5; i++) await column.press("ArrowRight");
+  await expect
+    .poll(async () => (await tile.boundingBox())!.width)
+    .not.toBeCloseTo(tileWidth, 0);
+
+  await page.getByRole("button", { name: "Hide tools" }).click();
+  await expect(e.tools).toBeHidden();
+  await expect
+    .poll(async () => (await findSettings("alice"))?.editor?.layout)
+    .toMatchObject({
+      order: ["tools", "notes", "chapters"],
+      collapsed: { tools: true },
+    });
+  await page.reload();
+  await expect(e.tools).toBeHidden();
+  await page.getByRole("button", { name: "Show tools" }).click();
+  await expect(e.tools).toBeVisible();
+});
+
+test("a stored Split layout from before Tools stays as it was", async ({
+  page,
+}) => {
+  const { first } = await seedBook();
+  await seedSettings("alice", {
+    editor: {
+      layout: {
+        split: true,
+        tab: "notes",
+        order: ["chapters", "notes"],
+        collapsed: { notes: false, chapters: false },
+        widths: {
+          "story,chapters,notes": {
+            "story-column": 40,
+            "chapters-column": 40,
+            "notes-column": 20,
+          },
+        },
+      },
+    },
+  });
+  await page.goto(`/stories/${first}`);
+  const e = editor(page);
+
+  await expect(e.notes).toBeVisible();
+  await expect(e.chapters).toBeVisible();
+  await expect(e.tools).toBeHidden();
+  const box = (await e.chapters.boundingBox())!;
+  expect(box.x).toBeLessThan((await e.notes.boundingBox())!.x);
+  expect(box.width).toBeGreaterThan(400);
+
+  await page.getByRole("button", { name: "Show tools" }).click();
+  await expect(e.tools).toBeVisible();
 });
 
 test("folder and chapter notes save separately; folder notes show in another chapter", async ({

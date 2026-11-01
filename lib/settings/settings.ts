@@ -9,7 +9,7 @@ export const THEMES = ["light", "dark"] as const;
 export type Theme = (typeof THEMES)[number];
 
 // Below the md breakpoint only one panel is shown at a time.
-export const MOBILE_VIEWS = ["story", "notes", "chapters"] as const;
+export const MOBILE_VIEWS = ["story", "notes", "chapters", "tools"] as const;
 export type MobileView = (typeof MOBILE_VIEWS)[number];
 
 interface Field<T> {

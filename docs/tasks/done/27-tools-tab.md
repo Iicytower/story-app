@@ -1,18 +1,21 @@
 # 27 – Zakładka Tools
 
-Wynik researchu (2026-11-01). Wspólne miejsce na narzędzia z tasków 23 i 32–34. Zmienia D12 i D19.
+Wynik researchu (2026-11-01). Wspólne miejsce na narzędzia z tasków 23 i 32–34. Zmienia D12, D19 i D27 (decyzja D41).
 
 ## Zakres
 
 - Trzeci panel boczny „Tools” obok Notes / Chapters, kolumna w Split i czwarta pozycja w przełączniku na wąskim ekranie.
 - Stała siatka kafelków, bez dodawania i usuwania z listy.
-- Kliknięcie kafelka pokazuje widok narzędzia w miejscu siatki, z przyciskiem powrotu.
+- Kliknięcie kafelka otwiera narzędzie w dialogu. Zakładka to tylko kafelki (decyzja użytkownika, 2026-11-01).
+- Atrapy kafelków Name generator, Synonyms i Rhymes („Coming soon.”) do czasu tasków 42, 33 i 34.
+- Bez Split panel boczny ma jedną szerokość dla wszystkich zakładek (decyzja użytkownika, 2026-11-01).
 - Rejestr narzędzi, do którego kolejne taski dopisują kafelek i widok.
 
 ## Ustalenia
 
 - `SidePanel` dostaje `"tools"`, za tym idą `DEFAULT_LAYOUT`, `SIDE_PANELS`, `COLUMN_IDS`, `normalizeLayout`, `PANEL_LABELS`, `MOBILE_VIEWS` i siatka przełącznika.
-- Tools jest zamontowane razem z innymi widokami i ukrywane przez `visibility: hidden` (D27), więc wynik narzędzia nie ginie przy zmianie zakładki.
+- Tools jest zamontowane razem z innymi widokami i ukrywane przez `visibility: hidden` (D27).
+- Otwarte narzędzie trzyma `Editor`, a dialog jest renderowany poza drzewami układu, więc zmiana szerokości okna go nie zamyka. Stan znika przy zmianie rozdziału i przeładowaniu (decyzja użytkownika, 2026-11-01).
 
 ## Dane z researchu
 
@@ -38,10 +41,11 @@ Stan z 2026-10-31. **[pomiar]** to wynik policzony na pobranym pliku, **[wniosek
 1. Tools działa na desktopie jako zakładka, w Split jako kolumna, a na wąskim ekranie jako czwarty widok.
 2. Zapisany układ z dwoma panelami nie resetuje się po wdrożeniu: kolejność, szerokości i zwinięcia zostają, a Tools dochodzi.
 3. Move left/right, Hide/Show i szerokości kolumn działają także dla Tools.
-4. Przełączanie zakładek nie gubi otwartego narzędzia ani stanu edytora.
+4. Przełączanie zakładek nie gubi stanu edytora, a przejście na wąski ekran nie zamyka otwartego narzędzia.
 5. `editor.mobileView` przyjmuje i zapisuje widok Tools.
-6. Siatka pokazuje kafelki, a przycisk powrotu wraca do siatki.
+6. Siatka pokazuje kafelki, kafelek otwiera narzędzie w dialogu, a zamknięcie dialogu wraca do siatki.
+7. Zmiana zakładki nie zmienia szerokości panelu bocznego.
 
 ## Testy
 
-Unit: `normalizeLayout` dla starych i nowych układów, ustawienia. E2E: zakładka, Split, wąski ekran, zachowanie stanu, otwarcie i powrót (uzupełnić `editor-panels.spec.ts`, `editor-mobile.spec.ts`).
+Unit: `normalizeLayout` dla starych i nowych układów, ustawienia. E2E: zakładka, Split, wąski ekran, zachowanie stanu, otwarcie i zamknięcie dialogu (uzupełnić `editor-panels.spec.ts`, `editor-mobile.spec.ts`).

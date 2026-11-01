@@ -24,7 +24,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-01): najp
 | 38 | [Publikacja opowiadań](done/38-publish.md) | 36 | [x] |
 | 41 | [Zmiana hasła](done/41-change-password.md) | 36 | [x] |
 | 37 | [Rejestracja](done/37-registration.md) | 36 | [x] |
-| 27 | [Zakładka Tools](27-tools-tab.md) | – | [ ] |
+| 27 | [Zakładka Tools](done/27-tools-tab.md) | – | [x] |
 | 42 | [Generator nazw](42-name-generator.md) | 27 | [ ] |
 | 39 | [Publiczna wyszukiwarka](39-public-search.md) | 24, 37, 38 | [ ] |
 | 26 | [Upload okładek](26-cover-upload.md) | – | [ ] |

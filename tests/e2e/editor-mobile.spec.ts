@@ -7,7 +7,7 @@ test.use({
   viewport: { width: 390, height: 844 },
 });
 
-test("switches between story, notes and chapters on a narrow screen", async ({
+test("switches between story, notes, chapters and tools on a narrow screen", async ({
   page,
 }) => {
   const id = await seedStory("alice", {
@@ -61,6 +61,17 @@ test("switches between story, notes and chapters on a narrow screen", async ({
   ]);
   await expect(notes).toBeHidden();
 
+  await tab("Tools").click();
+  await expect(tab("Tools")).toHaveAttribute("aria-selected", "true");
+  const tools = page.getByRole("list", { name: "Tools" });
+  await expect(chapters).toBeHidden();
+  await tools.getByRole("button", { name: "Name generator" }).click();
+  const dialog = page.getByRole("dialog", { name: "Name generator" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Close" }).first().click();
+  await expect(dialog).toBeHidden();
+  await expect(tools).toBeVisible();
+
   await tab("Story").click();
   await expect(content).toHaveText("Changed");
 });
@@ -89,7 +100,9 @@ test("keeps toolbar buttons accessible by name on a narrow screen", async ({
 
   await page.goto(`/stories/${id}`);
   await expect(page.getByRole("button", { name: "Export as…" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Publish", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Publish", exact: true }),
+  ).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,

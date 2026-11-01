@@ -35,10 +35,11 @@ import { AUTOSAVE_DELAY_MS, onTabHidden } from "@/lib/autosave";
 import { flushScrollSave } from "@/lib/editor/scroll-memory";
 import {
   collapsedColumns,
-  columnsKey,
   moveColumn,
+  SIDE_PANELS,
   type SidePanel,
   visibleColumns,
+  widthsKey,
 } from "@/lib/editor-layout";
 import type { EditorFolder } from "@/lib/folders/queries";
 import {
@@ -62,6 +63,8 @@ import {
   useEditorSettings,
   useIsDesktop,
 } from "./layout-store";
+import type { Tool } from "./tools";
+import { ToolDialog, ToolsPanel } from "./tools-panel";
 
 type Values = { title: string; content: string; notes: string };
 
@@ -69,11 +72,13 @@ const MOBILE_VIEWS: { value: MobileView; label: string }[] = [
   { value: "story", label: "Story" },
   { value: "notes", label: "Notes" },
   { value: "chapters", label: "Chapters" },
+  { value: "tools", label: "Tools" },
 ];
 
 const PANEL_LABELS: Record<SidePanel, string> = {
   notes: "Notes",
   chapters: "Chapters",
+  tools: "Tools",
 };
 
 type SaveState =
@@ -113,6 +118,8 @@ export function Editor({
   const [publicPath, setPublicPath] = useState(story.publicPath);
   const [publishPending, setPublishPending] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Here, not in ToolsPanel: the dialog must outlive the desktop and mobile trees.
+  const [openTool, setOpenTool] = useState<Tool | null>(null);
   // Empty during SSR, so the absolute link is only rendered after hydration.
   const origin = useSyncExternalStore(
     subscribeNever,
@@ -254,8 +261,8 @@ export function Editor({
 
   const columns = visibleColumns(layout);
   const hiddenColumns = collapsedColumns(layout);
-  const columnKey = columnsKey(columns);
-  const sideSize = columns.length === 2 ? 25 : 30;
+  const columnKey = widthsKey(layout);
+  const sideSize = columns.length === 3 ? 20 : columns.length === 2 ? 25 : 30;
 
   function setCollapsed(panel: SidePanel, collapsed: boolean) {
     updateEditorLayout((current) => ({
@@ -332,6 +339,12 @@ export function Editor({
     />
   );
 
+  const sidePanels: Record<SidePanel, React.ReactNode> = {
+    notes: desktopNotes,
+    chapters: chaptersPanel,
+    tools: <ToolsPanel onOpen={setOpenTool} />,
+  };
+
   function sideHeader(panel: SidePanel, index: number) {
     const label = PANEL_LABELS[panel];
     return (
@@ -348,7 +361,12 @@ export function Editor({
               onClick={() =>
                 updateEditorLayout((current) => ({
                   ...current,
-                  order: moveColumn(current.order, panel, "left"),
+                  order: moveColumn(
+                    current.order,
+                    panel,
+                    "left",
+                    current.collapsed,
+                  ),
                 }))
               }
             >
@@ -363,7 +381,12 @@ export function Editor({
               onClick={() =>
                 updateEditorLayout((current) => ({
                   ...current,
-                  order: moveColumn(current.order, panel, "right"),
+                  order: moveColumn(
+                    current.order,
+                    panel,
+                    "right",
+                    current.collapsed,
+                  ),
                 }))
               }
             >
@@ -374,9 +397,9 @@ export function Editor({
           <div
             role="tablist"
             aria-label="Side panel"
-            className="bg-muted text-muted-foreground mr-auto grid grid-cols-2 gap-1 rounded-lg p-1"
+            className="bg-muted text-muted-foreground mr-auto grid min-w-0 grid-cols-3 gap-1 rounded-lg p-1"
           >
-            {(["notes", "chapters"] as const).map((tab) => (
+            {SIDE_PANELS.map((tab) => (
               <button
                 key={tab}
                 type="button"
@@ -385,7 +408,7 @@ export function Editor({
                 onClick={() =>
                   updateEditorLayout((current) => ({ ...current, tab }))
                 }
-                className="aria-selected:bg-background aria-selected:text-foreground rounded-md px-3 py-1 text-sm font-medium aria-selected:shadow-sm"
+                className="aria-selected:bg-background aria-selected:text-foreground truncate rounded-md px-2 py-1 text-sm font-medium aria-selected:shadow-sm"
               >
                 {PANEL_LABELS[tab]}
               </button>
@@ -508,6 +531,7 @@ export function Editor({
           <ResizablePanelGroup
             // defaultLayout is read on mount only: remount whenever the set of columns changes.
             // Not for another tab, though: that would remount the story editor and lose its scroll.
+            // Tabs share one panel id and one width.
             key={layout.split ? columnKey : columns.length}
             id="editor-columns"
             defaultLayout={layout.widths[columnKey]}
@@ -536,26 +560,21 @@ export function Editor({
                 />
                 <ResizablePanel
                   // Not the bare panel name: the library also sets it as the DOM id, which labels point to.
-                  id={`${panel}-column`}
+                  id={layout.split ? `${panel}-column` : "side-column"}
                   minSize="15%"
                   defaultSize={`${sideSize}%`}
                 >
                   <div className="flex h-full flex-col">
                     {sideHeader(panel, index)}
                     {layout.split ? (
-                      panel === "notes" ? (
-                        desktopNotes
-                      ) : (
-                        chaptersPanel
-                      )
+                      sidePanels[panel]
                     ) : (
                       <div className="relative min-h-0 flex-1">
-                        <KeptView active={panel === "notes"}>
-                          {desktopNotes}
-                        </KeptView>
-                        <KeptView active={panel === "chapters"}>
-                          {chaptersPanel}
-                        </KeptView>
+                        {SIDE_PANELS.map((side) => (
+                          <KeptView key={side} active={panel === side}>
+                            {sidePanels[side]}
+                          </KeptView>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -585,7 +604,7 @@ export function Editor({
           <div
             role="tablist"
             aria-label="View"
-            className="bg-muted text-muted-foreground mx-4 mt-3 grid grid-cols-3 gap-1 rounded-lg p-1"
+            className="bg-muted text-muted-foreground mx-4 mt-3 grid grid-cols-4 gap-1 rounded-lg p-1"
           >
             {MOBILE_VIEWS.map((view) => (
               <button
@@ -594,7 +613,7 @@ export function Editor({
                 role="tab"
                 aria-selected={mobileView === view.value}
                 onClick={() => setMobileView(view.value)}
-                className="aria-selected:bg-background aria-selected:text-foreground rounded-md px-3 py-1.5 text-sm font-medium aria-selected:shadow-sm"
+                className="aria-selected:bg-background aria-selected:text-foreground rounded-md px-2 py-1.5 text-sm font-medium aria-selected:shadow-sm"
               >
                 {view.label}
               </button>
@@ -618,9 +637,13 @@ export function Editor({
             <KeptView active={mobileView === "chapters"}>
               {chaptersPanel}
             </KeptView>
+            <KeptView active={mobileView === "tools"}>
+              {sidePanels.tools}
+            </KeptView>
           </div>
         </>
       )}
+      <ToolDialog tool={openTool} onClose={() => setOpenTool(null)} />
     </div>
   );
 }

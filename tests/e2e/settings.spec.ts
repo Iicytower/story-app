@@ -38,7 +38,7 @@ test("the desktop layout is restored in another browser and rendered by the serv
   await page.getByRole("button", { name: "Move notes right" }).click();
   await expect
     .poll(async () => (await findSettings("alice"))?.editor?.layout)
-    .toMatchObject({ split: true, order: ["chapters", "notes"] });
+    .toMatchObject({ split: true, order: ["chapters", "notes", "tools"] });
 
   const other = await newBrowser(browser, "alice");
   await other.page.goto(`/stories/${id}`);
@@ -155,7 +155,7 @@ test("dragging a separator sends only a few saves", async ({ page }) => {
 
   await expect
     .poll(async () => (await findSettings("alice"))?.editor?.layout)
-    .toMatchObject({ widths: { "story,notes": expect.any(Object) } });
+    .toMatchObject({ widths: { "story,side": expect.any(Object) } });
   await page.waitForTimeout(1000);
   expect(requests.length).toBeGreaterThanOrEqual(1);
   expect(requests.length).toBeLessThanOrEqual(2);
