@@ -1,6 +1,6 @@
-# 29 – LanguageTool na serwerze i akcja sprawdzania
+# 29 – LanguageTool na serwerze, akcja sprawdzania i język folderu
 
-Wynik researchu. Silnik dla dialogu z taska 23.
+Wynik researchu. Silnik dla dialogu z taska 23. Zawiera dawny task 31 (D44).
 
 ## Zakres
 
@@ -9,17 +9,23 @@ Wynik researchu. Silnik dla dialogu z taska 23.
 - Tekst wysyłany w parametrze `data` z adnotacją tekst/markup, z podziałem na akapity.
 - Parametry `language=pl-PL`, `enabledRules=PL_WORD_REPEAT` oraz wyłączone reguły z taska 23.
 - Wynik w postaci niezależnej od LT: pozycja w źródle, rodzaj, opis, podpowiedzi, id reguły.
+- Język ustawiany per folder, obowiązujący dla jego rozdziałów i notatek. Istniejące i nowe foldery domyślnie mają polski.
+- Pisownia sprawdzana na bieżąco według języka folderu: atrybut `lang` z folderu na polach tekstu (treść, notatki rozdziału i folderu, tytuły) zamiast wpisanego na stałe `lang="pl"`.
+- Język folderu przekazywany do LT w parametrze `language`.
 
 ## Ustalenia
 
 - Serwer działa bez polskich n-gramów, których nie ma w oficjalnych paczkach.
 - Tekst opowiadania trafia tylko na własny serwer. Zmienia to D21 (decyzja przy realizacji).
+- Pisownia na bieżąco: przeglądarka z `lang`, bez nowych pakietów (decyzja użytkownika, D44). Zależy od słowników i ustawień przeglądarki.
+- Kafelki słownikowe i eksport bez zmian: język dotyczy tylko edytora i LT (D44).
 
 Do decyzji przy starcie taska:
 
 - Limit czasu wywołania. Propozycja: 30 s, po sprawdzeniu limitu funkcji na Vercelu i pomiarze na Mikrusie, bo test na 1 CPU go przekroczył (sekcja „Test na Coolify”).
 - Limit rozmiaru treści akcji (`bodySizeLimit`) dla najdłuższych rozdziałów.
 - Obraz Dockera (`erikvl87/languagetool` albo `meyay/languagetool`). `-Xmx` co najmniej 512 MB po teście na Coolify.
+- Lista języków. Na 2026-11-02 tylko polski, bez angielskiego (decyzja użytkownika); przy jednym języku ustalić, czy powstaje selektor, czy samo pole. Inne języki wymagają reguł LT dobranych pod język (dziś `PL_WORD_REPEAT` i wyłączenia z taska 23) i pomiaru pamięci.
 
 ## Dane z researchu
 
@@ -88,6 +94,22 @@ Parametr `data` **[pomiar]**: na próbce z `**` i `# ` „bląd” ma offset 10,
 
 Źródła: [CHANGES.md](https://github.com/languagetool-org/languagetool/blob/master/languagetool-standalone/CHANGES.md), [grammar.xml](https://github.com/languagetool-org/languagetool/blob/master/languagetool-language-modules/pl/src/main/resources/org/languagetool/rules/pl/grammar.xml), [docker-languagetool](https://github.com/Erikvl87/docker-languagetool).
 
+### Język folderu
+
+Modele nie mają pola `lang`, a `lang="pl"` jest wpisane na stałe w `components/markdown-editor.tsx` oraz w polach tytułu. Migrację robić jak D14; w bazie tylko wybrane wartości, brak pola oznacza polski.
+
+- Hunspell pl_PL z sjp.pl: tylko pisownia, aktualizowany co miesiąc (pakiet 20260401), zgodność z reformą 2026 niepotwierdzona. GPL 2 / LGPL 2.1 / MPL 1.1 / Apache 2.0 / CC BY 4.0.
+- npm: `dictionary-pl` 2.0.0 (dane z 2008 r.), `@cspell/dict-pl_pl` 3.0.8 (2026-10-13, lista słów), `nspell` 2.1.5 (2021), `hunspell-wasm` 0.3.0 (2024). Nowe pakiety wymagają zgody.
+- LT nie nadaje się do sprawdzania na bieżąco: jedno sprawdzenie to sekundy, a Server Actions wstrzymują autozapis.
+
+Inne języki w narzędziach:
+
+- Definicje: najtaniej, jeden ekstrakt kaikki na język (edycje oznaczone jako „work in progress”).
+- Synonimy: nowe źródło na język (en: WordNet, Datamuse; de: OpenThesaurus, CC BY-SA 4.0 lub LGPL 2.1).
+- Rymy: poza angielskim brak darmowego API. Datamuse tylko en/es, klucz wymagany od 2027 r.
+- Lematyzacja: najdrożej, osobne dane morfologiczne na język.
+- `dictionaryapi.dev` odpada dla każdego języka: niejasne prawa do danych.
+
 ## Kryteria akceptacji
 
 1. Rozdział właściciela zwraca błędy z pozycjami zgodnymi ze źródłem markdown.
@@ -97,7 +119,10 @@ Parametr `data` **[pomiar]**: na próbce z `**` i `# ` „bląd” ma offset 10,
 5. Niedostępny silnik i przekroczony czas dają `{ ok: false, ... }`.
 6. Powtórzenie słowa w zdaniu jest zgłaszane.
 7. Sekret i adres nie trafiają do klienta.
+8. Folder bez ustawionego języka działa jak polski, także po migracji.
+9. Język folderu obowiązuje we wszystkich jego rozdziałach i notatkach: w atrybucie `lang` pól i w parametrze `language` żądania do LT.
+10. Zmiana języka cudzego folderu daje `NOT_FOUND` (o ile powstanie zapis języka).
 
 ## Testy
 
-Unit: budowa `data` z markdownu, mapowanie odpowiedzi LT. Integracyjne: sesja, własność, błędy, timeout (silnik zastąpiony atrapą, bez sieci). `manual`: rozdział ok. 6000 słów na serwerze, czas i RAM.
+Unit: budowa `data` z markdownu, mapowanie odpowiedzi LT, normalizacja języka. Integracyjne: sesja, własność, błędy, timeout (silnik zastąpiony atrapą, bez sieci), zapis języka, migracja. E2E: atrybut `lang` pól. `manual`: rozdział ok. 6000 słów na serwerze, czas i RAM; zaznaczanie literówek w przeglądarce.

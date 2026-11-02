@@ -26,18 +26,17 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-01): najp
 | 37 | [Rejestracja](done/37-registration.md) | 36 | [x] |
 | 27 | [Zakładka Tools](done/27-tools-tab.md) | – | [x] |
 | 42 | [Generator nazw](done/42-name-generator.md) | 27 | [x] |
-| 31 | [Język folderu i pisownia na bieżąco](31-folder-language.md) | – | [ ] |
 | 39 | [Publiczna wyszukiwarka](done/39-public-search.md) | 24, 37, 38 | [x] |
 | 26 | [Upload okładek](26-cover-upload.md) | – | [ ] |
 | 40 | [Wyświetlanie okładek](40-cover-display.md) | 26 | [ ] |
 | 28 | [Serwer na Mikrusie](28-mikrus-server.md) | – | [ ] |
 | 25 | [Serwis słownikowy i tabela form](25-dictionary-service.md) | 28 | [ ] |
-| 32 | [Definicje](32-definitions.md) | 25, 27, 31 | [ ] |
-| 33 | [Synonimy](33-synonyms.md) | 25, 27, 31 | [ ] |
-| 34 | [Rymy](34-rhymes.md) | 25, 27, 31 | [ ] |
+| 32 | [Definicje](32-definitions.md) | 25, 27 | [ ] |
+| 33 | [Synonimy](33-synonyms.md) | 25, 27 | [ ] |
+| 34 | [Rymy](34-rhymes.md) | 25, 27 | [ ] |
 | 35 | [Filtry rymów](35-rhyme-filters.md) | 34 | [ ] |
-| 29 | [LanguageTool na serwerze i akcja sprawdzania](29-languagetool.md) | 28, 31 | [ ] |
-| 23 | [Korekta tekstu w dialogu](23-proofreading.md) | 27, 29, 31 | [ ] |
+| 29 | [LanguageTool na serwerze, akcja sprawdzania i język folderu](29-languagetool.md) | 28 | [ ] |
+| 23 | [Korekta tekstu w dialogu](23-proofreading.md) | 27, 29 | [ ] |
 | 30 | [Słownik użytkownika w korekcie](30-user-dictionary.md) | 23 | [ ] |
 
 ## Backlog
