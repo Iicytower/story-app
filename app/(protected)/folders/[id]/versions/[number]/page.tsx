@@ -12,7 +12,7 @@ export default async function FolderVersionPage({
   params,
 }: PageProps<"/folders/[id]/versions/[number]">) {
   const user = await requireUser();
-  if (!user.ok) redirect("/login");
+  if (!user.ok) redirect("/");
 
   const { id, number } = await params;
   const version = /^\d+$/.test(number)

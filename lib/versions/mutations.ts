@@ -9,14 +9,17 @@ import { Folder } from "@/lib/models/folder";
 import { FolderVersion } from "@/lib/models/folder-version";
 import { Story } from "@/lib/models/story";
 import type { ChapterSort } from "@/lib/folders/sort";
+import {
+  arrivalUpdate,
+  publicationFor,
+  rememberChapterSlug,
+} from "@/lib/publish/mutations";
 import { type ChapterState, numberedTitle } from "./versions";
 
 // JSON keeps the fields apart, so "a" + "bc" and "ab" + "c" hash differently.
 function contentHash(storyId: Types.ObjectId, state: ChapterState): string {
   return createHash("sha256")
-    .update(
-      JSON.stringify([storyId.toString(), state.title, state.content]),
-    )
+    .update(JSON.stringify([storyId.toString(), state.title, state.content]))
     .digest("hex");
 }
 
@@ -145,6 +148,8 @@ async function restoreChapter(
       title: 1,
       content: 1,
       notes: 1,
+      tags: 1,
+      publication: 1,
       deletedAt: 1,
       updatedAt: 1,
     })
@@ -162,12 +167,16 @@ async function restoreChapter(
           { timestamps: false },
         ),
       );
+      if (story.publication === "public" && story.title !== title) {
+        await rememberChapterSlug(storyId, userId, folderId, story.title);
+      }
     }
     return storyId;
   }
 
   const position = await nextChapterPosition(userId, folderId);
   if (story && story.deletedAt !== null) {
+    const arrival = await arrivalUpdate(folderId);
     await withFreeTitle(title, (free) =>
       Story.updateOne(
         { _id: storyId },
@@ -179,9 +188,9 @@ async function restoreChapter(
             content,
             updatedAt,
             deletedAt: null,
+            ...arrival.set,
           },
-          // The share link stopped working with the deletion; it does not come back.
-          $unset: { shareToken: 1 },
+          $unset: arrival.unset,
         },
         { timestamps: false },
       ),
@@ -190,6 +199,7 @@ async function restoreChapter(
   }
 
   let id = storyId;
+  const publication = await publicationFor(folderId);
   await withFreeTitle(title, async (free) => {
     const copy = await Story.create({
       userId,
@@ -198,6 +208,8 @@ async function restoreChapter(
       title: free,
       content,
       notes: story?.notes ?? "",
+      tags: story?.tags ?? [],
+      publication,
     });
     id = copy._id;
   });

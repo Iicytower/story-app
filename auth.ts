@@ -6,13 +6,13 @@ import { isPublicPath } from "@/lib/auth/public-paths";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
-      credentials: { email: {}, password: {} },
+      credentials: { nickname: {}, password: {} },
       authorize: authorizeCredentials,
     }),
   ],
   // Every request through the proxy re-signs the JWT, so the 30 days restart on each visit.
   session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
-  pages: { signIn: "/login" },
+  pages: { signIn: "/" },
   // Without it a local `next start` rejects every sign-in (Vercel already sets VERCEL).
   trustHost: true,
   callbacks: {

@@ -53,7 +53,6 @@ describe("toMarkdownExport", () => {
     expect(data.notes).toBe(value);
   });
 
-
   it("keeps HTML comments in the content", () => {
     const content = "Visible <!-- hidden -->\n<!--\nmulti\n-->";
     expect(split(toMarkdownExport({ ...story, content })).body).toBe(content);

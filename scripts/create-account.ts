@@ -1,7 +1,8 @@
 import { stdin, stdout } from "node:process";
 import { createInterface } from "node:readline/promises";
 import { Writable } from "node:stream";
-import { createOrUpdateUser, normalizeEmail, userExists } from "@/lib/accounts";
+import { createOrUpdateUser, userExists } from "@/lib/accounts";
+import { nicknameError, passwordError } from "@/lib/credentials";
 import { connectDB, disconnectDB } from "@/lib/db";
 
 // readline echoes typed characters through its output stream; muting it hides the password.
@@ -23,19 +24,21 @@ async function askHidden(question: string): Promise<string> {
   return answer;
 }
 
-async function askEmail(): Promise<string> {
+async function askNickname(): Promise<string> {
   for (;;) {
-    const email = normalizeEmail(await rl.question("Email: "));
-    if (email.includes("@")) return email;
-    console.log("Invalid email, try again.");
+    const nickname = (await rl.question("Nickname: ")).trim();
+    const error = nicknameError(nickname);
+    if (!error) return nickname;
+    console.log(`${error} Try again.`);
   }
 }
 
 async function askPassword(): Promise<string> {
   for (;;) {
     const password = await askHidden("Password: ");
-    if (!password) {
-      console.log("Password cannot be empty, try again.");
+    const error = passwordError(password);
+    if (error) {
+      console.log(`${error} Try again.`);
       continue;
     }
     if (password === (await askHidden("Repeat password: "))) return password;
@@ -45,11 +48,11 @@ async function askPassword(): Promise<string> {
 
 async function main() {
   await connectDB();
-  const email = await askEmail();
+  const nickname = await askNickname();
 
-  if (await userExists(email)) {
+  if (await userExists(nickname)) {
     const answer = await rl.question(
-      `Account ${email} already exists. Change its password? [y/N] `,
+      `Account ${nickname} already exists. Change its password? [y/N] `,
     );
     if (answer.trim().toLowerCase() !== "y") {
       console.log("No changes made.");
@@ -57,11 +60,11 @@ async function main() {
     }
   }
 
-  const result = await createOrUpdateUser(email, await askPassword());
+  const result = await createOrUpdateUser(nickname, await askPassword());
   console.log(
     result === "created"
-      ? `Account ${email} created.`
-      : `Password for ${email} changed.`,
+      ? `Account ${nickname} created.`
+      : `Password for ${nickname} changed.`,
   );
 }
 

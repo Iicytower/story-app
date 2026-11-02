@@ -1,6 +1,6 @@
 # 23 – Korekta tekstu w dialogu
 
-Zgłoszenie użytkownika (2026-10-30), przebudowane po researchu z 2026-10-31. Kafelek „Proofread” w Tools sprawdza treść rozdziału przez LanguageTool, a zmiany przegląda się w dialogu. Silnik i akcja sprawdzania: task 29. Język folderu i pisownia na bieżąco: task 31. Zapamiętane słowa: task 30.
+Zgłoszenie użytkownika (2026-10-30), przebudowane po researchu z 2026-10-31. Kafelek „Proofread” w Tools sprawdza treść rozdziału przez LanguageTool, a zmiany przegląda się w dialogu. Silnik, akcja sprawdzania i język folderu: task 29. Zapamiętane słowa: task 30.
 
 ## Zakres
 

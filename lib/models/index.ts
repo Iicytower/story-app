@@ -5,3 +5,4 @@ import "./user";
 import "./settings";
 import "./folder-version";
 import "./chapter-content";
+import "./rate-limit";

@@ -2,30 +2,36 @@ import { isObjectIdOrHexString } from "mongoose";
 import { connectDB } from "@/lib/db";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
+import { chapterPublicPath } from "@/lib/publish/queries";
 import { serialize } from "@/lib/serialize";
-import { escapeRegex } from "./search";
+import { buildStoryFilter } from "./search";
 
-export async function listStories(userId: string, query?: string) {
+export async function listStories(
+  userId: string,
+  query?: string,
+  tags: string[] = [],
+) {
   await connectDB();
-  const filter: Record<string, unknown> = { userId, deletedAt: null };
-  if (query) {
-    const pattern = new RegExp(escapeRegex(query), "i");
-    filter.$or = [{ title: pattern }, { content: pattern }];
-  }
-  const [stories, folders] = await Promise.all([
-    Story.find(filter)
-      .select({ title: 1, content: 1, folderId: 1, updatedAt: 1 })
-      .sort({ updatedAt: -1, _id: -1 })
-      .lean(),
-    Folder.find({ userId, deletedAt: null }).select({ name: 1 }).lean(),
-  ]);
-  const folderNames = new Map(
-    folders.map((folder) => [folder._id.toString(), folder.name]),
+  const folders = await Folder.find({ userId, deletedAt: null })
+    .select({ name: 1, tags: 1 })
+    .lean();
+  const stories = await Story.find(
+    buildStoryFilter(userId, query, tags, folders),
+  )
+    .select({ title: 1, content: 1, folderId: 1, tags: 1, updatedAt: 1 })
+    .sort({ updatedAt: -1, _id: -1 })
+    .lean();
+  const foldersById = new Map(
+    folders.map((folder) => [folder._id.toString(), folder]),
   );
-  return stories.map((story) => ({
-    ...serialize(story),
-    folderName: folderNames.get(story.folderId?.toString()) ?? "",
-  }));
+  return stories.map((story) => {
+    const folder = foldersById.get(story.folderId?.toString());
+    return {
+      ...serialize(story),
+      folderName: folder?.name ?? "",
+      folderTags: folder?.tags ?? [],
+    };
+  });
 }
 
 export type StoryListItem = Awaited<ReturnType<typeof listStories>>[number];
@@ -38,7 +44,7 @@ export async function getStory(userId: string, id: string) {
       title: 1,
       content: 1,
       notes: 1,
-      shareToken: 1,
+      publication: 1,
       folderId: 1,
       updatedAt: 1,
     })
@@ -48,9 +54,16 @@ export async function getStory(userId: string, id: string) {
   const folder =
     story.folderId &&
     (await Folder.findOne({ _id: story.folderId, deletedAt: null })
-      .select({ name: 1 })
+      .select({ name: 1, published: 1 })
       .lean());
-  return { ...serialize(story), folderName: folder ? folder.name : null };
+  return {
+    ...serialize(story),
+    folderName: folder ? folder.name : null,
+    publicPath:
+      folder && folder.published && story.publication === "public"
+        ? await chapterPublicPath(userId, folder._id.toString(), id)
+        : null,
+  };
 }
 
 export type EditorStory = NonNullable<Awaited<ReturnType<typeof getStory>>>;
@@ -62,11 +75,4 @@ export async function getStoryForExport(userId: string, id: string) {
     .select({ title: 1, content: 1, notes: 1, createdAt: 1, updatedAt: 1 })
     .lean();
   return story && serialize(story);
-}
-
-export async function getSharedStory(token: string) {
-  await connectDB();
-  return Story.findOne({ shareToken: token, deletedAt: null })
-    .select({ _id: 0, title: 1, content: 1 })
-    .lean<{ title: string; content: string }>();
 }

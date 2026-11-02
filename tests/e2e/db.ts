@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { hashPassword } from "@/lib/accounts";
 import { E2E_MONGODB_URI, USERS, type UserName } from "./env";
 
 export async function withE2EDb<T>(
@@ -16,6 +17,10 @@ export async function withE2EDb<T>(
 
 export function clearStories(): Promise<void> {
   return withE2EDb(async (connection) => {
+    await connection.collection("rateLimits").deleteMany({});
+    await connection.collection("users").deleteMany({
+      nickname: { $nin: Object.values(USERS).map((user) => user.nickname) },
+    });
     await connection.collection("stories").deleteMany({});
     await connection.collection("folders").deleteMany({});
     await connection.collection("settings").deleteMany({});
@@ -24,10 +29,38 @@ export function clearStories(): Promise<void> {
   });
 }
 
+// Requires a counted attempt: the slot id holds a keyed hash of the address.
+export function exhaustLoginLimit(): Promise<void> {
+  return withE2EDb(async (connection) => {
+    await connection
+      .collection<{ _id: string }>("rateLimits")
+      .updateMany({ _id: /^login:/ }, { $set: { count: 1000 } });
+  });
+}
+
+export function exhaustSearchLimit(): Promise<void> {
+  return withE2EDb(async (connection) => {
+    await connection
+      .collection<{ _id: string }>("rateLimits")
+      .updateMany({ _id: /^search:/ }, { $set: { count: 1000 } });
+  });
+}
+
+export function restorePassword(user: UserName): Promise<void> {
+  return withE2EDb(async (connection) => {
+    await connection
+      .collection("users")
+      .updateOne(
+        { nickname: USERS[user].nickname },
+        { $set: { passwordHash: await hashPassword(USERS[user].password) } },
+      );
+  });
+}
+
 async function userId(connection: mongoose.Connection, user: UserName) {
   const account = await connection
     .collection("users")
-    .findOne({ email: USERS[user].email });
+    .findOne({ nickname: USERS[user].nickname });
   if (!account) throw new Error(`User ${user} is not seeded`);
   return account._id;
 }
@@ -79,6 +112,7 @@ export function seedStory(
     folder?: string;
     content?: string;
     notes?: string;
+    tags?: string[];
     createdAt?: Date;
     updatedAt?: Date;
     deletedAt?: Date;
@@ -99,6 +133,7 @@ export function seedStory(
       title: story.title,
       content: story.content ?? "",
       notes: story.notes ?? "",
+      tags: story.tags ?? [],
       deletedAt: story.deletedAt ?? null,
       createdAt: story.createdAt ?? now,
       updatedAt: story.updatedAt ?? now,
@@ -168,6 +203,17 @@ export function findSettings(
       .collection("settings")
       .findOne({ userId: await userId(connection, user) }),
   );
+}
+
+export function seedSettings(
+  user: UserName,
+  settings: Record<string, unknown>,
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    await connection
+      .collection("settings")
+      .insertOne({ userId: await userId(connection, user), ...settings });
+  });
 }
 
 export function findFolderVersion(

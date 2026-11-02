@@ -41,6 +41,7 @@ Mechanizm: `docs/decisions.md` D14. Migracje uruchamiają się w buildzie produk
 - **Ręczne zdjęcie blokady**, gdy build padł w trakcie migracji, a nie chcesz czekać 15 min na jej przejęcie. Sprawdź najpierw, czy żaden build nie trwa: `db.migrations.deleteOne({ _id: "lock" })`.
 - **Okno builda:** stary deployment obsługuje ruch, dopóki nowy nie wejdzie. Po `002-folders` stary kod (v1.0) może utworzyć opowiadanie bez `folderId`. `002-folders` jest powtarzalna, więc kolejny deploy przypisze je do „Unsorted” (przy kolizji tytułu z sufiksem „ (2)”). Do tego czasu opowiadanie jest widoczne w wyszukiwaniu i w edytorze, ale nie na liście folderów. Sprawdzenie: `db.stories.countDocuments({ folderId: { $exists: false } })`. Podobnie `003-positions` (też powtarzalna) dopisuje przy kolejnym deployu `position` folderom i rozdziałom utworzonym w oknie builda.
 - **Pierwsze wydanie z `002-folders` (staging i produkcja):** v1.0 nie ma `autoIndex: false`, więc jego zimny start w trakcie builda odtwarza usunięty indeks `userId_1_title_1`. Nowy kod sam go nie usunie, a ten sam tytuł w dwóch folderach dostaje wtedy `DUPLICATE_TITLE`. Dlatego po wejściu nowego deploymentu trzeba zrobić jeden **Redeploy** (jego `syncIndexes()` usunie indeks, a działający kod już go nie odtworzy) i sprawdzić `db.stories.getIndexes()`: nie może być `userId_1_title_1`. To samo po rollbacku („Promote”) do v1.0 i ponownym wydaniu.
+- **Wydanie z taskiem 36 (nick, bez migracji):** przed merge'em do `staging` i osobno przed merge'em do `main` trzeba ustawić nick właściciela w odpowiedniej bazie (mongosh): `db.users.updateOne({ email: "<e-mail>" }, { $set: { nickname: "<nick>" } })`. Konto bez nicku nie zaloguje się na nowym deploymencie. Stary deployment dalej loguje e-mailem, bo pole `email` zostaje. `syncIndexes()` w buildzie usuwa `email_1` i buduje `nickname_1`.
 - **Lokalnie:** `npm run migrate` (baza z `.env.local`). Aplikacja nie tworzy indeksów sama (`autoIndex: false`), więc po zmianie schematu trzeba uruchomić migrację.
 
 ## Ustalenia
@@ -88,7 +89,7 @@ docker run --rm --network host -v "$BACKUP:/backup:ro" mongo:8 mongoimport --uri
 ## Problem: JSON „There was a problem with the server configuration” po logowaniu
 
 - Objaw: 500 na `/api/auth/callback/credentials`, w logu „No outgoing requests” (do Atlasa nic nie poszło).
-- Ten JSON Auth.js zwraca tylko przy nieudanej kontroli konfiguracji: `MissingSecret`, `UntrustedHost` albo `InvalidCallbackUrl`. Błąd bazy lub hasła dałby „Invalid email or password.”.
+- Ten JSON Auth.js zwraca tylko przy nieudanej kontroli konfiguracji: `MissingSecret`, `UntrustedHost` albo `InvalidCallbackUrl`. Błąd bazy lub hasła dałby „Invalid nickname or password.”.
 - Pierwsza przyczyna: zmienne dodane po deployu. Vercel wczytuje zmienne dopiero przy deployu, więc po zmianie potrzebny **Redeploy**.
 - Druga przyczyna: testowanie przez URL konkretnego deploymentu (`story-<hash>-iicytowers-projects.vercel.app`). Taki URL jest na stałe przypięty do jednej wersji, więc po redeployu dalej działał stary deployment bez zmiennych (ten sam Deployment ID w logach). Trzeba otwierać **domenę produkcyjną** z Settings → Domains (bez hasha) i wyczyścić cookies starego URL-a.
 - Diagnostyka: w Logs szukać linii `[auth][error]` i porównać Deployment ID oraz region funkcji z oczekiwanymi.
@@ -96,9 +97,9 @@ docker run --rm --network host -v "$BACKUP:/backup:ro" mongo:8 mongoimport --uri
 
 ## Smoke test
 
-1. `/` przekierowuje na `/login`; błędne hasło → „Invalid email or password.”, poprawne loguje.
+1. `/` pokazuje wyszukiwarkę bez logowania; „Log in / Create account” otwiera dialog, błędne hasło → „Invalid nickname or password.”, poprawne loguje.
 2. Utworzenie opowiadania, treść, autozapis („Saved”); po odświeżeniu treść zostaje.
 3. „Export as…” pobiera plik w wybranym formacie.
-4. „Share”: link w incognito pokazuje opowiadanie bez notatek i komentarzy; po „Stop sharing” 404.
+4. „Publish”: adres `/p/...` w incognito pokazuje opowiadanie z nickiem, bez notatek i komentarzy; po „Unpublish” 404.
 5. Przełącznik motywu i wylogowanie.
 6. Foldery: nowy folder, rozdział o tym samym tytule w dwóch folderach, przeniesienie rozdziału, notatki folderu z autozapisem.

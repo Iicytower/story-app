@@ -27,8 +27,8 @@ function signInAs(userId: Types.ObjectId) {
 beforeEach(async () => {
   [alice, bob] = (
     await User.create([
-      { email: "alice@example.com", passwordHash: "x" },
-      { email: "bob@example.com", passwordHash: "x" },
+      { nickname: "alice", passwordHash: "x" },
+      { nickname: "bob", passwordHash: "x" },
     ])
   ).map((user) => user._id);
   signInAs(alice);
@@ -71,8 +71,15 @@ describe("saveSettings", () => {
     expect(await getUserSettings(alice.toString())).toEqual({
       ...DEFAULT_SETTINGS,
       editor: { layout, mobileView: "notes" },
-      appearance: { theme: "dark" },
+      appearance: { sidebarCollapsed: false, theme: "dark" },
     });
+  });
+
+  it("saves the collapsed sidebar", async () => {
+    await saveSettings({ appearance: { sidebarCollapsed: true } });
+
+    const { appearance } = await getUserSettings(alice.toString());
+    expect(appearance.sidebarCollapsed).toBe(true);
   });
 
   it("creates one document when the first saves run in parallel", async () => {

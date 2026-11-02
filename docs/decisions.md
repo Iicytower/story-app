@@ -86,9 +86,9 @@ Zamiast `mongodb-memory-server` używamy kontenera `mongo:8` z `docker-compose.y
 - Strona `/s/[token]` wywołuje `connection()`, żeby nie była cache'owana (inaczej link działałby po „Stop sharing”). `noindex`: `metadata.robots` (meta tag) + `X-Robots-Tag: noindex, nofollow` przez `headers()` w `next.config.ts`.
 - `stripComments`: komentarz kończy się na pierwszym `-->` (jak w HTML), więc z zagnieżdżonego `<!-- a <!-- b --> c -->` zostaje ` c -->`.
 
-## D12 – Widok mobilny edytora (2026-10-06, zmienione 2026-10-20 w D19)
+## D12 – Widok mobilny edytora (2026-10-06, zmienione 2026-10-20 w D19, 2026-11-01 w D41)
 
-- Odstępstwo od „tylko desktop” w spec: edytor obsługuje wąskie ekrany. Poniżej breakpointu `md` (768 px) na górze jest przełącznik Story / Notes / Chapters (`role="tablist"`, nazwa „View”) i widoczny jest jeden panel naraz. Zakładka Story pokazuje edytor WYSIWYG (D20); Notes – notatki folderu nad notatkami rozdziału, bez separatora.
+- Odstępstwo od „tylko desktop” w spec: edytor obsługuje wąskie ekrany. Poniżej breakpointu `md` (768 px) na górze jest przełącznik Story / Notes / Chapters / Tools (D41; `role="tablist"`, nazwa „View”) i widoczny jest jeden panel naraz. Zakładka Story pokazuje edytor WYSIWYG (D20); Notes – notatki folderu nad notatkami rozdziału, bez separatora.
 - Na wąskim ekranie przyciski paska narzędzi pokazują tylko ikony (etykieta w `sr-only`), przyciski zwijania i Split są ukryte, a pola tekstowe mają `text-base`, żeby iOS nie powiększał strony przy fokusie.
 - Układ (desktop lub mobile) wybiera `matchMedia` (`useSyncExternalStore`, serwer renderuje desktop), więc w DOM jest tylko jedno drzewo paneli i każde pole występuje raz. Widoki Story / Notes / Chapters są zamontowane jednocześnie, a nieaktywne ukryte (D27). Treść, notatki i notatki folderu trzyma komponent nad oboma drzewami, więc zmiana szerokości okna ich nie gubi.
 
@@ -148,7 +148,7 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - `/s/f/[token]`: nazwa folderu i numerowany spis. `/s/f/[token]/[n]`: rozdział `n` (od 1, w bieżącej kolejności folderu) z linkami poprzedni / „Contents” / następny; `n` spoza zakresu lub nieliczbowe → 404. Numery zmieniają się razem z kolejnością i usuwaniem rozdziałów. Obie strony: `connection()`, `metadata.robots`, `X-Robots-Tag` w `next.config.ts`, `stripComments`, bez notatek. `isPublicPath` obejmuje `/s/f/<token>` i `/s/f/<token>/<n>`.
 - Przyciski w widoku folderu: „Export .zip” (link z `download`, bez zapisu – folder nie ma niezapisanych zmian poza autozapisywanymi notatkami) i „Share” / „Stop sharing” z polem linku i „Copy link”.
 
-## D19 – Panele edytora (2026-10-20)
+## D19 – Panele edytora (2026-10-20, zmienione 2026-11-01 w D41)
 
 - Desktop: `[Story] | [panel boczny]` w `ResizablePanelGroup` (shadcn Resizable, `react-resizable-panels` v4). Story to edytor WYSIWYG (D20). Panel boczny ma zakładki Notes / Chapters (`tablist` „Side panel”, domyślnie Notes). „Split” w pasku narzędzi (`aria-pressed`) pokazuje obie kolumny; „Move left/right” w nagłówku kolumny zmienia ich kolejność (Story zawsze pierwsza). „Hide notes/chapters” zwija kolumnę, a „Show …” zostaje przy prawej krawędzi.
 - Notes: pionowa grupa – notatki folderu (`useFolderNotes`, osobna kolejka i stan zapisu, konflikt po `notesUpdatedAt`) nad notatkami rozdziału (zapisywanymi z rozdziałem przez `saveStory`, nazwa pola „Notes” bez zmian). Status notatek folderu nie ma `role="status"` (unikalny status edytora zostaje dla rozdziału), tylko `aria-live`.
@@ -217,7 +217,7 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Zostaje 5 najnowszych backupów. Odtwarzanie tylko jako instrukcja w `deploy.md` (bez `npm run restore`).
 - Testy uruchamiają skrypt z `ENV_FILE` i `BACKUP_DIR` wskazującymi na katalog tymczasowy i bazy `story_app_test_*`; nigdy `.env.prod`.
 
-## D27 – Pozycja przewijania przy przełączaniu widoków (2026-10-30)
+## D27 – Pozycja przewijania przy przełączaniu widoków (2026-10-30, zmienione 2026-11-01 w D41)
 
 - Preview ↔ Source: dopasowanie po bloku. `blockStarts` (`lib/editor/source-blocks.ts`) wylicza, gdzie w markdownie zaczyna się każdy węzeł najwyższego poziomu (tokeny lexera `MarkdownManager`, w tym puste akapity z dodatkowych pustych linii, jak w `@tiptap/markdown`). Przy przełączeniu zapamiętywany jest blok przy górnej krawędzi widoku i ułamek jego wysokości; nowy widok przewija się do tego samego miejsca przed odmalowaniem (`useLayoutEffect`). Wysokość linii w textarea (z zawijaniem) mierzy ukryta kopia pola. Widok przewinięty na sam początek zostaje na początku.
 - Zakładki Notes / Chapters (desktop, bez Split) i Story / Notes / Chapters (wąski ekran) są zamontowane jednocześnie; nieaktywne mają `visibility: hidden` (nie `display: none`, które może wyzerować przewinięcie). Zostaje więc też tryb Preview/Source i historia Undo. Przy Split i Hide/Show grupa kolumn nadal się remontuje, a pozycję przywraca pamięć opisana niżej.
@@ -286,3 +286,97 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Preview szuka w tekście widocznym, osobno w każdym bloku (bez znaczników markdown, także w komentarzach), dekoracjami ProseMirror (`lib/editor/find-highlight.ts`). Złamanie linii to `\n`, trafienie nie przechodzi między blokami. Zamiana przejmuje formatowanie pierwszego zastąpionego znaku. Source szuka w surowym markdownie, więc liczba trafień może się różnić między trybami. Textarea nie stylizuje fragmentów, więc pod nią leży kopia tekstu z niewidocznymi literami i `<mark>`.
 - Undo: „Replace” i „Replace all” to jeden krok, także zaraz po pisaniu (`closeHistory` w Preview). W Source zamiana idzie przez `document.execCommand`, który jako jedyny zachowuje natywne Undo textarea, a „Replace all” podmienia cały tekst jednym poleceniem. Metoda jest przestarzała, ale nie ma zamiennika.
 - Po zamianie bieżącym trafieniem jest następne za nowym tekstem, więc „kot” → „kotek” nie trafia ponownie w to samo miejsce. Fokus wraca do pola Find, bo przyciski stają się nieaktywne, gdy nie ma trafień. Zmiana idzie zwykłą ścieżką edycji, więc autozapis działa bez zmian (D22).
+
+## D36 – Tagi (2026-11-01)
+
+- Zmienia spec („bez tagów”). Pole `tags` (tablica stringów) na `folders` i `stories`, tagi osobno na każdym poziomie. Kod odczytu traktuje brak pola jak pustą listę, a powtarzalna migracja `005-tags` uzupełnia dokumenty tworzone przez starą wersję w trakcie builda.
+- Normalizacja: `trim`, zwinięcie białych znaków do jednej spacji, małe litery, bez duplikatów, puste odrzucane. Spacje w środku tagu i polskie znaki zostają. W dialogu przecinek rozdziela tagi. Limity: 30 znaków na tag, 10 tagów na folder lub rozdział; przekroczenie → `INVALID_INPUT`, wejście spoza tablicy stringów też.
+- Rozdział dziedziczy tagi folderu i wliczają się one do jego limitu: suma tagów własnych i odziedziczonych to maks. 10, a tag obecny na obu poziomach liczy się raz. Zapis tagów folderu, który przekroczyłby limit któregoś aktywnego rozdziału, jest odrzucany z nazwą tego rozdziału. Przeniesienie rozdziału przekraczające limit też jest odrzucane. Przywracanie wersji nigdy nie jest odrzucane z tego powodu, a rozdział ponad limitem trzeba zmniejszyć przy kolejnej edycji jego tagów.
+- Tagi to zmiana organizacyjna: akcje `setFolderTags` i `setStoryTags` zastępują całą listę i nie zmieniają `updatedAt`, `lastActivityAt` ani `notesUpdatedAt`, więc otwarty edytor nie dostaje `CONFLICT`. Tagów nie ma w eksporcie, wersjach folderów i na stronach publicznych. Przywrócenie wersji ich nie zmienia; rozdział przeniesiony i kopiowany przy przywracaniu dostaje bieżące tagi oryginału, jak notatki.
+- Podpowiedzi i filtr biorą własne tagi użytkownika z aktywnych folderów i rozdziałów.
+- Filtr na `/stories`: parametry `?tag=a&tag=b`, wartości normalizowane jak przy zapisie. Wybrany tag zmienia widok folderów na listę rozdziałów, ten sam co wyniki wyszukiwania. Kilka tagów działa jak AND, a rozdział dziedziczy tagi folderu, więc każdy tag może pasować przez rozdział albo przez jego folder. Przeniesienie rozdziału zmienia odziedziczone tagi. Pusty folder z tagiem nie pojawia się w wynikach.
+- Wybór tagów to klikalne chipy (linki zachowujące `q`), a formularz wyszukiwania zachowuje wybrane tagi w ukrytych polach.
+- Edycja w dialogu „Tags”: folder na swojej stronie, rozdział w wierszu listy rozdziałów, nie w edytorze. Listy folderów, rozdziałów i wyników pokazują tagi elementu, a przy rozdziałach także odziedziczone, w odróżnionym stylu. Dialog rozdziału pokazuje odziedziczone bez przycisku usuwania, usuwa się je na folderze.
+
+## D37 – Logowanie przez nick, bez migracji danych (2026-11-01)
+
+- Zmienia D1 i D4. Konto to `nickname` i hasło, komunikat błędu: „Invalid nickname or password.”. Bez fallbacku na e-mail w formularzu.
+- `email` usunięty ze schematu `User`, ale zostaje w dokumentach (decyzja użytkownika): pliku migracji nie ma, a nicki istniejącym kontom właściciel ustawia ręcznie przed wydaniem (`deploy.md`). `syncIndexes()` w buildzie sam usuwa `email_1`, więc nowe konta nie kolidują na braku e-maila.
+- Nick: jedno pole `nickname` z unikalnym indeksem z collation `{ locale: "en", strength: 2 }`, żeby ręczna zmiana w bazie dotyczyła jednego pola. Zapytania o nick muszą podawać tę collation. Indeks częściowy (`$type: "string"`), żeby konta jeszcze bez nicku nie wywracały builda kolizją na `null`.
+- Nick: 3–30 znaków, `A-Za-z0-9_-`. Hasło: 17–256 znaków (punktów kodowych), mała i wielka litera (także Unicode), cyfra, znak specjalny ASCII. Walidacja w `lib/credentials.ts`, egzekwowana też w `createOrUpdateUser`. Istniejące hasła nie są sprawdzane.
+- bcrypt uwzględnia tylko 72 bajty, więc nowe hasła idą przez SHA-256 (hex), a hash ma prefiks `sha256$`. Hash bez prefiksu to bcrypt surowego hasła sprzed D37 i działa dalej. Bez nowych pakietów.
+
+## D38 – Publikacja zamiast udostępniania linkiem (2026-11-01)
+
+- Zmienia D1, D11, D18, D25 i spec („Udostępnianie przez link”). Decyzja użytkownika: „Share” znika całkowicie. Usunięte trasy `/s/...`, akcje `setSharing` i `setFolderSharing`, nagłówki `X-Robots-Tag`, przyciski. Wysłane linki przestają działać i nie są przenoszone do publikacji. `shareToken` zostaje w dokumentach (D14, expand-only), usuwamy go ze schematu, a `syncIndexes()` w buildzie usuwa indeksy.
+- Bez pliku migracji: brak `published` to nieopublikowany folder, brak `publication` to brak decyzji, więc po wdrożeniu nic nie jest publiczne.
+- W UI zawsze „Publish” / „Unpublish”, także przy rozdziale; wartość `hidden` to tylko nazwa w bazie.
+- Stan: `folders.published` oraz `stories.publication` (`public`, `hidden`, brak). Rozdział jest publiczny tylko, gdy folder jest aktywny i `published`, a rozdział aktywny i `public`.
+- „Publish” folderu: `published`, rozdziały bez decyzji stają się `public`, jawne stany zostają. „Unpublish” zachowuje stany rozdziałów, więc ponowny „Publish” przywraca ten sam zestaw. „Publish all” (z potwierdzeniem, tylko w opublikowanym folderze) ustawia wszystkie aktywne na `public`.
+- „Publish” rozdziału to publikacja folderu z pozostałymi wyłączonymi: w nieopublikowanym folderze rozdział dostaje `public`, a wszystkie pozostałe `hidden`, także te publiczne przed „Unpublish” (zgłoszenie użytkownika: nie mogą wracać razem z jednym rozdziałem). W opublikowanym folderze zmienia się tylko ten rozdział. „Unpublish” rozdziału ustawia `hidden`.
+- Nowy, zaimportowany, przeniesiony lub przywrócony rozdział: `hidden` w opublikowanym folderze, inaczej brak decyzji. Przeniesienie kasuje też stare adresy.
+- Folder bez żadnego publicznego rozdziału daje czytelnikowi 404.
+- Kolejność czytania: przy „Newest first” strony publiczne odwracają kolejność (najstarszy rozdział jako 1., także poprzedni / następny). „Manual” i „A–Z” zostają jak u autora.
+- Adres: `/p/<nick>/<folder>` (spis) i `/p/<nick>/<folder>/<rozdział>`, także dla pojedynczego rozdziału. Slugi z `safeFileName`, liczone przy odczycie, bez unikalnego indeksu, bo każdy `E11000` w zapisach znaczy dziś „tytuł zajęty”. Kolizję (np. „Ą” i „A”) rozstrzyga `_id`: starszy dostaje czysty slug, nowszy `-2`. Ukryte rozdziały i prywatne foldery też się liczą, więc ukrycie nie zmienia adresu sąsiada, ale sufiks `-2` zdradza istnienie podobnie nazwanego prywatnego folderu. Adres zależy od sąsiadów: usunięcie lub zmiana nazwy starszego z dwóch kolidujących przesuwa adres młodszego bez przekierowania, a zmiana nazwy może przejąć cudzy dotychczasowy adres. Kolizje wymagają nazw różniących się tylko wielkością liter, znakami diakrytycznymi lub interpunkcją, więc to przypadek rzadki i zaakceptowany.
+- Zmiana tytułu lub nazwy zmienia adres, a stary trafia do `formerSlugs` i przekierowuje (307, bo slug może wrócić do użycia, a 308 przeglądarka zapamiętuje na stałe), tylko dla publicznego rozdziału lub opublikowanego folderu. Aktualny slug ma pierwszeństwo nad `formerSlugs`. Nick w złej wielkości liter też przekierowuje.
+- Strony są indeksowane (decyzja użytkownika): bez `noindex`, tytuł strony to „<tytuł> by <nick>”. Bez sitemap. Treść na żywo, jak w dawnym „Share”, więc autozapis po 20 s jest od razu publiczny (`connection()`, bez cache).
+- Publikacja to zmiana organizacyjna: `timestamps: false`, bez zmian `lastActivityAt` i `notesUpdatedAt`. Eksportu i wersji folderów nie dotyczy, przywrócenie wersji nie zmienia `publication` rozdziału, który został w folderze.
+- UI: „Publish” / „Unpublish” i link na stronie folderu i w edytorze, przycisk ikony przy każdym rozdziale na liście.
+
+## D39 – Zmiana hasła, bez zmiany nicku (2026-11-01)
+
+- Zmienia zakres taska 41 (decyzja użytkownika): nicku nie można zmienić, także z migracji. Adresy `/p/<nick>/...` są więc stałe i nie ma `formerNicknames`. Nick poprawia tylko właściciel ręcznie w bazie (D37).
+- „Change password” w menu konta (D29) otwiera dialog, bez strony ustawień. Dialog jest renderowany obok `DropdownMenu`, bo menu odmontowuje treść po zamknięciu.
+- Akcja `changePassword` przyjmuje stare hasło, nowe i powtórzenie. Konto bierze z sesji. Błędny typ, różne hasła, słabe nowe i złe stare dają `INVALID_INPUT`. Nowe może być równe staremu, o ile spełnia wymagania.
+- Wymagania są wypisane przy polu nowego hasła (`PASSWORD_REQUIREMENTS` w `lib/credentials.ts`, `aria-describedby`), a test pilnuje zgodności listy znaków specjalnych z `passwordError`.
+- Zmiana hasła nie unieważnia sesji (JWT nie ma do tego mechanizmu), więc inne urządzenia zostają zalogowane do wygaśnięcia sesji. Bez opóźnienia `LOGIN_DELAY_MS`: zgadywać starego hasła może tylko ktoś z ważną sesją.
+
+## D40 – Rejestracja i limit prób (2026-11-01)
+
+- Zmienia D1 („brak rejestracji w UI”) i D4. Publiczna strona `/register`: nick, hasło, powtórzenie. Skrypt `create-account` zostaje.
+- Rejestracja używa `createUser` (tylko `insert`), nigdy `createOrUpdateUser`, bo upsert zmieniłby hasło istniejącego konta. Zajęty nick i wyścig rozstrzyga unikalny indeks (D37), wcześniejszy odczyt daje ten sam komunikat bez liczenia hasha.
+- Limit (mechanizm także dla taska 39): kolekcja `rateLimits`, dokument na regułę, klienta i okno: `_id` = `<reguła>:<HMAC-SHA256 z IP, klucz AUTH_SECRET>:<początek okna>`, `count`, `expiresAt`. Stałe okno, licznik resetuje się razem z oknem, a poprawność nie zależy od TTL, który tylko sprząta. IP w bazie nie jest zapisywane jawnie. Bez pliku migracji: indeks TTL tworzy `syncIndexes()` w buildzie (D14).
+- `takeAttempt` najpierw zwiększa licznik, potem sprawdza, więc równoległe żądania nie przejdą limitu. `giveBackAttempt` oddaje próbę, która nie powinna się liczyć.
+- Rejestracja: 5 kont na godzinę z IP. Liczą się tylko utworzone konta (decyzja użytkownika), więc literówki i zajęte nicki nie blokują, a sprawdzanie zajętości nicków nie ma limitu (odrzucany przed bcrypt, więc tani).
+- Logowanie: 20 nieudanych prób na 15 minut z IP, sprawdzane w `authorizeCredentials`, bo `/api/auth/callback/credentials` da się wywołać z pominięciem akcji `login`. Po przekroczeniu nawet poprawne hasło daje „Too many attempts…” (`LoginRateLimited`). Udane logowanie oddaje próbę.
+- IP: pierwszy adres z `x-forwarded-for`, który Vercel ustawia sam. Bez nagłówka wszyscy dzielą klucz `unknown`. IPv6 liczone po sieci /64, bo pojedynczy klient zwykle ma całą taką sieć. Współdzielony adres (NAT, akademik) dzieli limit.
+- Gdy automatyczne logowanie po rejestracji trafi na limit logowania, konto już istnieje, więc akcja przekierowuje na `/login`.
+- Vitest: `next-auth` w `server.deps.inline`, bo pakiet importuje `next/server` bez rozszerzenia, a `authorize.ts` i akcje używają jego klas błędów w testach.
+
+## D41 – Zakładka Tools (2026-11-01)
+
+- Zmienia D12, D19 i D27. Trzeci panel boczny `tools`: zakładka, kolumna w Split, czwarty widok na wąskim ekranie (`editor.mobileView`). Zamontowany razem z innymi widokami (D27).
+- Zakładka to tylko siatka kafelków z rejestru `TOOLS` (`app/(protected)/stories/[id]/tools.tsx`). Kafelek otwiera narzędzie w dialogu. Otwarte narzędzie trzyma `Editor`, a `ToolDialog` jest renderowany poza drzewami układu, więc zmiana szerokości okna go nie zamyka. Zmiana rozdziału i przeładowanie je zamykają. Name generator, Synonyms i Rhymes to atrapy („Coming soon.”) do tasków 42, 33 i 34.
+- Bez Split wszystkie zakładki mają jedną szerokość: stałe id panelu `side-column` i klucz `story,side`. Zmiana zakładki nie zmienia już szerokości, co odwraca „szerokości per zakładka” z D27. `normalizeLayout` przenosi na ten klucz szerokość wybranej zakładki, a gdy jej nie ma, pierwszej zapisanej. Split ma nadal szerokości per zestaw kolumn.
+- `normalizeLayout` uzupełnia `order` o brakujące panele zamiast go odrzucać. Zapisany układ ze Split bez `tools` dostaje `collapsed.tools = true`, bo trzecia widoczna kolumna zmieniłaby klucz szerokości i wyzerowała układ. Przycisk „Show tools” stoi przy prawej krawędzi.
+- Przy trzech kolumnach bocznych domyślna szerokość to 20%, żeby Story nie spadło poniżej `minSize` 30%. `moveColumn` przeskakuje schowane kolumny, inaczej Move left/right bywałby bez widocznego efektu.
+
+## D42 – Publiczna wyszukiwarka, strona główna i sidebar (2026-11-01)
+
+- Zmienia D1, D4, D29, D36, D38 i D40. Strona `/` to publiczna wyszukiwarka i widok domyślny po zalogowaniu (logowanie, rejestracja i Home prowadzą na `/`). Zalogowany widzi tę samą stronę z sidebarem.
+- Treść: regex bez rozróżniania wielkości liter, jak na `/stories`. `$text` nie zna polskiego, Atlas Search wymagałby innego obrazu Dockera i indeksu poza `syncIndexes()`, a embeddingi wysyłają tekst do dostawcy i kosztują. Regex nie zna odmiany („ręka” nie znajdzie „ręce”), nie widzi tekstu rozdzielonego znacznikami (`**a** b` dla „a b”) i przegląda wszystkie publiczne rozdziały. Przy dużej liczbie tekstów trzeba wrócić do Atlas Search.
+- `content` zawiera komentarze, więc zapytanie do bazy tylko zawęża kandydatów, a `matchesPublicText` sprawdza tekst po `stripComments`. Fragment też powstaje z tego tekstu. Tekst złączony po usunięciu komentarza może dać trafienie, którego czytelnik widzi jako jedno miejsce. Notatek nie ma w `select`.
+- Pole tekstowe szuka w tytule rozdziału, nazwie folderu (tytuł książki; pasują wszystkie jego publiczne rozdziały), treści i tagach (cały tag po normalizacji). Kliknięte tagi (`?tag=`) są obowiązkowe (AND, jak D36), a tag folderu jest dziedziczony. Lista tagów bierze tylko publiczne rozdziały i ich foldery. Tag z wejścia to najwyżej `MAX_TAGS`, zapytanie to najwyżej 100 znaków.
+- Wyniki: do 50 (po sprawdzeniu komentarzy), od ostatnio zmienionych. Adresy z tych samych slugów co strony czytania, więc liczą się też ukryte rozdziały i prywatne foldery. Autorzy bez nicku (D37) są pomijani, bo nie mają publicznego adresu.
+- Limit: 30 wyszukiwań na minutę z IP (`SEARCH_LIMIT`, D40). Pusta strona nie zużywa limitu, a generowanie metadanych go nie liczy. Linki tagów mają `prefetch={false}`, żeby prefetch nie zużywał prób.
+- Strona jest indeksowana (decyzja użytkownika), także adresy z `?q=`, więc roboty mogą zużywać limit swojego adresu. Bez sitemap.
+- `/login` i `/register` usunięte (decyzja użytkownika), adresy dają 404 i są na liście publicznych, żeby nie otwierać dialogu, który po zalogowaniu wróciłby na 404. Dialog na `/` przełącza logowanie i rejestrację. Otwiera go przycisk, `?auth=login` albo `callbackUrl` z proxy (`pages.signIn: "/"`). Akcje i formularze w `app/auth/`.
+- Sidebar (`components/app-sidebar.tsx`) zastępuje menu konta i ikonę Home z D29, na każdej stronie zalogowanego, także w edytorze. Pozycje: Home, Search, Folders, Toggle theme, Change password, Log out. Na desktopie zwijany do paska ikon (`appearance.sidebarCollapsed`, D24), poniżej `md` wysuwana szuflada otwierana przyciskiem „Menu”.
+
+## D43 – Generator nazw (2026-11-02)
+
+- Generator działa w całości w przeglądarce, bez AI i bez modeli uczonych na danych (decyzja użytkownika). Dlatego sylaby z tabel głosek i morfemy zamiast łańcucha Markowa, który wymagałby list nazw i trudniej reagowałby na filtry. Szczegóły: `docs/tasks/42-name-generator.md`.
+- Nazwy znaczące: styl Polish/Slavic składa je z polskich członów, pozostałe style z angielskich albo wymyślonych. Mix styles dotyczy tylko sylab, nie takich członów.
+- Lista 10 nazw jest zastępowana przy „Next 10”, a powtórki są wykluczane do zamknięcia dialogu. Wyniki nie są zapisywane; można je tylko skopiować.
+- Sprzeczne filtry są blokowane (decyzja użytkownika): wybranie jednego odznacza ten, który przeszkadza, według osobnej listy par. Wartość, której kliknięcie coś odznaczy, ma przerywaną ramkę. Komunikat o braku wyników zostaje dla pól tekstowych i kombinacji trzech i więcej filtrów, których lista par nie obejmuje.
+- Filtry w `localStorage` wygasają 7 dni po ostatniej zmianie (decyzja użytkownika).
+- Ustalone przy implementacji: Polish letters jest domyślnie włączony (nazwy polskie mają diakrytyki), a Apostrophes and hyphens działa dwustronnie: włączony wymaga znaku w każdej nazwie, wyłączony go zabrania. Unpronounceable i Balanced to dodatkowa sprzeczność, bo mutacja usuwająca samogłoskę nie mieści się w 36–54% samogłosek.
+- Rdzenie wulgarne obejmują polski, angielski i rosyjski (rosyjski w transliteracji łacińskiej, bo generator nie tworzy cyrylicy). Są w bundlu klienta, ładowane z generatorem dopiero po otwarciu kafelka.
+
+## D44 – Język folderu w tasku LanguageTool (2026-11-02)
+
+- Decyzja użytkownika: task 31 nie istnieje osobno, jego zakres jest częścią taska 29. Do tego czasu zostaje D21. Numer 31 nie wraca.
+- Na razie tylko polski, bez angielskiego. Dzisiejszy `lang="pl"` i spellcheck przeglądarki już to obsługują, a sam język folderu przydaje się dopiero z parametrem `language` LanguageTool.
+- Pisownia na bieżąco zostaje w przeglądarce (`lang` z folderu), bez słowników w aplikacji i nowych pakietów.
+- Język dotyczy edytora i LT. Kafelki słownikowe pokazują się bez warunku, a eksport i strony publiczne zostają bez zmian.
+- Taski 23, 32, 33 i 34 nie zależą już od języka folderu.

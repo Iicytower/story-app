@@ -12,7 +12,7 @@ export default async function StoryPage({
   params,
 }: PageProps<"/stories/[id]">) {
   const user = await requireUser();
-  if (!user.ok) redirect("/login");
+  if (!user.ok) redirect("/");
 
   const { id } = await params;
   const story = await getStory(user.userId, id);

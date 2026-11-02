@@ -12,7 +12,7 @@ import { requireUser } from "@/lib/auth/session";
 import { getFolder, listFolders } from "@/lib/folders/queries";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
-import { getSharedStory, getStory, listStories } from "@/lib/stories/queries";
+import { getStory, listStories } from "@/lib/stories/queries";
 import { setupTestDb } from "./test-db";
 
 vi.mock("@/lib/auth/session", () => ({ requireUser: vi.fn() }));
@@ -151,9 +151,7 @@ describe("renameFolder", () => {
 describe("deleteFolder", () => {
   it("soft deletes the folder and its chapters without changing their updatedAt", async () => {
     const folderId = await seedFolder("Drafts");
-    const storyId = await seedStory(folderId, "Chapter", alice, {
-      shareToken: "token-1234567890abcdef",
-    });
+    const storyId = await seedStory(folderId, "Chapter");
     const otherFolder = await seedFolder("Other");
     const otherStory = await seedStory(otherFolder, "Kept");
 
@@ -168,9 +166,7 @@ describe("deleteFolder", () => {
 
   it("hides the folder and its chapters everywhere", async () => {
     const folderId = await seedFolder("Drafts");
-    const storyId = await seedStory(folderId, "Dragon", alice, {
-      shareToken: "token-1234567890abcdef",
-    });
+    const storyId = await seedStory(folderId, "Dragon");
 
     await deleteFolder(folderId.toString());
 
@@ -179,7 +175,6 @@ describe("deleteFolder", () => {
     expect(await getFolder(userId, folderId.toString())).toBeNull();
     expect(await listStories(userId, "Dragon")).toEqual([]);
     expect(await getStory(userId, storyId.toString())).toBeNull();
-    expect(await getSharedStory("token-1234567890abcdef")).toBeNull();
   });
 
   it("returns NOT_FOUND for another user's folder and leaves it intact", async () => {

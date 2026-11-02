@@ -15,7 +15,7 @@ Zgłoszenie użytkownika (2026-10-30), przebudowane po researchu z 2026-10-31. B
 
 - Bez zewnętrznych API w czasie działania. Do serwisu trafia tylko szukane słowo.
 - Narzędzia tylko wyszukują: bez wysyłania zaznaczenia i bez podmiany w tekście (decyzja użytkownika z researchu, kryteria 3–5 poprzedniej wersji odpadają).
-- Tylko polski. Pole `lang` dojdzie, gdy powstanie język folderu (task 31).
+- Tylko polski. Pole `lang` dojdzie, gdy język folderu (task 29) obejmie inne języki.
 - Baza budowana lokalnie, odświeżana na żądanie, bez ustalonego rytmu.
 - Bez cache po stronie serwera. Szukanie tylko po zatwierdzeniu, a formularz jest zablokowany, dopóki trwa poprzednie, bo Server Actions idą kolejno i wstrzymują autozapis.
 - Tabele każdego źródła osobno, scalanie przy odpowiedzi, a każda pozycja ma etykietę źródła (licencje). Dane poza publicznym repo, z opisem licencji.

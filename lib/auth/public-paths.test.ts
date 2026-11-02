@@ -3,24 +3,27 @@ import { isPublicPath } from "./public-paths";
 
 describe("isPublicPath", () => {
   it.each([
+    "/",
     "/login",
+    "/register",
     "/api/auth/session",
     "/api/auth/callback/credentials",
-    "/s/abc123",
-    "/s/f/abc123",
-    "/s/f/abc123/2",
+    "/p/alice/book",
+    "/p/alice/book/chapter",
   ])("%s is public", (path) => expect(isPublicPath(path)).toBe(true));
 
   it.each([
-    "/",
     "/stories",
     "/stories/123",
     "/stories/123/export",
     "/login/x",
-    "/s",
-    "/s/a/b",
-    "/s/f/abc123/x",
-    "/s/f/abc123/2/3",
+    "/register/x",
+    "/s/abc123",
+    "/s/f/abc123",
+    "/s/f/abc123/2",
+    "/p",
+    "/p/alice",
+    "/p/alice/book/chapter/x",
     "/api/other",
   ])("%s requires a session", (path) => expect(isPublicPath(path)).toBe(false));
 });

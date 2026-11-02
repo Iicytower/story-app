@@ -416,7 +416,7 @@ describe("restoreFolderVersion", () => {
     const deleted = await seedStory(folderId, "Gone");
     await seedStory(folderId, "Stays");
     await createFolderVersion(folderId.toString(), "One");
-    await edit(deleted, { deletedAt: new Date(), shareToken: "token" });
+    await edit(deleted, { deletedAt: new Date(), publication: "public" });
 
     await restoreFolderVersion(
       folderId.toString(),
@@ -432,7 +432,7 @@ describe("restoreFolderVersion", () => {
       content: "Gone content",
       deletedAt: null,
     });
-    expect(restored!.shareToken).toBeUndefined();
+    expect(restored!.publication).toBeUndefined();
     expect(restored!.position).toBe(position);
     const view = await getFolderVersion(
       alice.toString(),
