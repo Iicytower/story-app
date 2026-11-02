@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import {
   Dialog,
   DialogContent,
@@ -39,12 +40,16 @@ export function ToolDialog({
   return (
     <Dialog open={tool !== null} onOpenChange={(open) => !open && onClose()}>
       {tool && (
-        <DialogContent>
+        <DialogContent className={tool.dialogClassName}>
           <DialogHeader>
             <DialogTitle>{tool.label}</DialogTitle>
             <DialogDescription>{tool.description}</DialogDescription>
           </DialogHeader>
-          <tool.View />
+          <Suspense
+            fallback={<p className="text-muted-foreground text-sm">Loading…</p>}
+          >
+            <tool.View />
+          </Suspense>
         </DialogContent>
       )}
     </Dialog>
