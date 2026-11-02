@@ -363,3 +363,12 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - `/login` i `/register` usunięte (decyzja użytkownika), adresy dają 404 i są na liście publicznych, żeby nie otwierać dialogu, który po zalogowaniu wróciłby na 404. Dialog na `/` przełącza logowanie i rejestrację. Otwiera go przycisk, `?auth=login` albo `callbackUrl` z proxy (`pages.signIn: "/"`). Akcje i formularze w `app/auth/`.
 - Sidebar (`components/app-sidebar.tsx`) zastępuje menu konta i ikonę Home z D29, na każdej stronie zalogowanego, także w edytorze. Pozycje: Home, Search, Folders, Toggle theme, Change password, Log out. Na desktopie zwijany do paska ikon (`appearance.sidebarCollapsed`, D24), poniżej `md` wysuwana szuflada otwierana przyciskiem „Menu”.
 
+## D43 – Generator nazw (2026-11-02)
+
+- Generator działa w całości w przeglądarce, bez AI i bez modeli uczonych na danych (decyzja użytkownika). Dlatego sylaby z tabel głosek i morfemy zamiast łańcucha Markowa, który wymagałby list nazw i trudniej reagowałby na filtry. Szczegóły: `docs/tasks/42-name-generator.md`.
+- Nazwy znaczące: styl Polish/Slavic składa je z polskich członów, pozostałe style z angielskich albo wymyślonych. Mix styles dotyczy tylko sylab, nie takich członów.
+- Lista 10 nazw jest zastępowana przy „Next 10”, a powtórki są wykluczane do zamknięcia dialogu. Wyniki nie są zapisywane; można je tylko skopiować.
+- Sprzeczne filtry są blokowane (decyzja użytkownika): wybranie jednego odznacza ten, który przeszkadza, według osobnej listy par. Wartość, której kliknięcie coś odznaczy, ma przerywaną ramkę. Komunikat o braku wyników zostaje dla pól tekstowych i kombinacji trzech i więcej filtrów, których lista par nie obejmuje.
+- Filtry w `localStorage` wygasają 7 dni po ostatniej zmianie (decyzja użytkownika).
+- Rdzenie wulgarne obejmują polski, angielski i rosyjski (rosyjski w transliteracji łacińskiej, bo generator nie tworzy cyrylicy). Są w bundlu klienta, ładowane z generatorem dopiero po otwarciu kafelka.
+
