@@ -34,8 +34,8 @@ Każda grupa pojedynczego wyboru ma też wartość `Any` (domyślną, jeśli nie
 | Excludes | pole tekstowe | Fragmenty po przecinku |
 | Alliteration | przełącznik | Wszystkie słowa zaczynają się od tej samej głoski; tylko nazwy wielowyrazowe |
 | Repeated syllable | przełącznik | Np. Lulu, Bobo |
-| Polish letters | przełącznik | Wyłączony odrzuca ą, ć, ę, ł, ń, ó, ś, ź, ż |
-| Apostrophes and hyphens | przełącznik | Kal'thar, Vex-7 (cyfry tylko w Sci-fi) |
+| Polish letters | przełącznik | Domyślnie włączony. Wyłączony odrzuca ą, ć, ę, ł, ń, ó, ś, ź, ż |
+| Apostrophes and hyphens | przełącznik | Włączony: każda nazwa ma apostrof albo łącznik (Kal'thar, Vex-7, cyfry tylko w Sci-fi). Wyłączony: żadna nie ma |
 | Word count | jeden | One, Two, Three; Full name zawsze ma dwa, a Epithet to przydomek typu „the Grey” |
 | Easy to inflect | przełącznik | Końcówka odmieniająca się regularnie po polsku |
 
@@ -48,7 +48,7 @@ Każda grupa pojedynczego wyboru ma też wartość `Any` (domyślną, jeśli nie
 | Wartość | Sprzeczna z |
 | --- | --- |
 | Pronunciation: Easy | Letter balance: Consonant-heavy |
-| Pronunciation: Unpronounceable | Letter balance: Vowel-heavy, Repeated syllable |
+| Pronunciation: Unpronounceable | Letter balance: Vowel-heavy, Letter balance: Balanced, Repeated syllable |
 | Sound: Hard | Style: Elvish, Mood: Ethereal |
 | Sound: Soft | Style: Orcish, Style: Dwarven |
 | Mood: Ethereal | Letter balance: Consonant-heavy |
@@ -62,7 +62,7 @@ Każda grupa pojedynczego wyboru ma też wartość `Any` (domyślną, jeśli nie
 Oznaczenia:
 
 - Grupy pojedynczego wyboru to okrągłe pigułki, a wielokrotny wybór i przełączniki to prostokąty z zaokrąglonymi rogami.
-- Wartość, której kliknięcie coś odznaczy, ma przerywaną ramkę i `title` „Clears Hard”; to samo w `aria-description`. Wartości bez konfliktu wyglądają zwyczajnie.
+- Wartość, której kliknięcie coś odznaczy, ma przerywaną ramkę i `title` „Clears Hard” (`title` jest też opisem dla czytników ekranu; `aria-description` odpada, bo ESLint a11y go nie wspiera). Wartości bez konfliktu wyglądają zwyczajnie.
 
 ### Algorytm
 
