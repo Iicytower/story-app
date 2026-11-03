@@ -25,6 +25,7 @@ import {
   SearchIcon,
   Undo2Icon,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FindPanel } from "@/components/find-panel";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ import {
   MARKED_OPTIONS,
   trimMarkdown,
 } from "@/lib/editor/extensions";
+import { Comment } from "@/lib/editor/comment";
 import {
   compileFind,
   expandMatch,
@@ -101,6 +103,7 @@ export function MarkdownEditor({
   // Remembers the scroll position under this chapter and field (see scroll-memory).
   scrollMemory?: { storyId: string; field: string };
 }) {
+  const t = useTranslations("markdownEditor");
   // Always Preview on open; the choice is not remembered.
   const [mode, setMode] = useState<Mode>("preview");
   const [linkOpen, setLinkOpen] = useState(false);
@@ -136,7 +139,11 @@ export function MarkdownEditor({
     // Rendered after hydration only, so the server HTML never disagrees with ProseMirror's.
     immediatelyRender: false,
     extensions: [
-      ...contentExtensions,
+      ...contentExtensions.map((extension) =>
+        extension.name === Comment.name
+          ? Comment.configure({ label: t("comment") })
+          : extension,
+      ),
       Markdown.configure({ markedOptions: MARKED_OPTIONS }),
       FindHighlight,
       Extension.create({
@@ -445,14 +452,14 @@ export function MarkdownEditor({
     <div
       ref={rootRef}
       role="group"
-      aria-label={`${label} editor`}
+      aria-label={t("group", { label })}
       onKeyDown={handleFindKeys}
       className={cn("flex min-h-0 flex-col", className)}
     >
       <div className="flex flex-wrap items-center gap-0.5 border-b px-2 py-1">
         <div
           role="group"
-          aria-label="Mode"
+          aria-label={t("mode")}
           className="bg-muted text-muted-foreground mr-1 flex gap-0.5 rounded-md p-0.5"
         >
           {(["preview", "source"] as const).map((option) => (
@@ -463,7 +470,7 @@ export function MarkdownEditor({
               onClick={() => switchMode(option)}
               className="aria-pressed:bg-background aria-pressed:text-foreground rounded px-2 py-0.5 text-xs font-medium aria-pressed:shadow-sm"
             >
-              {option === "preview" ? "Preview" : "Source"}
+              {t(option)}
             </button>
           ))}
         </div>
@@ -474,8 +481,8 @@ export function MarkdownEditor({
           type="button"
           variant="ghost"
           size="icon-sm"
-          aria-label="Find and replace"
-          title="Find and replace"
+          aria-label={t("findReplace")}
+          title={t("findReplace")}
           aria-pressed={find !== null}
           onClick={() => (find ? closeFind() : openFind("replace"))}
           className="aria-pressed:bg-muted"
@@ -761,75 +768,76 @@ function Toolbar({ editor, onLink }: { editor: Editor; onLink: () => void }) {
     }),
   });
   const chain = () => editor.chain().focus();
+  const t = useTranslations("markdownEditor");
 
   const buttons = [
     {
-      label: "Bold",
+      label: t("bold"),
       icon: BoldIcon,
       active: state.bold,
       run: () => chain().toggleBold().run(),
     },
     {
-      label: "Italic",
+      label: t("italic"),
       icon: ItalicIcon,
       active: state.italic,
       run: () => chain().toggleItalic().run(),
     },
     {
-      label: "Heading 1",
+      label: t("heading1"),
       icon: Heading1Icon,
       active: state.h1,
       run: () => chain().toggleHeading({ level: 1 }).run(),
     },
     {
-      label: "Heading 2",
+      label: t("heading2"),
       icon: Heading2Icon,
       active: state.h2,
       run: () => chain().toggleHeading({ level: 2 }).run(),
     },
     {
-      label: "Heading 3",
+      label: t("heading3"),
       icon: Heading3Icon,
       active: state.h3,
       run: () => chain().toggleHeading({ level: 3 }).run(),
     },
     {
-      label: "Bulleted list",
+      label: t("bulletList"),
       icon: ListIcon,
       active: state.bulletList,
       run: () => chain().toggleBulletList().run(),
     },
     {
-      label: "Numbered list",
+      label: t("orderedList"),
       icon: ListOrderedIcon,
       active: state.orderedList,
       run: () => chain().toggleOrderedList().run(),
     },
     {
-      label: "Quote",
+      label: t("quote"),
       icon: QuoteIcon,
       active: state.blockquote,
       run: () => chain().toggleBlockquote().run(),
     },
     {
-      label: "Horizontal line",
+      label: t("horizontalLine"),
       icon: MinusIcon,
       run: () => chain().setHorizontalRule().run(),
     },
-    { label: "Link", icon: LinkIcon, active: state.link, run: onLink },
+    { label: t("link"), icon: LinkIcon, active: state.link, run: onLink },
     {
-      label: "Comment",
+      label: t("comment"),
       icon: MessageSquareIcon,
       run: () => chain().insertComment().run(),
     },
     {
-      label: "Undo",
+      label: t("undo"),
       icon: Undo2Icon,
       disabled: !state.canUndo,
       run: () => chain().undo().run(),
     },
     {
-      label: "Redo",
+      label: t("redo"),
       icon: Redo2Icon,
       disabled: !state.canRedo,
       run: () => chain().redo().run(),
@@ -895,12 +903,14 @@ function LinkForm({
 }) {
   const [url, setUrl] = useState(initialUrl);
   const [error, setError] = useState<string | null>(null);
+  const t = useTranslations("markdownEditor");
+  const tCommon = useTranslations("common");
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = url.trim();
     if (trimmed && !isAllowedLink(trimmed)) {
-      setError("Use an http, https or mailto link.");
+      setError(t("invalidLink"));
       return;
     }
     onSubmit(trimmed);
@@ -909,10 +919,10 @@ function LinkForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <DialogHeader>
-        <DialogTitle>Link</DialogTitle>
+        <DialogTitle>{t("link")}</DialogTitle>
       </DialogHeader>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="link-url">URL</Label>
+        <Label htmlFor="link-url">{t("url")}</Label>
         <Input
           id="link-url"
           value={url}
@@ -921,9 +931,7 @@ function LinkForm({
           aria-invalid={error !== null}
           autoComplete="off"
         />
-        <p className="text-muted-foreground text-xs">
-          Leave empty to remove the link.
-        </p>
+        <p className="text-muted-foreground text-xs">{t("emptyRemoves")}</p>
       </div>
       {error && (
         <p role="alert" className="text-destructive text-sm">
@@ -933,10 +941,10 @@ function LinkForm({
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline">
-            Cancel
+            {tCommon("cancel")}
           </Button>
         </DialogClose>
-        <Button type="submit">Apply</Button>
+        <Button type="submit">{t("apply")}</Button>
       </DialogFooter>
     </form>
   );

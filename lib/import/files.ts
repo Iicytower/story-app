@@ -2,8 +2,6 @@ import { unzipSync } from "fflate";
 import { ImportError } from "./document";
 import { MAX_UNPACKED_BYTES } from "./limits";
 
-const TOO_LARGE = "The unpacked file is too large.";
-
 export function assertUnpackedSize(
   bytes: Uint8Array,
   limit = MAX_UNPACKED_BYTES,
@@ -13,7 +11,7 @@ export function assertUnpackedSize(
     // Sizes come from the headers, so this rejects a zip bomb without unpacking it.
     filter: ({ originalSize }) => {
       total += originalSize;
-      if (total > limit) throw new ImportError(TOO_LARGE);
+      if (total > limit) throw new ImportError("importUnpackedTooLarge");
       return false;
     },
   });

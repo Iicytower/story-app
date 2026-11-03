@@ -1,8 +1,8 @@
 import { unzipSync } from "fflate";
 import { Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { GET } from "@/app/(protected)/folders/[id]/export/route";
-import { deleteFolder } from "@/app/(protected)/folders/actions";
+import { GET } from "@/app/folders/[id]/export/route";
+import { deleteFolder } from "@/app/[locale]/(protected)/folders/actions";
 import { requireUser } from "@/lib/auth/session";
 import { getFolderForExport } from "@/lib/folders/queries";
 import { Folder } from "@/lib/models/folder";

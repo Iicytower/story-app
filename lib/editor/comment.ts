@@ -12,8 +12,10 @@ const COMMENT = /^<!--([\s\S]*?)-->[ \t]*(?:\n|$)/;
 
 // Author's note kept in the markdown as an HTML comment: public pages and the
 // shared folder drop it with stripComments, the export keeps it.
-export const Comment = Node.create({
+// The editor sets the label in the page's language.
+export const Comment = Node.create<{ label: string }>({
   name: "comment",
+  addOptions: () => ({ label: "Comment" }),
   group: "block",
   content: "text*",
   marks: "",
@@ -30,7 +32,7 @@ export const Comment = Node.create({
       "aside",
       {
         "data-comment": "",
-        "aria-label": "Comment",
+        "aria-label": this.options.label,
         class:
           "my-2 whitespace-pre-wrap rounded-md border-l-4 border-amber-400 bg-amber-100/60 px-3 py-1 text-sm italic dark:bg-amber-500/15",
       },

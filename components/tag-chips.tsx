@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { inheritedOnly } from "@/lib/tags/tags";
 
 const CHIP = "rounded-full px-2 py-0.5 text-xs whitespace-nowrap";
@@ -9,6 +10,7 @@ export function TagChips({
   tags?: string[];
   folderTags?: string[];
 }) {
+  const t = useTranslations("tags");
   const inherited = inheritedOnly(tags, folderTags);
   if (tags.length + inherited.length === 0) return null;
   return (
@@ -21,7 +23,7 @@ export function TagChips({
       {inherited.map((tag) => (
         <span
           key={tag}
-          title="From folder"
+          title={t("fromFolder")}
           className={`${CHIP} text-muted-foreground border border-dashed`}
         >
           {tag}

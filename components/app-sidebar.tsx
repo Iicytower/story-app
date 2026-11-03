@@ -4,6 +4,7 @@ import {
   FolderIcon,
   HouseIcon,
   KeyRoundIcon,
+  LanguagesIcon,
   LogOutIcon,
   MenuIcon,
   MoonIcon,
@@ -12,13 +13,25 @@ import {
   SearchIcon,
   SunIcon,
 } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import { type Locale, LOCALE_NAMES, routing } from "@/i18n/routing";
+import { useLocale, useTranslations } from "next-intl";
 import { type ReactNode, useLayoutEffect, useState } from "react";
-import { logout, saveSettings } from "@/app/(protected)/actions";
+import {
+  changeLocale,
+  logout,
+  saveSettings,
+} from "@/app/[locale]/(protected)/actions";
 import { ChangePasswordDialog } from "@/components/change-password-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { applyTheme, rememberTheme } from "@/lib/theme";
 
 function toggleTheme() {
@@ -88,6 +101,54 @@ function ActionButton({
   );
 }
 
+function LanguageMenu({
+  compact,
+  onDone,
+}: {
+  compact: boolean;
+  onDone: () => void;
+}) {
+  const t = useTranslations("sidebar");
+  const locale = useLocale();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  async function choose(next: string) {
+    if (next === locale) return;
+    await changeLocale(next);
+    onDone();
+    // The same page and query in the new language.
+    router.replace(`${pathname}${window.location.search}`, {
+      locale: next as Locale,
+    });
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          title={t("language")}
+          aria-label={t("language")}
+          className={ITEM}
+        >
+          <LanguagesIcon />
+          {!compact && t("language")}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="right" align="end">
+        <DropdownMenuRadioGroup value={locale} onValueChange={choose}>
+          {routing.locales.map((option) => (
+            <DropdownMenuRadioItem key={option} value={option} lang={option}>
+              {LOCALE_NAMES[option]}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function NavItems({
   compact,
   onDone,
@@ -98,18 +159,19 @@ function NavItems({
   onChangePassword: () => void;
 }) {
   const pathname = usePathname();
+  const t = useTranslations("sidebar");
   return (
     <>
       <NavLink
         href="/"
-        label="Home"
+        label={t("home")}
         icon={<HouseIcon />}
         compact={compact}
         onClick={onDone}
       />
       <NavLink
         href="/"
-        label="Search"
+        label={t("search")}
         icon={<SearchIcon />}
         compact={compact}
         current={pathname === "/"}
@@ -117,7 +179,7 @@ function NavItems({
       />
       <NavLink
         href="/stories"
-        label="Folders"
+        label={t("folders")}
         icon={<FolderIcon />}
         compact={compact}
         current={pathname === "/stories"}
@@ -125,7 +187,7 @@ function NavItems({
       />
       <div className="mt-auto flex flex-col gap-1">
         <ActionButton
-          label="Toggle theme"
+          label={t("toggleTheme")}
           icon={
             <>
               <SunIcon className="hidden dark:block" />
@@ -138,14 +200,15 @@ function NavItems({
             onDone();
           }}
         />
+        <LanguageMenu compact={compact} onDone={onDone} />
         <ActionButton
-          label="Change password"
+          label={t("changePassword")}
           icon={<KeyRoundIcon />}
           compact={compact}
           onClick={onChangePassword}
         />
         <ActionButton
-          label="Log out"
+          label={t("logOut")}
           icon={<LogOutIcon />}
           compact={compact}
           onClick={() => void logout()}
@@ -163,6 +226,7 @@ export function AppSidebar({
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const t = useTranslations("sidebar");
 
   // React's dev-mode remount resets <html> attributes set by the inline script, and a
   // client-side sign-in brings another user's data-theme without running the script again.
@@ -185,8 +249,8 @@ export function AppSidebar({
       <Button
         variant="ghost"
         size="icon-sm"
-        aria-label="Menu"
-        title="Menu"
+        aria-label={t("menu")}
+        title={t("menu")}
         className="absolute top-1 left-1 z-40 md:hidden"
         onClick={() => setDrawerOpen(true)}
       >
@@ -197,8 +261,8 @@ export function AppSidebar({
           aria-describedby={undefined}
           className="top-0 left-0 flex h-dvh max-w-64 translate-x-0 translate-y-0 flex-col gap-1 rounded-none pt-10 sm:max-w-64"
         >
-          <DialogTitle className="sr-only">Menu</DialogTitle>
-          <nav aria-label="Main" className="flex flex-1 flex-col gap-1">
+          <DialogTitle className="sr-only">{t("menu")}</DialogTitle>
+          <nav aria-label={t("mainNav")} className="flex flex-1 flex-col gap-1">
             <NavItems
               compact={false}
               onDone={() => setDrawerOpen(false)}
@@ -208,7 +272,7 @@ export function AppSidebar({
         </DialogContent>
       </Dialog>
       <nav
-        aria-label="Main"
+        aria-label={t("mainNav")}
         data-collapsed={collapsed}
         className="bg-background sticky top-0 hidden h-dvh w-52 shrink-0 flex-col gap-1 border-r p-2 data-[collapsed=true]:w-12 md:flex"
       >
@@ -218,7 +282,7 @@ export function AppSidebar({
           onChangePassword={openPasswordDialog}
         />
         <ActionButton
-          label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          label={collapsed ? t("expand") : t("collapse")}
           icon={collapsed ? <PanelLeftOpenIcon /> : <PanelLeftCloseIcon />}
           compact={collapsed}
           onClick={toggleCollapsed}

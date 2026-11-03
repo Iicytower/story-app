@@ -386,3 +386,37 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Zmienia D15. Decyzja użytkownika po merge'u `develop` → `staging`, o który nie poprosił wprost: merge do `staging` i `main` oraz push na te branche robi wyłącznie użytkownik, także gdy prosi o testy na stagingu. Claude pushuje tylko `develop` (na prośbę) i otwiera PR-y wydań.
 - Egzekwuje to hook PreToolUse `.claude/hooks/protect-branches.sh`: blokuje `git merge` na tych branchach, `git push` na nie i wszystkie `gh pr merge` (każdy PR w tym repo celuje w `staging` albo `main`).
 - `resolve-pr-conflicts` pomija PR-y z headem `staging` lub `main` i podaje komendy użytkownikowi.
+
+## D46 – Wielojęzyczny interfejs z prefiksem w adresie (2026-11-03)
+
+- Zmienia zasadę „UI w całości po angielsku” i założenie prywatnej aplikacji: aplikacja docelowo jest publiczna, interfejs ma wybór języka. Na start angielski i polski; kolejny język to tylko nowy plik tłumaczeń i wpis na liście języków (decyzja użytkownika).
+- Biblioteka `next-intl` (decyzja użytkownika, instalacja w tasku 43).
+- Każdy adres ma prefiks `/en/...` albo `/pl/...`, także dla domyślnego angielskiego. Segmenty ścieżek są te same we wszystkich językach (`/pl/stories`). Poza prefiksem zostają Route Handlery (`/api/...`, eksport).
+- Wejście bez prefiksu przekierowuje na język wybrany kolejno z: ustawienia zalogowanego użytkownika, cookie z ostatniego wyboru, `Accept-Language`, a gdy nic nie pasuje – angielski. Stare adresy (w tym publiczne `/p/...`) działają dzięki temu przekierowaniu.
+- Przełącznik tylko w sidebarze (zalogowani). Niezalogowany zmienia język adresem albo ustawieniami przeglądarki.
+- Komunikaty Server Actions tłumaczone na serwerze według języka żądania; kształt `{ ok, error, message }` bez zmian.
+- Język interfejsu jest niezależny od języka treści folderu (D44, task 29): `lang` edytora i spellcheck zależą od folderu, nie od UI.
+- Polskie tłumaczenie przygotowuje Claude, użytkownik je przegląda.
+- Podział: task 43 (routing), 44 (słowniki `en`), 45 (przełącznik i `pl`).
+
+## D47 – Publiczny link bez prefiksu języka (2026-11-03)
+
+- Link publiczny pokazywany i kopiowany w edytorze i folderze (`Public link`) zostaje bez prefiksu (`/p/nick/folder`): odbiorca trafia na swój język przez przekierowanie z proxy (D46), a nie na język autora (decyzja użytkownika).
+- Linki klikane w aplikacji (wyszukiwarka, nawigacja rozdziałów) idą przez helpery `next-intl` i mają prefiks bieżącego języka.
+- Route Handlery eksportu leżą w `app/stories/[id]/export` i `app/folders/[id]/export`, poza `app/[locale]`, pod tymi samymi adresami co wcześniej.
+
+## D48 – Słownik i komunikaty generowane (2026-11-03)
+
+- Jeden plik `messages/en.json` z przestrzeniami nazw według obszaru; typy kluczy z `en` (`types/next-intl.d.ts`), więc brakujący klucz w innym języku to błąd `tsc` (decyzja użytkownika).
+- Walidacja w `lib/` nie zależy od `next-intl`: zwraca klucz i wartości (`ValidationError`, `ErrorMessage`), a Server Action tłumaczy je na serwerze (`translateError` / `actionError` z `lib/i18n/action-error.ts`). Klient tłumaczy klucze sam (wymagania hasła, błędy importu `ImportError.key`). Poza żądaniem (skrypt `create-account`, rzucane błędy) tekst jest po angielsku przez `inEnglish` (decyzja użytkownika).
+- Teksty generowane do treści (tytuł „Chapter N” przy imporcie, nagłówki „Notes” i „Folder notes” w eksporcie, nazwa wersji „Before restoring version N”) są w języku interfejsu w chwili utworzenia; zapisane dane się nie zmieniają (decyzja użytkownika).
+- Import rozpoznaje nagłówki „Notes” i „Folder notes” wszystkich języków z listy `DOCUMENTS` w `lib/i18n/english.ts`. Nowy język trzeba tam dopisać (poza plikiem `messages/xx.json` i listą języków w `i18n/routing.ts`).
+- Strona 404 poza prefiksem języka (`app/not-found.tsx`) zostaje po angielsku: nie ma z czego wziąć języka.
+
+## D49 – Przełącznik języka i język po zalogowaniu (2026-11-03)
+
+- Przełącznik „Language” w sidebarze to menu z listą języków, każdy nazwany we własnym języku (`LOCALE_NAMES` w `i18n/routing.ts`; decyzja użytkownika).
+- Ustawienie `appearance.locale` zapisuje tylko akcja `changeLocale`, która ustawia też cookie `NEXT_LOCALE` na rok; `saveSettings` go nie przyjmuje. `null` = nie wybrano, język z cookie albo `Accept-Language`.
+- Logowanie woła `signIn` z `redirect: false` i przekierowuje samo: na `callbackUrl` w języku z ustawienia (i ustawia cookie), a bez ustawienia w języku bieżącej strony. Auth.js nie sprawdza już `callbackUrl`, więc przed otwartym przekierowaniem chroni `withLocale`, które zostawia tylko ścieżkę i query.
+- Ograniczenie: proxy nie czyta bazy. Na urządzeniu, które już jest zalogowane, zmiana języka zrobiona na innym urządzeniu działa dla adresów bez prefiksu dopiero po kolejnym zalogowaniu albo przełączeniu na tym urządzeniu.
+- Strony publiczne mają `hreflang` dla każdego języka i `x-default` na adres bez prefiksu (zgodnie z D47; decyzja użytkownika). Adres bezwzględny z nagłówków żądania, więc produkcja i staging linkują do siebie.

@@ -1,8 +1,14 @@
 import type { Page } from "@playwright/test";
-import { PASSWORD_REQUIREMENTS } from "@/lib/credentials";
 import { restorePassword } from "./db";
 import { USERS } from "./env";
-import { expect, expectSignedOut, login, sidebarAction, test } from "./helpers";
+import {
+  expect,
+  expectSignedOut,
+  login,
+  PASSWORD_REQUIREMENT_TEXTS,
+  sidebarAction,
+  test,
+} from "./helpers";
 
 const NEW_PASSWORD = "Carol-new-password-678";
 
@@ -38,7 +44,7 @@ test("the dialog lists the password requirements at the new password field", asy
   await expect(page.getByLabel("Current password")).toBeFocused();
   const requirements = page.getByRole("dialog").getByRole("list");
   await expect(requirements.getByRole("listitem")).toHaveText(
-    PASSWORD_REQUIREMENTS,
+    PASSWORD_REQUIREMENT_TEXTS,
   );
   await expect(field).toHaveAccessibleDescription(/17-256 characters/);
 });
@@ -70,7 +76,7 @@ test("after the change only the new password signs in", async ({ page }) => {
 
   // The menu still responds after the dialog, and this session outlives the change.
   await page.reload();
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL("/en");
   await sidebarAction(page, "Log out");
   await expectSignedOut(page);
 
@@ -82,7 +88,7 @@ test("after the change only the new password signs in", async ({ page }) => {
   ).toBeVisible();
 
   await signIn(page, NEW_PASSWORD);
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL("/en");
 });
 
 test("closing the dialog clears what was typed", async ({ page }) => {

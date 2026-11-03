@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parse } from "yaml";
-import { GET } from "@/app/(protected)/stories/[id]/export/route";
+import { GET } from "@/app/stories/[id]/export/route";
 import { requireUser } from "@/lib/auth/session";
 import { Story } from "@/lib/models/story";
 import { setupTestDb } from "./test-db";

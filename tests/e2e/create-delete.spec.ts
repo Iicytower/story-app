@@ -42,7 +42,7 @@ test("shows the duplicate title error in the modal", async ({ page }) => {
     "A story with this title already exists in this folder.",
   );
   await expect(dialog.getByLabel("Title")).toHaveValue("Taken");
-  await expect(page).toHaveURL("/stories");
+  await expect(page).toHaveURL("/en/stories");
 });
 
 test("shows the empty title error in the modal", async ({ page }) => {

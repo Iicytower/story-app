@@ -11,7 +11,6 @@ export function countCharacters(text: string): number {
 // Typical pace of reading aloud.
 const READ_ALOUD_WORDS_PER_MINUTE = 150;
 
-export function formatReadAloudTime(words: number): string {
-  const minutes = Math.ceil(words / READ_ALOUD_WORDS_PER_MINUTE);
-  return minutes === 1 ? "1 minute" : `${minutes} minutes`;
+export function readAloudMinutes(words: number): number {
+  return Math.ceil(words / READ_ALOUD_WORDS_PER_MINUTE);
 }

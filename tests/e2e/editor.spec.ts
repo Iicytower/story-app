@@ -131,7 +131,7 @@ test("deletes the story and returns to its folder", async ({ page }) => {
   const dialog = page.getByRole("alertdialog", { name: "Delete story?" });
   await dialog.getByRole("button", { name: "Delete" }).click();
 
-  await expect(page).toHaveURL(`/folders/${folderId}`);
+  await expect(page).toHaveURL(`/en/folders/${folderId}`);
   await expect(page.getByText("No chapters yet.")).toBeVisible();
   expect((await findStory("Doomed"))?.deletedAt).toBeInstanceOf(Date);
 });

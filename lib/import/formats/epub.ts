@@ -1,30 +1,31 @@
 import { strFromU8 } from "fflate";
+import { ENGLISH_DOCUMENT_LABELS } from "@/lib/i18n/english";
 import { DomUtils } from "htmlparser2";
 import {
   fromSections,
   ImportError,
   structureMarkdown,
   type ImportedFile,
+  type ChapterTitle,
 } from "../document";
 import { decodeText, unzip } from "../files";
 import { htmlToMarkdown } from "../html";
 import { parseXml } from "./xml";
 
-const INVALID = "This EPUB file could not be read.";
-
 export function readEpub(
   bytes: Uint8Array,
   fallbackTitle: string,
+  chapterTitle?: ChapterTitle,
 ): ImportedFile {
   const files = unzip(bytes);
   const container = files["META-INF/container.xml"];
-  if (!container) throw new ImportError(INVALID);
+  if (!container) throw new ImportError("importEpubInvalid");
   const [rootfile] = DomUtils.getElementsByTagName(
     "rootfile",
     parseXml(strFromU8(container)).children,
   );
   const opfPath = rootfile && DomUtils.getAttributeValue(rootfile, "full-path");
-  if (!opfPath || !files[opfPath]) throw new ImportError(INVALID);
+  if (!opfPath || !files[opfPath]) throw new ImportError("importEpubInvalid");
   const directory = opfPath.slice(0, opfPath.lastIndexOf("/") + 1);
 
   const opf = parseXml(decodeText(files[opfPath])).children;
@@ -56,8 +57,8 @@ export function readEpub(
       if (!markdown.trim()) return [];
       const { chapters, unsplit } = structureMarkdown(
         markdown,
-        `Chapter ${index + 1}`,
-        { shifted: true },
+        (chapterTitle ?? ENGLISH_DOCUMENT_LABELS.chapter)(index + 1),
+        { shifted: true, chapterTitle },
       );
       return [unsplit ?? chapters[0]];
     },

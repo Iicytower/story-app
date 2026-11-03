@@ -1,6 +1,7 @@
 "use client";
 
 import { FileDownIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import type { ExportSource } from "@/lib/export/document";
 import { EXPORT_FORMATS, type ExportFormatId } from "@/lib/export/formats";
+import { useDocumentLabels } from "@/lib/i18n/use-document-labels";
 import { safeFileName } from "@/lib/stories/export";
 
 function download(data: Uint8Array | string, name: string, mime: string) {
@@ -43,6 +45,8 @@ export function ExportDialog({
   const [separateFiles, setSeparateFiles] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const t = useTranslations("export");
+  const labels = useDocumentLabels();
 
   async function runExport() {
     const format = EXPORT_FORMATS.find(({ id }) => id === formatId)!;
@@ -55,7 +59,7 @@ export function ExportDialog({
       }
       const response = await fetch(dataUrl);
       if (!response.ok) {
-        setError("The export data could not be loaded.");
+        setError(t("loadFailed"));
         return;
       }
       const source: ExportSource = await response.json();
@@ -63,15 +67,20 @@ export function ExportDialog({
         await import("@/lib/export/build");
       const baseName = safeFileName(source.title, fallbackName);
       if (separateFiles) {
-        const zip = await buildChapterFilesZip(formatId, source, includeExtras);
+        const zip = await buildChapterFilesZip(
+          formatId,
+          source,
+          includeExtras,
+          labels,
+        );
         download(zip, `${baseName}.zip`, "application/zip");
       } else {
-        const data = await buildExport(formatId, source, includeExtras);
+        const data = await buildExport(formatId, source, includeExtras, labels);
         download(data, `${baseName}.${format.extension}`, format.mime);
       }
       setOpen(false);
     } catch {
-      setError("The file could not be created.");
+      setError(t("createFailed"));
     } finally {
       setPending(false);
     }
@@ -82,15 +91,15 @@ export function ExportDialog({
       <DialogTrigger asChild>
         <Button variant="outline">
           <FileDownIcon />
-          <span className="sr-only md:not-sr-only">Export as…</span>
+          <span className="sr-only md:not-sr-only">{t("exportAs")}</span>
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Export as</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-2">
-          <Label htmlFor="export-format">Format</Label>
+          <Label htmlFor="export-format">{t("format")}</Label>
           <select
             id="export-format"
             className="border-input bg-background h-9 rounded-md border px-2 text-sm"
@@ -99,9 +108,9 @@ export function ExportDialog({
               setFormatId(event.target.value as ExportFormatId)
             }
           >
-            {EXPORT_FORMATS.map(({ id, label }) => (
+            {EXPORT_FORMATS.map(({ id }) => (
               <option key={id} value={id}>
-                {label}
+                {t(`formats.${id}`)}
               </option>
             ))}
           </select>
@@ -112,7 +121,7 @@ export function ExportDialog({
             checked={includeExtras}
             onChange={(event) => setIncludeExtras(event.target.checked)}
           />
-          Include comments and notes
+          {t("includeExtras")}
         </Label>
         {chapterFiles && (
           <Label className="font-normal">
@@ -121,7 +130,7 @@ export function ExportDialog({
               checked={separateFiles}
               onChange={(event) => setSeparateFiles(event.target.checked)}
             />
-            One file per chapter (.zip)
+            {t("separateFiles")}
           </Label>
         )}
         {error && (
@@ -131,7 +140,7 @@ export function ExportDialog({
         )}
         <DialogFooter>
           <Button onClick={runExport} disabled={pending}>
-            {pending ? "Exporting…" : "Export"}
+            {pending ? t("exporting") : t("export")}
           </Button>
         </DialogFooter>
       </DialogContent>

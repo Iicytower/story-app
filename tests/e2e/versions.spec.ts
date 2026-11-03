@@ -85,7 +85,7 @@ test("saves a named version, compares it and restores one, then two chapters", a
     "rewritten",
   );
 
-  const folderUrl = `/folders/${folderId}`;
+  const folderUrl = `/en/folders/${folderId}`;
   const restore = page.getByRole("button", { name: "Restore selected" });
   await expect(restore).toBeDisabled();
   await page.getByRole("checkbox", { name: "A", exact: true }).check();
@@ -136,7 +136,7 @@ test("selects all chapters with one checkbox", async ({ page }) => {
   ).toBeChecked();
   await page.getByRole("button", { name: "Restore selected" }).click();
 
-  await expect(page).toHaveURL(`/folders/${folderId}`);
+  await expect(page).toHaveURL(`/en/folders/${folderId}`);
   for (const [i, id] of ids.entries()) {
     expect((await findStoryById(id))?.content).toBe(`${"AB"[i]} content`);
   }
@@ -164,7 +164,7 @@ test("an open editor gets a conflict after its chapter is restored", async ({
     .click();
   await other.getByRole("checkbox", { name: "A", exact: true }).check();
   await other.getByRole("button", { name: "Restore selected" }).click();
-  await expect(other).toHaveURL(`/folders/${folderId}`);
+  await expect(other).toHaveURL(`/en/folders/${folderId}`);
 
   await content.fill("Typed in the open editor");
   await page.keyboard.press("Control+s");
@@ -204,7 +204,7 @@ test("restores the entire version after confirmation, removing chapters added si
   ]);
   await dialog.getByRole("button", { name: "Restore" }).click();
 
-  await expect(page).toHaveURL(`/folders/${folderId}`);
+  await expect(page).toHaveURL(`/en/folders/${folderId}`);
   await expect(
     page.getByRole("list", { name: "Chapters" }).getByRole("link"),
   ).toHaveText([/^B/, /^A/]);
@@ -236,7 +236,7 @@ test("removes a selected chapter added since", async ({ page }) => {
   ).toBeVisible();
   await page.getByRole("button", { name: "Restore selected" }).click();
 
-  await expect(page).toHaveURL(`/folders/${folderId}`);
+  await expect(page).toHaveURL(`/en/folders/${folderId}`);
   expect((await findStoryById(added))?.deletedAt).toBeInstanceOf(Date);
 });
 

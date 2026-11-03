@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { saveSettings } from "@/app/(protected)/actions";
+import { changeLocale, saveSettings } from "@/app/[locale]/(protected)/actions";
 import { requireUser } from "@/lib/auth/session";
 import { DEFAULT_LAYOUT } from "@/lib/editor-layout";
 import { Settings } from "@/lib/models/settings";
@@ -11,6 +11,8 @@ import { setupTestDb } from "./test-db";
 
 vi.mock("@/lib/auth/session", () => ({ requireUser: vi.fn() }));
 vi.mock("@/auth", () => ({ signOut: vi.fn() }));
+const setCookie = vi.fn();
+vi.mock("next/headers", () => ({ cookies: async () => ({ set: setCookie }) }));
 
 setupTestDb();
 
@@ -71,7 +73,7 @@ describe("saveSettings", () => {
     expect(await getUserSettings(alice.toString())).toEqual({
       ...DEFAULT_SETTINGS,
       editor: { layout, mobileView: "notes" },
-      appearance: { sidebarCollapsed: false, theme: "dark" },
+      appearance: { sidebarCollapsed: false, theme: "dark", locale: null },
     });
   });
 
@@ -108,6 +110,8 @@ describe("saveSettings", () => {
     for (const patch of [
       { appearance: { theme: "blue" } },
       { folders: { manualOrder: true } },
+      // Only through changeLocale, which also sets the cookie.
+      { appearance: { locale: "pl" } },
       "dark",
     ]) {
       expect(await saveSettings(patch)).toMatchObject({
@@ -148,5 +152,57 @@ describe("saveSettings", () => {
       },
     );
     expect(await Settings.countDocuments()).toBe(0);
+  });
+});
+
+describe("changeLocale", () => {
+  beforeEach(() => setCookie.mockReset());
+
+  it("saves the language and sets the cookie", async () => {
+    expect(await changeLocale("pl")).toEqual({ ok: true });
+
+    expect((await getUserSettings(alice.toString())).appearance.locale).toBe(
+      "pl",
+    );
+    expect(setCookie).toHaveBeenCalledWith(
+      "NEXT_LOCALE",
+      "pl",
+      expect.objectContaining({ path: "/", maxAge: 60 * 60 * 24 * 365 }),
+    );
+    expect((await getUserSettings(bob.toString())).appearance.locale).toBe(
+      null,
+    );
+  });
+
+  it.each(["de", "", null, 7, { locale: "pl" }])(
+    "rejects %j",
+    async (locale) => {
+      expect(await changeLocale(locale)).toMatchObject({
+        ok: false,
+        error: "INVALID_INPUT",
+      });
+      expect(await stored(alice)).toBeNull();
+      expect(setCookie).not.toHaveBeenCalled();
+    },
+  );
+
+  it("ignores an unknown stored language", async () => {
+    await Settings.collection.insertOne({
+      userId: alice,
+      appearance: { locale: "xx" },
+    });
+    expect((await getUserSettings(alice.toString())).appearance.locale).toBe(
+      null,
+    );
+  });
+
+  it("requires a session", async () => {
+    vi.mocked(requireUser).mockResolvedValue({
+      ok: false,
+      error: "UNAUTHORIZED",
+      message: "Your session has expired. Please sign in again.",
+    });
+    expect(await changeLocale("pl")).toMatchObject({ error: "UNAUTHORIZED" });
+    expect(setCookie).not.toHaveBeenCalled();
   });
 });
