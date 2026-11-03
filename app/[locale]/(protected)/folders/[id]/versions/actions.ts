@@ -2,9 +2,11 @@
 
 import { isObjectIdOrHexString, type Types } from "mongoose";
 import { refresh } from "next/cache";
-import type { ActionError, ActionResult } from "@/lib/action-result";
+import { getTranslations } from "next-intl/server";
+import type { ActionResult, ValidationError } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import { connectDB } from "@/lib/db";
+import { actionError, translateError } from "@/lib/i18n/action-error";
 import { Folder } from "@/lib/models/folder";
 import {
   FolderVersion,
@@ -17,22 +19,11 @@ import {
   restore,
   saveVersion,
 } from "@/lib/versions/mutations";
-import {
-  beforeRestoreName,
-  validateVersionName,
-} from "@/lib/versions/versions";
+import { validateVersionName } from "@/lib/versions/versions";
 
-const FOLDER_NOT_FOUND: ActionError = {
-  ok: false,
-  error: "NOT_FOUND",
-  message: "This folder does not exist or has been deleted.",
-};
+const FOLDER_NOT_FOUND = () => actionError("NOT_FOUND", "folderNotFound");
 
-const NOT_FOUND: ActionError = {
-  ok: false,
-  error: "NOT_FOUND",
-  message: "This version does not exist or has been deleted.",
-};
+const NOT_FOUND = () => actionError("NOT_FOUND", "versionNotFound");
 
 const isVersionNumber = (number: unknown): number is number =>
   Number.isInteger(number) && (number as number) > 0;
@@ -46,29 +37,29 @@ export async function createFolderVersion(
 ): Promise<ActionResult<{ number: number }>> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(folderId)) return FOLDER_NOT_FOUND;
+  if (!isObjectIdOrHexString(folderId)) return FOLDER_NOT_FOUND();
   const valid = validateVersionName(name);
-  if (!valid.ok) return valid;
+  if (!valid.ok) return translateError(valid);
 
   await connectDB();
   const number = await saveVersion(user.userId, folderId, valid.name);
-  if (number === null) return FOLDER_NOT_FOUND;
+  if (number === null) return FOLDER_NOT_FOUND();
 
   refresh();
   return { ok: true, number };
 }
 
-const INVALID_SELECTION: ActionError = {
+const INVALID_SELECTION: ValidationError = {
   ok: false,
   error: "INVALID_INPUT",
-  message: "The folder has changed. Reload the page and select chapters again.",
+  key: "selectionChanged",
 };
 
 // What to restore, from the version and the folder's current chapter ids.
 type Plan = (
   version: Pick<FolderVersionFields, "chapterSort" | "chapters">,
   current: Types.ObjectId[],
-) => Restore | ActionError;
+) => Restore | ValidationError;
 
 // Saves the folder as a new version first, so the restore can be undone.
 async function restoreVersion(
@@ -78,11 +69,11 @@ async function restoreVersion(
 ): Promise<ActionResult<{ savedNumber: number }>> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(folderId)) return FOLDER_NOT_FOUND;
-  if (!isVersionNumber(number)) return NOT_FOUND;
+  if (!isObjectIdOrHexString(folderId)) return FOLDER_NOT_FOUND();
+  if (!isVersionNumber(number)) return NOT_FOUND();
 
   await connectDB();
-  if (!(await activeFolder(user.userId, folderId))) return FOLDER_NOT_FOUND;
+  if (!(await activeFolder(user.userId, folderId))) return FOLDER_NOT_FOUND();
   const version = await FolderVersion.findOne({
     userId: user.userId,
     folderId,
@@ -90,21 +81,21 @@ async function restoreVersion(
   })
     .select({ chapterSort: 1, chapters: 1 })
     .lean();
-  if (!version) return NOT_FOUND;
+  if (!version) return NOT_FOUND();
   const current = await Story.find({
     userId: user.userId,
     folderId,
     deletedAt: null,
   }).distinct("_id");
   const changes = plan(version, current);
-  if ("ok" in changes) return changes;
+  if ("ok" in changes) return translateError(changes);
 
   const savedNumber = await saveVersion(
     user.userId,
     folderId,
-    beforeRestoreName(number),
+    (await getTranslations("versions"))("beforeRestore", { number }),
   );
-  if (savedNumber === null) return FOLDER_NOT_FOUND;
+  if (savedNumber === null) return FOLDER_NOT_FOUND();
   await restore(user.userId, folderId, changes);
 
   refresh();
@@ -145,11 +136,7 @@ export async function restoreFolderVersion(
       (id) => toRemove.has(id.toString()) && !saved.has(id.toString()),
     );
     if (chapters.length + remove.length === 0) {
-      return {
-        ok: false,
-        error: "INVALID_INPUT",
-        message: "Select chapters to restore or remove.",
-      };
+      return { ok: false, error: "INVALID_INPUT", key: "selectChapters" };
     }
     if (chapters.length !== requested.size || remove.length !== toRemove.size) {
       return INVALID_SELECTION;
@@ -164,12 +151,12 @@ export async function deleteFolderVersion(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(folderId)) return FOLDER_NOT_FOUND;
-  if (!isVersionNumber(number)) return NOT_FOUND;
+  if (!isObjectIdOrHexString(folderId)) return FOLDER_NOT_FOUND();
+  if (!isVersionNumber(number)) return NOT_FOUND();
 
   await connectDB();
-  if (!(await activeFolder(user.userId, folderId))) return FOLDER_NOT_FOUND;
-  if (!(await deleteVersion(user.userId, folderId, number))) return NOT_FOUND;
+  if (!(await activeFolder(user.userId, folderId))) return FOLDER_NOT_FOUND();
+  if (!(await deleteVersion(user.userId, folderId, number))) return NOT_FOUND();
 
   refresh();
   return { ok: true };

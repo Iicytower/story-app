@@ -2,9 +2,11 @@
 
 import { isObjectIdOrHexString, Types } from "mongoose";
 import { refresh } from "next/cache";
-import type { ActionError, ActionResult } from "@/lib/action-result";
+import type { ActionResult, ValidationError } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import { connectDB, isDuplicateKeyError } from "@/lib/db";
+import { actionError, translateError } from "@/lib/i18n/action-error";
+import type { ErrorKey, ErrorValues } from "@/lib/i18n/messages";
 import {
   findOrCreateFolder,
   moveInList,
@@ -33,27 +35,15 @@ import { chapterPublicPath } from "@/lib/publish/queries";
 import {
   exceedsTagLimit,
   normalizeTags,
-  TAG_LIMIT_MESSAGE,
+  TAG_LIMIT_ERROR,
 } from "@/lib/tags/tags";
 import { numberedTitle } from "@/lib/versions/versions";
 
-const NOT_FOUND: ActionError = {
-  ok: false,
-  error: "NOT_FOUND",
-  message: "This story does not exist or has been deleted.",
-};
+const NOT_FOUND = () => actionError("NOT_FOUND", "storyNotFound");
 
-const FOLDER_NOT_FOUND: ActionError = {
-  ok: false,
-  error: "NOT_FOUND",
-  message: "This folder does not exist or has been deleted.",
-};
+const FOLDER_NOT_FOUND = () => actionError("NOT_FOUND", "folderNotFound");
 
-const DUPLICATE_TITLE: ActionError = {
-  ok: false,
-  error: "DUPLICATE_TITLE",
-  message: "A story with this title already exists in this folder.",
-};
+const DUPLICATE_TITLE = () => actionError("DUPLICATE_TITLE", "duplicateTitle");
 
 // The folder is picked by name; a name the user has no folder for creates one.
 export async function createStory(
@@ -66,11 +56,11 @@ export async function createStory(
   // Both checked before the folder is created, so a rejected story leaves no empty folder behind.
   const trimmed = title.trim();
   if (!trimmed) {
-    return { ok: false, error: "EMPTY_TITLE", message: "Title is required." };
+    return actionError("EMPTY_TITLE", "titleRequired");
   }
   const trimmedFolder = folderName.trim();
   if (!trimmedFolder) {
-    return { ok: false, error: "EMPTY_NAME", message: "Folder is required." };
+    return actionError("EMPTY_NAME", "folderRequired");
   }
 
   await connectDB();
@@ -86,7 +76,7 @@ export async function createStory(
     await touchFolder(folderId);
     return { ok: true, id: story._id.toString() };
   } catch (error) {
-    if (isDuplicateKeyError(error)) return DUPLICATE_TITLE;
+    if (isDuplicateKeyError(error)) return DUPLICATE_TITLE();
     throw error;
   }
 }
@@ -99,15 +89,15 @@ export type ImportTarget =
   // Always a new folder, with " (2)" when the name is taken.
   | { kind: "new"; name: string };
 
-function invalidImport(message: string): ActionError {
-  return { ok: false, error: "INVALID_INPUT", message };
+function invalidImport(key: ErrorKey, values?: ErrorValues): ValidationError {
+  return { ok: false, error: "INVALID_INPUT", key, values };
 }
 
 // The browser parses the file, so nothing here can be taken from it on trust.
 function checkImport(
   chapters: ImportedChapter[],
   folderNotes: string,
-): ActionError | null {
+): ValidationError | null {
   const isText = (value: unknown) => typeof value === "string";
   const valid =
     Array.isArray(chapters) &&
@@ -119,27 +109,21 @@ function checkImport(
         isText(chapter?.notes),
     );
   if (!valid || chapters.length === 0) {
-    return invalidImport("There is nothing to import.");
+    return invalidImport("nothingToImport");
   }
   if (chapters.length > MAX_IMPORT_CHAPTERS) {
-    return invalidImport(
-      `A file can have at most ${MAX_IMPORT_CHAPTERS} chapters.`,
-    );
+    return invalidImport("importTooManyChapters", { max: MAX_IMPORT_CHAPTERS });
   }
   if (chapters.some(({ title }) => !title.trim())) {
-    return { ok: false, error: "EMPTY_TITLE", message: "Title is required." };
+    return { ok: false, error: "EMPTY_TITLE", key: "titleRequired" };
   }
   if (chapters.some(({ title }) => title.length > MAX_IMPORT_TITLE_LENGTH)) {
-    return invalidImport(
-      `A title can have at most ${MAX_IMPORT_TITLE_LENGTH} characters.`,
-    );
+    return invalidImport("importTitleTooLong", {
+      max: MAX_IMPORT_TITLE_LENGTH,
+    });
   }
   if (importTextBytes(chapters, folderNotes) > MAX_IMPORT_TEXT_BYTES) {
-    return {
-      ok: false,
-      error: "TOO_LARGE",
-      message: "This text is too large to import.",
-    };
+    return { ok: false, error: "TOO_LARGE", key: "importTooLarge" };
   }
   return null;
 }
@@ -218,24 +202,24 @@ export async function importStories(
   const user = await requireUser();
   if (!user.ok) return user;
   const problem = checkImport(chapters, folderNotes);
-  if (problem) return problem;
+  if (problem) return translateError(problem);
 
   await connectDB();
   let folderId: Types.ObjectId;
   let notesToAppend = folderNotes.trim();
   if (target?.kind === "folder") {
-    if (!isObjectIdOrHexString(target.id)) return FOLDER_NOT_FOUND;
+    if (!isObjectIdOrHexString(target.id)) return FOLDER_NOT_FOUND();
     const folder = await Folder.exists({
       _id: target.id,
       userId: user.userId,
       deletedAt: null,
     });
-    if (!folder) return FOLDER_NOT_FOUND;
+    if (!folder) return FOLDER_NOT_FOUND();
     folderId = folder._id;
   } else {
     const name = typeof target?.name === "string" ? target.name.trim() : "";
     if (!name) {
-      return { ok: false, error: "EMPTY_NAME", message: "Folder is required." };
+      return actionError("EMPTY_NAME", "folderRequired");
     }
     if (target.kind === "new") {
       folderId = await createNumberedFolder(user.userId, name, notesToAppend);
@@ -249,7 +233,7 @@ export async function importStories(
   try {
     ids = await insertChapters(user.userId, folderId, chapters);
   } catch (error) {
-    if (isDuplicateKeyError(error)) return DUPLICATE_TITLE;
+    if (isDuplicateKeyError(error)) return DUPLICATE_TITLE();
     throw error;
   }
   if (notesToAppend) {
@@ -289,8 +273,8 @@ export async function moveStory(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
-  if (!isObjectIdOrHexString(folderId)) return FOLDER_NOT_FOUND;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isObjectIdOrHexString(folderId)) return FOLDER_NOT_FOUND();
 
   await connectDB();
   const folder = await Folder.findOne({
@@ -300,7 +284,7 @@ export async function moveStory(
   })
     .select({ tags: 1 })
     .lean();
-  if (!folder) return FOLDER_NOT_FOUND;
+  if (!folder) return FOLDER_NOT_FOUND();
   const story = await Story.findOne({
     _id: id,
     userId: user.userId,
@@ -308,9 +292,9 @@ export async function moveStory(
   })
     .select({ tags: 1 })
     .lean();
-  if (!story) return NOT_FOUND;
+  if (!story) return NOT_FOUND();
   if (exceedsTagLimit(story.tags, folder.tags)) {
-    return { ok: false, error: "INVALID_INPUT", message: TAG_LIMIT_MESSAGE };
+    return translateError(TAG_LIMIT_ERROR);
   }
   const arrival = await arrivalUpdate(folderId);
   try {
@@ -326,9 +310,9 @@ export async function moveStory(
       },
       { timestamps: false },
     );
-    if (matchedCount === 0) return NOT_FOUND;
+    if (matchedCount === 0) return NOT_FOUND();
   } catch (error) {
-    if (isDuplicateKeyError(error)) return DUPLICATE_TITLE;
+    if (isDuplicateKeyError(error)) return DUPLICATE_TITLE();
     throw error;
   }
   await touchFolder(folderId);
@@ -344,14 +328,14 @@ export async function setStoryTags(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
   const normalized = normalizeTags(tags);
-  if (!normalized.ok) return normalized;
+  if (!normalized.ok) return translateError(normalized);
 
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };
   const story = await Story.findOne(owned).select({ folderId: 1 }).lean();
-  if (!story) return NOT_FOUND;
+  if (!story) return NOT_FOUND();
   const folder = await Folder.findOne({
     _id: story.folderId,
     deletedAt: null,
@@ -359,14 +343,14 @@ export async function setStoryTags(
     .select({ tags: 1 })
     .lean();
   if (exceedsTagLimit(normalized.tags, folder?.tags)) {
-    return { ok: false, error: "INVALID_INPUT", message: TAG_LIMIT_MESSAGE };
+    return translateError(TAG_LIMIT_ERROR);
   }
   const { matchedCount } = await Story.updateOne(
     owned,
     { $set: { tags: normalized.tags } },
     { timestamps: false },
   );
-  if (matchedCount === 0) return NOT_FOUND;
+  if (matchedCount === 0) return NOT_FOUND();
 
   refresh();
   return { ok: true };
@@ -378,13 +362,9 @@ export async function reorderChapter(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
   if (!isDirection(direction)) {
-    return {
-      ok: false,
-      error: "INVALID_INPUT",
-      message: "This option is not available. Reload the page and try again.",
-    };
+    return actionError("INVALID_INPUT", "optionUnavailable");
   }
 
   await connectDB();
@@ -395,7 +375,7 @@ export async function reorderChapter(
   })
     .select({ folderId: 1 })
     .lean();
-  if (!story) return NOT_FOUND;
+  if (!story) return NOT_FOUND();
   const chapters = await findChaptersInOrder(
     user.userId,
     story.folderId.toString(),
@@ -412,14 +392,14 @@ export async function reorderChapter(
 export async function deleteStory(id: string): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
 
   await connectDB();
   const { matchedCount } = await Story.updateOne(
     { _id: id, userId: user.userId, deletedAt: null },
     { $set: { deletedAt: new Date() } },
   );
-  if (matchedCount === 0) return NOT_FOUND;
+  if (matchedCount === 0) return NOT_FOUND();
 
   refresh();
   return { ok: true };
@@ -434,11 +414,11 @@ export async function saveStory(
 ): Promise<ActionResult<{ updatedAt: string }>> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
 
   const trimmed = title.trim();
   if (!trimmed) {
-    return { ok: false, error: "EMPTY_TITLE", message: "Title is required." };
+    return actionError("EMPTY_TITLE", "titleRequired");
   }
 
   await connectDB();
@@ -469,26 +449,16 @@ export async function saveStory(
       return { ok: true, updatedAt: updatedAt.toISOString() };
     }
   } catch (error) {
-    if (isDuplicateKeyError(error)) return DUPLICATE_TITLE;
+    if (isDuplicateKeyError(error)) return DUPLICATE_TITLE();
     throw error;
   }
 
   const current = await Story.findOne(owned).select({ updatedAt: 1 }).lean();
-  if (!current) return NOT_FOUND;
+  if (!current) return NOT_FOUND();
   if (current.updatedAt.getTime() !== expected.getTime()) {
-    return {
-      ok: false,
-      error: "CONFLICT",
-      message:
-        "This story was changed in another tab or on another device. Reload the page to get the latest version.",
-    };
+    return actionError("CONFLICT", "storyConflict");
   }
-  return {
-    ok: false,
-    error: "EMPTY_CONTENT",
-    message:
-      "The story content cannot be cleared completely. Your changes were not saved.",
-  };
+  return actionError("EMPTY_CONTENT", "contentCleared");
 }
 
 // Publishing never touches updatedAt: an open editor sends it as expectedUpdatedAt on the next save.
@@ -498,12 +468,12 @@ export async function setChapterPublished(
 ): Promise<ActionResult<{ publicPath: string | null }>> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
 
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };
   const story = await Story.findOne(owned).select({ folderId: 1 }).lean();
-  if (!story) return NOT_FOUND;
+  if (!story) return NOT_FOUND();
   const folder = await Folder.findOne({
     _id: story.folderId,
     userId: user.userId,
@@ -511,7 +481,7 @@ export async function setChapterPublished(
   })
     .select({ published: 1 })
     .lean();
-  if (!folder) return NOT_FOUND;
+  if (!folder) return NOT_FOUND();
 
   if (!enabled) {
     await Story.updateOne(

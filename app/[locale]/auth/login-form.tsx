@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,12 +9,13 @@ import { login } from "./login-actions";
 
 export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
   const [state, formAction, pending] = useActionState(login, null);
+  const t = useTranslations("auth");
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="callbackUrl" value={callbackUrl} />
       <div className="flex flex-col gap-2">
-        <Label htmlFor="nickname">Nickname</Label>
+        <Label htmlFor="nickname">{t("nickname")}</Label>
         <Input
           id="nickname"
           name="nickname"
@@ -25,7 +27,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
         />
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password">{t("password")}</Label>
         <Input
           id="password"
           name="password"
@@ -40,7 +42,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
         </p>
       )}
       <Button type="submit" disabled={pending}>
-        {pending ? "Signing in…" : "Sign in"}
+        {pending ? t("signingIn") : t("signIn")}
       </Button>
     </form>
   );

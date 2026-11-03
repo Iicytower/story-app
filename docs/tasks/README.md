@@ -28,7 +28,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-01): najp
 | 42 | [Generator nazw](done/42-name-generator.md) | 27 | [x] |
 | 39 | [Publiczna wyszukiwarka](done/39-public-search.md) | 24, 37, 38 | [x] |
 | 43 | [Routing z prefiksem języka](done/43-locale-routing.md) | – | [x] |
-| 44 | [Słowniki tekstów interfejsu](44-ui-dictionaries.md) | 43 | [ ] |
+| 44 | [Słowniki tekstów interfejsu](done/44-ui-dictionaries.md) | 43 | [x] |
 | 45 | [Przełącznik języka i polski interfejs](45-polish-ui.md) | 44 | [ ] |
 | 26 | [Upload okładek](26-cover-upload.md) | – | [ ] |
 | 40 | [Wyświetlanie okładek](40-cover-display.md) | 26 | [ ] |
@@ -64,5 +64,5 @@ Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 
 - Kryteria akceptacji z pliku taska spełnione, a testy z sekcji „Testy” napisane i zielone (zasady: [`../testing.md`](../testing.md)).
 - `npm run verify` przechodzi.
-- Interfejs po angielsku.
+- Każdy nowy tekst interfejsu w słowniku `messages/en.json` (D46), bez literałów w komponentach i akcjach.
 - Status w tej tabeli zaktualizowany.

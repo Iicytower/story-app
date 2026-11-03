@@ -15,7 +15,6 @@ import { setupTestDb } from "./test-db";
 
 vi.mock("next/headers", () => ({ headers: vi.fn() }));
 vi.mock("@/i18n/navigation", () => ({ redirect: vi.fn() }));
-vi.mock("next-intl/server", () => ({ getLocale: async () => "en" }));
 vi.mock("@/auth", () => ({ signIn: vi.fn() }));
 
 // bcrypt takes seconds when every test file runs in parallel.

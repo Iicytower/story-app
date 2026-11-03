@@ -1,17 +1,12 @@
 import { auth } from "@/auth";
 import type { ActionError } from "@/lib/action-result";
+import { actionError } from "@/lib/i18n/action-error";
 
 export async function requireUser(): Promise<
   { ok: true; userId: string } | ActionError
 > {
   const session = await auth();
   const userId = session?.user?.id;
-  if (!userId) {
-    return {
-      ok: false,
-      error: "UNAUTHORIZED",
-      message: "Your session has expired. Please sign in again.",
-    };
-  }
+  if (!userId) return actionError("UNAUTHORIZED", "sessionExpired");
   return { ok: true, userId };
 }

@@ -7,6 +7,7 @@ import { hashPassword, verifyPassword } from "@/lib/accounts";
 import { requireUser } from "@/lib/auth/session";
 import { passwordError } from "@/lib/credentials";
 import { connectDB } from "@/lib/db";
+import { actionError } from "@/lib/i18n/action-error";
 import { User } from "@/lib/models/user";
 import { updateUserSettings } from "@/lib/settings/queries";
 import { parseSettingsPatch } from "@/lib/settings/settings";
@@ -21,11 +22,7 @@ export async function saveSettings(patch: unknown): Promise<ActionResult> {
   if (!user.ok) return user;
   const parsed = parseSettingsPatch(patch);
   if (!parsed) {
-    return {
-      ok: false,
-      error: "INVALID_INPUT",
-      message: "These settings are not valid.",
-    };
+    return actionError("INVALID_INPUT", "settingsInvalid");
   }
 
   await updateUserSettings(user.userId, parsed);
@@ -44,22 +41,14 @@ export async function changePassword(
     typeof newPassword !== "string" ||
     typeof repeatedPassword !== "string"
   ) {
-    return {
-      ok: false,
-      error: "INVALID_INPUT",
-      message: "These passwords are not valid.",
-    };
+    return actionError("INVALID_INPUT", "passwordsInvalid");
   }
   if (newPassword !== repeatedPassword) {
-    return {
-      ok: false,
-      error: "INVALID_INPUT",
-      message: "The new passwords do not match.",
-    };
+    return actionError("INVALID_INPUT", "newPasswordsDoNotMatch");
   }
   const weakness = passwordError(newPassword);
   if (weakness) {
-    return { ok: false, error: "INVALID_INPUT", message: weakness };
+    return actionError("INVALID_INPUT", weakness.key, weakness.values);
   }
 
   await connectDB();
@@ -68,11 +57,7 @@ export async function changePassword(
     !account ||
     !(await verifyPassword(currentPassword, account.passwordHash))
   ) {
-    return {
-      ok: false,
-      error: "INVALID_INPUT",
-      message: "The current password is incorrect.",
-    };
+    return actionError("INVALID_INPUT", "currentPasswordIncorrect");
   }
 
   await User.updateOne(

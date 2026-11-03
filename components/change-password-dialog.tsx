@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { changePassword } from "@/app/[locale]/(protected)/actions";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PASSWORD_REQUIREMENTS } from "@/lib/credentials";
+import {
+  PASSWORD_REQUIREMENT_VALUES,
+  PASSWORD_REQUIREMENTS,
+} from "@/lib/credentials";
 
 export function ChangePasswordDialog({
   open,
@@ -35,6 +39,9 @@ function ChangePasswordForm() {
   const [error, setError] = useState<string | null>(null);
   const [changed, setChanged] = useState(false);
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("changePassword");
+  const tCommon = useTranslations("common");
+  const tPassword = useTranslations("password");
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,14 +61,14 @@ function ChangePasswordForm() {
     return (
       <div className="flex flex-col gap-4">
         <DialogHeader>
-          <DialogTitle>Change password</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
         <p role="status" className="text-sm">
-          Your password has been changed.
+          {t("changed")}
         </p>
         <DialogFooter>
           <DialogClose asChild>
-            <Button>Close</Button>
+            <Button>{tCommon("close")}</Button>
           </DialogClose>
         </DialogFooter>
       </div>
@@ -71,10 +78,10 @@ function ChangePasswordForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <DialogHeader>
-        <DialogTitle>Change password</DialogTitle>
+        <DialogTitle>{t("title")}</DialogTitle>
       </DialogHeader>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="current-password">Current password</Label>
+        <Label htmlFor="current-password">{t("current")}</Label>
         <Input
           id="current-password"
           name="currentPassword"
@@ -84,7 +91,7 @@ function ChangePasswordForm() {
         />
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="new-password">New password</Label>
+        <Label htmlFor="new-password">{t("new")}</Label>
         <Input
           id="new-password"
           name="newPassword"
@@ -97,16 +104,21 @@ function ChangePasswordForm() {
           id="new-password-requirements"
           className="text-muted-foreground text-xs break-words"
         >
-          <p>The password must contain:</p>
+          <p>{tPassword("mustContain")}</p>
           <ul className="list-disc pl-4">
             {PASSWORD_REQUIREMENTS.map((requirement) => (
-              <li key={requirement}>{requirement}</li>
+              <li key={requirement}>
+                {tPassword(
+                  `requirements.${requirement}`,
+                  PASSWORD_REQUIREMENT_VALUES,
+                )}
+              </li>
             ))}
           </ul>
         </div>
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="repeated-password">Repeat new password</Label>
+        <Label htmlFor="repeated-password">{t("repeat")}</Label>
         <Input
           id="repeated-password"
           name="repeatedPassword"
@@ -123,11 +135,11 @@ function ChangePasswordForm() {
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline">
-            Cancel
+            {tCommon("cancel")}
           </Button>
         </DialogClose>
         <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : "Save"}
+          {pending ? tCommon("saving") : tCommon("save")}
         </Button>
       </DialogFooter>
     </form>

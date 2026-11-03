@@ -2,6 +2,7 @@
 
 import { FileUpIcon } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useDocumentLabels } from "@/lib/i18n/use-document-labels";
 import type { ImportedFile } from "@/lib/import/document";
 import {
   importTextBytes,
@@ -36,12 +38,13 @@ export function ImportDialog({
   folderId?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("import");
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">
           <FileUpIcon />
-          <span className="sr-only md:not-sr-only">Import…</span>
+          <span className="sr-only md:not-sr-only">{t("import")}</span>
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -76,6 +79,10 @@ function ImportForm({
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("import");
+  const tErrors = useTranslations("errors");
+  const tCommon = useTranslations("common");
+  const labels = useDocumentLabels();
 
   const chapters = !file
     ? []
@@ -90,14 +97,14 @@ function ImportForm({
     setError(null);
     if (!picked) return;
     if (picked.size > MAX_IMPORT_FILE_BYTES) {
-      setError("This file is larger than 50 MB.");
+      setError(tErrors("importFileTooLarge"));
       return;
     }
     setParsing(true);
     try {
       const { parseImportFile } = await import("@/lib/import/parse");
       const bytes = new Uint8Array(await picked.arrayBuffer());
-      const parsed = await parseImportFile(picked.name, bytes);
+      const parsed = await parseImportFile(picked.name, bytes, labels.chapter);
       setFile(parsed);
       setSplit(true);
       setTitle(
@@ -107,8 +114,8 @@ function ImportForm({
       const { ImportError } = await import("@/lib/import/document");
       setError(
         parseError instanceof ImportError
-          ? parseError.message
-          : "This file could not be read.",
+          ? tErrors(parseError.key, parseError.values)
+          : tErrors("importUnreadable"),
       );
     } finally {
       setParsing(false);
@@ -125,7 +132,7 @@ function ImportForm({
     if (!file) return;
     const named = single ? [{ ...chapters[0], title }] : chapters;
     if (importTextBytes(named, file.folderNotes) > MAX_IMPORT_TEXT_BYTES) {
-      setError("This text is too large to import.");
+      setError(tErrors("importTooLarge"));
       return;
     }
     const target: ImportTarget = folderId
@@ -139,7 +146,7 @@ function ImportForm({
         () => null,
       );
       if (!result) {
-        setError("This text could not be imported. It may be too large.");
+        setError(tErrors("importFailed"));
         return;
       }
       if (!result.ok) {
@@ -154,15 +161,19 @@ function ImportForm({
     });
   }
 
-  const titleLabel = single ? "Title" : folderId ? null : "New folder";
+  const titleLabel = single
+    ? t("storyTitle")
+    : folderId
+      ? null
+      : t("newFolder");
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <DialogHeader>
-        <DialogTitle>Import</DialogTitle>
+        <DialogTitle>{t("title")}</DialogTitle>
       </DialogHeader>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="import-file">File</Label>
+        <Label htmlFor="import-file">{t("file")}</Label>
         <Input
           id="import-file"
           type="file"
@@ -170,14 +181,12 @@ function ImportForm({
           onChange={handleFile}
         />
       </div>
-      {parsing && <p className="text-muted-foreground text-sm">Reading…</p>}
+      {parsing && (
+        <p className="text-muted-foreground text-sm">{t("reading")}</p>
+      )}
       {file && (
         <>
-          {file.lossy && (
-            <p className="text-sm">
-              Formatting cannot be kept: a PDF only gives back the text.
-            </p>
-          )}
+          {file.lossy && <p className="text-sm">{t("lossy")}</p>}
           {file.unsplit && (
             <Label className="font-normal">
               <input
@@ -185,18 +194,18 @@ function ImportForm({
                 checked={split}
                 onChange={(event) => handleSplit(event.target.checked)}
               />
-              Split into {file.chapters.length} chapters
+              {t("split", { count: file.chapters.length })}
             </Label>
           )}
           {!folderId && single && (
             <div className="flex flex-col gap-2">
-              <Label htmlFor="import-folder">Folder</Label>
+              <Label htmlFor="import-folder">{t("folder")}</Label>
               <Input
                 id="import-folder"
                 list="import-folders"
                 value={folder}
                 onChange={(event) => setFolder(event.target.value)}
-                placeholder="Choose or type a new folder"
+                placeholder={t("folderPlaceholder")}
                 autoComplete="off"
               />
               <datalist id="import-folders">
@@ -220,9 +229,11 @@ function ImportForm({
           )}
           {!single && (
             <div className="flex flex-col gap-1">
-              <p className="text-sm font-medium">{chapters.length} chapters</p>
+              <p className="text-sm font-medium">
+                {t("chapterCount", { count: chapters.length })}
+              </p>
               <ol
-                aria-label="Chapters to import"
+                aria-label={t("chapters")}
                 className="text-muted-foreground max-h-40 list-decimal overflow-y-auto pl-5 text-sm"
               >
                 {chapters.map((chapter, index) => (
@@ -241,11 +252,11 @@ function ImportForm({
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline">
-            Cancel
+            {tCommon("cancel")}
           </Button>
         </DialogClose>
         <Button type="submit" disabled={!file || pending}>
-          {pending ? "Importing…" : "Import"}
+          {pending ? t("importing") : t("submit")}
         </Button>
       </DialogFooter>
     </form>

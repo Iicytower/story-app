@@ -2,6 +2,7 @@
 
 import { RotateCcwIcon } from "lucide-react";
 import { Link, useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import {
   AlertDialog,
@@ -17,7 +18,6 @@ import {
 import { Button } from "@/components/ui/button";
 import type { ActionResult } from "@/lib/action-result";
 import {
-  type ChapterField,
   type ComparedChapter,
   restoreSummary,
   type VersionComparison,
@@ -27,28 +27,13 @@ import { TextDiff } from "./text-diff";
 
 type Status = ComparedChapter["status"] | "added";
 
-const STATUS_LABELS: Record<Status, string> = {
+// Shown next to a selected chapter (versions.effects); unchanged chapters have nothing to restore.
+const EFFECTS: Record<Status, Exclude<Status, "unchanged"> | null> = {
   changed: "changed",
-  unchanged: "unchanged",
-  deleted: "deleted since",
-  added: "added since",
-};
-
-// Shown next to a selected chapter.
-const EFFECTS: Record<Status, string | null> = {
-  changed: "will be reverted",
   unchanged: null,
-  deleted: "will come back",
-  added: "will be removed",
+  deleted: "deleted",
+  added: "added",
 };
-
-const FIELD_LABELS: Record<ChapterField, string> = {
-  title: "Title",
-  content: "Content",
-};
-
-const chapters = (count: number) =>
-  `${count} ${count === 1 ? "chapter" : "chapters"}`;
 
 export function RestoreForm({
   folderId,
@@ -60,6 +45,7 @@ export function RestoreForm({
   comparison: VersionComparison;
 }) {
   const router = useRouter();
+  const t = useTranslations("versions");
   const rows = [
     ...comparison.chapters.map((chapter) => ({
       id: chapter.storyId,
@@ -116,7 +102,7 @@ export function RestoreForm({
   return (
     <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
-        <h2 className="mr-auto font-medium">Chapters</h2>
+        <h2 className="mr-auto font-medium">{t("chapters")}</h2>
         {selectable.length > 0 && (
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -130,7 +116,7 @@ export function RestoreForm({
                 )
               }
             />
-            Select all
+            {t("selectAll")}
           </label>
         )}
         <Button
@@ -138,7 +124,7 @@ export function RestoreForm({
           onClick={restoreSelected}
           disabled={pending || selected.size === 0}
         >
-          Restore selected
+          {t("restoreSelected")}
         </Button>
         <RestoreEntireDialog
           comparison={comparison}
@@ -152,12 +138,10 @@ export function RestoreForm({
         </p>
       )}
       {rows.length === 0 ? (
-        <p className="text-muted-foreground">
-          This version has no chapters and the folder has none now.
-        </p>
+        <p className="text-muted-foreground">{t("emptyComparison")}</p>
       ) : (
         <ul
-          aria-label="Chapters in this version"
+          aria-label={t("chaptersInVersion")}
           className="flex flex-col divide-y rounded-lg border"
         >
           {rows.map((row) => {
@@ -184,22 +168,24 @@ export function RestoreForm({
                     )}
                   </label>
                   {effect && selected.has(row.id) && (
-                    <span className="text-sm font-medium">{effect}</span>
+                    <span className="text-sm font-medium">
+                      {t(`effects.${effect}`)}
+                    </span>
                   )}
                   <span className="text-muted-foreground text-sm">
-                    {STATUS_LABELS[row.status]}
+                    {t(`status.${row.status}`)}
                   </span>
                 </div>
                 {row.diffs.length > 0 && (
                   <details>
                     <summary className="text-muted-foreground cursor-pointer text-sm">
-                      Show changes
+                      {t("showChanges")}
                     </summary>
                     <div className="mt-2 flex flex-col gap-3">
                       {row.diffs.map(({ field, parts }) => (
                         <div key={field} className="flex flex-col gap-1">
                           <h3 className="text-sm font-medium">
-                            {FIELD_LABELS[field]}
+                            {t(`fields.${field}`)}
                           </h3>
                           <TextDiff parts={parts} />
                         </div>
@@ -212,9 +198,7 @@ export function RestoreForm({
           })}
         </ul>
       )}
-      <p className="text-muted-foreground text-sm">
-        Notes are not part of versions and stay as they are.
-      </p>
+      <p className="text-muted-foreground text-sm">{t("notesNotIncluded")}</p>
     </section>
   );
 }
@@ -228,12 +212,14 @@ function RestoreEntireDialog({
   pending: boolean;
   onConfirm: () => void;
 }) {
+  const t = useTranslations("versions");
+  const tCommon = useTranslations("common");
   const { reverted, returned, removed } = restoreSummary(comparison);
   const changes = [
-    reverted > 0 && `${chapters(reverted)} will be reverted.`,
-    returned > 0 && `${chapters(returned)} will come back.`,
-    removed > 0 && `${chapters(removed)} added since will be removed.`,
-    "The chapter order and sort mode will be restored.",
+    reverted > 0 && t("willRevert", { count: reverted }),
+    returned > 0 && t("willReturn", { count: returned }),
+    removed > 0 && t("willRemove", { count: removed }),
+    t("orderRestored"),
   ].filter(Boolean);
 
   return (
@@ -241,15 +227,14 @@ function RestoreEntireDialog({
       <AlertDialogTrigger asChild>
         <Button disabled={pending}>
           <RotateCcwIcon />
-          {pending ? "Restoring…" : "Restore entire version"}
+          {pending ? t("restoring") : t("restoreEntire")}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Restore entire version?</AlertDialogTitle>
+          <AlertDialogTitle>{t("restoreEntireTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
-            The folder will match this version. The current state is saved as a
-            new version first, so you can go back to it.
+            {t("restoreEntireDescription")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <ul className="list-disc pl-5 text-sm">
@@ -258,8 +243,10 @@ function RestoreEntireDialog({
           ))}
         </ul>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>Restore</AlertDialogAction>
+          <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm}>
+            {t("restore")}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

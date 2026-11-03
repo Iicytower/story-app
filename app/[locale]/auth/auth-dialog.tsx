@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,11 +22,12 @@ export function AuthDialog({
 }) {
   const [mode, setMode] = useState<"login" | "register">("login");
   const registering = mode === "register";
+  const t = useTranslations("auth");
 
   return (
     <Dialog defaultOpen={defaultOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Log in / Create account</Button>
+        <Button variant="outline">{t("openDialog")}</Button>
       </DialogTrigger>
       <DialogContent
         aria-describedby={undefined}
@@ -33,7 +35,7 @@ export function AuthDialog({
       >
         <DialogHeader>
           <DialogTitle>
-            {registering ? "Create account" : "Sign in"}
+            {registering ? t("createAccount") : t("signIn")}
           </DialogTitle>
         </DialogHeader>
         {registering ? (
@@ -42,13 +44,13 @@ export function AuthDialog({
           <LoginForm callbackUrl={callbackUrl} />
         )}
         <p className="text-muted-foreground text-sm">
-          {registering ? "Already have an account? " : "No account? "}
+          {registering ? t("haveAccount") : t("noAccount")}
           <button
             type="button"
             className="underline"
             onClick={() => setMode(registering ? "login" : "register")}
           >
-            {registering ? "Sign in" : "Create one"}
+            {registering ? t("signIn") : t("createOne")}
           </button>
         </p>
       </DialogContent>

@@ -1,7 +1,12 @@
 import { strFromU8 } from "fflate";
 import { DomUtils } from "htmlparser2";
 import { escapeXml } from "@/lib/export/formats/xml";
-import { ImportError, structureMarkdown, type ImportedFile } from "../document";
+import {
+  ImportError,
+  structureMarkdown,
+  type ImportedFile,
+  type ChapterTitle,
+} from "../document";
 import { unzip } from "../files";
 import { htmlToMarkdown } from "../html";
 import { nodesToHtml, parseXml, type XmlElement, type XmlNode } from "./xml";
@@ -105,18 +110,19 @@ function converter(styles: Styles) {
 export function readOdt(
   bytes: Uint8Array,
   fallbackTitle: string,
+  chapterTitle?: ChapterTitle,
 ): ImportedFile {
   const content = unzip(bytes)["content.xml"];
-  if (!content)
-    throw new ImportError("This OpenDocument file could not be read.");
+  if (!content) throw new ImportError("importOdtInvalid");
   const nodes = parseXml(strFromU8(content)).children;
   const [text] = DomUtils.getElementsByTagName("office:text", nodes);
-  if (!text) throw new ImportError("This OpenDocument file could not be read.");
+  if (!text) throw new ImportError("importOdtInvalid");
   const html = nodesToHtml(
     DomUtils.getChildren(text),
     converter(readStyles(nodes)),
   );
   return structureMarkdown(htmlToMarkdown(html), fallbackTitle, {
     shifted: true,
+    chapterTitle,
   });
 }

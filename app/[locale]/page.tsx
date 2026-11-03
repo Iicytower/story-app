@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import { AppShell } from "@/components/app-shell";
 import { AuthDialog } from "./auth/auth-dialog";
 import { PublicSearch } from "./public-search";
 
-export const metadata: Metadata = { title: "Search stories – Story App" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return { title: t("search") };
+}
 
 export default async function HomePage({
   params,

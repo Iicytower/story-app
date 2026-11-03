@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countCharacters, countWords, formatReadAloudTime } from "./count";
+import { countCharacters, countWords, readAloudMinutes } from "./count";
 
 describe("countWords", () => {
   it("returns 0 for empty and whitespace-only text", () => {
@@ -38,18 +38,18 @@ describe("countCharacters", () => {
   });
 });
 
-describe("formatReadAloudTime", () => {
+describe("readAloudMinutes", () => {
   it("returns 0 minutes for no words", () => {
-    expect(formatReadAloudTime(0)).toBe("0 minutes");
+    expect(readAloudMinutes(0)).toBe(0);
   });
 
   it("rounds a partial minute up", () => {
-    expect(formatReadAloudTime(1)).toBe("1 minute");
-    expect(formatReadAloudTime(150)).toBe("1 minute");
-    expect(formatReadAloudTime(151)).toBe("2 minutes");
+    expect(readAloudMinutes(1)).toBe(1);
+    expect(readAloudMinutes(150)).toBe(1);
+    expect(readAloudMinutes(151)).toBe(2);
   });
 
   it("uses 150 words per minute", () => {
-    expect(formatReadAloudTime(750)).toBe("5 minutes");
+    expect(readAloudMinutes(750)).toBe(5);
   });
 });

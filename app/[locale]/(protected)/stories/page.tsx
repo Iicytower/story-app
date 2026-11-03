@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Form from "next/form";
+import { getTranslations } from "next-intl/server";
 import { getPathname, Link, redirect } from "@/i18n/navigation";
 import { getLocale } from "next-intl/server";
 import { LocalDate } from "@/components/local-date";
@@ -19,13 +20,10 @@ import { CreateStoryDialog } from "./create-story-dialog";
 import { DeleteStoryButton } from "./delete-story-button";
 import { ImportDialog } from "./import-dialog";
 
-const SORT_OPTIONS = [
-  { value: "updated", label: "Last updated" },
-  { value: "manual", label: "Manual" },
-  { value: "alpha", label: "A–Z" },
-];
-
-export const metadata: Metadata = { title: "Stories – Story App" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return { title: t("stories") };
+}
 
 export default async function StoriesPage({
   searchParams,
@@ -55,14 +53,20 @@ export default async function StoriesPage({
     href: "/stories",
     locale: await getLocale(),
   });
+  const t = await getTranslations("folders");
+  const sortOptions = [
+    { value: "updated", label: t("sortUpdated") },
+    { value: "manual", label: t("sortManual") },
+    { value: "alpha", label: t("sortAlpha") },
+  ];
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
       <div className="flex items-center gap-2">
-        <h1 className="mr-auto text-2xl font-semibold">Folders</h1>
+        <h1 className="mr-auto text-2xl font-semibold">{t("title")}</h1>
         <SortSelect
-          label="Sort folders"
+          label={t("sortFolders")}
           value={sort}
-          options={SORT_OPTIONS}
+          options={sortOptions}
           action={setFolderSort}
         />
         <CreateFolderDialog />
@@ -81,15 +85,15 @@ export default async function StoriesPage({
           name="q"
           type="search"
           defaultValue={query}
-          placeholder="Search title and content in all folders, press Enter"
-          aria-label="Search stories"
+          placeholder={t("searchPlaceholder")}
+          aria-label={t("searchLabel")}
         />
         {selectedTags.map((selected) => (
           <input key={selected} type="hidden" name="tag" value={selected} />
         ))}
       </Form>
       {filterTags.length > 0 && (
-        <nav aria-label="Filter by tag" className="flex flex-wrap gap-1">
+        <nav aria-label={t("filterByTag")} className="flex flex-wrap gap-1">
           {filterTags.map((filterTag) => {
             const active = selectedTags.includes(filterTag);
             return (
@@ -112,12 +116,10 @@ export default async function StoriesPage({
       {query || selectedTags.length > 0 ? (
         <SearchResults userId={user.userId} query={query} tags={selectedTags} />
       ) : folders.length === 0 ? (
-        <p className="text-muted-foreground">
-          No folders yet. Create a folder or a new story.
-        </p>
+        <p className="text-muted-foreground">{t("empty")}</p>
       ) : (
         <ul
-          aria-label="Folders"
+          aria-label={t("listLabel")}
           className="flex flex-col divide-y rounded-lg border"
         >
           {folders.map((folder, index) => (
@@ -131,8 +133,7 @@ export default async function StoriesPage({
                   <TagChips tags={folder.tags} />
                 </span>
                 <span className="text-muted-foreground text-sm">
-                  {folder.chapterCount}{" "}
-                  {folder.chapterCount === 1 ? "chapter" : "chapters"}
+                  {t("chapterCount", { count: folder.chapterCount })}
                 </span>
                 <span className="text-muted-foreground w-28 text-right text-sm">
                   <LocalDate iso={folder.lastActivityAt} />
@@ -164,18 +165,21 @@ async function SearchResults({
   tags: string[];
 }) {
   const stories = await listStories(userId, query, tags);
+  const t = await getTranslations("folders");
   if (stories.length === 0) {
     return (
       <p className="text-muted-foreground">
-        {query
-          ? `No stories match "${query}"${tags.length > 0 ? " with the selected tags" : ""}.`
-          : "No stories have the selected tags."}
+        {!query
+          ? t("noTagMatch")
+          : tags.length > 0
+            ? t("noMatchWithTags", { query })
+            : t("noMatch", { query })}
       </p>
     );
   }
   return (
     <ul
-      aria-label="Search results"
+      aria-label={t("results")}
       className="flex flex-col divide-y rounded-lg border"
     >
       {stories.map((story) => {
@@ -189,7 +193,7 @@ async function SearchResults({
               <span className="flex items-baseline gap-2">
                 <span className="font-medium">{story.title}</span>
                 <span className="text-muted-foreground text-xs">
-                  in {story.folderName}
+                  {t("inFolder", { folder: story.folderName })}
                 </span>
               </span>
               <span className="text-muted-foreground line-clamp-2 text-sm">

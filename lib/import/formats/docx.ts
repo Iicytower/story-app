@@ -1,5 +1,9 @@
 import mammoth from "mammoth";
-import { structureMarkdown, type ImportedFile } from "../document";
+import {
+  structureMarkdown,
+  type ImportedFile,
+  type ChapterTitle,
+} from "../document";
 import { assertUnpackedSize } from "../files";
 import { htmlToMarkdown } from "../html";
 
@@ -16,6 +20,7 @@ const STYLE_MAP = [
 export async function readDocx(
   bytes: Uint8Array,
   fallbackTitle: string,
+  chapterTitle?: ChapterTitle,
 ): Promise<ImportedFile> {
   assertUnpackedSize(bytes);
   const { value } = await mammoth.convertToHtml(
@@ -27,5 +32,6 @@ export async function readDocx(
   );
   return structureMarkdown(htmlToMarkdown(value), fallbackTitle, {
     shifted: true,
+    chapterTitle,
   });
 }

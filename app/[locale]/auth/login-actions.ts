@@ -5,6 +5,7 @@ import { getLocale } from "next-intl/server";
 import { signIn } from "@/auth";
 import type { ActionError } from "@/lib/action-result";
 import { LoginRateLimited } from "@/lib/auth/authorize";
+import { actionError } from "@/lib/i18n/action-error";
 
 export async function login(
   _previous: ActionError | null,
@@ -19,18 +20,10 @@ export async function login(
     });
   } catch (error) {
     if (error instanceof LoginRateLimited) {
-      return {
-        ok: false,
-        error: "RATE_LIMITED",
-        message: "Too many attempts. Try again in a few minutes.",
-      };
+      return actionError("RATE_LIMITED", "tooManyAttempts");
     }
     if (error instanceof AuthError) {
-      return {
-        ok: false,
-        error: "UNAUTHORIZED",
-        message: "Invalid nickname or password.",
-      };
+      return actionError("UNAUTHORIZED", "invalidCredentials");
     }
     // signIn signals success by throwing Next.js's redirect, which must propagate.
     throw error;

@@ -1,10 +1,11 @@
-import type { ActionError } from "@/lib/action-result";
+import type { ValidationError } from "@/lib/action-result";
+import type { ErrorMessage } from "@/lib/i18n/messages";
 
 export const MAX_TAG_LENGTH = 30;
 export const MAX_TAGS = 10;
 
-function invalid(message: string): ActionError {
-  return { ok: false, error: "INVALID_INPUT", message };
+function invalid(message: ErrorMessage): ValidationError {
+  return { ok: false, error: "INVALID_INPUT", ...message };
 }
 
 export function normalizeTag(tag: string): string {
@@ -18,16 +19,16 @@ function normalizeAll(tags: string[]): string[] {
 // Tags come from the client, so nothing here can be taken on trust.
 export function normalizeTags(
   input: unknown,
-): { ok: true; tags: string[] } | ActionError {
+): { ok: true; tags: string[] } | ValidationError {
   if (!Array.isArray(input) || !input.every((tag) => typeof tag === "string")) {
-    return invalid("These tags are not valid.");
+    return invalid({ key: "tagsInvalid" });
   }
   const tags = normalizeAll(input);
   if (tags.some((tag) => tag.length > MAX_TAG_LENGTH)) {
-    return invalid(`A tag can have at most ${MAX_TAG_LENGTH} characters.`);
+    return invalid({ key: "tagTooLong", values: { max: MAX_TAG_LENGTH } });
   }
   if (tags.length > MAX_TAGS) {
-    return invalid(`You can use at most ${MAX_TAGS} tags.`);
+    return invalid({ key: "tooManyTags", values: { max: MAX_TAGS } });
   }
   return { ok: true, tags };
 }
@@ -55,7 +56,12 @@ export function exceedsTagLimit(
   return own.length + inheritedOnly(own, folderTags).length > MAX_TAGS;
 }
 
-export const TAG_LIMIT_MESSAGE = `A chapter can have at most ${MAX_TAGS} tags, counting the ones from its folder.`;
+export const TAG_LIMIT_ERROR: ValidationError = {
+  ok: false,
+  error: "INVALID_INPUT",
+  key: "chapterTagLimit",
+  values: { max: MAX_TAGS },
+};
 
 export function tagFilterHref(
   query: string,

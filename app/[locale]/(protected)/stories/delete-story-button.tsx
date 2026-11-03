@@ -1,6 +1,7 @@
 "use client";
 
 import { Trash2Icon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import {
   AlertDialog,
@@ -28,6 +29,8 @@ export function DeleteStoryButton({
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("stories");
+  const tCommon = useTranslations("common");
 
   function handleOpenChange(next: boolean) {
     setOpen(next);
@@ -51,15 +54,15 @@ export function DeleteStoryButton({
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={`Delete ${title}`}>
+        <Button variant="ghost" size="icon" aria-label={t("delete", { title })}>
           <Trash2Icon />
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete story?</AlertDialogTitle>
+          <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
-            &ldquo;{title}&rdquo; will be removed from your stories.
+            {t("deleteDescription", { title })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         {error && (
@@ -68,13 +71,13 @@ export function DeleteStoryButton({
           </p>
         )}
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
             disabled={pending}
             onClick={handleDelete}
           >
-            {pending ? "Deleting…" : "Delete"}
+            {pending ? tCommon("deleting") : tCommon("delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

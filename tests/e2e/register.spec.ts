@@ -1,7 +1,6 @@
 import type { Page } from "@playwright/test";
-import { PASSWORD_REQUIREMENTS } from "@/lib/credentials";
 import { USERS } from "./env";
-import { expect, test } from "./helpers";
+import { expect, PASSWORD_REQUIREMENT_TEXTS, test } from "./helpers";
 
 const PASSWORD = "Dave-password-123456";
 
@@ -51,16 +50,20 @@ test("requirements update live, one by one", async ({ page }) => {
   const list = page.getByRole("list", { name: "Password requirements" });
   const items = list.getByRole("listitem");
   await expect(items).toHaveText(
-    PASSWORD_REQUIREMENTS.map((requirement) => `Missing: ${requirement}`),
+    PASSWORD_REQUIREMENT_TEXTS.map((requirement) => `Missing: ${requirement}`),
   );
 
   await page.getByLabel("Password", { exact: true }).fill("abc");
-  await expect(items.nth(1)).toHaveText(`Met: ${PASSWORD_REQUIREMENTS[1]}`);
-  await expect(items.nth(2)).toHaveText(`Missing: ${PASSWORD_REQUIREMENTS[2]}`);
+  await expect(items.nth(1)).toHaveText(
+    `Met: ${PASSWORD_REQUIREMENT_TEXTS[1]}`,
+  );
+  await expect(items.nth(2)).toHaveText(
+    `Missing: ${PASSWORD_REQUIREMENT_TEXTS[2]}`,
+  );
 
   await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await expect(items).toHaveText(
-    PASSWORD_REQUIREMENTS.map((requirement) => `Met: ${requirement}`),
+    PASSWORD_REQUIREMENT_TEXTS.map((requirement) => `Met: ${requirement}`),
   );
 });
 

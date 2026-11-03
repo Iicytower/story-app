@@ -1,11 +1,20 @@
+import { createTranslator } from "next-intl";
 import { describe, expect, it } from "vitest";
+import en from "@/messages/en.json";
 import {
   nicknameError,
   passwordChecklist,
+  PASSWORD_REQUIREMENT_VALUES,
   PASSWORD_REQUIREMENTS,
   PASSWORD_SPECIAL_CHARACTERS,
   passwordError,
 } from "./credentials";
+
+const t = createTranslator({
+  locale: "en",
+  messages: en,
+  namespace: "password",
+});
 
 const VALID_PASSWORD = "Abcdefghijklmno1!";
 
@@ -28,36 +37,53 @@ describe("passwordError", () => {
   });
 
   it("rejects a password below the minimum length", () => {
-    expect(passwordError("Abcdefghijklmn1!")).toMatch(/at least 17/);
+    expect(passwordError("Abcdefghijklmn1!")).toEqual({
+      key: "passwordTooShort",
+      values: { min: 17 },
+    });
   });
 
   it("accepts a password at the maximum length and rejects a longer one", () => {
     expect(passwordError(VALID_PASSWORD.padEnd(256, "x"))).toBeNull();
-    expect(passwordError(VALID_PASSWORD.padEnd(257, "x"))).toMatch(
-      /at most 256/,
-    );
+    expect(passwordError(VALID_PASSWORD.padEnd(257, "x"))).toEqual({
+      key: "passwordTooLong",
+      values: { max: 256 },
+    });
   });
 
   it("counts characters, not UTF-16 units", () => {
     expect(passwordError(VALID_PASSWORD.padEnd(16, "😀"))).toBeNull();
-    expect(passwordError("Aa1!" + "😀".repeat(12))).toMatch(/at least 17/);
+    expect(passwordError("Aa1!" + "😀".repeat(12))).toEqual({
+      key: "passwordTooShort",
+      values: { min: 17 },
+    });
   });
 
   it("requires a lowercase letter", () => {
-    expect(passwordError("ABCDEFGHIJKLMNO1!")).toMatch(/lowercase/);
+    expect(passwordError("ABCDEFGHIJKLMNO1!")).toEqual({
+      key: "passwordNoLowercase",
+    });
   });
 
   it("requires an uppercase letter", () => {
-    expect(passwordError("abcdefghijklmno1!")).toMatch(/uppercase/);
+    expect(passwordError("abcdefghijklmno1!")).toEqual({
+      key: "passwordNoUppercase",
+    });
   });
 
   it("requires a digit", () => {
-    expect(passwordError("Abcdefghijklmnop!")).toMatch(/digit/);
+    expect(passwordError("Abcdefghijklmnop!")).toEqual({
+      key: "passwordNoDigit",
+    });
   });
 
   it("requires an ASCII special character", () => {
-    expect(passwordError("Abcdefghijklmnop1")).toMatch(/special/);
-    expect(passwordError("Abcdefghijklmn1 😀")).toMatch(/special/);
+    expect(passwordError("Abcdefghijklmnop1")).toEqual({
+      key: "passwordNoSpecial",
+    });
+    expect(passwordError("Abcdefghijklmn1 😀")).toEqual({
+      key: "passwordNoSpecial",
+    });
   });
 
   it.each(["!", "/", ":", "@", "[", "`", "{", "~"])("accepts %s", (char) => {
@@ -67,7 +93,18 @@ describe("passwordError", () => {
 
 describe("PASSWORD_REQUIREMENTS", () => {
   it("states the limits passwordError enforces", () => {
-    expect(PASSWORD_REQUIREMENTS[0]).toBe("17-256 characters");
+    expect(
+      t(
+        `requirements.${PASSWORD_REQUIREMENTS[0]}`,
+        PASSWORD_REQUIREMENT_VALUES,
+      ),
+    ).toBe("17-256 characters");
+    expect(
+      t(
+        `requirements.${PASSWORD_REQUIREMENTS[4]}`,
+        PASSWORD_REQUIREMENT_VALUES,
+      ),
+    ).toBe(`A special character, one of: ${PASSWORD_SPECIAL_CHARACTERS}`);
   });
 
   it("lists exactly the special characters passwordError accepts", () => {
@@ -88,7 +125,7 @@ describe("passwordChecklist", () => {
       .map(({ requirement }) => requirement);
   }
 
-  it("keeps the order and text of PASSWORD_REQUIREMENTS", () => {
+  it("keeps the order of PASSWORD_REQUIREMENTS", () => {
     expect(passwordChecklist("").map(({ requirement }) => requirement)).toEqual(
       PASSWORD_REQUIREMENTS,
     );

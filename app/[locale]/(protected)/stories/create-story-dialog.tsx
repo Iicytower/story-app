@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,10 +24,11 @@ export function CreateStoryDialog({
   folderNames: string[];
   defaultFolder: string;
 }) {
+  const t = useTranslations("stories");
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button>New story</Button>
+        <Button>{t("newStory")}</Button>
       </DialogTrigger>
       <DialogContent>
         <CreateStoryForm
@@ -51,6 +53,8 @@ function CreateStoryForm({
   const [title, setTitle] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("stories");
+  const tCommon = useTranslations("common");
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -64,17 +68,17 @@ function CreateStoryForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <DialogHeader>
-        <DialogTitle>New story</DialogTitle>
+        <DialogTitle>{t("newStory")}</DialogTitle>
       </DialogHeader>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="new-story-folder">Folder</Label>
+        <Label htmlFor="new-story-folder">{t("folder")}</Label>
         {/* Pick an existing folder or type a new name; a new name creates the folder. */}
         <Input
           id="new-story-folder"
           list="new-story-folders"
           value={folder}
           onChange={(event) => setFolder(event.target.value)}
-          placeholder="Choose or type a new folder"
+          placeholder={t("folderPlaceholder")}
           autoComplete="off"
         />
         <datalist id="new-story-folders">
@@ -84,7 +88,7 @@ function CreateStoryForm({
         </datalist>
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="new-story-title">Title</Label>
+        <Label htmlFor="new-story-title">{t("title")}</Label>
         <Input
           id="new-story-title"
           value={title}
@@ -102,11 +106,11 @@ function CreateStoryForm({
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline">
-            Cancel
+            {tCommon("cancel")}
           </Button>
         </DialogClose>
         <Button type="submit" disabled={pending}>
-          {pending ? "Creating…" : "Create"}
+          {pending ? tCommon("creating") : tCommon("create")}
         </Button>
       </DialogFooter>
     </form>

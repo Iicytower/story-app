@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Suspense } from "react";
 import {
   Dialog,
@@ -9,9 +10,10 @@ import {
 import { type Tool, TOOLS } from "./tools";
 
 export function ToolsPanel({ onOpen }: { onOpen: (tool: Tool) => void }) {
+  const t = useTranslations("tools");
   return (
     <ul
-      aria-label="Tools"
+      aria-label={t("list")}
       className="grid min-h-0 flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-2 overflow-y-auto p-3"
     >
       {TOOLS.map((tool) => (
@@ -22,7 +24,7 @@ export function ToolsPanel({ onOpen }: { onOpen: (tool: Tool) => void }) {
             className="hover:bg-muted flex h-full w-full flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm font-medium"
           >
             <tool.icon className="text-muted-foreground size-5" />
-            {tool.label}
+            {t(`items.${tool.id}.label`)}
           </button>
         </li>
       ))}
@@ -37,16 +39,21 @@ export function ToolDialog({
   tool: Tool | null;
   onClose: () => void;
 }) {
+  const t = useTranslations("tools");
   return (
     <Dialog open={tool !== null} onOpenChange={(open) => !open && onClose()}>
       {tool && (
         <DialogContent className={tool.dialogClassName}>
           <DialogHeader>
-            <DialogTitle>{tool.label}</DialogTitle>
-            <DialogDescription>{tool.description}</DialogDescription>
+            <DialogTitle>{t(`items.${tool.id}.label`)}</DialogTitle>
+            <DialogDescription>
+              {t(`items.${tool.id}.description`)}
+            </DialogDescription>
           </DialogHeader>
           <Suspense
-            fallback={<p className="text-muted-foreground text-sm">Loading…</p>}
+            fallback={
+              <p className="text-muted-foreground text-sm">{t("loading")}</p>
+            }
           >
             <tool.View />
           </Suspense>

@@ -1,11 +1,17 @@
 "use client";
 
+import { useLocale } from "next-intl";
 import { useSyncExternalStore } from "react";
 
 const subscribeNever = () => () => {};
 
-function format(iso: string, withTime: boolean, timeZone?: string) {
-  return new Date(iso).toLocaleString("en-US", {
+export function formatDate(
+  iso: string,
+  locale: string,
+  withTime: boolean,
+  timeZone?: string,
+) {
+  return new Date(iso).toLocaleString(locale, {
     dateStyle: "medium",
     ...(withTime && { timeStyle: "short" }),
     timeZone,
@@ -20,10 +26,11 @@ export function LocalDate({
   iso: string;
   withTime?: boolean;
 }) {
+  const locale = useLocale();
   const text = useSyncExternalStore(
     subscribeNever,
-    () => format(iso, withTime),
-    () => format(iso, withTime, "UTC"),
+    () => formatDate(iso, locale, withTime),
+    () => formatDate(iso, locale, withTime, "UTC"),
   );
   return <time dateTime={iso}>{text}</time>;
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Link, redirect } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { LocalDate } from "@/components/local-date";
 import { TagChips } from "@/components/tag-chips";
 import { TagsDialog } from "@/components/tags-dialog";
@@ -26,13 +26,10 @@ import { PublishChapterButton } from "./publish-chapter-button";
 import { RenameFolderDialog } from "./rename-folder-dialog";
 import { FolderVersions } from "./versions/folder-versions";
 
-const SORT_OPTIONS = [
-  { value: "created", label: "Newest first" },
-  { value: "manual", label: "Manual" },
-  { value: "alpha", label: "A–Z" },
-];
-
-export const metadata: Metadata = { title: "Folder – Story App" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return { title: t("folder") };
+}
 
 export default async function FolderPage({
   params,
@@ -55,6 +52,12 @@ export default async function FolderPage({
   const unpublishedCount = folder.chapters.filter(
     ({ publication }) => publication !== "public",
   ).length;
+  const t = await getTranslations("folders");
+  const sortOptions = [
+    { value: "created", label: t("sortNewest") },
+    { value: "manual", label: t("sortManual") },
+    { value: "alpha", label: t("sortAlpha") },
+  ];
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
@@ -63,14 +66,14 @@ export default async function FolderPage({
           href="/stories"
           className="text-muted-foreground hover:text-foreground text-sm"
         >
-          ← All folders
+          {t("allFolders")}
         </Link>
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="mr-auto text-2xl font-semibold">{folder.name}</h1>
           <SortSelect
-            label="Sort chapters"
+            label={t("sortChapters")}
             value={folder.chapterSort}
-            options={SORT_OPTIONS}
+            options={sortOptions}
             action={setChapterSort.bind(null, folder.id)}
           />
           <TagsDialog
@@ -100,12 +103,10 @@ export default async function FolderPage({
       </div>
       <div className="grid gap-6 md:grid-cols-[1fr_20rem]">
         {folder.chapters.length === 0 ? (
-          <p className="text-muted-foreground">
-            No chapters yet. Create the first one.
-          </p>
+          <p className="text-muted-foreground">{t("noChapters")}</p>
         ) : (
           <ul
-            aria-label="Chapters"
+            aria-label={t("chapters")}
             className="flex h-fit flex-col divide-y rounded-lg border"
           >
             {folder.chapters.map((chapter, index) => {

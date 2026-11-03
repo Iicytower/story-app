@@ -1,6 +1,7 @@
 "use client";
 
 import { TagIcon, XIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useId, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +30,7 @@ type TagsDialogProps = {
 
 export function TagsDialog(props: TagsDialogProps) {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("tags");
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -36,14 +38,14 @@ export function TagsDialog(props: TagsDialogProps) {
           <Button
             variant="ghost"
             size="icon"
-            aria-label={`Tags for ${props.name}`}
+            aria-label={t("tagsFor", { name: props.name })}
           >
             <TagIcon />
           </Button>
         ) : (
           <Button variant="outline">
             <TagIcon />
-            Tags
+            {t("tags")}
           </Button>
         )}
       </DialogTrigger>
@@ -67,6 +69,8 @@ function TagsForm({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const inputId = useId();
+  const t = useTranslations("tags");
+  const tCommon = useTranslations("common");
   const listId = useId();
   const inherited = inheritedOnly(tags, folderTags);
 
@@ -89,10 +93,10 @@ function TagsForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <DialogHeader>
-        <DialogTitle>Tags for {name}</DialogTitle>
+        <DialogTitle>{t("tagsFor", { name })}</DialogTitle>
       </DialogHeader>
       {tags.length + inherited.length > 0 && (
-        <ul aria-label="Current tags" className="flex flex-wrap gap-1">
+        <ul aria-label={t("current")} className="flex flex-wrap gap-1">
           {tags.map((tag) => (
             <li
               key={tag}
@@ -101,7 +105,7 @@ function TagsForm({
               {tag}
               <button
                 type="button"
-                aria-label={`Remove ${tag}`}
+                aria-label={t("remove", { tag })}
                 onClick={() => setTags(tags.filter((other) => other !== tag))}
               >
                 <XIcon className="size-3" />
@@ -111,7 +115,7 @@ function TagsForm({
           {inherited.map((tag) => (
             <li
               key={tag}
-              title="From folder"
+              title={t("fromFolder")}
               className="text-muted-foreground rounded-full border border-dashed px-2 py-0.5 text-xs"
             >
               {tag}
@@ -120,7 +124,7 @@ function TagsForm({
         </ul>
       )}
       <div className="flex flex-col gap-2">
-        <Label htmlFor={inputId}>Add tag</Label>
+        <Label htmlFor={inputId}>{t("add")}</Label>
         <div className="flex gap-2">
           <Input
             id={inputId}
@@ -136,7 +140,7 @@ function TagsForm({
             aria-invalid={error !== null}
           />
           <Button type="button" variant="outline" onClick={addInput}>
-            Add
+            {t("addButton")}
           </Button>
         </div>
         <datalist id={listId}>
@@ -155,11 +159,11 @@ function TagsForm({
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline">
-            Cancel
+            {tCommon("cancel")}
           </Button>
         </DialogClose>
         <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : "Save"}
+          {pending ? tCommon("saving") : tCommon("save")}
         </Button>
       </DialogFooter>
     </form>

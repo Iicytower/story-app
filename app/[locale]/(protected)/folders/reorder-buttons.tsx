@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import type { ActionResult } from "@/lib/action-result";
@@ -19,6 +20,7 @@ export function ReorderButtons({
 }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("reorder");
 
   function move(direction: Direction) {
     setError(null);
@@ -38,8 +40,8 @@ export function ReorderButtons({
       <Button
         variant="ghost"
         size="icon"
-        aria-label={`Move ${name} up`}
-        title="Move up"
+        aria-label={t("moveUp", { name })}
+        title={t("up")}
         disabled={pending || isFirst}
         onClick={() => move("up")}
       >
@@ -48,8 +50,8 @@ export function ReorderButtons({
       <Button
         variant="ghost"
         size="icon"
-        aria-label={`Move ${name} down`}
-        title="Move down"
+        aria-label={t("moveDown", { name })}
+        title={t("down")}
         disabled={pending || isLast}
         onClick={() => move("down")}
       >

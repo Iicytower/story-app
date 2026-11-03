@@ -1,6 +1,7 @@
 "use client";
 
 import { PencilIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,12 +19,13 @@ import { renameFolder } from "../actions";
 
 export function RenameFolderDialog({ id, name }: { id: string; name: string }) {
   const [open, setOpen] = useState(false);
+  const tCommon = useTranslations("common");
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">
           <PencilIcon />
-          Rename
+          {tCommon("rename")}
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -45,6 +47,8 @@ function RenameFolderForm({
   const [name, setName] = useState(currentName);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("folders");
+  const tCommon = useTranslations("common");
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -58,10 +62,10 @@ function RenameFolderForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <DialogHeader>
-        <DialogTitle>Rename folder</DialogTitle>
+        <DialogTitle>{t("renameTitle")}</DialogTitle>
       </DialogHeader>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="rename-folder-name">Name</Label>
+        <Label htmlFor="rename-folder-name">{t("name")}</Label>
         <Input
           id="rename-folder-name"
           value={name}
@@ -77,11 +81,11 @@ function RenameFolderForm({
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline">
-            Cancel
+            {tCommon("cancel")}
           </Button>
         </DialogClose>
         <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : "Save"}
+          {pending ? tCommon("saving") : tCommon("save")}
         </Button>
       </DialogFooter>
     </form>

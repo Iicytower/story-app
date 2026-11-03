@@ -6,9 +6,10 @@ import { redirect } from "@/i18n/navigation";
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
 import { createUser, userExists } from "@/lib/accounts";
-import type { ActionError, ActionResult } from "@/lib/action-result";
+import type { ActionResult } from "@/lib/action-result";
 import { nicknameError, passwordError } from "@/lib/credentials";
 import { connectDB } from "@/lib/db";
+import { actionError } from "@/lib/i18n/action-error";
 import {
   clientIp,
   giveBackAttempt,
@@ -16,11 +17,7 @@ import {
   takeAttempt,
 } from "@/lib/rate-limit";
 
-const NICKNAME_TAKEN: ActionError = {
-  ok: false,
-  error: "DUPLICATE_NAME",
-  message: "This nickname is already taken.",
-};
+const NICKNAME_TAKEN = () => actionError("DUPLICATE_NAME", "nicknameTaken");
 
 export async function register(
   nickname: unknown,
@@ -32,40 +29,30 @@ export async function register(
     typeof password !== "string" ||
     typeof repeatedPassword !== "string"
   ) {
-    return {
-      ok: false,
-      error: "INVALID_INPUT",
-      message: "These details are not valid.",
-    };
+    return actionError("INVALID_INPUT", "detailsInvalid");
   }
   const trimmed = nickname.trim();
   const invalid = nicknameError(trimmed) ?? passwordError(password);
-  if (invalid) return { ok: false, error: "INVALID_INPUT", message: invalid };
+  if (invalid) {
+    return actionError("INVALID_INPUT", invalid.key, invalid.values);
+  }
   if (password !== repeatedPassword) {
-    return {
-      ok: false,
-      error: "INVALID_INPUT",
-      message: "The passwords do not match.",
-    };
+    return actionError("INVALID_INPUT", "passwordsDoNotMatch");
   }
 
   await connectDB();
-  if (await userExists(trimmed)) return NICKNAME_TAKEN;
+  if (await userExists(trimmed)) return NICKNAME_TAKEN();
 
   const attempt = await takeAttempt(
     REGISTRATION_LIMIT,
     clientIp(await headers()),
   );
   if (!attempt) {
-    return {
-      ok: false,
-      error: "RATE_LIMITED",
-      message: "Too many new accounts. Try again later.",
-    };
+    return actionError("RATE_LIMITED", "tooManyAccounts");
   }
   if (!(await createUser(trimmed, password))) {
     await giveBackAttempt(attempt);
-    return NICKNAME_TAKEN;
+    return NICKNAME_TAKEN();
   }
 
   const locale = await getLocale();

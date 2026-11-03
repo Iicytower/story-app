@@ -1,16 +1,25 @@
+import type { ErrorMessage } from "@/lib/i18n/messages";
+
 const NICKNAME_PATTERN = /^[A-Za-z0-9_-]{3,30}$/;
 
 export const PASSWORD_MIN_LENGTH = 17;
 export const PASSWORD_MAX_LENGTH = 256;
 export const PASSWORD_SPECIAL_CHARACTERS = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
 
+// Keys of password.requirements; the texts take these values.
 export const PASSWORD_REQUIREMENTS = [
-  `${PASSWORD_MIN_LENGTH}-${PASSWORD_MAX_LENGTH} characters`,
-  "A lowercase letter (any alphabet)",
-  "An uppercase letter (any alphabet)",
-  "A digit (0-9)",
-  `A special character, one of: ${PASSWORD_SPECIAL_CHARACTERS}`,
-];
+  "length",
+  "lowercase",
+  "uppercase",
+  "digit",
+  "special",
+] as const;
+
+export const PASSWORD_REQUIREMENT_VALUES = {
+  min: PASSWORD_MIN_LENGTH,
+  max: PASSWORD_MAX_LENGTH,
+  characters: PASSWORD_SPECIAL_CHARACTERS,
+};
 
 const LOWERCASE = /\p{Ll}/u;
 const UPPERCASE = /\p{Lu}/u;
@@ -36,30 +45,23 @@ export function passwordChecklist(password: string) {
   }));
 }
 
-export const NICKNAME_REQUIREMENT =
-  "Nickname must be 3-30 characters: letters a-z, digits, _ and -.";
-
-export function nicknameError(nickname: string): string | null {
-  return NICKNAME_PATTERN.test(nickname) ? null : NICKNAME_REQUIREMENT;
+export function nicknameError(nickname: string): ErrorMessage | null {
+  return NICKNAME_PATTERN.test(nickname)
+    ? null
+    : { key: "nicknameRequirement" };
 }
 
-export function passwordError(password: string): string | null {
+export function passwordError(password: string): ErrorMessage | null {
   const length = [...password].length;
   if (length < PASSWORD_MIN_LENGTH) {
-    return `Password must be at least ${PASSWORD_MIN_LENGTH} characters long.`;
+    return { key: "passwordTooShort", values: { min: PASSWORD_MIN_LENGTH } };
   }
   if (length > PASSWORD_MAX_LENGTH) {
-    return `Password must be at most ${PASSWORD_MAX_LENGTH} characters long.`;
+    return { key: "passwordTooLong", values: { max: PASSWORD_MAX_LENGTH } };
   }
-  if (!LOWERCASE.test(password)) {
-    return "Password must contain a lowercase letter.";
-  }
-  if (!UPPERCASE.test(password)) {
-    return "Password must contain an uppercase letter.";
-  }
-  if (!DIGIT.test(password)) return "Password must contain a digit.";
-  if (!SPECIAL.test(password)) {
-    return "Password must contain an ASCII special character.";
-  }
+  if (!LOWERCASE.test(password)) return { key: "passwordNoLowercase" };
+  if (!UPPERCASE.test(password)) return { key: "passwordNoUppercase" };
+  if (!DIGIT.test(password)) return { key: "passwordNoDigit" };
+  if (!SPECIAL.test(password)) return { key: "passwordNoSpecial" };
   return null;
 }

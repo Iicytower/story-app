@@ -2,6 +2,7 @@
 
 import { HistoryIcon, Trash2Icon } from "lucide-react";
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { LocalDate } from "@/components/local-date";
 import {
@@ -38,19 +39,21 @@ export function FolderVersions({
   folderId: string;
   versions: VersionListItem[];
 }) {
+  const t = useTranslations("versions");
+  const tFolders = useTranslations("folders");
   return (
     <section aria-labelledby="versions-heading" className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
         <h2 id="versions-heading" className="text-sm font-medium">
-          Versions
+          {t("title")}
         </h2>
         <SaveVersionDialog folderId={folderId} />
       </div>
       {versions.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No versions yet.</p>
+        <p className="text-muted-foreground text-sm">{t("none")}</p>
       ) : (
         <ul
-          aria-label="Versions"
+          aria-label={t("title")}
           className="flex flex-col divide-y rounded-lg border"
         >
           {versions.map((version) => (
@@ -60,12 +63,14 @@ export function FolderVersions({
                 className="hover:bg-muted/50 flex min-w-0 flex-1 flex-col gap-0.5 px-3 py-2"
               >
                 <span className="truncate text-sm font-medium">
-                  Version {version.number}: {version.name}
+                  {t("versionName", {
+                    number: version.number,
+                    name: version.name,
+                  })}
                 </span>
                 <span className="text-muted-foreground text-xs">
                   <LocalDate iso={version.createdAt} withTime /> ·{" "}
-                  {version.chapterCount}{" "}
-                  {version.chapterCount === 1 ? "chapter" : "chapters"}
+                  {tFolders("chapterCount", { count: version.chapterCount })}
                 </span>
               </Link>
               <DeleteVersionButton folderId={folderId} version={version} />
@@ -79,12 +84,13 @@ export function FolderVersions({
 
 function SaveVersionDialog({ folderId }: { folderId: string }) {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("versions");
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <HistoryIcon />
-          Save version
+          {t("save")}
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -104,6 +110,8 @@ function SaveVersionForm({
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("versions");
+  const tCommon = useTranslations("common");
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -117,14 +125,11 @@ function SaveVersionForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <DialogHeader>
-        <DialogTitle>Save version</DialogTitle>
+        <DialogTitle>{t("save")}</DialogTitle>
       </DialogHeader>
-      <p className="text-muted-foreground text-sm">
-        Saves the titles and contents of the folder&apos;s chapters as they are
-        stored now, with their order. Notes are not part of versions.
-      </p>
+      <p className="text-muted-foreground text-sm">{t("saveDescription")}</p>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="version-name">Name</Label>
+        <Label htmlFor="version-name">{t("name")}</Label>
         <Input
           id="version-name"
           value={name}
@@ -141,11 +146,11 @@ function SaveVersionForm({
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline">
-            Cancel
+            {tCommon("cancel")}
           </Button>
         </DialogClose>
         <Button type="submit" disabled={pending || !name.trim()}>
-          {pending ? "Saving…" : "Save"}
+          {pending ? tCommon("saving") : tCommon("save")}
         </Button>
       </DialogFooter>
     </form>
@@ -162,7 +167,8 @@ function DeleteVersionButton({
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const label = `Version ${version.number}`;
+  const t = useTranslations("versions");
+  const tCommon = useTranslations("common");
 
   function handleOpenChange(next: boolean) {
     setOpen(next);
@@ -182,16 +188,22 @@ function DeleteVersionButton({
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={`Delete ${label}`}>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={t("delete", { number: version.number })}
+        >
           <Trash2Icon />
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete version?</AlertDialogTitle>
+          <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
-            {label} &ldquo;{version.name}&rdquo; will be removed. Chapters and
-            other versions stay as they are.
+            {t("deleteDescription", {
+              number: version.number,
+              name: version.name,
+            })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         {error && (
@@ -200,13 +212,13 @@ function DeleteVersionButton({
           </p>
         )}
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
             disabled={pending}
             onClick={handleDelete}
           >
-            {pending ? "Deleting…" : "Delete"}
+            {pending ? tCommon("deleting") : tCommon("delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

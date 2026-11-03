@@ -1,31 +1,25 @@
 import { diffWordsWithSpace } from "diff";
-import type { ActionError } from "@/lib/action-result";
+import type { ValidationError } from "@/lib/action-result";
 
 export const VERSION_NAME_MAX_LENGTH = 100;
 
 export function validateVersionName(
   name: string,
-): { ok: true; name: string } | ActionError {
+): { ok: true; name: string } | ValidationError {
   const trimmed = name.trim();
   if (!trimmed) {
-    return {
-      ok: false,
-      error: "EMPTY_NAME",
-      message: "Version name is required.",
-    };
+    return { ok: false, error: "EMPTY_NAME", key: "versionNameRequired" };
   }
   if (trimmed.length > VERSION_NAME_MAX_LENGTH) {
     return {
       ok: false,
       error: "INVALID_INPUT",
-      message: `Version name can have at most ${VERSION_NAME_MAX_LENGTH} characters.`,
+      key: "versionNameTooLong",
+      values: { max: VERSION_NAME_MAX_LENGTH },
     };
   }
   return { ok: true, name: trimmed };
 }
-
-export const beforeRestoreName = (number: number) =>
-  `Before restoring version ${number}`;
 
 // attempt 1 is the title itself, then "Title (2)", "Title (3)"… as in migration 002.
 export const numberedTitle = (title: string, attempt: number) =>

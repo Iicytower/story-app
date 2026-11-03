@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "cn";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { AUTOSAVE_DELAY_MS, onTabHidden } from "@/lib/autosave";
@@ -24,6 +25,7 @@ export function useFolderNotes(
   const saved = useRef(initialNotes);
   const notesUpdatedAt = useRef(initialNotesUpdatedAt);
   const queue = useRef(Promise.resolve());
+  const tErrors = useTranslations("errors");
 
   // Saves run one at a time, so each one sends the notesUpdatedAt returned by the previous one.
   // Resolves once the notes typed so far are saved, e.g. before leaving the page.
@@ -47,14 +49,14 @@ export function useFolderNotes(
         setSaveState({ status: "error", message: result.message });
         return { ok: false, message: result.message };
       } catch {
-        const message = "Could not reach the server. Check your connection.";
+        const message = tErrors("offline");
         setSaveState({ status: "error", message });
         return { ok: false, message };
       }
     });
     queue.current = run.then(() => {});
     return run;
-  }, [folderId]);
+  }, [folderId, tErrors]);
 
   useEffect(() => {
     latest.current = notes;
@@ -88,10 +90,12 @@ export function FolderNotesField({
   scrollMemory?: { storyId: string; field: string };
 }) {
   const { notes, setNotes, saveState } = state;
+  const t = useTranslations("folders");
+  const tSave = useTranslations("save");
   return (
     <section className={cn("flex flex-col", className)}>
       <div className="flex items-center justify-between gap-2 border-b px-4 py-2">
-        <h3 className="text-sm font-medium">Folder notes</h3>
+        <h3 className="text-sm font-medium">{t("notes")}</h3>
         {/* Not role="status": the editor already has one for the chapter, and tests rely on it being unique. */}
         <span
           id="folder-notes-status"
@@ -102,16 +106,16 @@ export function FolderNotesField({
               : "text-muted-foreground text-sm"
           }
         >
-          {saveState.status === "saving" && "Saving…"}
-          {saveState.status === "saved" && "Saved"}
+          {saveState.status === "saving" && tSave("saving")}
+          {saveState.status === "saved" && tSave("saved")}
           {saveState.status === "error" && saveState.message}
         </span>
       </div>
       <MarkdownEditor
         value={notes}
         onChange={setNotes}
-        label="Folder notes"
-        placeholder="Notes for this folder…"
+        label={t("notes")}
+        placeholder={t("notesPlaceholder")}
         className="flex-1"
         compact
         scrollMemory={scrollMemory}

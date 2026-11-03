@@ -1,5 +1,12 @@
 import { marked, type Token, type Tokens } from "marked";
 import { parseBlocks, spansText } from "@/lib/export/blocks";
+import {
+  ENGLISH_DOCUMENT_LABELS,
+  FOLDER_NOTES_HEADINGS,
+  inEnglish,
+  NOTES_HEADINGS,
+} from "@/lib/i18n/english";
+import type { ErrorKey, ErrorValues } from "@/lib/i18n/messages";
 import { MAX_IMPORT_TITLE_LENGTH, type ImportedChapter } from "./limits";
 
 export type ImportedFile = {
@@ -12,10 +19,18 @@ export type ImportedFile = {
   lossy: boolean;
 };
 
-export class ImportError extends Error {}
+// The message is English; the dialog shows the key in the page's language.
+export class ImportError extends Error {
+  constructor(
+    readonly key: ErrorKey,
+    readonly values?: ErrorValues,
+  ) {
+    super(inEnglish({ key, values }));
+  }
+}
 
-const NOTES = "Notes";
-const FOLDER_NOTES = "Folder notes";
+// Title of an untitled chapter, in the language of the interface.
+export type ChapterTitle = (number: number) => string;
 
 const cleanTitle = (title: string, fallback: string) =>
   (title.trim() || fallback).slice(0, MAX_IMPORT_TITLE_LENGTH).trim();
@@ -43,7 +58,7 @@ function toMarkdown(tokens: Token[], drop: number): string {
 function toChapter(title: string, tokens: Token[], drop: number) {
   // Notes are appended last, so a "Notes" heading in the story itself stays in the text.
   const index = tokens.findLastIndex(
-    (token) => isHeading(token) && headingText(token) === NOTES,
+    (token) => isHeading(token) && NOTES_HEADINGS.includes(headingText(token)),
   );
   if (index === -1) {
     return { title, content: toMarkdown(tokens, drop), notes: "" };
@@ -60,7 +75,11 @@ function toChapter(title: string, tokens: Token[], drop: number) {
 export function structureMarkdown(
   markdown: string,
   fallbackTitle: string,
-  { shifted, lossy = false }: { shifted: boolean; lossy?: boolean },
+  {
+    shifted,
+    lossy = false,
+    chapterTitle = ENGLISH_DOCUMENT_LABELS.chapter,
+  }: { shifted: boolean; lossy?: boolean; chapterTitle?: ChapterTitle },
 ): ImportedFile {
   const tokens = marked.lexer(markdown, { breaks: true, gfm: true });
   const start = tokens.findIndex((token) => token.type !== "space");
@@ -83,7 +102,7 @@ export function structureMarkdown(
   const hasFolderNotes =
     closing !== undefined &&
     isHeading(closing) &&
-    headingText(closing) === FOLDER_NOTES;
+    FOLDER_NOTES_HEADINGS.includes(headingText(closing));
   const text = hasFolderNotes ? body.slice(0, lastChapter) : body;
   const folderNotes = hasFolderNotes
     ? toMarkdown(body.slice(lastChapter + 1), drop)
@@ -104,7 +123,7 @@ export function structureMarkdown(
 
   const chapters = parts.map((part, index) =>
     toChapter(
-      cleanTitle(part.title, `Chapter ${index + 1}`),
+      cleanTitle(part.title, chapterTitle(index + 1)),
       part.tokens,
       drop,
     ),
@@ -134,7 +153,9 @@ export function fromSections(
   sections: ImportedChapter[],
   lossy: boolean,
 ): ImportedFile {
-  const notes = sections.find((section) => section.title === FOLDER_NOTES);
+  const notes = sections.find((section) =>
+    FOLDER_NOTES_HEADINGS.includes(section.title),
+  );
   return {
     title,
     chapters: sections.filter((section) => section !== notes),

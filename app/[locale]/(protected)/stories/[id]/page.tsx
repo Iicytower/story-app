@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { getEditorFolder } from "@/lib/folders/queries";
@@ -8,7 +8,10 @@ import { getUserSettings } from "@/lib/settings/queries";
 import { getStory } from "@/lib/stories/queries";
 import { Editor } from "./editor";
 
-export const metadata: Metadata = { title: "Editor – Story App" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return { title: t("editor") };
+}
 
 export default async function StoryPage({
   params,

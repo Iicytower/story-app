@@ -5,6 +5,7 @@ import {
   ImportError,
   structureMarkdown,
   type ImportedFile,
+  type ChapterTitle,
 } from "../document";
 import { htmlToMarkdown } from "../html";
 import {
@@ -57,12 +58,16 @@ function sectionToHtml(section: XmlElement): string {
   return title + nodesToHtml(rest, toHtml);
 }
 
-export function readFb2(text: string, fallbackTitle: string): ImportedFile {
+export function readFb2(
+  text: string,
+  fallbackTitle: string,
+  chapterTitle?: ChapterTitle,
+): ImportedFile {
   const nodes = parseXml(text).children;
   const body = DomUtils.getElementsByTagName("body", nodes).find(
     (element) => DomUtils.getAttributeValue(element, "name") !== "notes",
   );
-  if (!body) throw new ImportError("This FictionBook file could not be read.");
+  if (!body) throw new ImportError("importFb2Invalid");
   const [bookTitle] = DomUtils.getElementsByTagName("book-title", nodes);
   const title =
     (bookTitle && DomUtils.textContent(bookTitle).trim()) || fallbackTitle;
@@ -75,6 +80,7 @@ export function readFb2(text: string, fallbackTitle: string): ImportedFile {
     if (!markdown.replace(/\*/g, "").trim()) return [];
     const { chapters, unsplit } = structureMarkdown(markdown, title, {
       shifted: true,
+      chapterTitle,
     });
     return [unsplit ?? chapters[0]];
   });

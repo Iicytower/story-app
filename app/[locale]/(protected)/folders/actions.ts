@@ -2,9 +2,10 @@
 
 import { isObjectIdOrHexString } from "mongoose";
 import { refresh } from "next/cache";
-import type { ActionError, ActionResult } from "@/lib/action-result";
+import type { ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import { connectDB, isDuplicateKeyError } from "@/lib/db";
+import { actionError, translateError } from "@/lib/i18n/action-error";
 import {
   moveInList,
   nextFolderPosition,
@@ -25,29 +26,13 @@ import { rememberFolderSlug } from "@/lib/publish/mutations";
 import { getUserSettings, updateUserSettings } from "@/lib/settings/queries";
 import { exceedsTagLimit, MAX_TAGS, normalizeTags } from "@/lib/tags/tags";
 
-const NOT_FOUND: ActionError = {
-  ok: false,
-  error: "NOT_FOUND",
-  message: "This folder does not exist or has been deleted.",
-};
+const NOT_FOUND = () => actionError("NOT_FOUND", "folderNotFound");
 
-const EMPTY_NAME: ActionError = {
-  ok: false,
-  error: "EMPTY_NAME",
-  message: "Folder name is required.",
-};
+const EMPTY_NAME = () => actionError("EMPTY_NAME", "folderNameRequired");
 
-const INVALID_INPUT: ActionError = {
-  ok: false,
-  error: "INVALID_INPUT",
-  message: "This option is not available. Reload the page and try again.",
-};
+const INVALID_INPUT = () => actionError("INVALID_INPUT", "optionUnavailable");
 
-const DUPLICATE_NAME: ActionError = {
-  ok: false,
-  error: "DUPLICATE_NAME",
-  message: "A folder with this name already exists.",
-};
+const DUPLICATE_NAME = () => actionError("DUPLICATE_NAME", "duplicateFolder");
 
 export async function createFolder(
   name: string,
@@ -55,7 +40,7 @@ export async function createFolder(
   const user = await requireUser();
   if (!user.ok) return user;
   const trimmed = name.trim();
-  if (!trimmed) return EMPTY_NAME;
+  if (!trimmed) return EMPTY_NAME();
 
   await connectDB();
   try {
@@ -66,7 +51,7 @@ export async function createFolder(
     });
     return { ok: true, id: folder._id.toString() };
   } catch (error) {
-    if (isDuplicateKeyError(error)) return DUPLICATE_NAME;
+    if (isDuplicateKeyError(error)) return DUPLICATE_NAME();
     throw error;
   }
 }
@@ -77,9 +62,9 @@ export async function renameFolder(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
   const trimmed = name.trim();
-  if (!trimmed) return EMPTY_NAME;
+  if (!trimmed) return EMPTY_NAME();
 
   await connectDB();
   try {
@@ -88,12 +73,12 @@ export async function renameFolder(
       { $set: { name: trimmed } },
       { projection: { name: 1, published: 1 } },
     ).lean();
-    if (!folder) return NOT_FOUND;
+    if (!folder) return NOT_FOUND();
     if (folder.published && folder.name !== trimmed) {
       await rememberFolderSlug(id, user.userId, folder.name);
     }
   } catch (error) {
-    if (isDuplicateKeyError(error)) return DUPLICATE_NAME;
+    if (isDuplicateKeyError(error)) return DUPLICATE_NAME();
     throw error;
   }
 
@@ -105,7 +90,7 @@ export async function renameFolder(
 export async function deleteFolder(id: string): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
 
   await connectDB();
   const deletedAt = new Date();
@@ -113,7 +98,7 @@ export async function deleteFolder(id: string): Promise<ActionResult> {
     { _id: id, userId: user.userId, deletedAt: null },
     { $set: { deletedAt } },
   );
-  if (matchedCount === 0) return NOT_FOUND;
+  if (matchedCount === 0) return NOT_FOUND();
   await Story.updateMany(
     { userId: user.userId, folderId: id, deletedAt: null },
     { $set: { deletedAt } },
@@ -130,7 +115,7 @@ export async function saveFolderNotes(
 ): Promise<ActionResult<{ notesUpdatedAt: string }>> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
 
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };
@@ -145,13 +130,8 @@ export async function saveFolderNotes(
     return { ok: true, notesUpdatedAt: notesUpdatedAt.toISOString() };
   }
 
-  if (!(await Folder.exists(owned))) return NOT_FOUND;
-  return {
-    ok: false,
-    error: "CONFLICT",
-    message:
-      "These notes were changed in another tab or on another device. Reload the page to get the latest version.",
-  };
+  if (!(await Folder.exists(owned))) return NOT_FOUND();
+  return actionError("CONFLICT", "notesConflict");
 }
 
 // Organizational change: keeps updatedAt, lastActivityAt and notesUpdatedAt (D36).
@@ -161,13 +141,13 @@ export async function setFolderTags(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
   const normalized = normalizeTags(tags);
-  if (!normalized.ok) return normalized;
+  if (!normalized.ok) return translateError(normalized);
 
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };
-  if (!(await Folder.exists(owned))) return NOT_FOUND;
+  if (!(await Folder.exists(owned))) return NOT_FOUND();
   const chapters = await Story.find({
     userId: user.userId,
     folderId: id,
@@ -179,18 +159,17 @@ export async function setFolderTags(
     exceedsTagLimit(chapter.tags, normalized.tags),
   );
   if (over) {
-    return {
-      ok: false,
-      error: "INVALID_INPUT",
-      message: `"${over.title}" would have more than ${MAX_TAGS} tags, counting the ones from this folder.`,
-    };
+    return actionError("INVALID_INPUT", "folderTagLimit", {
+      title: over.title,
+      max: MAX_TAGS,
+    });
   }
   const { matchedCount } = await Folder.updateOne(
     owned,
     { $set: { tags: normalized.tags } },
     { timestamps: false },
   );
-  if (matchedCount === 0) return NOT_FOUND;
+  if (matchedCount === 0) return NOT_FOUND();
 
   refresh();
   return { ok: true };
@@ -200,7 +179,7 @@ export async function setFolderTags(
 export async function setFolderSort(mode: string): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isFolderSort(mode)) return INVALID_INPUT;
+  if (!isFolderSort(mode)) return INVALID_INPUT();
 
   await connectDB();
   const { folders } = await getUserSettings(user.userId);
@@ -227,15 +206,15 @@ export async function setChapterSort(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
-  if (!isChapterSort(mode)) return INVALID_INPUT;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isChapterSort(mode)) return INVALID_INPUT();
 
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };
   const folder = await Folder.findOne(owned)
     .select({ chapterSort: 1, manualChapterOrder: 1 })
     .lean();
-  if (!folder) return NOT_FOUND;
+  if (!folder) return NOT_FOUND();
   if (mode === "manual" && !folder.manualChapterOrder) {
     const shown = await findChaptersInOrder(
       user.userId,
@@ -267,15 +246,15 @@ export async function reorderFolder(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
-  if (!isDirection(direction)) return INVALID_INPUT;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isDirection(direction)) return INVALID_INPUT();
 
   await connectDB();
   const folders = await findFoldersInOrder(user.userId, folderOrder("manual"))
     .select({ position: 1 })
     .lean();
   const moved = moveInList(folders, id, direction);
-  if (!moved) return NOT_FOUND;
+  if (!moved) return NOT_FOUND();
   await savePositions(Folder, moved);
 
   refresh();
@@ -290,12 +269,12 @@ export async function setFolderPublished(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
 
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };
   const folder = await Folder.findOne(owned).select({ published: 1 }).lean();
-  if (!folder) return NOT_FOUND;
+  if (!folder) return NOT_FOUND();
   if (enabled && !folder.published) {
     await Story.updateMany(
       {
@@ -321,11 +300,11 @@ export async function setFolderPublished(
 export async function publishAllChapters(id: string): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
 
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };
-  if (!(await Folder.exists({ ...owned, published: true }))) return NOT_FOUND;
+  if (!(await Folder.exists({ ...owned, published: true }))) return NOT_FOUND();
   await Story.updateMany(
     { userId: user.userId, folderId: id, deletedAt: null },
     { $set: { publication: "public" } },

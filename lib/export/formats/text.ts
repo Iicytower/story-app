@@ -1,4 +1,8 @@
 import { stripComments } from "@/lib/stories/strip-comments";
+import {
+  type DocumentLabels,
+  ENGLISH_DOCUMENT_LABELS,
+} from "@/lib/i18n/english";
 import { spansText, type Block } from "../blocks";
 import type { ExportDocument, ExportSource } from "../document";
 
@@ -44,6 +48,7 @@ export function buildTxt({ title, sections }: ExportDocument): string {
 export function buildMarkdown(
   source: ExportSource,
   includeExtras: boolean,
+  labels: DocumentLabels = ENGLISH_DOCUMENT_LABELS,
 ): string {
   const parts = [`# ${source.title}`];
   for (const chapter of source.chapters) {
@@ -52,11 +57,11 @@ export function buildMarkdown(
       includeExtras ? chapter.content : stripComments(chapter.content),
     );
     if (includeExtras && chapter.notes.trim()) {
-      parts.push("### Notes", chapter.notes);
+      parts.push(`### ${labels.notes}`, chapter.notes);
     }
   }
   if (includeExtras && source.notes.trim()) {
-    parts.push("## Folder notes", source.notes);
+    parts.push(`## ${labels.folderNotes}`, source.notes);
   }
   return `${parts.join("\n\n")}\n`;
 }
