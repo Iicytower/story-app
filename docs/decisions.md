@@ -404,3 +404,11 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Link publiczny pokazywany i kopiowany w edytorze i folderze (`Public link`) zostaje bez prefiksu (`/p/nick/folder`): odbiorca trafia na swój język przez przekierowanie z proxy (D46), a nie na język autora (decyzja użytkownika).
 - Linki klikane w aplikacji (wyszukiwarka, nawigacja rozdziałów) idą przez helpery `next-intl` i mają prefiks bieżącego języka.
 - Route Handlery eksportu leżą w `app/stories/[id]/export` i `app/folders/[id]/export`, poza `app/[locale]`, pod tymi samymi adresami co wcześniej.
+
+## D48 – Słownik i komunikaty generowane (2026-11-03)
+
+- Jeden plik `messages/en.json` z przestrzeniami nazw według obszaru; typy kluczy z `en` (`types/next-intl.d.ts`), więc brakujący klucz w innym języku to błąd `tsc` (decyzja użytkownika).
+- Walidacja w `lib/` nie zależy od `next-intl`: zwraca klucz i wartości (`ValidationError`, `ErrorMessage`), a Server Action tłumaczy je na serwerze (`translateError` / `actionError` z `lib/i18n/action-error.ts`). Klient tłumaczy klucze sam (wymagania hasła, błędy importu `ImportError.key`). Poza żądaniem (skrypt `create-account`, rzucane błędy) tekst jest po angielsku przez `inEnglish` (decyzja użytkownika).
+- Teksty generowane do treści (tytuł „Chapter N” przy imporcie, nagłówki „Notes” i „Folder notes” w eksporcie, nazwa wersji „Before restoring version N”) są w języku interfejsu w chwili utworzenia; zapisane dane się nie zmieniają (decyzja użytkownika).
+- Import rozpoznaje nagłówki „Notes” i „Folder notes” wszystkich języków z listy `DOCUMENTS` w `lib/i18n/english.ts`. Nowy język trzeba tam dopisać (poza plikiem `messages/xx.json` i listą języków w `i18n/routing.ts`).
+- Strona 404 poza prefiksem języka (`app/not-found.tsx`) zostaje po angielsku: nie ma z czego wziąć języka.

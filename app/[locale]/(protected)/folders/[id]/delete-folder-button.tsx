@@ -2,6 +2,7 @@
 
 import { Trash2Icon } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import {
   AlertDialog,
@@ -30,6 +31,8 @@ export function DeleteFolderButton({
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("folders");
+  const tCommon = useTranslations("common");
 
   function handleOpenChange(next: boolean) {
     setOpen(next);
@@ -51,15 +54,14 @@ export function DeleteFolderButton({
       <AlertDialogTrigger asChild>
         <Button variant="outline">
           <Trash2Icon />
-          Delete
+          {tCommon("delete")}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete folder?</AlertDialogTitle>
+          <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
-            &ldquo;{name}&rdquo; and its {chapterCount}{" "}
-            {chapterCount === 1 ? "chapter" : "chapters"} will be removed.
+            {t("deleteDescription", { name, count: chapterCount })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         {error && (
@@ -68,13 +70,13 @@ export function DeleteFolderButton({
           </p>
         )}
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
             disabled={pending}
             onClick={handleDelete}
           >
-            {pending ? "Deleting…" : "Delete"}
+            {pending ? tCommon("deleting") : tCommon("delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

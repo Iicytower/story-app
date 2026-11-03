@@ -1,5 +1,9 @@
 import { parse } from "yaml";
-import { structureMarkdown, type ImportedFile } from "../document";
+import {
+  structureMarkdown,
+  type ImportedFile,
+  type ChapterTitle,
+} from "../document";
 
 const FRONTMATTER = /^---\n([\s\S]*?)\n---\n\n?/;
 
@@ -19,10 +23,14 @@ function frontmatter(text: string): Record<string, unknown> | null {
 export function readMarkdown(
   text: string,
   fallbackTitle: string,
+  chapterTitle?: ChapterTitle,
 ): ImportedFile {
   const fields = frontmatter(text);
   if (typeof fields?.title !== "string") {
-    return structureMarkdown(text, fallbackTitle, { shifted: false });
+    return structureMarkdown(text, fallbackTitle, {
+      shifted: false,
+      chapterTitle,
+    });
   }
   const title = fields.title.trim() || fallbackTitle;
   const chapter = {
@@ -43,7 +51,11 @@ const headed = (text: string) =>
   text.replace(/\n\nNotes\n\n(?![\s\S]*\n\nNotes\n\n)/, "\n\n### Notes\n\n");
 
 // A plain text export separates chapters with two empty lines, the title with one.
-export function readTxt(text: string, fallbackTitle: string): ImportedFile {
+export function readTxt(
+  text: string,
+  fallbackTitle: string,
+  chapterTitle?: ChapterTitle,
+): ImportedFile {
   const [head, ...rest] = text.trim().split(/\n{3,}/);
   const title = (
     rest.length ? /^(.{1,100})(?:\n\n|$)/ : /^(.{1,100})\n\n/
@@ -60,5 +72,6 @@ export function readTxt(text: string, fallbackTitle: string): ImportedFile {
   ];
   return structureMarkdown(markdown.join("\n\n"), fallbackTitle, {
     shifted: false,
+    chapterTitle,
   });
 }

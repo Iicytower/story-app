@@ -1,7 +1,24 @@
 import { expect, test as base, type Page } from "@playwright/test";
+import { createTranslator } from "next-intl";
 import { AUTOSAVE_DELAY_MS } from "@/lib/autosave";
+import {
+  PASSWORD_REQUIREMENT_VALUES,
+  PASSWORD_REQUIREMENTS,
+} from "@/lib/credentials";
+import en from "@/messages/en.json";
 import { clearStories } from "./db";
 import { USERS, type UserName } from "./env";
+
+const password = createTranslator({
+  locale: "en",
+  messages: en,
+  namespace: "password",
+});
+
+// The requirement texts as the English interface shows them.
+export const PASSWORD_REQUIREMENT_TEXTS = PASSWORD_REQUIREMENTS.map((id) =>
+  password(`requirements.${id}`, PASSWORD_REQUIREMENT_VALUES),
+);
 
 export async function login(page: Page, user: UserName) {
   await page.goto("/?auth=login");

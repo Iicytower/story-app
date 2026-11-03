@@ -1,6 +1,7 @@
 "use client";
 
 import { GlobeIcon, GlobeLockIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { setChapterPublished } from "../../stories/actions";
@@ -15,7 +16,8 @@ export function PublishChapterButton({
   isPublic: boolean;
 }) {
   const [pending, startTransition] = useTransition();
-  const label = `${isPublic ? "Unpublish" : "Publish"} "${title}"`;
+  const t = useTranslations("folders");
+  const label = t(isPublic ? "unpublishChapter" : "publishChapter", { title });
 
   return (
     <Button

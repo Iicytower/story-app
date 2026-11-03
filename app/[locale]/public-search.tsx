@@ -1,6 +1,6 @@
 import Form from "next/form";
 import { headers } from "next/headers";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { getPathname, Link } from "@/i18n/navigation";
 import { TagChips } from "@/components/tag-chips";
 import { Input } from "@/components/ui/input";
@@ -35,9 +35,10 @@ export async function PublicSearch({
   const filterTags = [...new Set([...tags, ...selectedTags])];
 
   const searchPath = getPathname({ href: "/", locale: await getLocale() });
+  const t = await getTranslations("search");
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-8">
-      <h1 className="text-2xl font-semibold">Search stories</h1>
+      <h1 className="text-2xl font-semibold">{t("title")}</h1>
       <Form action={searchPath} role="search">
         <Input
           key={query}
@@ -45,15 +46,15 @@ export async function PublicSearch({
           type="search"
           defaultValue={query}
           maxLength={MAX_QUERY_LENGTH}
-          placeholder="Search titles, tags and text, press Enter"
-          aria-label="Search published stories"
+          placeholder={t("placeholder")}
+          aria-label={t("label")}
         />
         {selectedTags.map((selected) => (
           <input key={selected} type="hidden" name="tag" value={selected} />
         ))}
       </Form>
       {filterTags.length > 0 && (
-        <nav aria-label="Filter by tag" className="flex flex-wrap gap-1">
+        <nav aria-label={t("filterByTag")} className="flex flex-wrap gap-1">
           {filterTags.map((filterTag) => {
             const active = selectedTags.includes(filterTag);
             return (
@@ -77,7 +78,7 @@ export async function PublicSearch({
       )}
       {!allowed ? (
         <p role="alert" className="text-destructive">
-          Too many searches. Try again in a minute.
+          {t("tooMany")}
         </p>
       ) : (
         searching && (
@@ -90,13 +91,14 @@ export async function PublicSearch({
   );
 }
 
-function Results({ results }: { results: PublicSearchResult[] }) {
+async function Results({ results }: { results: PublicSearchResult[] }) {
+  const t = await getTranslations("search");
   if (results.length === 0) {
-    return <p className="text-muted-foreground">No stories found.</p>;
+    return <p className="text-muted-foreground">{t("none")}</p>;
   }
   return (
     <ul
-      aria-label="Search results"
+      aria-label={t("results")}
       className="flex flex-col divide-y rounded-lg border"
     >
       {results.map(
@@ -109,7 +111,7 @@ function Results({ results }: { results: PublicSearchResult[] }) {
               <span className="flex flex-wrap items-baseline gap-2">
                 <span className="font-medium">{title}</span>
                 <span className="text-muted-foreground text-xs">
-                  in {folderName} by {nickname}
+                  {t("inFolderBy", { folder: folderName, nickname })}
                 </span>
               </span>
               <span className="text-muted-foreground line-clamp-2 text-sm">

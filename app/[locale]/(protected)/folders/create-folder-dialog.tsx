@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,10 +18,11 @@ import { Label } from "@/components/ui/label";
 import { createFolder } from "./actions";
 
 export function CreateFolderDialog() {
+  const t = useTranslations("folders");
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline">New folder</Button>
+        <Button variant="outline">{t("newFolder")}</Button>
       </DialogTrigger>
       <DialogContent>
         <CreateFolderForm />
@@ -35,6 +37,8 @@ function CreateFolderForm() {
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("folders");
+  const tCommon = useTranslations("common");
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,10 +52,10 @@ function CreateFolderForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <DialogHeader>
-        <DialogTitle>New folder</DialogTitle>
+        <DialogTitle>{t("newFolder")}</DialogTitle>
       </DialogHeader>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="new-folder-name">Name</Label>
+        <Label htmlFor="new-folder-name">{t("name")}</Label>
         <Input
           id="new-folder-name"
           value={name}
@@ -67,11 +71,11 @@ function CreateFolderForm() {
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline">
-            Cancel
+            {tCommon("cancel")}
           </Button>
         </DialogClose>
         <Button type="submit" disabled={pending}>
-          {pending ? "Creating…" : "Create"}
+          {pending ? tCommon("creating") : tCommon("create")}
         </Button>
       </DialogFooter>
     </form>

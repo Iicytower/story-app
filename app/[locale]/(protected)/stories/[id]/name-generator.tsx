@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckIcon, CopyIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useId, useRef, useState } from "react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
@@ -8,9 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   clearedBy,
-  clearsLabel,
   clearValue,
   type FilterKey,
+  labelKey,
   selectValue,
 } from "@/lib/name-generator/conflicts";
 import {
@@ -26,7 +27,6 @@ import {
   type SingleGroup,
   STYLES,
   type Toggle,
-  TOGGLES,
   TYPE_GROUPS,
 } from "@/lib/name-generator/filters";
 import { generate } from "@/lib/name-generator/generate";
@@ -89,12 +89,13 @@ function Group({
 function CopyButton({
   label,
   text,
-  children = "Copy",
+  children,
 }: {
   label: string;
   text: string;
   children?: string;
 }) {
+  const t = useTranslations("nameGenerator");
   const [copied, setCopied] = useState(false);
   return (
     <Button
@@ -108,17 +109,12 @@ function CopyButton({
       onMouseLeave={() => setCopied(false)}
     >
       {copied ? <CheckIcon /> : <CopyIcon />}
-      {children}
+      {children ?? t("copy")}
     </Button>
   );
 }
 
-const TEXT_FIELDS = [
-  { key: "startsWith", label: "Starts with" },
-  { key: "endsWith", label: "Ends with" },
-  { key: "contains", label: "Contains" },
-  { key: "excludes", label: "Excludes (comma-separated)" },
-] as const;
+const TEXT_FIELDS = ["startsWith", "endsWith", "contains", "excludes"] as const;
 
 function persist(filters: Filters) {
   saveFilters(window.localStorage, filters, Date.now());
@@ -132,6 +128,9 @@ export function NameGenerator() {
   const [filters, setFilters] = useState(restore);
   const [names, setNames] = useState<string[] | null>(null);
   const seen = useRef(new Set<string>());
+  const t = useTranslations("nameGenerator");
+  // Paths built from filter values, which match the dictionary's keys.
+  const label = (path: string) => t(path as Parameters<typeof t>[0]);
 
   function update(next: Filters) {
     setFilters(next);
@@ -148,35 +147,40 @@ export function NameGenerator() {
     setNames(result);
   }
 
-  const clearsOf = (key: FilterKey) => clearsLabel(clearedBy(filters, key));
+  function clearsOf(key: FilterKey) {
+    const cleared = clearedBy(filters, key);
+    return cleared.length > 0
+      ? t("clears", {
+          labels: cleared.map((k) => label(labelKey(k))).join(", "),
+        })
+      : undefined;
+  }
 
   function single(group: SingleGroup) {
-    const { label, options } = SINGLE_GROUPS[group];
+    const { options } = SINGLE_GROUPS[group];
     const current = filters[group];
     return (
-      <Group label={label}>
+      <Group label={t(`groups.${group}.label`)}>
         <Choice
-          label="Any"
+          label={t("any")}
           round
           pressed={current === "any"}
           onClick={() => update(clearValue(filters, `${group}:${current}`))}
         />
-        {(options as readonly { value: string; label: string }[]).map(
-          (option) => {
-            const key = `${group}:${option.value}`;
-            const pressed = current === option.value;
-            return (
-              <Choice
-                key={key}
-                label={option.label}
-                round
-                pressed={pressed}
-                clears={pressed ? undefined : clearsOf(key)}
-                onClick={() => update(selectValue(filters, key))}
-              />
-            );
-          },
-        )}
+        {(options as readonly { value: string }[]).map((option) => {
+          const key = `${group}:${option.value}`;
+          const pressed = current === option.value;
+          return (
+            <Choice
+              key={key}
+              label={label(`groups.${group}.options.${option.value}`)}
+              round
+              pressed={pressed}
+              clears={pressed ? undefined : clearsOf(key)}
+              onClick={() => update(selectValue(filters, key))}
+            />
+          );
+        })}
       </Group>
     );
   }
@@ -185,7 +189,7 @@ export function NameGenerator() {
     const key = `${name}:on`;
     return (
       <Choice
-        label={TOGGLES[name]}
+        label={t(`toggles.${name}`)}
         round={false}
         pressed={filters[name]}
         disabled={disabled}
@@ -205,11 +209,11 @@ export function NameGenerator() {
     <div className="grid min-w-0 items-start gap-4 sm:grid-cols-[minmax(0,1fr)_16rem]">
       <div className="grid min-w-0 gap-3">
         {TYPE_GROUPS.map((group) => (
-          <Group key={group.label} label={group.label}>
+          <Group key={group.id} label={t(`typeGroups.${group.id}`)}>
             {group.types.map((type) => (
               <Choice
                 key={type.value}
-                label={type.label}
+                label={t(`types.${type.value}`)}
                 round
                 pressed={filters.type === type.value}
                 onClick={() => update({ ...filters, type: type.value })}
@@ -220,9 +224,9 @@ export function NameGenerator() {
 
         {hasGender(filters.type) && single("gender")}
 
-        <Group label="Style">
+        <Group label={t("style")}>
           <Choice
-            label="Any"
+            label={t("any")}
             round={false}
             pressed={filters.styles.length === 0}
             onClick={() => update({ ...filters, styles: [] })}
@@ -233,7 +237,7 @@ export function NameGenerator() {
             return (
               <Choice
                 key={key}
-                label={style.label}
+                label={t(`styles.${style.value}`)}
                 round={false}
                 pressed={pressed}
                 clears={pressed ? undefined : clearsOf(key)}
@@ -254,11 +258,11 @@ export function NameGenerator() {
         {single("length")}
         {single("pronunciation")}
 
-        <Group label="Crude part">
+        <Group label={t("crudePart")}>
           {CRUDE_OPTIONS.map((option) => (
             <Choice
               key={option.value}
-              label={option.label}
+              label={t(`crude.${option.value}`)}
               round
               pressed={filters.crude === option.value}
               onClick={() => update({ ...filters, crude: option.value })}
@@ -270,11 +274,11 @@ export function NameGenerator() {
         {single("mood")}
         {hasWordCount(filters.type) && single("wordCount")}
 
-        <Group label="Options">
+        <Group label={t("options")}>
           {hasAlliteration(filters.type) && toggle("alliteration")}
           {toggle("repeatedSyllable")}
           <Choice
-            label="Polish letters"
+            label={t("polishLetters")}
             round={false}
             pressed={filters.polishLetters}
             onClick={() =>
@@ -290,10 +294,10 @@ export function NameGenerator() {
         </Group>
 
         <div className="grid grid-cols-2 gap-2">
-          {TEXT_FIELDS.map(({ key, label }) => (
+          {TEXT_FIELDS.map((key) => (
             <div key={key} className="grid gap-1">
               <Label htmlFor={`name-${key}`} className="text-xs font-normal">
-                {label}
+                {t(`textFields.${key}`)}
               </Label>
               <Input
                 id={`name-${key}`}
@@ -312,45 +316,43 @@ export function NameGenerator() {
             size="xs"
             onClick={() => update(DEFAULT_FILTERS)}
           >
-            Reset filters
+            {t("reset")}
           </Button>
         </div>
       </div>
 
       <div className="order-first grid min-w-0 gap-2 sm:sticky sm:top-0 sm:order-none">
         <div className="flex gap-2">
-          <Button onClick={run}>Generate</Button>
+          <Button onClick={run}>{t("generate")}</Button>
           {names !== null && names.length > 0 && (
             <Button variant="outline" onClick={run}>
-              Next 10
+              {t("next")}
             </Button>
           )}
         </div>
         {names !== null && names.length < 10 && (
           <p role="status" className="text-muted-foreground text-xs">
             {names.length === 0
-              ? "No names match these filters."
-              : `Only ${names.length} ${
-                  names.length === 1 ? "name matches" : "names match"
-                } these filters.`}
+              ? t("noMatch")
+              : t("fewMatch", { count: names.length })}
           </p>
         )}
         {names !== null && names.length > 0 && (
           <>
-            <ol aria-label="Names" className="grid gap-0.5">
+            <ol aria-label={t("names")} className="grid gap-0.5">
               {names.map((name) => (
                 <li
                   key={name}
                   className="flex items-center justify-between gap-2"
                 >
                   <span className="min-w-0 break-words">{name}</span>
-                  <CopyButton label={`Copy ${name}`} text={name} />
+                  <CopyButton label={t("copyName", { name })} text={name} />
                 </li>
               ))}
             </ol>
             <div>
-              <CopyButton label="Copy all" text={names.join("\n")}>
-                Copy all
+              <CopyButton label={t("copyAll")} text={names.join("\n")}>
+                {t("copyAll")}
               </CopyButton>
             </div>
           </>

@@ -3,7 +3,6 @@ import {
   SINGLE_GROUPS,
   type SingleGroup,
   type Style,
-  STYLES,
   type Toggle,
   TOGGLES,
 } from "./filters";
@@ -29,7 +28,7 @@ export function selectedKeys(filters: Filters): FilterKey[] {
   for (const group of Object.keys(SINGLE_GROUPS) as SingleGroup[]) {
     if (filters[group] !== "any") keys.push(`${group}:${filters[group]}`);
   }
-  for (const toggle of Object.keys(TOGGLES) as Toggle[]) {
+  for (const toggle of TOGGLES) {
     if (filters[toggle]) keys.push(`${toggle}:on`);
   }
   if (!filters.polishLetters) keys.push("polishLetters:off");
@@ -56,7 +55,7 @@ export function clearValue(filters: Filters, key: FilterKey): Filters {
     };
   }
   if (group === "polishLetters") return { ...filters, polishLetters: true };
-  if (group in TOGGLES) return { ...filters, [group]: false };
+  if (isToggle(group)) return { ...filters, [group]: false };
   return { ...filters, [group]: "any" };
 }
 
@@ -67,24 +66,19 @@ export function selectValue(filters: Filters, key: FilterKey): Filters {
     return { ...cleared, styles: [...cleared.styles, value as Style] };
   }
   if (group === "polishLetters") return { ...cleared, polishLetters: false };
-  if (group in TOGGLES) return { ...cleared, [group]: true };
+  if (isToggle(group)) return { ...cleared, [group]: true };
   return { ...cleared, [group]: value };
 }
 
-export function keyLabel(key: FilterKey): string {
+// Path of the value's label in the nameGenerator dictionary.
+export function labelKey(key: FilterKey): string {
   const [group, value] = key.split(":");
-  if (group === "style") {
-    return STYLES.find((style) => style.value === value)?.label ?? value;
-  }
-  if (group === "polishLetters") return "No Polish letters";
-  if (group in TOGGLES) return TOGGLES[group as Toggle];
-  const options: readonly { value: string; label: string }[] =
-    SINGLE_GROUPS[group as SingleGroup].options;
-  return options.find((option) => option.value === value)?.label ?? value;
+  if (group === "style") return `styles.${value}`;
+  if (group === "polishLetters") return "noPolishLetters";
+  if (isToggle(group)) return `toggles.${group}`;
+  return `groups.${group}.options.${value}`;
 }
 
-export function clearsLabel(keys: FilterKey[]): string | undefined {
-  return keys.length > 0
-    ? `Clears ${keys.map(keyLabel).join(", ")}`
-    : undefined;
+function isToggle(group: string): group is Toggle {
+  return (TOGGLES as readonly string[]).includes(group);
 }

@@ -13,6 +13,7 @@ import {
   PanelRightOpenIcon,
 } from "lucide-react";
 import { cn } from "cn";
+import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import {
   Fragment,
@@ -44,7 +45,7 @@ import type { EditorFolder } from "@/lib/folders/queries";
 import {
   countCharacters,
   countWords,
-  formatReadAloudTime,
+  readAloudMinutes,
 } from "@/lib/stories/count";
 import type { MobileView, UserSettings } from "@/lib/settings/settings";
 import type { EditorStory } from "@/lib/stories/queries";
@@ -67,18 +68,7 @@ import { ToolDialog, ToolsPanel } from "./tools-panel";
 
 type Values = { title: string; content: string; notes: string };
 
-const MOBILE_VIEWS: { value: MobileView; label: string }[] = [
-  { value: "story", label: "Story" },
-  { value: "notes", label: "Notes" },
-  { value: "chapters", label: "Chapters" },
-  { value: "tools", label: "Tools" },
-];
-
-const PANEL_LABELS: Record<SidePanel, string> = {
-  notes: "Notes",
-  chapters: "Chapters",
-  tools: "Tools",
-};
+const MOBILE_VIEWS: MobileView[] = ["story", "notes", "chapters", "tools"];
 
 type SaveState =
   | { status: "idle" | "saving" | "saved" }
@@ -102,6 +92,10 @@ export function Editor({
   settings: UserSettings["editor"];
 }) {
   const router = useRouter();
+  const t = useTranslations("editor");
+  const tErrors = useTranslations("errors");
+  const tSave = useTranslations("save");
+  const tFolders = useTranslations("folders");
   const [title, setTitle] = useState(story.title);
   const [content, setContent] = useState(story.content);
   const [notes, setNotes] = useState(story.notes);
@@ -158,22 +152,19 @@ export function Editor({
           }
           setSaveState({ status: "error", message: result.message });
         } catch {
-          setSaveState({
-            status: "error",
-            message: "Could not reach the server. Check your connection.",
-          });
+          setSaveState({ status: "error", message: tErrors("offline") });
         }
         return false;
       });
       queue.current = run.then(() => {});
       return run;
     },
-    [story.id],
+    [story.id, tErrors],
   );
 
   async function saveForExport(): Promise<boolean> {
     if (!latest.current.title.trim()) {
-      setSaveState({ status: "error", message: "Title is required." });
+      setSaveState({ status: "error", message: tErrors("titleRequired") });
       return false;
     }
     return Boolean(await save(true));
@@ -181,7 +172,7 @@ export function Editor({
 
   async function beforeLeave(): Promise<string | null> {
     if (!latest.current.title.trim()) {
-      const message = "Title is required.";
+      const message = tErrors("titleRequired");
       setSaveState({ status: "error", message });
       return message;
     }
@@ -190,14 +181,12 @@ export function Editor({
       folderNotes.flush(),
     ]);
     if (!notesSaved.ok) {
-      const message = `Folder notes were not saved: ${notesSaved.message}`;
+      const message = t("notSavedNotes", { message: notesSaved.message });
       setSaveState({ status: "error", message });
       return message;
     }
     // save() has already put its error into the status.
-    return storySaved
-      ? null
-      : "The chapter was not saved. See the message above.";
+    return storySaved ? null : t("notSavedChapter");
   }
 
   async function togglePublished() {
@@ -211,10 +200,7 @@ export function Editor({
         setSaveState({ status: "error", message: result.message });
       }
     } catch {
-      setSaveState({
-        status: "error",
-        message: "Could not reach the server. Check your connection.",
-      });
+      setSaveState({ status: "error", message: tErrors("offline") });
     }
     setPublishPending(false);
   }
@@ -275,26 +261,29 @@ export function Editor({
       <MarkdownEditor
         value={content}
         onChange={setContent}
-        label="Content"
-        placeholder="Write your story…"
+        label={t("content")}
+        placeholder={t("contentPlaceholder")}
         className="flex-1"
         scrollMemory={{ storyId: story.id, field: "content" }}
       />
       <p className="text-muted-foreground border-t px-4 py-2 text-xs md:px-6">
-        {words} words · {countCharacters(content)} characters ·{" "}
-        {formatReadAloudTime(words)} read aloud
+        {t("stats", {
+          words,
+          characters: countCharacters(content),
+          minutes: readAloudMinutes(words),
+        })}
       </p>
     </div>
   );
 
   const chapterNotes = (className: string) => (
     <div className={`flex min-h-0 flex-col ${className}`}>
-      <h3 className="border-b px-4 py-2 text-sm font-medium">Notes</h3>
+      <h3 className="border-b px-4 py-2 text-sm font-medium">{t("notes")}</h3>
       <MarkdownEditor
         value={notes}
         onChange={setNotes}
-        label="Notes"
-        placeholder="Notes for this chapter…"
+        label={t("notes")}
+        placeholder={t("notesPlaceholder")}
         className="flex-1"
         compact
         scrollMemory={{ storyId: story.id, field: "notes" }}
@@ -321,7 +310,7 @@ export function Editor({
           scrollMemory={{ storyId: story.id, field: "folderNotes" }}
         />
       </ResizablePanel>
-      <ResizableHandle withHandle aria-label="Resize folder notes" />
+      <ResizableHandle withHandle aria-label={t("resizeFolderNotes")} />
       <ResizablePanel id="chapter-notes-panel" minSize="15%" defaultSize="60%">
         {chapterNotes("h-full")}
       </ResizablePanel>
@@ -345,7 +334,8 @@ export function Editor({
   };
 
   function sideHeader(panel: SidePanel, index: number) {
-    const label = PANEL_LABELS[panel];
+    const label = t(`views.${panel}`);
+    const name = t(`panelNames.${panel}`);
     return (
       <div className="flex items-center gap-1 border-b px-2 py-1">
         {layout.split ? (
@@ -354,8 +344,8 @@ export function Editor({
             <Button
               variant="ghost"
               size="icon"
-              aria-label={`Move ${label.toLowerCase()} left`}
-              title="Move left"
+              aria-label={t("moveLeft", { panel: name })}
+              title={t("moveLeftShort")}
               disabled={index === 0}
               onClick={() =>
                 updateEditorLayout((current) => ({
@@ -374,8 +364,8 @@ export function Editor({
             <Button
               variant="ghost"
               size="icon"
-              aria-label={`Move ${label.toLowerCase()} right`}
-              title="Move right"
+              aria-label={t("moveRight", { panel: name })}
+              title={t("moveRightShort")}
               disabled={index === columns.length - 1}
               onClick={() =>
                 updateEditorLayout((current) => ({
@@ -395,7 +385,7 @@ export function Editor({
         ) : (
           <div
             role="tablist"
-            aria-label="Side panel"
+            aria-label={t("sidePanel")}
             className="bg-muted text-muted-foreground mr-auto grid min-w-0 grid-cols-3 gap-1 rounded-lg p-1"
           >
             {SIDE_PANELS.map((tab) => (
@@ -409,7 +399,7 @@ export function Editor({
                 }
                 className="aria-selected:bg-background aria-selected:text-foreground truncate rounded-md px-2 py-1 text-sm font-medium aria-selected:shadow-sm"
               >
-                {PANEL_LABELS[tab]}
+                {t(`views.${tab}`)}
               </button>
             ))}
           </div>
@@ -417,8 +407,8 @@ export function Editor({
         <Button
           variant="ghost"
           size="icon"
-          aria-label={`Hide ${label.toLowerCase()}`}
-          title={`Hide ${label.toLowerCase()}`}
+          aria-label={t("hide", { panel: name })}
+          title={t("hide", { panel: name })}
           onClick={() => setCollapsed(panel, true)}
         >
           <PanelRightCloseIcon />
@@ -435,7 +425,7 @@ export function Editor({
             <Link
               href={`/folders/${story.folderId}`}
               className="max-w-48"
-              title={`Back to ${story.folderName}`}
+              title={t("backTo", { folder: story.folderName })}
             >
               <ArrowLeftIcon />
               <span className="truncate">{story.folderName}</span>
@@ -445,8 +435,8 @@ export function Editor({
         <Input
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          aria-label="Title"
-          placeholder="Title"
+          aria-label={t("title")}
+          placeholder={t("title")}
           lang="pl"
           spellCheck
           className="h-9 w-full text-lg font-semibold md:w-auto md:flex-1 md:text-lg"
@@ -459,8 +449,8 @@ export function Editor({
               : "text-muted-foreground mr-auto text-sm md:mr-0"
           }
         >
-          {saveState.status === "saving" && "Saving…"}
-          {saveState.status === "saved" && "Saved"}
+          {saveState.status === "saving" && tSave("saving")}
+          {saveState.status === "saved" && tSave("saved")}
           {saveState.status === "error" && saveState.message}
         </span>
         <ExportDialog
@@ -475,7 +465,7 @@ export function Editor({
         >
           <GlobeIcon />
           <span className="sr-only md:not-sr-only">
-            {publicPath ? "Unpublish" : "Publish"}
+            {publicPath ? tFolders("unpublish") : tFolders("publish")}
           </span>
         </Button>
         <DeleteStoryButton
@@ -501,26 +491,26 @@ export function Editor({
           }
         >
           <Columns3Icon />
-          Split
+          {t("split")}
         </Button>
       </div>
       {publicUrl && (
         <div className="flex items-center gap-2 border-b px-4 py-2 text-sm md:px-6">
           <LinkIcon className="text-muted-foreground size-4 shrink-0" />
           <span className="text-muted-foreground hidden md:inline">
-            This chapter is public:
+            {t("isPublic")}
           </span>
           <Input
             readOnly
             value={publicUrl}
-            aria-label="Public link"
+            aria-label={tFolders("publicLink")}
             onFocus={(event) => event.target.select()}
             className="h-8 max-w-xl min-w-0"
           />
           <Button variant="outline" size="sm" onClick={copyPublicUrl}>
             {copied ? <CheckIcon /> : <CopyIcon />}
             <span className="sr-only md:not-sr-only">
-              {copied ? "Copied" : "Copy link"}
+              {copied ? tFolders("copied") : tFolders("copyLink")}
             </span>
           </Button>
         </div>
@@ -555,7 +545,9 @@ export function Editor({
               <Fragment key={layout.split ? panel : "side"}>
                 <ResizableHandle
                   withHandle
-                  aria-label={`Resize ${PANEL_LABELS[panel].toLowerCase()} column`}
+                  aria-label={t("resizeColumn", {
+                    panel: t(`panelNames.${panel}`),
+                  })}
                 />
                 <ResizablePanel
                   // Not the bare panel name: the library also sets it as the DOM id, which labels point to.
@@ -588,8 +580,8 @@ export function Editor({
                   key={panel}
                   variant="ghost"
                   size="icon"
-                  aria-label={`Show ${PANEL_LABELS[panel].toLowerCase()}`}
-                  title={`Show ${PANEL_LABELS[panel].toLowerCase()}`}
+                  aria-label={t("show", { panel: t(`panelNames.${panel}`) })}
+                  title={t("show", { panel: t(`panelNames.${panel}`) })}
                   onClick={() => setCollapsed(panel, false)}
                 >
                   <PanelRightOpenIcon />
@@ -602,19 +594,19 @@ export function Editor({
         <>
           <div
             role="tablist"
-            aria-label="View"
+            aria-label={t("view")}
             className="bg-muted text-muted-foreground mx-4 mt-3 grid grid-cols-4 gap-1 rounded-lg p-1"
           >
             {MOBILE_VIEWS.map((view) => (
               <button
-                key={view.value}
+                key={view}
                 type="button"
                 role="tab"
-                aria-selected={mobileView === view.value}
-                onClick={() => setMobileView(view.value)}
+                aria-selected={mobileView === view}
+                onClick={() => setMobileView(view)}
                 className="aria-selected:bg-background aria-selected:text-foreground rounded-md px-2 py-1.5 text-sm font-medium aria-selected:shadow-sm"
               >
-                {view.label}
+                {t(`views.${view}`)}
               </button>
             ))}
           </div>

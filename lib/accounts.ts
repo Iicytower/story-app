@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { nicknameError, passwordError } from "@/lib/credentials";
 import { isDuplicateKeyError } from "@/lib/db";
+import { inEnglish } from "@/lib/i18n/english";
 import { NICKNAME_COLLATION, User } from "@/lib/models/user";
 
 // Hashes without the prefix are bcrypt of the raw password, from before task 36.
@@ -59,7 +60,7 @@ export async function createOrUpdateUser(
 ): Promise<"created" | "updated"> {
   const trimmed = nickname.trim();
   const error = nicknameError(trimmed) ?? passwordError(password);
-  if (error) throw new Error(error);
+  if (error) throw new Error(inEnglish(error));
 
   const result = await User.updateOne(
     { nickname: trimmed },

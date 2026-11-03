@@ -8,6 +8,7 @@ import {
   WholeWordIcon,
   XIcon,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { ReactNode, RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,19 +73,20 @@ export function FindPanel({
   onReplaceAll: () => void;
   onClose: () => void;
 }) {
+  const t = useTranslations("find");
   const none = matchCount === 0;
   const status = invalid
-    ? "Invalid regular expression"
+    ? t("invalidRegex")
     : !options.query
       ? ""
       : none
-        ? "No results"
-        : `${current + 1} of ${matchCount}`;
+        ? t("noResults")
+        : t("position", { current: current + 1, total: matchCount });
 
   const toggles = [
-    { key: "matchCase", label: "Match case", icon: CaseSensitiveIcon },
-    { key: "wholeWord", label: "Whole word", icon: WholeWordIcon },
-    { key: "regex", label: "Regular expression", icon: RegexIcon },
+    { key: "matchCase", label: t("matchCase"), icon: CaseSensitiveIcon },
+    { key: "wholeWord", label: t("wholeWord"), icon: WholeWordIcon },
+    { key: "regex", label: t("regex"), icon: RegexIcon },
   ] as const;
 
   return (
@@ -101,9 +103,9 @@ export function FindPanel({
             event.preventDefault();
             onStep(event.shiftKey ? -1 : 1);
           }}
-          aria-label="Find"
+          aria-label={t("find")}
           aria-invalid={invalid}
-          placeholder="Find"
+          placeholder={t("find")}
           autoComplete="off"
           spellCheck={false}
           className="h-7 w-48 min-w-0 flex-1 md:flex-none"
@@ -127,20 +129,20 @@ export function FindPanel({
           {status}
         </span>
         <PanelButton
-          label="Previous match"
+          label={t("previous")}
           disabled={none}
           onClick={() => onStep(-1)}
         >
           <ChevronUpIcon />
         </PanelButton>
         <PanelButton
-          label="Next match"
+          label={t("next")}
           disabled={none}
           onClick={() => onStep(1)}
         >
           <ChevronDownIcon />
         </PanelButton>
-        <PanelButton label="Close find" onClick={onClose}>
+        <PanelButton label={t("close")} onClick={onClose}>
           <XIcon />
         </PanelButton>
       </div>
@@ -154,17 +156,17 @@ export function FindPanel({
               event.preventDefault();
               if (!none) onReplace();
             }}
-            aria-label="Replace with"
-            placeholder="Replace"
+            aria-label={t("replaceWith")}
+            placeholder={t("replacePlaceholder")}
             autoComplete="off"
             spellCheck={false}
             className="h-7 w-48 min-w-0 flex-1 md:flex-none"
           />
-          <PanelButton label="Replace" disabled={none} onClick={onReplace}>
+          <PanelButton label={t("replace")} disabled={none} onClick={onReplace}>
             <ReplaceIcon />
           </PanelButton>
           <PanelButton
-            label="Replace all"
+            label={t("replaceAll")}
             disabled={none}
             onClick={onReplaceAll}
           >

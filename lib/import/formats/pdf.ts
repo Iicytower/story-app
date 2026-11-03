@@ -1,5 +1,10 @@
 import { getDocumentProxy, getMeta } from "unpdf";
-import { structureMarkdown, type ImportedFile } from "../document";
+import { NOTES_HEADINGS } from "@/lib/i18n/english";
+import {
+  structureMarkdown,
+  type ImportedFile,
+  type ChapterTitle,
+} from "../document";
 
 type TextItem = { str: string; transform: number[]; height: number };
 
@@ -27,6 +32,7 @@ function pageLines(items: TextItem[]) {
 export async function readPdf(
   bytes: Uint8Array,
   fallbackTitle: string,
+  chapterTitle?: ChapterTitle,
 ): Promise<ImportedFile> {
   const pdf = await getDocumentProxy(bytes);
   const { info } = await getMeta(pdf);
@@ -55,11 +61,14 @@ export async function readPdf(
   }
 
   if (title && paragraphs[0] === title) paragraphs.shift();
-  const notes = paragraphs.lastIndexOf("Notes");
-  if (notes !== -1) paragraphs[notes] = "### Notes";
+  const notes = paragraphs.findLastIndex((paragraph) =>
+    NOTES_HEADINGS.includes(paragraph),
+  );
+  if (notes !== -1) paragraphs[notes] = `### ${paragraphs[notes]}`;
   const markdown = [`# ${title || fallbackTitle}`, ...paragraphs].join("\n\n");
   return structureMarkdown(markdown, fallbackTitle, {
     shifted: false,
     lossy: true,
+    chapterTitle,
   });
 }

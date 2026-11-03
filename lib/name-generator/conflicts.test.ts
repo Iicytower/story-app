@@ -1,7 +1,8 @@
+import en from "@/messages/en.json";
 import { describe, expect, it } from "vitest";
 import {
   clearedBy,
-  clearsLabel,
+  labelKey,
   clearValue,
   CONFLICTS,
   selectValue,
@@ -64,15 +65,30 @@ describe("selectValue", () => {
   });
 });
 
-describe("clearsLabel", () => {
-  it("names the selected values a click would clear", () => {
-    const filters = selectValue(DEFAULT_FILTERS, "sound:hard");
-    expect(clearsLabel(clearedBy(filters, "style:elvish"))).toBe("Clears Hard");
+describe("labelKey", () => {
+  it.each([
+    ["sound:hard", "groups.sound.options.hard"],
+    ["style:elvish", "styles.elvish"],
+    ["alliteration:on", "toggles.alliteration"],
+    ["polishLetters:off", "noPolishLetters"],
+  ])("finds the label of %s", (key, path) => {
+    expect(labelKey(key)).toBe(path);
+    expect(getByPath(en.nameGenerator, path)).toEqual(expect.any(String));
   });
 
-  it("is empty when nothing would be cleared", () => {
-    expect(clearsLabel(clearedBy(DEFAULT_FILTERS, "style:elvish"))).toBe(
-      undefined,
-    );
+  it("names the selected values a click would clear", () => {
+    const filters = selectValue(DEFAULT_FILTERS, "sound:hard");
+    expect(clearedBy(filters, "style:elvish").map(labelKey)).toEqual([
+      "groups.sound.options.hard",
+    ]);
   });
 });
+
+function getByPath(tree: object, path: string): unknown {
+  return path
+    .split(".")
+    .reduce<unknown>(
+      (node, part) => (node as Record<string, unknown>)?.[part],
+      tree,
+    );
+}

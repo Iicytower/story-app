@@ -1,5 +1,9 @@
 import { strToU8, zipSync } from "fflate";
 import { chapterFileName } from "@/lib/folders/export";
+import {
+  type DocumentLabels,
+  ENGLISH_DOCUMENT_LABELS,
+} from "@/lib/i18n/english";
 import { toExportDocument, type ExportSource } from "./document";
 import { EXPORT_FORMATS, type ExportFormatId } from "./formats";
 
@@ -8,12 +12,13 @@ export async function buildExport(
   format: ExportFormatId,
   source: ExportSource,
   includeExtras: boolean,
+  labels: DocumentLabels = ENGLISH_DOCUMENT_LABELS,
 ): Promise<Uint8Array | string> {
-  const document = toExportDocument(source, includeExtras);
+  const document = toExportDocument(source, includeExtras, labels);
   switch (format) {
     case "md": {
       const { buildMarkdown } = await import("./formats/text");
-      return buildMarkdown(source, includeExtras);
+      return buildMarkdown(source, includeExtras, labels);
     }
     case "txt": {
       const { buildTxt } = await import("./formats/text");
@@ -50,6 +55,7 @@ export async function buildChapterFilesZip(
   format: ExportFormatId,
   source: ExportSource,
   includeExtras: boolean,
+  labels: DocumentLabels = ENGLISH_DOCUMENT_LABELS,
 ): Promise<Uint8Array> {
   const { extension } = EXPORT_FORMATS.find(({ id }) => id === format)!;
   const toBytes = async (title: string, content: string, notes: string) => {
@@ -62,6 +68,7 @@ export async function buildChapterFilesZip(
         chapters: [{ title, content, notes }],
       },
       includeExtras,
+      labels,
     );
     return typeof data === "string" ? strToU8(data) : data;
   };

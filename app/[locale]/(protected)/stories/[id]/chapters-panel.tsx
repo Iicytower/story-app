@@ -1,6 +1,7 @@
 "use client";
 
 import { Link, useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useLayoutEffect, useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +33,7 @@ export function ChaptersPanel({
 }) {
   const router = useRouter();
   const listRef = useRef<HTMLUListElement>(null);
+  const t = useTranslations("chapters");
 
   useLayoutEffect(() => {
     const position = recallScroll(currentId, "chapters");
@@ -41,9 +43,7 @@ export function ChaptersPanel({
 
   if (!folder) {
     return (
-      <p className="text-muted-foreground px-4 py-3 text-sm">
-        This story is not in a folder.
-      </p>
+      <p className="text-muted-foreground px-4 py-3 text-sm">{t("noFolder")}</p>
     );
   }
 
@@ -59,7 +59,7 @@ export function ChaptersPanel({
       </div>
       <ul
         ref={listRef}
-        aria-label="Chapters"
+        aria-label={t("list")}
         onScroll={(event) =>
           rememberScroll(
             currentId,
@@ -120,11 +120,12 @@ function NewChapterDialog({
   folderName: string;
   beforeLeave: () => Promise<string | null>;
 }) {
+  const t = useTranslations("chapters");
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          New chapter
+          {t("newChapter")}
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -146,6 +147,8 @@ function NewChapterForm({
   const [title, setTitle] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("chapters");
+  const tCommon = useTranslations("common");
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -164,10 +167,10 @@ function NewChapterForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <DialogHeader>
-        <DialogTitle>New chapter</DialogTitle>
+        <DialogTitle>{t("newChapter")}</DialogTitle>
       </DialogHeader>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="new-chapter-title">Title</Label>
+        <Label htmlFor="new-chapter-title">{t("title")}</Label>
         <Input
           id="new-chapter-title"
           value={title}
@@ -185,11 +188,11 @@ function NewChapterForm({
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline">
-            Cancel
+            {tCommon("cancel")}
           </Button>
         </DialogClose>
         <Button type="submit" disabled={pending}>
-          {pending ? "Creating…" : "Create"}
+          {pending ? tCommon("creating") : tCommon("create")}
         </Button>
       </DialogFooter>
     </form>

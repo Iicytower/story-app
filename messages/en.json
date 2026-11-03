@@ -1,0 +1,544 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…",
+    "close": "Close",
+    "delete": "Delete",
+    "deleting": "Deleting…",
+    "create": "Create",
+    "creating": "Creating…",
+    "rename": "Rename",
+    "appName": "Story App"
+  },
+  "sidebar": {
+    "home": "Home",
+    "search": "Search",
+    "folders": "Folders",
+    "toggleTheme": "Toggle theme",
+    "changePassword": "Change password",
+    "logOut": "Log out",
+    "menu": "Menu",
+    "mainNav": "Main",
+    "expand": "Expand sidebar",
+    "collapse": "Collapse sidebar"
+  },
+  "errors": {
+    "nicknameRequirement": "Nickname must be 3-30 characters: letters a-z, digits, _ and -.",
+    "passwordTooShort": "Password must be at least {min} characters long.",
+    "passwordTooLong": "Password must be at most {max} characters long.",
+    "passwordNoLowercase": "Password must contain a lowercase letter.",
+    "passwordNoUppercase": "Password must contain an uppercase letter.",
+    "passwordNoDigit": "Password must contain a digit.",
+    "passwordNoSpecial": "Password must contain an ASCII special character.",
+    "passwordsDoNotMatch": "The passwords do not match.",
+    "sessionExpired": "Your session has expired. Please sign in again.",
+    "tagsInvalid": "These tags are not valid.",
+    "tagTooLong": "A tag can have at most {max} characters.",
+    "tooManyTags": "You can use at most {max} tags.",
+    "chapterTagLimit": "A chapter can have at most {max} tags, counting the ones from its folder.",
+    "versionNameRequired": "Version name is required.",
+    "versionNameTooLong": "Version name can have at most {max} characters.",
+    "folderNotFound": "This folder does not exist or has been deleted.",
+    "folderNameRequired": "Folder name is required.",
+    "optionUnavailable": "This option is not available. Reload the page and try again.",
+    "duplicateFolder": "A folder with this name already exists.",
+    "notesConflict": "These notes were changed in another tab or on another device. Reload the page to get the latest version.",
+    "storyNotFound": "This story does not exist or has been deleted.",
+    "duplicateTitle": "A story with this title already exists in this folder.",
+    "titleRequired": "Title is required.",
+    "folderRequired": "Folder is required.",
+    "importTooLarge": "This text is too large to import.",
+    "storyConflict": "This story was changed in another tab or on another device. Reload the page to get the latest version.",
+    "contentCleared": "The story content cannot be cleared completely. Your changes were not saved.",
+    "versionNotFound": "This version does not exist or has been deleted.",
+    "selectionChanged": "The folder has changed. Reload the page and select chapters again.",
+    "selectChapters": "Select chapters to restore or remove.",
+    "settingsInvalid": "These settings are not valid.",
+    "passwordsInvalid": "These passwords are not valid.",
+    "newPasswordsDoNotMatch": "The new passwords do not match.",
+    "currentPasswordIncorrect": "The current password is incorrect.",
+    "nicknameTaken": "This nickname is already taken.",
+    "detailsInvalid": "These details are not valid.",
+    "tooManyAccounts": "Too many new accounts. Try again later.",
+    "tooManyAttempts": "Too many attempts. Try again in a few minutes.",
+    "invalidCredentials": "Invalid nickname or password.",
+    "nothingToImport": "There is nothing to import.",
+    "importTooManyChapters": "A file can have at most {max} chapters.",
+    "importTitleTooLong": "A title can have at most {max} characters.",
+    "folderTagLimit": "\"{title}\" would have more than {max} tags, counting the ones from this folder.",
+    "offline": "Could not reach the server. Check your connection.",
+    "importUnpackedTooLarge": "The unpacked file is too large.",
+    "importUnsupported": "Unsupported file type: {extension}.",
+    "importUnsupportedNone": "Unsupported file type: none.",
+    "importEmpty": "This file has no text to import.",
+    "importFb2Invalid": "This FictionBook file could not be read.",
+    "importOdtInvalid": "This OpenDocument file could not be read.",
+    "importEpubInvalid": "This EPUB file could not be read.",
+    "importFileTooLarge": "This file is larger than 50 MB.",
+    "importUnreadable": "This file could not be read.",
+    "importFailed": "This text could not be imported. It may be too large."
+  },
+  "password": {
+    "mustContain": "The password must contain:",
+    "requirements": {
+      "length": "{min}-{max} characters",
+      "lowercase": "A lowercase letter (any alphabet)",
+      "uppercase": "An uppercase letter (any alphabet)",
+      "digit": "A digit (0-9)",
+      "special": "A special character, one of: {characters}"
+    }
+  },
+  "auth": {
+    "openDialog": "Log in / Create account",
+    "createAccount": "Create account",
+    "signIn": "Sign in",
+    "haveAccount": "Already have an account? ",
+    "noAccount": "No account? ",
+    "createOne": "Create one",
+    "nickname": "Nickname",
+    "password": "Password",
+    "signingIn": "Signing in…",
+    "repeatPassword": "Repeat password",
+    "passwordRequirements": "Password requirements",
+    "met": "Met: ",
+    "missing": "Missing: ",
+    "noRecovery": "There is no password recovery. If you forget your password, you lose access to your account and stories.",
+    "creatingAccount": "Creating account…"
+  },
+  "changePassword": {
+    "title": "Change password",
+    "changed": "Your password has been changed.",
+    "current": "Current password",
+    "new": "New password",
+    "repeat": "Repeat new password"
+  },
+  "export": {
+    "loadFailed": "The export data could not be loaded.",
+    "createFailed": "The file could not be created.",
+    "exportAs": "Export as…",
+    "title": "Export as",
+    "format": "Format",
+    "includeExtras": "Include comments and notes",
+    "separateFiles": "One file per chapter (.zip)",
+    "exporting": "Exporting…",
+    "export": "Export",
+    "formats": {
+      "docx": "Word (.docx)",
+      "odt": "OpenDocument (.odt)",
+      "pdf": "PDF (.pdf)",
+      "epub": "EPUB (.epub)",
+      "fb2": "FictionBook (.fb2)",
+      "html": "Web page (.html)",
+      "txt": "Plain text (.txt)",
+      "md": "Markdown, one file (.md)"
+    }
+  },
+  "tags": {
+    "fromFolder": "From folder",
+    "tagsFor": "Tags for {name}",
+    "tags": "Tags",
+    "current": "Current tags",
+    "remove": "Remove {tag}",
+    "add": "Add tag",
+    "addButton": "Add"
+  },
+  "find": {
+    "invalidRegex": "Invalid regular expression",
+    "noResults": "No results",
+    "position": "{current} of {total}",
+    "matchCase": "Match case",
+    "wholeWord": "Whole word",
+    "regex": "Regular expression",
+    "find": "Find",
+    "previous": "Previous match",
+    "next": "Next match",
+    "close": "Close find",
+    "replaceWith": "Replace with",
+    "replacePlaceholder": "Replace",
+    "replace": "Replace",
+    "replaceAll": "Replace all"
+  },
+  "markdownEditor": {
+    "group": "{label} editor",
+    "mode": "Mode",
+    "preview": "Preview",
+    "source": "Source",
+    "findReplace": "Find and replace",
+    "bold": "Bold",
+    "italic": "Italic",
+    "heading1": "Heading 1",
+    "heading2": "Heading 2",
+    "heading3": "Heading 3",
+    "bulletList": "Bulleted list",
+    "orderedList": "Numbered list",
+    "quote": "Quote",
+    "horizontalLine": "Horizontal line",
+    "link": "Link",
+    "comment": "Comment",
+    "undo": "Undo",
+    "redo": "Redo",
+    "invalidLink": "Use an http, https or mailto link.",
+    "url": "URL",
+    "emptyRemoves": "Leave empty to remove the link.",
+    "apply": "Apply"
+  },
+  "versions": {
+    "beforeRestore": "Before restoring version {number}",
+    "title": "Versions",
+    "none": "No versions yet.",
+    "versionName": "Version {number}: {name}",
+    "save": "Save version",
+    "saveDescription": "Saves the titles and contents of the folder's chapters as they are stored now, with their order. Notes are not part of versions.",
+    "name": "Name",
+    "label": "Version {number}",
+    "delete": "Delete Version {number}",
+    "deleteTitle": "Delete version?",
+    "deleteDescription": "Version {number} “{name}” will be removed. Chapters and other versions stay as they are.",
+    "saved": "Saved <date></date>. Changes are shown from this version to the current text.",
+    "status": {
+      "changed": "changed",
+      "unchanged": "unchanged",
+      "deleted": "deleted since",
+      "added": "added since"
+    },
+    "effects": {
+      "changed": "will be reverted",
+      "deleted": "will come back",
+      "added": "will be removed"
+    },
+    "fields": {
+      "title": "Title",
+      "content": "Content"
+    },
+    "chapters": "Chapters",
+    "selectAll": "Select all",
+    "restoreSelected": "Restore selected",
+    "emptyComparison": "This version has no chapters and the folder has none now.",
+    "chaptersInVersion": "Chapters in this version",
+    "showChanges": "Show changes",
+    "notesNotIncluded": "Notes are not part of versions and stay as they are.",
+    "willRevert": "{count, plural, one {# chapter} other {# chapters}} will be reverted.",
+    "willReturn": "{count, plural, one {# chapter} other {# chapters}} will come back.",
+    "willRemove": "{count, plural, one {# chapter} other {# chapters}} added since will be removed.",
+    "orderRestored": "The chapter order and sort mode will be restored.",
+    "restoring": "Restoring…",
+    "restoreEntire": "Restore entire version",
+    "restoreEntireTitle": "Restore entire version?",
+    "restoreEntireDescription": "The folder will match this version. The current state is saved as a new version first, so you can go back to it.",
+    "restore": "Restore",
+    "tooManyChanges": "Too many changes to compare."
+  },
+  "metadata": {
+    "stories": "Stories – Story App",
+    "search": "Search stories – Story App",
+    "folder": "Folder – Story App",
+    "version": "Version – Story App",
+    "editor": "Editor – Story App"
+  },
+  "folders": {
+    "title": "Folders",
+    "sortFolders": "Sort folders",
+    "sortUpdated": "Last updated",
+    "sortManual": "Manual",
+    "sortAlpha": "A–Z",
+    "searchPlaceholder": "Search title and content in all folders, press Enter",
+    "searchLabel": "Search stories",
+    "filterByTag": "Filter by tag",
+    "empty": "No folders yet. Create a folder or a new story.",
+    "listLabel": "Folders",
+    "chapterCount": "{count, plural, one {# chapter} other {# chapters}}",
+    "noMatch": "No stories match \"{query}\".",
+    "noMatchWithTags": "No stories match \"{query}\" with the selected tags.",
+    "noTagMatch": "No stories have the selected tags.",
+    "results": "Search results",
+    "inFolder": "in {folder}",
+    "newFolder": "New folder",
+    "name": "Name",
+    "deleteTitle": "Delete folder?",
+    "deleteDescription": "“{name}” and its {count, plural, one {# chapter} other {# chapters}} will be removed.",
+    "renameTitle": "Rename folder",
+    "moveStory": "Move {title}",
+    "moveTo": "Move to…",
+    "noOtherFolders": "There are no other folders. Create one first.",
+    "folderFor": "Folder for “{title}”",
+    "moving": "Moving…",
+    "move": "Move",
+    "publishChapter": "Publish \"{title}\"",
+    "unpublishChapter": "Unpublish \"{title}\"",
+    "notes": "Folder notes",
+    "notesPlaceholder": "Notes for this folder…",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "publishAll": "Publish all",
+    "publishAllTitle": "Publish all chapters?",
+    "publishAllDescription": "{count, plural, one {# unpublished chapter} other {# unpublished chapters}} will be published.",
+    "isPublic": "This folder is public:",
+    "publicLink": "Public link",
+    "copied": "Copied",
+    "copyLink": "Copy link",
+    "sortNewest": "Newest first",
+    "allFolders": "← All folders",
+    "sortChapters": "Sort chapters",
+    "noChapters": "No chapters yet. Create the first one.",
+    "chapters": "Chapters"
+  },
+  "reorder": {
+    "moveUp": "Move {name} up",
+    "moveDown": "Move {name} down",
+    "up": "Move up",
+    "down": "Move down"
+  },
+  "stories": {
+    "newStory": "New story",
+    "folder": "Folder",
+    "folderPlaceholder": "Choose or type a new folder",
+    "title": "Title",
+    "delete": "Delete {title}",
+    "deleteTitle": "Delete story?",
+    "deleteDescription": "“{title}” will be removed from your stories."
+  },
+  "save": {
+    "saving": "Saving…",
+    "saved": "Saved"
+  },
+  "editor": {
+    "views": {
+      "story": "Story",
+      "notes": "Notes",
+      "chapters": "Chapters",
+      "tools": "Tools"
+    },
+    "panelNames": {
+      "notes": "notes",
+      "chapters": "chapters",
+      "tools": "tools"
+    },
+    "notSavedNotes": "Folder notes were not saved: {message}",
+    "notSavedChapter": "The chapter was not saved. See the message above.",
+    "content": "Content",
+    "contentPlaceholder": "Write your story…",
+    "stats": "{words, plural, one {# word} other {# words}} · {characters, plural, one {# character} other {# characters}} · {minutes, plural, one {# minute} other {# minutes}} read aloud",
+    "notes": "Notes",
+    "notesPlaceholder": "Notes for this chapter…",
+    "resizeFolderNotes": "Resize folder notes",
+    "moveLeft": "Move {panel} left",
+    "moveLeftShort": "Move left",
+    "moveRight": "Move {panel} right",
+    "moveRightShort": "Move right",
+    "sidePanel": "Side panel",
+    "hide": "Hide {panel}",
+    "show": "Show {panel}",
+    "resizeColumn": "Resize {panel} column",
+    "backTo": "Back to {folder}",
+    "title": "Title",
+    "split": "Split",
+    "isPublic": "This chapter is public:",
+    "view": "View"
+  },
+  "chapters": {
+    "noFolder": "This story is not in a folder.",
+    "list": "Chapters",
+    "newChapter": "New chapter",
+    "title": "Title"
+  },
+  "tools": {
+    "list": "Tools",
+    "loading": "Loading…",
+    "comingSoon": "Coming soon.",
+    "items": {
+      "name-generator": {
+        "label": "Name generator",
+        "description": "Find names for characters and places."
+      },
+      "synonyms": {
+        "label": "Synonyms",
+        "description": "Look up other words for a word."
+      },
+      "rhymes": {
+        "label": "Rhymes",
+        "description": "Look up words that rhyme."
+      }
+    }
+  },
+  "nameGenerator": {
+    "typeGroups": {
+      "characters": "Characters",
+      "places": "Places",
+      "organizations": "Organizations",
+      "things": "Things and beings"
+    },
+    "types": {
+      "first-name": "First name",
+      "surname": "Surname",
+      "full-name": "Full name",
+      "epithet": "Epithet",
+      "city": "City",
+      "village": "Village",
+      "river": "River",
+      "mountains": "Mountains",
+      "forest": "Forest",
+      "kingdom": "Kingdom",
+      "inn": "Inn",
+      "guild": "Guild",
+      "order": "Order",
+      "house": "House",
+      "company": "Company",
+      "faction": "Faction",
+      "weapon": "Weapon",
+      "artifact": "Artifact",
+      "ship": "Ship",
+      "spell": "Spell",
+      "species": "Species",
+      "monster": "Monster",
+      "deity": "Deity"
+    },
+    "styles": {
+      "polish": "Polish/Slavic",
+      "english": "English",
+      "german": "German",
+      "nordic": "Nordic",
+      "latin": "Latin",
+      "celtic": "Celtic",
+      "elvish": "Elvish",
+      "dwarven": "Dwarven",
+      "orcish": "Orcish",
+      "scifi": "Sci-fi"
+    },
+    "groups": {
+      "gender": {
+        "label": "Gender",
+        "options": {
+          "male": "Male",
+          "female": "Female",
+          "neutral": "Neutral"
+        }
+      },
+      "sound": {
+        "label": "Sound",
+        "options": {
+          "hard": "Hard",
+          "soft": "Soft",
+          "neutral": "Neutral"
+        }
+      },
+      "length": {
+        "label": "Length",
+        "options": {
+          "short": "Short",
+          "medium": "Medium",
+          "long": "Long"
+        }
+      },
+      "pronunciation": {
+        "label": "Pronunciation",
+        "options": {
+          "easy": "Easy",
+          "exotic": "Exotic",
+          "unpronounceable": "Unpronounceable"
+        }
+      },
+      "balance": {
+        "label": "Letter balance",
+        "options": {
+          "vowel-heavy": "Vowel-heavy",
+          "balanced": "Balanced",
+          "consonant-heavy": "Consonant-heavy"
+        }
+      },
+      "mood": {
+        "label": "Mood",
+        "options": {
+          "dark": "Dark",
+          "noble": "Noble",
+          "comic": "Comic",
+          "ethereal": "Ethereal",
+          "common": "Common"
+        }
+      },
+      "wordCount": {
+        "label": "Word count",
+        "options": {
+          "one": "One",
+          "two": "Two",
+          "three": "Three"
+        }
+      }
+    },
+    "crude": {
+      "exclude": "Exclude",
+      "allow": "Allow",
+      "only": "Only"
+    },
+    "toggles": {
+      "mixStyles": "Mix styles",
+      "alliteration": "Alliteration",
+      "repeatedSyllable": "Repeated syllable",
+      "punctuation": "Apostrophes and hyphens",
+      "easyInflect": "Easy to inflect"
+    },
+    "noPolishLetters": "No Polish letters",
+    "polishLetters": "Polish letters",
+    "clears": "Clears {labels}",
+    "any": "Any",
+    "style": "Style",
+    "crudePart": "Crude part",
+    "options": "Options",
+    "textFields": {
+      "startsWith": "Starts with",
+      "endsWith": "Ends with",
+      "contains": "Contains",
+      "excludes": "Excludes (comma-separated)"
+    },
+    "reset": "Reset filters",
+    "generate": "Generate",
+    "next": "Next 10",
+    "noMatch": "No names match these filters.",
+    "fewMatch": "Only {count, plural, one {# name matches} other {# names match}} these filters.",
+    "names": "Names",
+    "copy": "Copy",
+    "copyName": "Copy {name}",
+    "copyAll": "Copy all"
+  },
+  "document": {
+    "notes": "Notes",
+    "folderNotes": "Folder notes",
+    "chapter": "Chapter {number}"
+  },
+  "import": {
+    "import": "Import…",
+    "title": "Import",
+    "file": "File",
+    "reading": "Reading…",
+    "lossy": "Formatting cannot be kept: a PDF only gives back the text.",
+    "split": "Split into {count} chapters",
+    "folder": "Folder",
+    "folderPlaceholder": "Choose or type a new folder",
+    "storyTitle": "Title",
+    "newFolder": "New folder",
+    "chapterCount": "{count, plural, one {# chapter} other {# chapters}}",
+    "chapters": "Chapters to import",
+    "importing": "Importing…",
+    "submit": "Import"
+  },
+  "public": {
+    "titleBy": "{title} by {nickname}",
+    "by": "by {nickname}",
+    "chapters": "Chapters",
+    "folderBy": "{folder} by {nickname}",
+    "contents": "Contents"
+  },
+  "search": {
+    "title": "Search stories",
+    "placeholder": "Search titles, tags and text, press Enter",
+    "label": "Search published stories",
+    "filterByTag": "Filter by tag",
+    "tooMany": "Too many searches. Try again in a minute.",
+    "none": "No stories found.",
+    "results": "Search results",
+    "inFolderBy": "in {folder} by {nickname}"
+  },
+  "notFound": {
+    "text": "404 | This page could not be found."
+  }
+}

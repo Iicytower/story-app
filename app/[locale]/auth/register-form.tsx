@@ -1,11 +1,15 @@
 "use client";
 
 import { Check, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { NICKNAME_REQUIREMENT, passwordChecklist } from "@/lib/credentials";
+import {
+  PASSWORD_REQUIREMENT_VALUES,
+  passwordChecklist,
+} from "@/lib/credentials";
 import { register } from "./register-actions";
 
 export function RegisterForm() {
@@ -14,11 +18,14 @@ export function RegisterForm() {
   const [repeatedPassword, setRepeatedPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("auth");
+  const tErrors = useTranslations("errors");
+  const tPassword = useTranslations("password");
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (password !== repeatedPassword) {
-      setError("The passwords do not match.");
+      setError(tErrors("passwordsDoNotMatch"));
       return;
     }
     setError(null);
@@ -31,7 +38,7 @@ export function RegisterForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="nickname">Nickname</Label>
+        <Label htmlFor="nickname">{t("nickname")}</Label>
         <Input
           id="nickname"
           name="nickname"
@@ -45,11 +52,11 @@ export function RegisterForm() {
           autoFocus
         />
         <p id="nickname-requirement" className="text-muted-foreground text-xs">
-          {NICKNAME_REQUIREMENT}
+          {tErrors("nicknameRequirement")}
         </p>
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password">{t("password")}</Label>
         <Input
           id="password"
           name="password"
@@ -62,7 +69,7 @@ export function RegisterForm() {
         />
         <ul
           id="password-requirements"
-          aria-label="Password requirements"
+          aria-label={t("passwordRequirements")}
           className="flex flex-col gap-1 text-xs break-words"
         >
           {passwordChecklist(password).map(({ requirement, met }) => (
@@ -77,15 +84,18 @@ export function RegisterForm() {
                 <X aria-hidden className="size-3.5 shrink-0" />
               )}
               <span>
-                <span className="sr-only">{met ? "Met: " : "Missing: "}</span>
-                {requirement}
+                <span className="sr-only">{met ? t("met") : t("missing")}</span>
+                {tPassword(
+                  `requirements.${requirement}`,
+                  PASSWORD_REQUIREMENT_VALUES,
+                )}
               </span>
             </li>
           ))}
         </ul>
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="repeated-password">Repeat password</Label>
+        <Label htmlFor="repeated-password">{t("repeatPassword")}</Label>
         <Input
           id="repeated-password"
           name="repeatedPassword"
@@ -96,17 +106,14 @@ export function RegisterForm() {
           required
         />
       </div>
-      <p className="text-sm">
-        There is no password recovery. If you forget your password, you lose
-        access to your account and stories.
-      </p>
+      <p className="text-sm">{t("noRecovery")}</p>
       {error && (
         <p role="alert" className="text-destructive text-sm">
           {error}
         </p>
       )}
       <Button type="submit" disabled={pending}>
-        {pending ? "Creating account…" : "Create account"}
+        {pending ? t("creatingAccount") : t("createAccount")}
       </Button>
     </form>
   );

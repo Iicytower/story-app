@@ -4,11 +4,11 @@ import { routing } from "./routing";
 
 export default getRequestConfig(async ({ requestLocale }) => {
   const requested = await requestLocale;
+  const locale = hasLocale(routing.locales, requested)
+    ? requested
+    : routing.defaultLocale;
   return {
-    locale: hasLocale(routing.locales, requested)
-      ? requested
-      : routing.defaultLocale,
-    // The dictionaries arrive in task 44; the provider refuses to render without messages.
-    messages: {},
+    locale,
+    messages: (await import(`../messages/${locale}.json`)).default,
   };
 });

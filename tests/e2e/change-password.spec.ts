@@ -1,8 +1,14 @@
 import type { Page } from "@playwright/test";
-import { PASSWORD_REQUIREMENTS } from "@/lib/credentials";
 import { restorePassword } from "./db";
 import { USERS } from "./env";
-import { expect, expectSignedOut, login, sidebarAction, test } from "./helpers";
+import {
+  expect,
+  expectSignedOut,
+  login,
+  PASSWORD_REQUIREMENT_TEXTS,
+  sidebarAction,
+  test,
+} from "./helpers";
 
 const NEW_PASSWORD = "Carol-new-password-678";
 
@@ -38,7 +44,7 @@ test("the dialog lists the password requirements at the new password field", asy
   await expect(page.getByLabel("Current password")).toBeFocused();
   const requirements = page.getByRole("dialog").getByRole("list");
   await expect(requirements.getByRole("listitem")).toHaveText(
-    PASSWORD_REQUIREMENTS,
+    PASSWORD_REQUIREMENT_TEXTS,
   );
   await expect(field).toHaveAccessibleDescription(/17-256 characters/);
 });

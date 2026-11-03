@@ -1,6 +1,7 @@
 "use client";
 
 import { FolderInputIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,10 +28,15 @@ export function MoveStoryDialog({
   folders: FolderOption[];
 }) {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("folders");
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={`Move ${title}`}>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={t("moveStory", { title })}
+        >
           <FolderInputIcon />
         </Button>
       </DialogTrigger>
@@ -60,6 +66,8 @@ function MoveStoryForm({
   const [folderId, setFolderId] = useState(folders[0]?.id ?? "");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("folders");
+  const tCommon = useTranslations("common");
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -73,17 +81,13 @@ function MoveStoryForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <DialogHeader>
-        <DialogTitle>Move to…</DialogTitle>
+        <DialogTitle>{t("moveTo")}</DialogTitle>
       </DialogHeader>
       {folders.length === 0 ? (
-        <p className="text-muted-foreground text-sm">
-          There are no other folders. Create one first.
-        </p>
+        <p className="text-muted-foreground text-sm">{t("noOtherFolders")}</p>
       ) : (
         <div className="flex flex-col gap-2">
-          <Label htmlFor="move-story-folder">
-            Folder for &ldquo;{title}&rdquo;
-          </Label>
+          <Label htmlFor="move-story-folder">{t("folderFor", { title })}</Label>
           <select
             id="move-story-folder"
             value={folderId}
@@ -106,11 +110,11 @@ function MoveStoryForm({
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline">
-            Cancel
+            {tCommon("cancel")}
           </Button>
         </DialogClose>
         <Button type="submit" disabled={pending || folders.length === 0}>
-          {pending ? "Moving…" : "Move"}
+          {pending ? t("moving") : t("move")}
         </Button>
       </DialogFooter>
     </form>
