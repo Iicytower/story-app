@@ -8,7 +8,7 @@ export async function login(page: Page, user: UserName) {
   await page.getByLabel("Nickname").fill(USERS[user].nickname);
   await page.getByLabel("Password").fill(USERS[user].password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL("/en");
 }
 
 export const test = base.extend<{ cleanStories: void }>({

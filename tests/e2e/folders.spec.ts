@@ -43,7 +43,7 @@ test("creates a folder, a chapter in it, moves the chapter and deletes the folde
   });
   await expect(deleteDialog).toContainText("and its 1 chapter will be removed");
   await deleteDialog.getByRole("button", { name: "Delete" }).click();
-  await expect(page).toHaveURL("/stories");
+  await expect(page).toHaveURL("/en/stories");
   await expect(page.getByText("Archive")).toHaveCount(0);
   expect((await findFolder("Archive"))?.deletedAt).toBeInstanceOf(Date);
   expect((await findStory("Chapter 1"))?.deletedAt).toBeInstanceOf(Date);

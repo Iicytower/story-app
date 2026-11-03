@@ -12,10 +12,9 @@ import {
   SearchIcon,
   SunIcon,
 } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { type ReactNode, useLayoutEffect, useState } from "react";
-import { logout, saveSettings } from "@/app/(protected)/actions";
+import { logout, saveSettings } from "@/app/[locale]/(protected)/actions";
 import { ChangePasswordDialog } from "@/components/change-password-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
