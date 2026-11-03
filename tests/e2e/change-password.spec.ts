@@ -70,7 +70,7 @@ test("after the change only the new password signs in", async ({ page }) => {
 
   // The menu still responds after the dialog, and this session outlives the change.
   await page.reload();
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL("/en");
   await sidebarAction(page, "Log out");
   await expectSignedOut(page);
 
@@ -82,7 +82,7 @@ test("after the change only the new password signs in", async ({ page }) => {
   ).toBeVisible();
 
   await signIn(page, NEW_PASSWORD);
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL("/en");
 });
 
 test("closing the dialog clears what was typed", async ({ page }) => {

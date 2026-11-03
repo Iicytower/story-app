@@ -398,3 +398,9 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Język interfejsu jest niezależny od języka treści folderu (D44, task 29): `lang` edytora i spellcheck zależą od folderu, nie od UI.
 - Polskie tłumaczenie przygotowuje Claude, użytkownik je przegląda.
 - Podział: task 43 (routing), 44 (słowniki `en`), 45 (przełącznik i `pl`).
+
+## D47 – Publiczny link bez prefiksu języka (2026-11-03)
+
+- Link publiczny pokazywany i kopiowany w edytorze i folderze (`Public link`) zostaje bez prefiksu (`/p/nick/folder`): odbiorca trafia na swój język przez przekierowanie z proxy (D46), a nie na język autora (decyzja użytkownika).
+- Linki klikane w aplikacji (wyszukiwarka, nawigacja rozdziałów) idą przez helpery `next-intl` i mają prefiks bieżącego języka.
+- Route Handlery eksportu leżą w `app/stories/[id]/export` i `app/folders/[id]/export`, poza `app/[locale]`, pod tymi samymi adresami co wcześniej.

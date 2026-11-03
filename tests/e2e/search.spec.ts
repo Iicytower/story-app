@@ -191,7 +191,7 @@ test("a signed-in user searches in the sidebar view", async ({ page }) => {
     .getByRole("navigation", { name: "Main" })
     .getByRole("link", { name: "Search" })
     .click();
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL("/en");
   await page.getByRole("searchbox").fill("dragon");
   await page.getByRole("searchbox").press("Enter");
   await expect(results(page)).toHaveCount(1);

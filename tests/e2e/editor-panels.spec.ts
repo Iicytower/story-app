@@ -368,7 +368,7 @@ test("Chapters panel saves before moving to another chapter", async ({
 
   await e.content.fill("Typed just before leaving");
   await e.chapters.getByRole("link", { name: "Second" }).click();
-  await expect(page).toHaveURL(`/stories/${second}`);
+  await expect(page).toHaveURL(`/en/stories/${second}`);
   expect((await findStoryById(first))?.content).toBe(
     "Typed just before leaving",
   );
@@ -396,7 +396,7 @@ test("Chapters panel stays on the chapter when saving fails or the title is empt
   await expect(e.status).toHaveText(
     /changed in another tab or on another device/,
   );
-  await expect(page).toHaveURL(`/stories/${first}`);
+  await expect(page).toHaveURL(`/en/stories/${first}`);
 
   // The Chapters tab must be saved, or the reload opens Notes.
   await expect
@@ -406,7 +406,7 @@ test("Chapters panel stays on the chapter when saving fails or the title is empt
   await e.title.fill("");
   await e.chapters.getByRole("link", { name: "Second" }).click();
   await expect(e.status).toHaveText("Title is required.");
-  await expect(page).toHaveURL(`/stories/${first}`);
+  await expect(page).toHaveURL(`/en/stories/${first}`);
 });
 
 test("Chapters panel adds, reorders and deletes chapters", async ({ page }) => {
@@ -434,7 +434,7 @@ test("Chapters panel adds, reorders and deletes chapters", async ({ page }) => {
     .getByRole("button", { name: "Delete" })
     .click();
   await expect(e.chapters.getByRole("link")).toHaveText(["First"]);
-  await expect(page).toHaveURL(`/stories/${first}`);
+  await expect(page).toHaveURL(`/en/stories/${first}`);
 
   await page.getByRole("button", { name: "New chapter" }).click();
   const dialog = page.getByRole("dialog", { name: "New chapter" });
@@ -450,7 +450,7 @@ test("Chapters panel adds, reorders and deletes chapters", async ({ page }) => {
     .getByRole("alertdialog", { name: "Delete story?" })
     .getByRole("button", { name: "Delete" })
     .click();
-  await expect(page).toHaveURL(`/folders/${book!._id}`);
+  await expect(page).toHaveURL(`/en/folders/${book!._id}`);
 });
 
 test("works with the default layout when localStorage throws", async ({

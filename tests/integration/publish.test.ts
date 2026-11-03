@@ -5,7 +5,7 @@ import {
   publishAllChapters,
   renameFolder,
   setFolderPublished,
-} from "@/app/(protected)/folders/actions";
+} from "@/app/[locale]/(protected)/folders/actions";
 import {
   createStory,
   deleteStory,
@@ -13,11 +13,11 @@ import {
   moveStory,
   saveStory,
   setChapterPublished,
-} from "@/app/(protected)/stories/actions";
+} from "@/app/[locale]/(protected)/stories/actions";
 import {
   createFolderVersion,
   restoreFolderVersion,
-} from "@/app/(protected)/folders/[id]/versions/actions";
+} from "@/app/[locale]/(protected)/folders/[id]/versions/actions";
 import { requireUser } from "@/lib/auth/session";
 import { getFolder, getFolderForExport } from "@/lib/folders/queries";
 import { Folder } from "@/lib/models/folder";

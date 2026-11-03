@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { saveSettings } from "@/app/(protected)/actions";
+import { saveSettings } from "@/app/[locale]/(protected)/actions";
 import { requireUser } from "@/lib/auth/session";
 import { DEFAULT_LAYOUT } from "@/lib/editor-layout";
 import { Settings } from "@/lib/models/settings";

@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { changePassword } from "@/app/(protected)/actions";
+import { changePassword } from "@/app/[locale]/(protected)/actions";
 import { createOrUpdateUser, verifyPassword } from "@/lib/accounts";
 import { authorizeCredentials } from "@/lib/auth/authorize";
 import { requireUser } from "@/lib/auth/session";

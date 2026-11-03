@@ -41,7 +41,7 @@ test("searches on Enter, highlights the match and shows the folder", async ({
   await search.fill("dragon");
   await search.press("Enter");
 
-  await expect(page).toHaveURL("/stories?q=dragon");
+  await expect(page).toHaveURL("/en/stories?q=dragon");
   const items = page
     .getByRole("list", { name: "Search results" })
     .getByRole("listitem");

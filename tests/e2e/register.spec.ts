@@ -69,7 +69,7 @@ test("a weak password is refused by the server", async ({ page }) => {
   await submit(page);
 
   await expect(alert(page)).toHaveText(/at least 17/);
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL("/en");
   await expect(page.getByLabel("Nickname")).toHaveValue("Dave");
 });
 
@@ -93,7 +93,7 @@ test("a taken nickname gives a message in any case", async ({ page }) => {
   await submit(page);
 
   await expect(alert(page)).toHaveText("This nickname is already taken.");
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL("/en");
 });
 
 test("the page says the password cannot be recovered", async ({ page }) => {

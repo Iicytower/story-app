@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { changePassword } from "@/app/(protected)/actions";
+import { changePassword } from "@/app/[locale]/(protected)/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

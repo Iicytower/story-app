@@ -40,6 +40,7 @@ Aplikacja webowa do pisania opowiadań (docelowo publiczna, D46) w markdown (Nex
 - Każda Server Action sprawdza sesję i zwraca `{ ok: true, ... } | { ok: false, error, message }` – nie rzuca wyjątków.
 - Zapytania o opowiadania zawsze z `deletedAt: null` (poza stroną publiczną, która też go wymaga).
 - Mongoose: `.lean()` + serializacja (`_id` → `id: string`, daty → ISO string) przed przekazaniem do klienta; model rejestrowany przez `mongoose.models.X ?? mongoose.model(...)`.
+- Strony w `app/[locale]/` (D46). `Link`, `redirect`, `useRouter`, `usePathname`, `getPathname` tylko z `@/i18n/navigation`, nigdy z `next/link` / `next/navigation`. Route Handlery (eksport, `api/`) poza `[locale]`.
 - Podgląd markdown: `react-markdown` + `remark-breaks`, nigdy `rehype-raw`.
 - API bibliotek (Next.js, Auth.js, Mongoose, shadcn) sprawdzaj w aktualnej dokumentacji (context7), nie z pamięci – wersje szybko się zmieniają.
 
