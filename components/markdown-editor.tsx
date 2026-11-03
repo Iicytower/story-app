@@ -161,7 +161,7 @@ export function MarkdownEditor({
         spellcheck: "true",
         ...(placeholder && { "aria-placeholder": placeholder }),
         class: cn(
-          "prose dark:prose-invert max-w-none min-h-full outline-none px-4 py-(--scroll-gap) md:px-6",
+          "prose dark:prose-invert max-w-none min-h-full outline-none px-4 pt-(--scroll-gap-top) pb-(--scroll-gap-bottom) md:px-6",
           compact && "prose-sm md:px-4",
         ),
       },
@@ -511,7 +511,7 @@ export function MarkdownEditor({
           }}
           className="min-h-0 flex-1 cursor-text overflow-y-auto"
         >
-          <div className="relative py-(--scroll-gap)">
+          <div className="relative pt-(--scroll-gap-top) pb-(--scroll-gap-bottom)">
             {matches.length > 0 && (
               <SourceHighlights
                 text={value}
@@ -569,7 +569,7 @@ function SourceHighlights({
     <div
       aria-hidden
       className={cn(
-        "pointer-events-none absolute inset-x-0 top-(--scroll-gap) break-words whitespace-pre-wrap text-transparent",
+        "pointer-events-none absolute inset-x-0 top-(--scroll-gap-top) break-words whitespace-pre-wrap text-transparent",
         className,
       )}
     >
@@ -592,6 +592,10 @@ function SourceHighlights({
   );
 }
 
+// Share of the view minus one line left empty above the first and below the last line.
+const TOP_GAP = 1 / 2;
+const BOTTOM_GAP = 3 / 4;
+
 function trackScrollGap(
   root: HTMLElement,
   scroller: HTMLElement,
@@ -602,9 +606,13 @@ function trackScrollGap(
       scroller.clientHeight - parseFloat(getComputedStyle(line).lineHeight),
       0,
     );
-    const previous = parseFloat(root.style.getPropertyValue("--scroll-gap"));
-    root.style.setProperty("--scroll-gap", `${gap}px`);
-    if (scroller.scrollTop > 0) scroller.scrollTop += gap - previous;
+    const top = gap * TOP_GAP;
+    const previous = parseFloat(
+      root.style.getPropertyValue("--scroll-gap-top"),
+    );
+    root.style.setProperty("--scroll-gap-top", `${top}px`);
+    root.style.setProperty("--scroll-gap-bottom", `${gap * BOTTOM_GAP}px`);
+    if (scroller.scrollTop > 0) scroller.scrollTop += top - previous;
   };
   update();
   const observer = new ResizeObserver(update);

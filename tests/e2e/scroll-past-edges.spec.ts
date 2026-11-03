@@ -35,7 +35,9 @@ function edges(mode: Mode, field: Locator) {
       : box.bottom - lineHeight;
     return {
       lineHeight,
-      firstFromBottom: view.bottom - first,
+      // Empty space left by the gaps, in multiples of the view minus one line.
+      gapTop: (first - view.top) / (view.height - lineHeight),
+      gapBottom: (view.bottom - last - lineHeight) / (view.height - lineHeight),
       lastFromTop: last - view.top,
     };
   }, mode);
@@ -50,15 +52,12 @@ async function scrollToEnd(mode: Mode, field: Locator, end: "top" | "bottom") {
 async function expectLimits(mode: Mode, field: Locator) {
   await scrollToEnd(mode, field, "bottom");
   await expect
-    .poll(async () => Math.abs((await edges(mode, field)).lastFromTop))
-    .toBeLessThan(2);
+    .poll(async () => Math.abs((await edges(mode, field)).gapBottom - 3 / 4))
+    .toBeLessThan(0.01);
   await scrollToEnd(mode, field, "top");
   await expect
-    .poll(async () => {
-      const { firstFromBottom, lineHeight } = await edges(mode, field);
-      return Math.abs(firstFromBottom - lineHeight);
-    })
-    .toBeLessThan(2);
+    .poll(async () => Math.abs((await edges(mode, field)).gapTop - 1 / 2))
+    .toBeLessThan(0.01);
 }
 
 async function seed(content: string) {
@@ -112,9 +111,7 @@ for (const mode of ["Preview", "Source"] as const)
     });
   });
 
-test("opens with the first line at the bottom of the view", async ({
-  page,
-}) => {
+test("opens with the first line halfway down the view", async ({ page }) => {
   const id = await seed(LONG);
   await page.goto(`/stories/${id}`);
   const { field } = markdownEditor(page, "Content");
@@ -123,8 +120,8 @@ test("opens with the first line at the bottom of the view", async ({
   await expect
     .poll(() => scrollerOf("Preview", field).evaluate((e) => e.scrollTop))
     .toBe(0);
-  const { firstFromBottom, lineHeight } = await edges("Preview", field);
-  expect(Math.abs(firstFromBottom - lineHeight)).toBeLessThan(2);
+  const { gapTop } = await edges("Preview", field);
+  expect(Math.abs(gapTop - 1 / 2)).toBeLessThan(0.01);
 });
 
 test("the last line stays in view across switching modes", async ({ page }) => {
@@ -139,8 +136,12 @@ test("the last line stays in view across switching modes", async ({ page }) => {
     "Source",
     editor.group.getByRole("textbox"),
   );
-  expect(lastFromTop).toBeLessThan(lineHeight * 2);
+  const view = (await scrollerOf(
+    "Source",
+    editor.group.getByRole("textbox"),
+  ).boundingBox())!;
   expect(lastFromTop).toBeGreaterThan(-lineHeight);
+  expect(lastFromTop).toBeLessThan(view.height - lineHeight);
 });
 
 test("Source: clicking the empty space focuses the text, typing keeps the caret in view", async ({
