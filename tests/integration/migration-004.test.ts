@@ -76,7 +76,7 @@ describe("004-settings", () => {
 
     expect(await getUserSettings(user.toString())).toEqual({
       editor: { layout, mobileView: "notes" },
-      appearance: { theme: "dark" },
+      appearance: { sidebarCollapsed: false, theme: "dark" },
       folders: { sort: "alpha", manualOrder: false },
     });
   });

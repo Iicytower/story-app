@@ -2,6 +2,35 @@ export function escapeRegex(phrase: string): string {
   return phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// q and every tag must all hold; a tag matches on the chapter or on its folder.
+export function buildStoryFilter(
+  userId: string,
+  query: string | undefined,
+  tags: string[],
+  folders: { _id: unknown; tags?: string[] }[],
+): Record<string, unknown> {
+  const filter: Record<string, unknown> = { userId, deletedAt: null };
+  if (query) {
+    const pattern = new RegExp(escapeRegex(query), "i");
+    filter.$or = [{ title: pattern }, { content: pattern }];
+  }
+  if (tags.length > 0) {
+    filter.$and = tags.map((tag) => ({
+      $or: [
+        { tags: tag },
+        {
+          folderId: {
+            $in: folders
+              .filter((folder) => folder.tags?.includes(tag))
+              .map(({ _id }) => _id),
+          },
+        },
+      ],
+    }));
+  }
+  return filter;
+}
+
 export type Snippet = { before: string; match: string; after: string };
 
 const PREVIEW_LENGTH = 200;

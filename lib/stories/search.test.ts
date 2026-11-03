@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSnippet, escapeRegex } from "./search";
+import { buildSnippet, buildStoryFilter, escapeRegex } from "./search";
 
 describe("escapeRegex", () => {
   it("escapes every regex metacharacter", () => {
@@ -77,5 +77,33 @@ describe("buildSnippet", () => {
       match: "two",
       after: "",
     });
+  });
+});
+
+describe("buildStoryFilter", () => {
+  const folders = [
+    { _id: "f1", tags: ["a", "b"] },
+    { _id: "f2", tags: ["b"] },
+    { _id: "f3" },
+  ];
+
+  it("always scopes to the user and active stories", () => {
+    expect(buildStoryFilter("u", undefined, [], folders)).toEqual({
+      userId: "u",
+      deletedAt: null,
+    });
+  });
+
+  it("requires every tag, on the chapter or on its folder", () => {
+    expect(buildStoryFilter("u", undefined, ["a", "b"], folders).$and).toEqual([
+      { $or: [{ tags: "a" }, { folderId: { $in: ["f1"] } }] },
+      { $or: [{ tags: "b" }, { folderId: { $in: ["f1", "f2"] } }] },
+    ]);
+  });
+
+  it("keeps the search next to the tag conditions", () => {
+    const filter = buildStoryFilter("u", "smok", ["a"], folders);
+    expect(filter.$or).toHaveLength(2);
+    expect(filter.$and).toHaveLength(1);
   });
 });

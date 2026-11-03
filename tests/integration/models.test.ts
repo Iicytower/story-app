@@ -59,25 +59,6 @@ describe("Story indexes", () => {
     ).resolves.toBeDefined();
   });
 
-  it("allows many stories without shareToken and rejects a duplicate token", async () => {
-    await Story.create({ folderId, userId: alice, title: "A" });
-    await Story.create({ folderId, userId: alice, title: "B" });
-    await Story.create({
-      folderId,
-      userId: bob,
-      title: "C",
-      shareToken: "token-1234567890ab",
-    });
-    await expect(
-      Story.create({
-        folderId,
-        userId: alice,
-        title: "D",
-        shareToken: "token-1234567890ab",
-      }),
-    ).rejects.toMatchObject(DUPLICATE_KEY);
-  });
-
   it("stores deletedAt as null on a new document", async () => {
     const { _id } = await Story.create({
       folderId,
@@ -117,14 +98,11 @@ describe("Folder", () => {
 });
 
 describe("User", () => {
-  it("stores email lowercase and rejects a duplicate email", async () => {
-    const user = await User.create({
-      email: "Alice@Example.com",
-      passwordHash: "x",
-    });
-    expect(user.email).toBe("alice@example.com");
+  it("keeps the nickname case and rejects a duplicate in another case", async () => {
+    const user = await User.create({ nickname: "Alice", passwordHash: "x" });
+    expect(user.nickname).toBe("Alice");
     await expect(
-      User.create({ email: "ALICE@example.com", passwordHash: "y" }),
+      User.create({ nickname: "ALICE", passwordHash: "y" }),
     ).rejects.toMatchObject(DUPLICATE_KEY);
   });
 });
@@ -140,11 +118,6 @@ describe("Story index definitions", () => {
           partialFilterExpression: { deletedAt: { $type: "null" } },
         }),
         expect.objectContaining({ key: { userId: 1, updatedAt: -1 } }),
-        expect.objectContaining({
-          key: { shareToken: 1 },
-          unique: true,
-          partialFilterExpression: { shareToken: { $type: "string" } },
-        }),
       ]),
     );
   });

@@ -19,15 +19,14 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-01): najp
 | 20 | [Tylko przycisk „Export as…”](done/20-export-as-only.md) | 19 | [x] |
 | 21 | [Aktualizacja unpdf do 2.x](done/21-unpdf-2.md) | 18 | [x] |
 | 22 | [Wyszukiwanie i zamiana w polu](done/22-find-replace.md) | – | [x] |
-| 24 | [Tagi](24-tags.md) | – | [ ] |
-| 31 | [Język folderu i pisownia na bieżąco](31-folder-language.md) | – | [ ] |
-| 36 | [Logowanie przez nick](36-nickname-login.md) | – | [ ] |
-| 38 | [Publikacja opowiadań](38-publish.md) | 36 | [ ] |
-| 41 | [Zmiana nicku i hasła](41-account-settings.md) | 36 | [ ] |
-| 37 | [Rejestracja](37-registration.md) | 36 | [ ] |
-| 27 | [Zakładka Tools](27-tools-tab.md) | – | [ ] |
-| 42 | [Generator nazw](42-name-generator.md) | 27 | [ ] |
-| 39 | [Publiczna wyszukiwarka](39-public-search.md) | 24, 37, 38 | [ ] |
+| 24 | [Tagi](done/24-tags.md) | – | [x] |
+| 36 | [Logowanie przez nick](done/36-nickname-login.md) | – | [x] |
+| 38 | [Publikacja opowiadań](done/38-publish.md) | 36 | [x] |
+| 41 | [Zmiana hasła](done/41-change-password.md) | 36 | [x] |
+| 37 | [Rejestracja](done/37-registration.md) | 36 | [x] |
+| 27 | [Zakładka Tools](done/27-tools-tab.md) | – | [x] |
+| 42 | [Generator nazw](done/42-name-generator.md) | 27 | [x] |
+| 39 | [Publiczna wyszukiwarka](done/39-public-search.md) | 24, 37, 38 | [x] |
 | 26 | [Upload okładek](26-cover-upload.md) | – | [ ] |
 | 40 | [Wyświetlanie okładek](40-cover-display.md) | 26 | [ ] |
 | 28 | [Serwer na Mikrusie](28-mikrus-server.md) | – | [ ] |
@@ -36,7 +35,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-01): najp
 | 33 | [Synonimy](33-synonyms.md) | 25, 27 | [ ] |
 | 34 | [Rymy](34-rhymes.md) | 25, 27 | [ ] |
 | 35 | [Filtry rymów](35-rhyme-filters.md) | 34 | [ ] |
-| 29 | [LanguageTool na serwerze i akcja sprawdzania](29-languagetool.md) | 28 | [ ] |
+| 29 | [LanguageTool na serwerze, akcja sprawdzania i język folderu](29-languagetool.md) | 28 | [ ] |
 | 23 | [Korekta tekstu w dialogu](23-proofreading.md) | 27, 29 | [ ] |
 | 30 | [Słownik użytkownika w korekcie](30-user-dictionary.md) | 23 | [ ] |
 

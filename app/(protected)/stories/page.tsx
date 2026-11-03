@@ -3,11 +3,14 @@ import Form from "next/form";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LocalDate } from "@/components/local-date";
+import { TagChips } from "@/components/tag-chips";
 import { Input } from "@/components/ui/input";
 import { requireUser } from "@/lib/auth/session";
 import { listFolders } from "@/lib/folders/queries";
 import { listStories } from "@/lib/stories/queries";
 import { buildSnippet } from "@/lib/stories/search";
+import { listUserTags } from "@/lib/tags/queries";
+import { parseTagFilter, tagFilterHref } from "@/lib/tags/tags";
 import { reorderFolder, setFolderSort } from "../folders/actions";
 import { CreateFolderDialog } from "../folders/create-folder-dialog";
 import { ReorderButtons } from "../folders/reorder-buttons";
@@ -28,11 +31,17 @@ export default async function StoriesPage({
   searchParams,
 }: PageProps<"/stories">) {
   const user = await requireUser();
-  if (!user.ok) redirect("/login");
+  if (!user.ok) redirect("/");
 
-  const { q } = await searchParams;
+  const { q, tag } = await searchParams;
   const query = typeof q === "string" ? q.trim() : "";
-  const { sort, folders } = await listFolders(user.userId);
+  const selectedTags = parseTagFilter(tag);
+  const [{ sort, folders }, userTags] = await Promise.all([
+    listFolders(user.userId),
+    listUserTags(user.userId),
+  ]);
+  // A selected tag that no longer exists stays visible, so it can be turned off.
+  const filterTags = [...new Set([...userTags, ...selectedTags])];
   // The most recently active folder, whatever order the list is shown in.
   const defaultFolder = folders.reduce<(typeof folders)[number] | undefined>(
     (latest, folder) =>
@@ -71,9 +80,33 @@ export default async function StoriesPage({
           placeholder="Search title and content in all folders, press Enter"
           aria-label="Search stories"
         />
+        {selectedTags.map((selected) => (
+          <input key={selected} type="hidden" name="tag" value={selected} />
+        ))}
       </Form>
-      {query ? (
-        <SearchResults userId={user.userId} query={query} />
+      {filterTags.length > 0 && (
+        <nav aria-label="Filter by tag" className="flex flex-wrap gap-1">
+          {filterTags.map((filterTag) => {
+            const active = selectedTags.includes(filterTag);
+            return (
+              <Link
+                key={filterTag}
+                href={tagFilterHref(query, selectedTags, filterTag)}
+                aria-current={active ? "true" : undefined}
+                className={`rounded-full px-2 py-0.5 text-xs ${
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted hover:bg-muted/70"
+                }`}
+              >
+                {filterTag}
+              </Link>
+            );
+          })}
+        </nav>
+      )}
+      {query || selectedTags.length > 0 ? (
+        <SearchResults userId={user.userId} query={query} tags={selectedTags} />
       ) : folders.length === 0 ? (
         <p className="text-muted-foreground">
           No folders yet. Create a folder or a new story.
@@ -89,7 +122,10 @@ export default async function StoriesPage({
                 href={`/folders/${folder.id}`}
                 className="hover:bg-muted/50 flex min-w-0 flex-1 items-baseline gap-4 px-4 py-3"
               >
-                <span className="mr-auto font-medium">{folder.name}</span>
+                <span className="mr-auto flex min-w-0 flex-wrap items-center gap-2">
+                  <span className="font-medium">{folder.name}</span>
+                  <TagChips tags={folder.tags} />
+                </span>
                 <span className="text-muted-foreground text-sm">
                   {folder.chapterCount}{" "}
                   {folder.chapterCount === 1 ? "chapter" : "chapters"}
@@ -117,15 +153,19 @@ export default async function StoriesPage({
 async function SearchResults({
   userId,
   query,
+  tags,
 }: {
   userId: string;
   query: string;
+  tags: string[];
 }) {
-  const stories = await listStories(userId, query);
+  const stories = await listStories(userId, query, tags);
   if (stories.length === 0) {
     return (
       <p className="text-muted-foreground">
-        No stories match &quot;{query}&quot;.
+        {query
+          ? `No stories match "${query}"${tags.length > 0 ? " with the selected tags" : ""}.`
+          : "No stories have the selected tags."}
       </p>
     );
   }
@@ -157,6 +197,7 @@ async function SearchResults({
                 )}
                 {snippet.after}
               </span>
+              <TagChips tags={story.tags} folderTags={story.folderTags} />
             </Link>
             <DeleteStoryButton id={story.id} title={story.title} />
           </li>

@@ -16,7 +16,7 @@ describe("requireUser", () => {
   });
 
   it("returns UNAUTHORIZED when the session has no user id", async () => {
-    auth.mockResolvedValue({ user: { email: "alice@example.com" } });
+    auth.mockResolvedValue({ user: { name: "alice" } });
     await expect(requireUser()).resolves.toMatchObject({
       ok: false,
       error: "UNAUTHORIZED",

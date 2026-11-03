@@ -1,6 +1,5 @@
 "use server";
 
-import { randomBytes } from "node:crypto";
 import { isObjectIdOrHexString, Types } from "mongoose";
 import { refresh } from "next/cache";
 import type { ActionError, ActionResult } from "@/lib/action-result";
@@ -25,6 +24,17 @@ import {
 } from "@/lib/import/limits";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
+import {
+  arrivalUpdate,
+  publicationFor,
+  rememberChapterSlug,
+} from "@/lib/publish/mutations";
+import { chapterPublicPath } from "@/lib/publish/queries";
+import {
+  exceedsTagLimit,
+  normalizeTags,
+  TAG_LIMIT_MESSAGE,
+} from "@/lib/tags/tags";
 import { numberedTitle } from "@/lib/versions/versions";
 
 const NOT_FOUND: ActionError = {
@@ -71,6 +81,7 @@ export async function createStory(
       folderId,
       title: trimmed,
       position: await nextChapterPosition(user.userId, folderId),
+      publication: await publicationFor(folderId),
     });
     await touchFolder(folderId);
     return { ok: true, id: story._id.toString() };
@@ -166,6 +177,7 @@ async function insertChapters(
     .lean();
   const taken = new Set(existing.map(({ title }) => title));
   const start = await nextChapterPosition(userId, folderId);
+  const publication = await publicationFor(folderId);
   const now = Date.now();
   const documents = chapters.map(({ title, content, notes }, index) => {
     const trimmed = title.trim();
@@ -181,6 +193,7 @@ async function insertChapters(
       content,
       notes,
       position: start + index,
+      ...(publication && { publication }),
       // Separate times keep the order in "Newest first" reproducible.
       createdAt: new Date(now + index),
       updatedAt: new Date(now + index),
@@ -280,12 +293,26 @@ export async function moveStory(
   if (!isObjectIdOrHexString(folderId)) return FOLDER_NOT_FOUND;
 
   await connectDB();
-  const folder = await Folder.exists({
+  const folder = await Folder.findOne({
     _id: folderId,
     userId: user.userId,
     deletedAt: null,
-  });
+  })
+    .select({ tags: 1 })
+    .lean();
   if (!folder) return FOLDER_NOT_FOUND;
+  const story = await Story.findOne({
+    _id: id,
+    userId: user.userId,
+    deletedAt: null,
+  })
+    .select({ tags: 1 })
+    .lean();
+  if (!story) return NOT_FOUND;
+  if (exceedsTagLimit(story.tags, folder.tags)) {
+    return { ok: false, error: "INVALID_INPUT", message: TAG_LIMIT_MESSAGE };
+  }
+  const arrival = await arrivalUpdate(folderId);
   try {
     const { matchedCount } = await Story.updateOne(
       { _id: id, userId: user.userId, deletedAt: null },
@@ -293,7 +320,9 @@ export async function moveStory(
         $set: {
           folderId,
           position: await nextChapterPosition(user.userId, folderId),
+          ...arrival.set,
         },
+        $unset: arrival.unset,
       },
       { timestamps: false },
     );
@@ -303,6 +332,41 @@ export async function moveStory(
     throw error;
   }
   await touchFolder(folderId);
+
+  refresh();
+  return { ok: true };
+}
+
+// Organizational change, like moveStory: an open editor must not get CONFLICT.
+export async function setStoryTags(
+  id: string,
+  tags: string[],
+): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND;
+  const normalized = normalizeTags(tags);
+  if (!normalized.ok) return normalized;
+
+  await connectDB();
+  const owned = { _id: id, userId: user.userId, deletedAt: null };
+  const story = await Story.findOne(owned).select({ folderId: 1 }).lean();
+  if (!story) return NOT_FOUND;
+  const folder = await Folder.findOne({
+    _id: story.folderId,
+    deletedAt: null,
+  })
+    .select({ tags: 1 })
+    .lean();
+  if (exceedsTagLimit(normalized.tags, folder?.tags)) {
+    return { ok: false, error: "INVALID_INPUT", message: TAG_LIMIT_MESSAGE };
+  }
+  const { matchedCount } = await Story.updateOne(
+    owned,
+    { $set: { tags: normalized.tags } },
+    { timestamps: false },
+  );
+  if (matchedCount === 0) return NOT_FOUND;
 
   refresh();
   return { ok: true };
@@ -391,11 +455,17 @@ export async function saveStory(
         ...(!content.trim() && { content: /^\s*$/ }),
       },
       { $set: { title: trimmed, content, notes, updatedAt } },
-      { timestamps: false, projection: { folderId: 1 } },
+      {
+        timestamps: false,
+        projection: { folderId: 1, title: 1, publication: 1 },
+      },
     ).lean();
     if (story) {
       // Only the folder's lastActivityAt; notesUpdatedAt stays, so folder notes never conflict.
       if (story.folderId) await touchFolder(story.folderId, updatedAt);
+      if (story.publication === "public" && story.title !== trimmed) {
+        await rememberChapterSlug(id, user.userId, story.folderId, story.title);
+      }
       return { ok: true, updatedAt: updatedAt.toISOString() };
     }
   } catch (error) {
@@ -421,33 +491,68 @@ export async function saveStory(
   };
 }
 
-// Sharing does not touch updatedAt: an open editor sends it as expectedUpdatedAt on the next save.
-export async function setSharing(
+// Publishing never touches updatedAt: an open editor sends it as expectedUpdatedAt on the next save.
+export async function setChapterPublished(
   id: string,
   enabled: boolean,
-): Promise<ActionResult<{ sharePath: string | null }>> {
+): Promise<ActionResult<{ publicPath: string | null }>> {
   const user = await requireUser();
   if (!user.ok) return user;
   if (!isObjectIdOrHexString(id)) return NOT_FOUND;
 
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };
+  const story = await Story.findOne(owned).select({ folderId: 1 }).lean();
+  if (!story) return NOT_FOUND;
+  const folder = await Folder.findOne({
+    _id: story.folderId,
+    userId: user.userId,
+    deletedAt: null,
+  })
+    .select({ published: 1 })
+    .lean();
+  if (!folder) return NOT_FOUND;
+
   if (!enabled) {
-    const { matchedCount } = await Story.updateOne(
+    await Story.updateOne(
       owned,
-      { $unset: { shareToken: 1 } },
+      { $set: { publication: "hidden" } },
       { timestamps: false },
     );
-    return matchedCount === 0 ? NOT_FOUND : { ok: true, sharePath: null };
+    refresh();
+    return { ok: true, publicPath: null };
   }
 
-  // Keeps an existing token, so sharing twice (e.g. from two tabs) returns the same link.
+  // Publishing one chapter is publishing the folder with the rest off, also those public
+  // before an Unpublish; a folder already published keeps its other chapters' settings.
+  if (!folder.published) {
+    await Story.updateMany(
+      {
+        userId: user.userId,
+        folderId: folder._id,
+        deletedAt: null,
+        _id: { $ne: id },
+      },
+      { $set: { publication: "hidden" } },
+      { timestamps: false },
+    );
+  }
   await Story.updateOne(
-    { ...owned, shareToken: { $exists: false } },
-    { $set: { shareToken: randomBytes(16).toString("base64url") } },
+    owned,
+    { $set: { publication: "public" } },
     { timestamps: false },
   );
-  const story = await Story.findOne(owned).select({ shareToken: 1 }).lean();
-  if (!story?.shareToken) return NOT_FOUND;
-  return { ok: true, sharePath: `/s/${story.shareToken}` };
+  if (!folder.published) {
+    await Folder.updateOne(
+      { _id: folder._id },
+      { $set: { published: true } },
+      { timestamps: false },
+    );
+  }
+
+  refresh();
+  return {
+    ok: true,
+    publicPath: await chapterPublicPath(user.userId, folder._id.toString(), id),
+  };
 }

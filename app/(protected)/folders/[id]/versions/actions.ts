@@ -17,7 +17,10 @@ import {
   restore,
   saveVersion,
 } from "@/lib/versions/mutations";
-import { beforeRestoreName, validateVersionName } from "@/lib/versions/versions";
+import {
+  beforeRestoreName,
+  validateVersionName,
+} from "@/lib/versions/versions";
 
 const FOLDER_NOT_FOUND: ActionError = {
   ok: false,

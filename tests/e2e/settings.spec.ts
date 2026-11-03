@@ -1,7 +1,7 @@
 import type { Browser, Page } from "@playwright/test";
 import { findSettings, seedStory } from "./db";
 import { storageStatePath, type UserName } from "./env";
-import { accountAction, countActionRequests, expect, test } from "./helpers";
+import { sidebarAction, countActionRequests, expect, test } from "./helpers";
 
 test.use({
   storageState: storageStatePath("alice"),
@@ -38,7 +38,7 @@ test("the desktop layout is restored in another browser and rendered by the serv
   await page.getByRole("button", { name: "Move notes right" }).click();
   await expect
     .poll(async () => (await findSettings("alice"))?.editor?.layout)
-    .toMatchObject({ split: true, order: ["chapters", "notes"] });
+    .toMatchObject({ split: true, order: ["chapters", "notes", "tools"] });
 
   const other = await newBrowser(browser, "alice");
   await other.page.goto(`/stories/${id}`);
@@ -67,7 +67,7 @@ test("another user keeps the default layout and theme", async ({
   const id = await seedChapter();
   await page.goto(`/stories/${id}`);
   await split(page).click();
-  await accountAction(page, "Toggle theme");
+  await sidebarAction(page, "Toggle theme");
   await expect
     .poll(() => findSettings("alice"))
     .toMatchObject({
@@ -88,7 +88,7 @@ test("the theme follows the settings in another browser, from the first paint", 
   browser,
 }) => {
   await page.goto("/stories");
-  await accountAction(page, "Toggle theme");
+  await sidebarAction(page, "Toggle theme");
   await expect
     .poll(async () => (await findSettings("alice"))?.appearance?.theme)
     .toBe("dark");
@@ -128,7 +128,7 @@ test("the sign-in page uses the browser's saved theme, otherwise the system one"
     colorScheme: "dark",
   });
   const page = await visitor.newPage();
-  await page.goto("/login");
+  await page.goto("/");
   await expect(html(page)).toHaveClass(/\bdark\b/);
 
   await page.evaluate(() => localStorage.setItem("theme", "light"));
@@ -155,7 +155,7 @@ test("dragging a separator sends only a few saves", async ({ page }) => {
 
   await expect
     .poll(async () => (await findSettings("alice"))?.editor?.layout)
-    .toMatchObject({ widths: { "story,notes": expect.any(Object) } });
+    .toMatchObject({ widths: { "story,side": expect.any(Object) } });
   await page.waitForTimeout(1000);
   expect(requests.length).toBeGreaterThanOrEqual(1);
   expect(requests.length).toBeLessThanOrEqual(2);

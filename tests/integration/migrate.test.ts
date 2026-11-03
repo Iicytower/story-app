@@ -48,7 +48,7 @@ async function indexNames(name: string): Promise<string[]> {
 
 async function seedStories() {
   const userId = new Types.ObjectId();
-  await User.create({ email: "alice@example.com", passwordHash: "hash" });
+  await User.create({ nickname: "alice", passwordHash: "hash" });
   await Story.create([
     { userId, folderId: userId, title: "One", content: "first" },
     { userId, folderId: userId, title: "Two", content: "second" },

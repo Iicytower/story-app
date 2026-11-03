@@ -1,5 +1,7 @@
 import mongoose, { Schema, type Model, type Types } from "mongoose";
 
+export type Publication = "public" | "hidden";
+
 export interface StoryFields {
   userId: Types.ObjectId;
   folderId: Types.ObjectId;
@@ -8,7 +10,12 @@ export interface StoryFields {
   notes: string;
   // Order in the folder's manual mode; missing on stories created by older deployments.
   position?: number;
-  shareToken?: string;
+  // Missing on stories created by older deployments until migration 005 runs again.
+  tags?: string[];
+  // Missing means no decision yet: publishing the folder makes the chapter public.
+  publication?: Publication;
+  // Addresses from before a title change; they redirect to the current one.
+  formerSlugs?: string[];
   deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -22,7 +29,9 @@ const storySchema = new Schema<StoryFields>(
     content: { type: String, default: "" },
     notes: { type: String, default: "" },
     position: { type: Number },
-    shareToken: { type: String },
+    tags: { type: [String] },
+    publication: { type: String, enum: ["public", "hidden"] },
+    formerSlugs: { type: [String], default: undefined },
     // Always stored: a partial index filter cannot express "field does not exist".
     deletedAt: { type: Date, default: null },
   },
@@ -34,13 +43,6 @@ storySchema.index(
   { unique: true, partialFilterExpression: { deletedAt: { $type: "null" } } },
 );
 storySchema.index({ userId: 1, updatedAt: -1 });
-storySchema.index(
-  { shareToken: 1 },
-  {
-    unique: true,
-    partialFilterExpression: { shareToken: { $type: "string" } },
-  },
-);
 
 export const Story: Model<StoryFields> =
   (mongoose.models.Story as Model<StoryFields> | undefined) ??

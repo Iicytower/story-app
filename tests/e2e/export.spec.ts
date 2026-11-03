@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { seedStory } from "./db";
+import { findFolder, seedStory } from "./db";
 import { storageStatePath } from "./env";
 import { expect, test } from "./helpers";
 
@@ -77,5 +77,14 @@ test("does not download with an empty title", async ({ page }) => {
 test("returns 404 for another user's story", async ({ page }) => {
   const id = await seedStory("bob", { title: "Bob's" });
   const response = await page.request.get(`/stories/${id}/export`);
+  expect(response.status()).toBe(404);
+});
+
+test("folder export returns 404 for another user's folder", async ({
+  page,
+}) => {
+  await seedStory("bob", { title: "Bob's", folder: "Bob's book" });
+  const folder = await findFolder("Bob's book");
+  const response = await page.request.get(`/folders/${folder!._id}/export`);
   expect(response.status()).toBe(404);
 });
