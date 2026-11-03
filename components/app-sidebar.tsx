@@ -4,6 +4,7 @@ import {
   FolderIcon,
   HouseIcon,
   KeyRoundIcon,
+  LanguagesIcon,
   LogOutIcon,
   MenuIcon,
   MoonIcon,
@@ -12,13 +13,25 @@ import {
   SearchIcon,
   SunIcon,
 } from "lucide-react";
-import { Link, usePathname } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import { type Locale, LOCALE_NAMES, routing } from "@/i18n/routing";
+import { useLocale, useTranslations } from "next-intl";
 import { type ReactNode, useLayoutEffect, useState } from "react";
-import { logout, saveSettings } from "@/app/[locale]/(protected)/actions";
+import {
+  changeLocale,
+  logout,
+  saveSettings,
+} from "@/app/[locale]/(protected)/actions";
 import { ChangePasswordDialog } from "@/components/change-password-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { applyTheme, rememberTheme } from "@/lib/theme";
 
 function toggleTheme() {
@@ -88,6 +101,54 @@ function ActionButton({
   );
 }
 
+function LanguageMenu({
+  compact,
+  onDone,
+}: {
+  compact: boolean;
+  onDone: () => void;
+}) {
+  const t = useTranslations("sidebar");
+  const locale = useLocale();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  async function choose(next: string) {
+    if (next === locale) return;
+    await changeLocale(next);
+    onDone();
+    // The same page and query in the new language.
+    router.replace(`${pathname}${window.location.search}`, {
+      locale: next as Locale,
+    });
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          title={t("language")}
+          aria-label={t("language")}
+          className={ITEM}
+        >
+          <LanguagesIcon />
+          {!compact && t("language")}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="right" align="end">
+        <DropdownMenuRadioGroup value={locale} onValueChange={choose}>
+          {routing.locales.map((option) => (
+            <DropdownMenuRadioItem key={option} value={option} lang={option}>
+              {LOCALE_NAMES[option]}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function NavItems({
   compact,
   onDone,
@@ -139,6 +200,7 @@ function NavItems({
             onDone();
           }}
         />
+        <LanguageMenu compact={compact} onDone={onDone} />
         <ActionButton
           label={t("changePassword")}
           icon={<KeyRoundIcon />}

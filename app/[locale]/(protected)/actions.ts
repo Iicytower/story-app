@@ -1,7 +1,10 @@
 "use server";
 
+import { cookies } from "next/headers";
+import { hasLocale } from "next-intl";
 import { getLocale } from "next-intl/server";
 import { signOut } from "@/auth";
+import { LOCALE_COOKIE, LOCALE_COOKIE_OPTIONS, routing } from "@/i18n/routing";
 import type { ActionResult } from "@/lib/action-result";
 import { hashPassword, verifyPassword } from "@/lib/accounts";
 import { requireUser } from "@/lib/auth/session";
@@ -26,6 +29,20 @@ export async function saveSettings(patch: unknown): Promise<ActionResult> {
   }
 
   await updateUserSettings(user.userId, parsed);
+  return { ok: true };
+}
+
+// The setting follows the user to other devices, the cookie picks the language of
+// addresses without a locale (D46).
+export async function changeLocale(locale: unknown): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!hasLocale(routing.locales, locale)) {
+    return actionError("INVALID_INPUT", "settingsInvalid");
+  }
+
+  await updateUserSettings(user.userId, { appearance: { locale } });
+  (await cookies()).set(LOCALE_COOKIE, locale, LOCALE_COOKIE_OPTIONS);
   return { ok: true };
 }
 

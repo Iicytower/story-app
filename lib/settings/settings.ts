@@ -4,6 +4,7 @@ import {
   normalizeLayout,
 } from "@/lib/editor-layout";
 import { FOLDER_SORTS, type FolderSort } from "@/lib/folders/sort";
+import { type Locale, routing } from "@/i18n/routing";
 
 export const THEMES = ["light", "dark"] as const;
 export type Theme = (typeof THEMES)[number];
@@ -46,6 +47,13 @@ const SETTINGS = {
     ),
     theme: field<Theme | null>(null, (value) =>
       value === null ? null : oneOf(THEMES)(value),
+    ),
+    // null: not chosen yet, the language comes from the cookie or Accept-Language (D46).
+    // Set by changeLocale, which also sets the cookie.
+    locale: field<Locale | null>(
+      null,
+      (value) => (value === null ? null : oneOf(routing.locales)(value)),
+      false,
     ),
   },
   folders: {

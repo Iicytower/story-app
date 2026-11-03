@@ -1,5 +1,6 @@
 import { createTranslator } from "next-intl";
 import en from "@/messages/en.json";
+import pl from "@/messages/pl.json";
 import type { ErrorMessage } from "./messages";
 
 const errors = createTranslator({
@@ -19,7 +20,7 @@ export function inEnglish({ key, values }: ErrorMessage): string {
 }
 
 // Headings of every language, so a file exported in one imports in another.
-const DOCUMENTS = [en.document];
+const DOCUMENTS = [en.document, pl.document];
 export const NOTES_HEADINGS = DOCUMENTS.map((labels) => labels.notes);
 export const FOLDER_NOTES_HEADINGS = DOCUMENTS.map(
   (labels) => labels.folderNotes,
