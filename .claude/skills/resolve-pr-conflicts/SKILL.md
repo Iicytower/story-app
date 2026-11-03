@@ -5,7 +5,7 @@ description: Resolve merge conflicts in all open pull requests, including the fa
 
 # Resolve PR conflicts
 
-Never push to `main` and never merge a PR: the user does that. Invoking this skill is the user's permission to push the head branch of a conflicting PR, including `staging`.
+Never merge into or push to `staging` or `main` and never merge a PR: the user does that (D45). If the head of a conflicting PR is `staging` or `main`, skip it and tell the user the commands to run.
 
 1. List the open PRs. GitHub computes `mergeable` lazily, so repeat for any `UNKNOWN`:
 
@@ -33,7 +33,7 @@ Never push to `main` and never merge a PR: the user does that. Invoking this ski
    git switch -
    ```
 
-4. **The tree is not in the history** (real conflict, e.g. a hotfix on `main`): do not use `-s ours`, it would drop that change. Run a normal `git merge origin/<base>`, resolve each file keeping both sides' intent, run `npm run verify`, then commit and push. If two sides change the same behaviour and the right result is not clear, ask the user with `AskUserQuestion`. If the head is `main`, stop and tell the user.
+4. **The tree is not in the history** (real conflict, e.g. a hotfix on `main`): do not use `-s ours`, it would drop that change. Run a normal `git merge origin/<base>`, resolve each file keeping both sides' intent, run `npm run verify`, then commit and push. If two sides change the same behaviour and the right result is not clear, ask the user with `AskUserQuestion`.
 
 5. Check every PR again, waiting for `UNKNOWN` and for checks (`gh pr checks <number>`):
 

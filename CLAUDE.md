@@ -20,7 +20,7 @@ Prywatna aplikacja webowa do pisania opowiadań w markdown (Next.js App Router, 
 4. Napisz testy z sekcji „Testy” taska razem z kodem (nie na końcu). Każde kryterium akceptacji musi mieć test albo oznaczenie `manual`.
 5. `npm run verify` musi przechodzić. Nie zamykaj taska z czerwonymi lub pominiętymi testami.
 6. W odpowiedzi do użytkownika podaj mapowanie: kryterium akceptacji → test (lub wynik weryfikacji `manual`).
-7. Status `[x]`, plik taska przenieś do `docs/tasks/done/` (`git mv`) i popraw link w tabeli, potem jeden commit na task na branchu taska (wiadomość: `NN: <krótki opis>`). Merge do `develop` po zakończeniu taska; push `develop` oraz merge `develop` → `staging` i push `staging` tylko na prośbę użytkownika. **Nigdy nie pushuj na `main` lub `master`** (D13, D15).
+7. Status `[x]`, plik taska przenieś do `docs/tasks/done/` (`git mv`) i popraw link w tabeli, potem jeden commit na task na branchu taska (wiadomość: `NN: <krótki opis>`). Merge do `develop` po zakończeniu taska; push `develop` tylko na prośbę użytkownika. **Nigdy nie merguj do `staging` ani `main` i nie pushuj na `staging`, `main` ani `master`** – robi to wyłącznie użytkownik, także przy prośbie o testy na stagingu (D45).
 
 ## Komendy
 
@@ -47,3 +47,4 @@ Prywatna aplikacja webowa do pisania opowiadań w markdown (Next.js App Router, 
 
 - Hook PostToolUse: ESLint `--fix` + Prettier na edytowanym pliku.
 - Hook Stop: `tsc --noEmit`, gdy są zmienione pliki TS; błędy trzeba naprawić.
+- Hook PreToolUse: `protect-branches.sh` blokuje merge do `staging`/`main`, push na te branche i `gh pr merge` (D45).
