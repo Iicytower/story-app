@@ -241,8 +241,8 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 
 ## D30 – Przewijanie poza tekst (2026-10-30)
 
-- Dotyczy każdego `MarkdownEditor`: treści, notatek rozdziału i notatek folderu. Odstęp nad pierwszą i pod ostatnią linią to wysokość widoku minus jedna linia (`--scroll-gap`, liczone w `trackScrollGap`, `ResizeObserver` na elemencie przewijanym). Wysokość linii pochodzi z pola, więc dłuższy nagłówek jako ostatnia linia jest przy maksymalnym przewinięciu widoczny częściowo.
-- Po otwarciu `scrollTop` to 0, czyli pierwsza linia stoi przy dolnej krawędzi. To decyzja użytkownika, tak samo nad tekstem w notatkach i przy zapamiętanej pozycji „na początku” (D27).
+- Dotyczy każdego `MarkdownEditor`: treści, notatek rozdziału i notatek folderu. Odstęp nad pierwszą linią to połowa, a pod ostatnią trzy czwarte wysokości widoku minus jedna linia (`--scroll-gap-top`, `--scroll-gap-bottom`, liczone w `trackScrollGap`, `ResizeObserver` na elemencie przewijanym; zmniejszone 2026-11-03 na prośbę użytkownika z pełnej wysokości). Wysokość linii pochodzi z pola, więc dłuższy nagłówek jako ostatnia linia jest przy maksymalnym przewinięciu widoczny częściowo.
+- Po otwarciu `scrollTop` to 0, czyli pierwsza linia stoi w połowie widoku. To decyzja użytkownika, tak samo nad tekstem w notatkach i przy zapamiętanej pozycji „na początku” (D27).
 - Element nie może być niższy niż jego padding, więc textarea w Source nie przewija się sama: rośnie z tekstem (`field-sizing: content`), a przewija ją zewnętrzny element, jak w Preview. Kliknięcie w pusty obszar ustawia fokus w polu. `field-sizing` nie ma fallbacku, Source wymaga przeglądarki, która go obsługuje (testy: Chromium).
 - Pozycja nad pierwszą linią nie jest kotwicą: przełączenie Preview/Source z tego obszaru (`scrollTop` > 0) ustawia pierwszą linię przy górnej krawędzi.
 
@@ -380,3 +380,9 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Pisownia na bieżąco zostaje w przeglądarce (`lang` z folderu), bez słowników w aplikacji i nowych pakietów.
 - Język dotyczy edytora i LT. Kafelki słownikowe pokazują się bez warunku, a eksport i strony publiczne zostają bez zmian.
 - Taski 23, 32, 33 i 34 nie zależą już od języka folderu.
+
+## D45 – Claude nie merguje do `staging` i `main` (2026-11-02)
+
+- Zmienia D15. Decyzja użytkownika po merge'u `develop` → `staging`, o który nie poprosił wprost: merge do `staging` i `main` oraz push na te branche robi wyłącznie użytkownik, także gdy prosi o testy na stagingu. Claude pushuje tylko `develop` (na prośbę) i otwiera PR-y wydań.
+- Egzekwuje to hook PreToolUse `.claude/hooks/protect-branches.sh`: blokuje `git merge` na tych branchach, `git push` na nie i wszystkie `gh pr merge` (każdy PR w tym repo celuje w `staging` albo `main`).
+- `resolve-pr-conflicts` pomija PR-y z headem `staging` lub `main` i podaje komendy użytkownikowi.
