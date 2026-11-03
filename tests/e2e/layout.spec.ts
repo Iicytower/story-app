@@ -31,11 +31,11 @@ test("log out returns to the home page and protects /stories again", async ({
 }) => {
   await page.goto("/stories");
   await sidebarAction(page, "Log out");
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL("/en");
   await expectSignedOut(page);
 
   await page.goto("/stories");
-  await expect(page).toHaveURL(/\/\?callbackUrl=/);
+  await expect(page).toHaveURL(/\/en\?callbackUrl=/);
 });
 
 for (const [name, viewport] of [
@@ -62,7 +62,7 @@ for (const [name, viewport] of [
       );
 
       await sidebarAction(page, "Folders");
-      await expect(page).toHaveURL("/stories");
+      await expect(page).toHaveURL("/en/stories");
 
       await page.getByRole("link", { name: /Book/ }).click();
       await expect(page).toHaveURL(/\/folders\//);
@@ -84,7 +84,7 @@ test("Home goes to the default view and a collapsed sidebar stays collapsed", as
   await page.goto("/stories");
   const nav = page.getByRole("navigation", { name: "Main" });
   await nav.getByRole("link", { name: "Home" }).click();
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL("/en");
 
   await nav.getByRole("button", { name: "Collapse sidebar" }).click();
   await expect
@@ -123,7 +123,7 @@ test.describe("on a narrow screen", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Menu" }).click();
     await page.getByRole("link", { name: "Folders" }).click();
-    await expect(page).toHaveURL("/stories");
+    await expect(page).toHaveURL("/en/stories");
     await expect(page.getByRole("dialog")).toBeHidden();
   });
 });

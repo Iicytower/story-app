@@ -3,6 +3,7 @@ import { createInterface } from "node:readline/promises";
 import { Writable } from "node:stream";
 import { createOrUpdateUser, userExists } from "@/lib/accounts";
 import { nicknameError, passwordError } from "@/lib/credentials";
+import { inEnglish } from "@/lib/i18n/english";
 import { connectDB, disconnectDB } from "@/lib/db";
 
 // readline echoes typed characters through its output stream; muting it hides the password.
@@ -29,7 +30,7 @@ async function askNickname(): Promise<string> {
     const nickname = (await rl.question("Nickname: ")).trim();
     const error = nicknameError(nickname);
     if (!error) return nickname;
-    console.log(`${error} Try again.`);
+    console.log(`${inEnglish(error)} Try again.`);
   }
 }
 
@@ -38,7 +39,7 @@ async function askPassword(): Promise<string> {
     const password = await askHidden("Password: ");
     const error = passwordError(password);
     if (error) {
-      console.log(`${error} Try again.`);
+      console.log(`${inEnglish(error)} Try again.`);
       continue;
     }
     if (password === (await askHidden("Repeat password: "))) return password;

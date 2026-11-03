@@ -2,7 +2,7 @@
 
 @AGENTS.md
 
-Prywatna aplikacja webowa do pisania opowiadań w markdown (Next.js App Router, TypeScript, MongoDB Atlas + Mongoose, Auth.js Credentials/JWT, Tailwind + shadcn/ui, Vercel).
+Aplikacja webowa do pisania opowiadań (docelowo publiczna, D46) w markdown (Next.js App Router, TypeScript, MongoDB Atlas + Mongoose, Auth.js Credentials/JWT, Tailwind + shadcn/ui, Vercel).
 
 ## Dokumentacja
 
@@ -34,12 +34,14 @@ Prywatna aplikacja webowa do pisania opowiadań w markdown (Next.js App Router, 
 
 ## Zasady projektu
 
-- UI w całości po angielsku, tylko desktop, dark mode.
+- UI wielojęzyczne (D46): angielski i polski, wybór w sidebarze; tylko desktop, dark mode.
 - Wielu użytkowników (D1): każde zapytanie o `stories` filtruje po `userId` z sesji; cudze = `NOT_FOUND`/404. `userId` nigdy z wejścia klienta.
 - Odczyt: Server Components bezpośrednio z bazy. Zapis: Server Actions. Route Handlers tylko dla eksportu i Auth.js.
 - Każda Server Action sprawdza sesję i zwraca `{ ok: true, ... } | { ok: false, error, message }` – nie rzuca wyjątków.
 - Zapytania o opowiadania zawsze z `deletedAt: null` (poza stroną publiczną, która też go wymaga).
 - Mongoose: `.lean()` + serializacja (`_id` → `id: string`, daty → ISO string) przed przekazaniem do klienta; model rejestrowany przez `mongoose.models.X ?? mongoose.model(...)`.
+- Strony w `app/[locale]/` (D46). `Link`, `redirect`, `useRouter`, `usePathname`, `getPathname` tylko z `@/i18n/navigation`, nigdy z `next/link` / `next/navigation`. Route Handlery (eksport, `api/`) poza `[locale]`.
+- Każdy tekst interfejsu w `messages/en.json` i `messages/pl.json` (D46; brak klucza w `pl` to błąd `tsc`): `useTranslations` / `getTranslations`, także `aria-label`, `placeholder`, `title`, `metadata`. Liczby mnogie przez ICU (`{count, plural, ...}`). Komunikaty Server Actions przez `actionError(code, key)` z `lib/i18n/action-error.ts`; walidacja w `lib/` zwraca klucz (`ValidationError`), akcja tłumaczy go `translateError`.
 - Podgląd markdown: `react-markdown` + `remark-breaks`, nigdy `rehype-raw`.
 - API bibliotek (Next.js, Auth.js, Mongoose, shadcn) sprawdzaj w aktualnej dokumentacji (context7), nie z pamięci – wersje szybko się zmieniają.
 

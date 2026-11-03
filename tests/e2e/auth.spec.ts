@@ -5,7 +5,7 @@ import { expect, test } from "./helpers";
 test.describe("signed out", () => {
   test("visiting /stories opens the sign-in dialog", async ({ page }) => {
     await page.goto("/stories");
-    await expect(page).toHaveURL(/\/\?callbackUrl=/);
+    await expect(page).toHaveURL(/\/en\?callbackUrl=/);
     await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   });
 
@@ -19,7 +19,7 @@ test.describe("signed out", () => {
         .getByRole("alert")
         .filter({ hasText: "Invalid nickname or password." }),
     ).toBeVisible();
-    await expect(page).toHaveURL("/?auth=login");
+    await expect(page).toHaveURL("/en?auth=login");
   });
 
   test("unknown nickname shows the same error", async ({ page }) => {
@@ -58,7 +58,7 @@ test.describe("signed out", () => {
         .getByRole("alert")
         .filter({ hasText: "Too many attempts. Try again in a few minutes." }),
     ).toBeVisible();
-    await expect(page).toHaveURL("/?auth=login");
+    await expect(page).toHaveURL("/en?auth=login");
   });
 
   test("the form has no email field", async ({ page }) => {
@@ -72,7 +72,7 @@ test.describe("signed out", () => {
     await page.getByLabel("Nickname").fill(USERS.alice.nickname.toUpperCase());
     await page.getByLabel("Password").fill(USERS.alice.password);
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL("/");
+    await expect(page).toHaveURL("/en");
   });
 
   test("correct password goes to the home view", async ({ page }) => {
@@ -80,7 +80,7 @@ test.describe("signed out", () => {
     await page.getByLabel("Nickname").fill(USERS.alice.nickname);
     await page.getByLabel("Password").fill(USERS.alice.password);
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL("/");
+    await expect(page).toHaveURL("/en");
   });
 });
 
@@ -89,7 +89,7 @@ test.describe("signed in", () => {
 
   test("/ shows the search view with the sidebar", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveURL("/");
+    await expect(page).toHaveURL("/en");
     await expect(
       page.getByRole("heading", { name: "Search stories" }),
     ).toBeVisible();

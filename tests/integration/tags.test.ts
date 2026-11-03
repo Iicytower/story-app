@@ -3,14 +3,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createFolderVersion,
   restoreEntireVersion,
-} from "@/app/(protected)/folders/[id]/versions/actions";
-import { deleteFolder, setFolderTags } from "@/app/(protected)/folders/actions";
+} from "@/app/[locale]/(protected)/folders/[id]/versions/actions";
+import {
+  deleteFolder,
+  setFolderTags,
+} from "@/app/[locale]/(protected)/folders/actions";
 import {
   deleteStory,
   moveStory,
   saveStory,
   setStoryTags,
-} from "@/app/(protected)/stories/actions";
+} from "@/app/[locale]/(protected)/stories/actions";
 import type { ActionError } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import { getFolderForExport } from "@/lib/folders/queries";

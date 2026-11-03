@@ -1,3 +1,7 @@
+import {
+  type DocumentLabels,
+  ENGLISH_DOCUMENT_LABELS,
+} from "@/lib/i18n/english";
 import { stripComments } from "@/lib/stories/strip-comments";
 import { parseBlocks, type Block } from "./blocks";
 
@@ -22,13 +26,14 @@ const notesHeading = (text: string): Block => ({
 export function toExportDocument(
   source: ExportSource,
   includeExtras: boolean,
+  labels: DocumentLabels = ENGLISH_DOCUMENT_LABELS,
 ): ExportDocument {
   const sections: ExportSection[] = source.chapters.map((chapter) => {
     const blocks = parseBlocks(
       includeExtras ? chapter.content : stripComments(chapter.content),
     );
     if (includeExtras && chapter.notes.trim()) {
-      blocks.push(notesHeading("Notes"), ...parseBlocks(chapter.notes));
+      blocks.push(notesHeading(labels.notes), ...parseBlocks(chapter.notes));
     }
     return {
       title: source.kind === "folder" ? chapter.title : null,
@@ -37,7 +42,7 @@ export function toExportDocument(
   });
   if (includeExtras && source.notes.trim()) {
     sections.push({
-      title: "Folder notes",
+      title: labels.folderNotes,
       blocks: parseBlocks(source.notes),
     });
   }

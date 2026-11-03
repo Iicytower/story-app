@@ -1,5 +1,6 @@
 import mongoose, { Schema, type Model, type Types } from "mongoose";
 import { FOLDER_SORTS } from "@/lib/folders/sort";
+import { routing } from "@/i18n/routing";
 import { MOBILE_VIEWS, THEMES } from "@/lib/settings/settings";
 
 // Only values the user chose are stored, without defaults: getUserSettings fills in the
@@ -7,7 +8,11 @@ import { MOBILE_VIEWS, THEMES } from "@/lib/settings/settings";
 export interface SettingsFields {
   userId: Types.ObjectId;
   editor?: { layout?: unknown; mobileView?: string };
-  appearance?: { theme?: string | null; sidebarCollapsed?: boolean };
+  appearance?: {
+    theme?: string | null;
+    sidebarCollapsed?: boolean;
+    locale?: string | null;
+  };
   folders?: { sort?: string; manualOrder?: boolean };
   createdAt: Date;
   updatedAt: Date;
@@ -29,6 +34,7 @@ const settingsSchema = new Schema<SettingsFields>(
     appearance: {
       theme: { type: String, enum: [...THEMES, null] },
       sidebarCollapsed: { type: Boolean },
+      locale: { type: String, enum: [...routing.locales, null] },
     },
     folders: {
       sort: { type: String, enum: FOLDER_SORTS },

@@ -5,9 +5,9 @@ import {
   deleteFolderVersion,
   restoreEntireVersion,
   restoreFolderVersion,
-} from "@/app/(protected)/folders/[id]/versions/actions";
-import { deleteFolder } from "@/app/(protected)/folders/actions";
-import { saveStory } from "@/app/(protected)/stories/actions";
+} from "@/app/[locale]/(protected)/folders/[id]/versions/actions";
+import { deleteFolder } from "@/app/[locale]/(protected)/folders/actions";
+import { saveStory } from "@/app/[locale]/(protected)/stories/actions";
 import type { ActionError } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import { ChapterContent } from "@/lib/models/chapter-content";

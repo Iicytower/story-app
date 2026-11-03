@@ -1,53 +1,42 @@
+// Labels are in the nameGenerator dictionary, under the same values.
 export interface Option<T extends string> {
   value: T;
-  label: string;
 }
 
-const options = <T extends string>(...pairs: [T, string][]): Option<T>[] =>
-  pairs.map(([value, label]) => ({ value, label }));
+const options = <T extends string>(...values: T[]): Option<T>[] =>
+  values.map((value) => ({ value }));
 
 export const TYPE_GROUPS = [
   {
-    label: "Characters",
+    id: "characters",
+    types: options("first-name", "surname", "full-name", "epithet"),
+  },
+  {
+    id: "places",
     types: options(
-      ["first-name", "First name"],
-      ["surname", "Surname"],
-      ["full-name", "Full name"],
-      ["epithet", "Epithet"],
+      "city",
+      "village",
+      "river",
+      "mountains",
+      "forest",
+      "kingdom",
+      "inn",
     ),
   },
   {
-    label: "Places",
-    types: options(
-      ["city", "City"],
-      ["village", "Village"],
-      ["river", "River"],
-      ["mountains", "Mountains"],
-      ["forest", "Forest"],
-      ["kingdom", "Kingdom"],
-      ["inn", "Inn"],
-    ),
+    id: "organizations",
+    types: options("guild", "order", "house", "company", "faction"),
   },
   {
-    label: "Organizations",
+    id: "things",
     types: options(
-      ["guild", "Guild"],
-      ["order", "Order"],
-      ["house", "House"],
-      ["company", "Company"],
-      ["faction", "Faction"],
-    ),
-  },
-  {
-    label: "Things and beings",
-    types: options(
-      ["weapon", "Weapon"],
-      ["artifact", "Artifact"],
-      ["ship", "Ship"],
-      ["spell", "Spell"],
-      ["species", "Species"],
-      ["monster", "Monster"],
-      ["deity", "Deity"],
+      "weapon",
+      "artifact",
+      "ship",
+      "spell",
+      "species",
+      "monster",
+      "deity",
     ),
   },
 ] as const;
@@ -59,16 +48,16 @@ export const NAME_TYPES: NameType[] = TYPE_GROUPS.flatMap((group) =>
 );
 
 export const STYLES = options(
-  ["polish", "Polish/Slavic"],
-  ["english", "English"],
-  ["german", "German"],
-  ["nordic", "Nordic"],
-  ["latin", "Latin"],
-  ["celtic", "Celtic"],
-  ["elvish", "Elvish"],
-  ["dwarven", "Dwarven"],
-  ["orcish", "Orcish"],
-  ["scifi", "Sci-fi"],
+  "polish",
+  "english",
+  "german",
+  "nordic",
+  "latin",
+  "celtic",
+  "elvish",
+  "dwarven",
+  "orcish",
+  "scifi",
 );
 
 export type Style = (typeof STYLES)[number]["value"];
@@ -77,77 +66,40 @@ export const STYLE_IDS: Style[] = STYLES.map((style) => style.value);
 
 export const SINGLE_GROUPS = {
   gender: {
-    label: "Gender",
-    options: options(
-      ["male", "Male"],
-      ["female", "Female"],
-      ["neutral", "Neutral"],
-    ),
+    options: options("male", "female", "neutral"),
   },
   sound: {
-    label: "Sound",
-    options: options(
-      ["hard", "Hard"],
-      ["soft", "Soft"],
-      ["neutral", "Neutral"],
-    ),
+    options: options("hard", "soft", "neutral"),
   },
   length: {
-    label: "Length",
-    options: options(
-      ["short", "Short"],
-      ["medium", "Medium"],
-      ["long", "Long"],
-    ),
+    options: options("short", "medium", "long"),
   },
   pronunciation: {
-    label: "Pronunciation",
-    options: options(
-      ["easy", "Easy"],
-      ["exotic", "Exotic"],
-      ["unpronounceable", "Unpronounceable"],
-    ),
+    options: options("easy", "exotic", "unpronounceable"),
   },
   balance: {
-    label: "Letter balance",
-    options: options(
-      ["vowel-heavy", "Vowel-heavy"],
-      ["balanced", "Balanced"],
-      ["consonant-heavy", "Consonant-heavy"],
-    ),
+    options: options("vowel-heavy", "balanced", "consonant-heavy"),
   },
   mood: {
-    label: "Mood",
-    options: options(
-      ["dark", "Dark"],
-      ["noble", "Noble"],
-      ["comic", "Comic"],
-      ["ethereal", "Ethereal"],
-      ["common", "Common"],
-    ),
+    options: options("dark", "noble", "comic", "ethereal", "common"),
   },
   wordCount: {
-    label: "Word count",
-    options: options(["one", "One"], ["two", "Two"], ["three", "Three"]),
+    options: options("one", "two", "three"),
   },
 };
 
-export const CRUDE_OPTIONS = options(
-  ["exclude", "Exclude"],
-  ["allow", "Allow"],
-  ["only", "Only"],
-);
+export const CRUDE_OPTIONS = options("exclude", "allow", "only");
 
-export const TOGGLES = {
-  mixStyles: "Mix styles",
-  alliteration: "Alliteration",
-  repeatedSyllable: "Repeated syllable",
-  punctuation: "Apostrophes and hyphens",
-  easyInflect: "Easy to inflect",
-};
+export const TOGGLES = [
+  "mixStyles",
+  "alliteration",
+  "repeatedSyllable",
+  "punctuation",
+  "easyInflect",
+] as const;
 
 export type SingleGroup = keyof typeof SINGLE_GROUPS;
-export type Toggle = keyof typeof TOGGLES;
+export type Toggle = (typeof TOGGLES)[number];
 type GroupValue<G extends SingleGroup> =
   (typeof SINGLE_GROUPS)[G]["options"][number]["value"];
 export type Mood = GroupValue<"mood">;
@@ -239,7 +191,7 @@ function isValidFilters(value: unknown): value is Filters {
     Object.entries(SINGLE_GROUPS).every(([key, group]) =>
       allowed(key, ["any", ...values(group.options)]),
     ) &&
-    [...Object.keys(TOGGLES), "polishLetters"].every(
+    [...TOGGLES, "polishLetters"].every(
       (key) => typeof saved[key] === "boolean",
     ) &&
     ["startsWith", "endsWith", "contains", "excludes"].every(

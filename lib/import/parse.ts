@@ -1,4 +1,4 @@
-import { ImportError, type ImportedFile } from "./document";
+import { type ChapterTitle, ImportError, type ImportedFile } from "./document";
 import { decodeText, unzip } from "./files";
 
 export const IMPORT_EXTENSIONS = [
@@ -28,16 +28,17 @@ async function readFile(
   extension: string,
   bytes: Uint8Array,
   title: string,
+  chapterTitle?: ChapterTitle,
 ): Promise<ImportedFile> {
   switch (extension) {
     case "md":
     case "markdown": {
       const { readMarkdown } = await import("./formats/text");
-      return readMarkdown(decodeText(bytes), title);
+      return readMarkdown(decodeText(bytes), title, chapterTitle);
     }
     case "txt": {
       const { readTxt } = await import("./formats/text");
-      return readTxt(decodeText(bytes), title);
+      return readTxt(decodeText(bytes), title, chapterTitle);
     }
     case "html":
     case "htm": {
@@ -47,38 +48,40 @@ async function readFile(
       ]);
       return structureMarkdown(htmlToMarkdown(decodeText(bytes)), title, {
         shifted: true,
+        chapterTitle,
       });
     }
     case "docx": {
       const { readDocx } = await import("./formats/docx");
-      return readDocx(bytes, title);
+      return readDocx(bytes, title, chapterTitle);
     }
     case "odt": {
       const { readOdt } = await import("./formats/odt");
-      return readOdt(bytes, title);
+      return readOdt(bytes, title, chapterTitle);
     }
     case "pdf": {
       const { readPdf } = await import("./formats/pdf");
-      return readPdf(bytes, title);
+      return readPdf(bytes, title, chapterTitle);
     }
     case "epub": {
       const { readEpub } = await import("./formats/epub");
-      return readEpub(bytes, title);
+      return readEpub(bytes, title, chapterTitle);
     }
     case "fb2": {
       const { readFb2 } = await import("./formats/fb2");
-      return readFb2(decodeText(bytes), title);
+      return readFb2(decodeText(bytes), title, chapterTitle);
     }
     default:
-      throw new ImportError(
-        `Unsupported file type: ${extension ? `.${extension}` : "none"}.`,
-      );
+      throw extension
+        ? new ImportError("importUnsupported", { extension: `.${extension}` })
+        : new ImportError("importUnsupportedNone");
   }
 }
 
 async function readZip(
   bytes: Uint8Array,
   fallbackTitle: string,
+  chapterTitle?: ChapterTitle,
 ): Promise<ImportedFile> {
   const entries = Object.entries(unzip(bytes))
     .filter(([name, data]) => data.length && !name.startsWith("__MACOSX/"))
@@ -94,7 +97,7 @@ async function readZip(
   for (const [name, data] of entries) {
     const { base, extension } = split(name);
     if (!IMPORT_EXTENSIONS.includes(extension) || extension === "zip") continue;
-    const entry = await readFile(extension, data, base);
+    const entry = await readFile(extension, data, base, chapterTitle);
     file.lossy ||= entry.lossy;
     if (base === "notes") {
       file.title = entry.title;
@@ -110,15 +113,16 @@ async function readZip(
 export async function parseImportFile(
   name: string,
   bytes: Uint8Array,
+  chapterTitle?: ChapterTitle,
 ): Promise<ImportedFile> {
   const { base, extension } = split(name);
   const file =
     extension === "zip"
-      ? await readZip(bytes, base)
-      : await readFile(extension, bytes, base);
+      ? await readZip(bytes, base, chapterTitle)
+      : await readFile(extension, bytes, base, chapterTitle);
   const empty = file.chapters.every(
     ({ content, notes }) => !content.trim() && !notes.trim(),
   );
-  if (empty) throw new ImportError("This file has no text to import.");
+  if (empty) throw new ImportError("importEmpty");
   return file;
 }

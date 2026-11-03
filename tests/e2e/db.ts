@@ -225,3 +225,11 @@ export function findFolderVersion(
       .findOne({ number }),
   );
 }
+
+export function clearSettings(user: UserName): Promise<void> {
+  return withE2EDb(async (connection) => {
+    await connection
+      .collection("settings")
+      .deleteOne({ userId: await userId(connection, user) });
+  });
+}
