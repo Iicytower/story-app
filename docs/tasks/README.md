@@ -27,6 +27,9 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-01): najp
 | 27 | [Zakładka Tools](done/27-tools-tab.md) | – | [x] |
 | 42 | [Generator nazw](done/42-name-generator.md) | 27 | [x] |
 | 39 | [Publiczna wyszukiwarka](done/39-public-search.md) | 24, 37, 38 | [x] |
+| 43 | [Routing z prefiksem języka](43-locale-routing.md) | – | [ ] |
+| 44 | [Słowniki tekstów interfejsu](44-ui-dictionaries.md) | 43 | [ ] |
+| 45 | [Przełącznik języka i polski interfejs](45-polish-ui.md) | 44 | [ ] |
 | 26 | [Upload okładek](26-cover-upload.md) | – | [ ] |
 | 40 | [Wyświetlanie okładek](40-cover-display.md) | 26 | [ ] |
 | 28 | [Serwer na Mikrusie](28-mikrus-server.md) | – | [ ] |

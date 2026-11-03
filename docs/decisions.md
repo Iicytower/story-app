@@ -386,3 +386,15 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Zmienia D15. Decyzja użytkownika po merge'u `develop` → `staging`, o który nie poprosił wprost: merge do `staging` i `main` oraz push na te branche robi wyłącznie użytkownik, także gdy prosi o testy na stagingu. Claude pushuje tylko `develop` (na prośbę) i otwiera PR-y wydań.
 - Egzekwuje to hook PreToolUse `.claude/hooks/protect-branches.sh`: blokuje `git merge` na tych branchach, `git push` na nie i wszystkie `gh pr merge` (każdy PR w tym repo celuje w `staging` albo `main`).
 - `resolve-pr-conflicts` pomija PR-y z headem `staging` lub `main` i podaje komendy użytkownikowi.
+
+## D46 – Wielojęzyczny interfejs z prefiksem w adresie (2026-11-03)
+
+- Zmienia zasadę „UI w całości po angielsku” i założenie prywatnej aplikacji: aplikacja docelowo jest publiczna, interfejs ma wybór języka. Na start angielski i polski; kolejny język to tylko nowy plik tłumaczeń i wpis na liście języków (decyzja użytkownika).
+- Biblioteka `next-intl` (decyzja użytkownika, instalacja w tasku 43).
+- Każdy adres ma prefiks `/en/...` albo `/pl/...`, także dla domyślnego angielskiego. Segmenty ścieżek są te same we wszystkich językach (`/pl/stories`). Poza prefiksem zostają Route Handlery (`/api/...`, eksport).
+- Wejście bez prefiksu przekierowuje na język wybrany kolejno z: ustawienia zalogowanego użytkownika, cookie z ostatniego wyboru, `Accept-Language`, a gdy nic nie pasuje – angielski. Stare adresy (w tym publiczne `/p/...`) działają dzięki temu przekierowaniu.
+- Przełącznik tylko w sidebarze (zalogowani). Niezalogowany zmienia język adresem albo ustawieniami przeglądarki.
+- Komunikaty Server Actions tłumaczone na serwerze według języka żądania; kształt `{ ok, error, message }` bez zmian.
+- Język interfejsu jest niezależny od języka treści folderu (D44, task 29): `lang` edytora i spellcheck zależą od folderu, nie od UI.
+- Polskie tłumaczenie przygotowuje Claude, użytkownik je przegląda.
+- Podział: task 43 (routing), 44 (słowniki `en`), 45 (przełącznik i `pl`).
