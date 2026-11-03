@@ -31,6 +31,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-01): najp
 | 44 | [Słowniki tekstów interfejsu](done/44-ui-dictionaries.md) | 43 | [x] |
 | 45 | [Przełącznik języka i polski interfejs](done/45-polish-ui.md) | 44 | [x] |
 | 46 | [Dialog ustawień zamiast osobnych pozycji w sidebarze](46-settings-dialog.md) | 45 | [ ] |
+| 47 | [Usunięcie trybu kolumn w edytorze](47-remove-split.md) | – | [ ] |
 | 26 | [Upload okładek](26-cover-upload.md) | – | [ ] |
 | 40 | [Wyświetlanie okładek](40-cover-display.md) | 26 | [ ] |
 | 28 | [Serwer na Mikrusie](28-mikrus-server.md) | – | [ ] |

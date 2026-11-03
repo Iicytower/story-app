@@ -425,3 +425,8 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 
 - Motyw, język, zmiana hasła i wylogowanie przechodzą z sidebaru do jednego dialogu „Settings”, otwieranego z sidebaru; osobnej strony ustawień nie ma (decyzja użytkownika, task 46).
 - Motyw w dialogu ma trzy opcje: jasny, ciemny i systemowy.
+
+## D51 – Bez trybu kolumn w edytorze (2026-11-03)
+
+- Tryb „Split” (prawy panel jako osobne kolumny) znika razem z kodem; edytor ma tylko panel boczny z zakładkami (decyzja użytkownika, task 47).
+- Zapisane `split`, `order` i szerokości kolumn są ignorowane przy odczycie, bez migracji.
