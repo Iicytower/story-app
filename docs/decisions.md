@@ -435,3 +435,7 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 
 - Oba tryby dostają mniejszy kontrast: w ciemnym tło nie czarne i tekst nie czysto biały, w jasnym tło złamana biel i tekst nie czysto czarny, przy zachowaniu WCAG AA (decyzja użytkownika, task 48).
 - Kolor akcentu aplikacji wybiera użytkownik spośród 2–3 propozycji przygotowanych w tasku; jeden motyw dla wszystkich, bez wyboru w ustawieniach.
+
+## D53 – Tooltipy przy przyciskach z samą ikoną (2026-11-03)
+
+- Przyciski bez widocznej etykiety mają stylizowany tooltip (shadcn Tooltip na Radix) z tekstem jak `aria-label`, zamiast natywnego `title` (decyzja użytkownika, task 50).

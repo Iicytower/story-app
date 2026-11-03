@@ -32,6 +32,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-01): najp
 | 45 | [Przełącznik języka i polski interfejs](done/45-polish-ui.md) | 44 | [x] |
 | 46 | [Dialog ustawień zamiast osobnych pozycji w sidebarze](46-settings-dialog.md) | 45 | [ ] |
 | 47 | [Usunięcie trybu kolumn w edytorze](47-remove-split.md) | – | [ ] |
+| 50 | [Podpowiedzi przy przyciskach z samą ikoną](50-icon-tooltips.md) | – | [ ] |
 | 48 | [Łagodniejszy kontrast i motyw kolorystyczny](48-softer-colors.md) | – | [ ] |
 | 49 | [Przebudowa strony głównej](49-home-page.md) | – | [ ] |
 | 26 | [Upload okładek](26-cover-upload.md) | – | [ ] |
