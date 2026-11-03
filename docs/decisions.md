@@ -420,3 +420,8 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Logowanie woła `signIn` z `redirect: false` i przekierowuje samo: na `callbackUrl` w języku z ustawienia (i ustawia cookie), a bez ustawienia w języku bieżącej strony. Auth.js nie sprawdza już `callbackUrl`, więc przed otwartym przekierowaniem chroni `withLocale`, które zostawia tylko ścieżkę i query.
 - Ograniczenie: proxy nie czyta bazy. Na urządzeniu, które już jest zalogowane, zmiana języka zrobiona na innym urządzeniu działa dla adresów bez prefiksu dopiero po kolejnym zalogowaniu albo przełączeniu na tym urządzeniu.
 - Strony publiczne mają `hreflang` dla każdego języka i `x-default` na adres bez prefiksu (zgodnie z D47; decyzja użytkownika). Adres bezwzględny z nagłówków żądania, więc produkcja i staging linkują do siebie.
+
+## D50 – Dialog ustawień (2026-11-03)
+
+- Motyw, język, zmiana hasła i wylogowanie przechodzą z sidebaru do jednego dialogu „Settings”, otwieranego z sidebaru; osobnej strony ustawień nie ma (decyzja użytkownika, task 46).
+- Motyw w dialogu ma trzy opcje: jasny, ciemny i systemowy.
