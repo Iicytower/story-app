@@ -3,6 +3,8 @@ import { Link, redirect } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { connection } from "next/server";
+import { requestOrigin } from "@/i18n/request-origin";
+import { languageAlternates } from "@/i18n/routing";
 import { getPublishedFolder } from "@/lib/publish/queries";
 
 export async function generateMetadata({
@@ -11,10 +13,13 @@ export async function generateMetadata({
   const { nickname, folder: slug } = await params;
   const folder = await getPublishedFolder(nickname, slug);
   const t = await getTranslations();
+  if (!folder) return { title: t("common.appName") };
   return {
-    title: folder
-      ? t("public.titleBy", { title: folder.name, nickname: folder.nickname })
-      : t("common.appName"),
+    title: t("public.titleBy", {
+      title: folder.name,
+      nickname: folder.nickname,
+    }),
+    alternates: languageAlternates(await requestOrigin(), folder.path),
   };
 }
 

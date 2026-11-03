@@ -3,6 +3,8 @@ import { Link, redirect } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { connection } from "next/server";
+import { requestOrigin } from "@/i18n/request-origin";
+import { languageAlternates } from "@/i18n/routing";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { getPublishedChapter } from "@/lib/publish/queries";
 import { stripComments } from "@/lib/stories/strip-comments";
@@ -13,13 +15,13 @@ export async function generateMetadata({
   const { nickname, folder, chapter: slug } = await params;
   const chapter = await getPublishedChapter(nickname, folder, slug);
   const t = await getTranslations();
+  if (!chapter) return { title: t("common.appName") };
   return {
-    title: chapter
-      ? t("public.titleBy", {
-          title: chapter.title,
-          nickname: chapter.nickname,
-        })
-      : t("common.appName"),
+    title: t("public.titleBy", {
+      title: chapter.title,
+      nickname: chapter.nickname,
+    }),
+    alternates: languageAlternates(await requestOrigin(), chapter.path),
   };
 }
 

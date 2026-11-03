@@ -1,0 +1,545 @@
+{
+  "common": {
+    "cancel": "Anuluj",
+    "save": "Zapisz",
+    "saving": "Zapisywanie…",
+    "close": "Zamknij",
+    "delete": "Usuń",
+    "deleting": "Usuwanie…",
+    "create": "Utwórz",
+    "creating": "Tworzenie…",
+    "rename": "Zmień nazwę",
+    "appName": "Story App"
+  },
+  "sidebar": {
+    "home": "Strona główna",
+    "search": "Szukaj",
+    "folders": "Foldery",
+    "toggleTheme": "Przełącz motyw",
+    "changePassword": "Zmień hasło",
+    "logOut": "Wyloguj",
+    "menu": "Menu",
+    "mainNav": "Główna",
+    "expand": "Rozwiń pasek boczny",
+    "collapse": "Zwiń pasek boczny",
+    "language": "Język"
+  },
+  "errors": {
+    "nicknameRequirement": "Nick musi mieć 3–30 znaków: litery a-z, cyfry, _ i -.",
+    "passwordTooShort": "Hasło musi mieć co najmniej {min} znaków.",
+    "passwordTooLong": "Hasło może mieć najwyżej {max} znaków.",
+    "passwordNoLowercase": "Hasło musi zawierać małą literę.",
+    "passwordNoUppercase": "Hasło musi zawierać wielką literę.",
+    "passwordNoDigit": "Hasło musi zawierać cyfrę.",
+    "passwordNoSpecial": "Hasło musi zawierać znak specjalny ASCII.",
+    "passwordsDoNotMatch": "Hasła nie są takie same.",
+    "sessionExpired": "Sesja wygasła. Zaloguj się ponownie.",
+    "tagsInvalid": "Te tagi są nieprawidłowe.",
+    "tagTooLong": "Tag może mieć najwyżej {max} znaków.",
+    "tooManyTags": "Możesz użyć najwyżej {max} tagów.",
+    "chapterTagLimit": "Rozdział może mieć najwyżej {max} tagów, licząc tagi folderu.",
+    "versionNameRequired": "Nazwa wersji jest wymagana.",
+    "versionNameTooLong": "Nazwa wersji może mieć najwyżej {max} znaków.",
+    "folderNotFound": "Ten folder nie istnieje albo został usunięty.",
+    "folderNameRequired": "Nazwa folderu jest wymagana.",
+    "optionUnavailable": "Ta opcja jest niedostępna. Odśwież stronę i spróbuj ponownie.",
+    "duplicateFolder": "Folder o tej nazwie już istnieje.",
+    "notesConflict": "Te notatki zmieniono w innej karcie albo na innym urządzeniu. Odśwież stronę, aby pobrać najnowszą wersję.",
+    "storyNotFound": "To opowiadanie nie istnieje albo zostało usunięte.",
+    "duplicateTitle": "Opowiadanie o tym tytule już jest w tym folderze.",
+    "titleRequired": "Tytuł jest wymagany.",
+    "folderRequired": "Folder jest wymagany.",
+    "importTooLarge": "Ten tekst jest za duży, aby go zaimportować.",
+    "storyConflict": "To opowiadanie zmieniono w innej karcie albo na innym urządzeniu. Odśwież stronę, aby pobrać najnowszą wersję.",
+    "contentCleared": "Nie można całkowicie wyczyścić treści opowiadania. Zmiany nie zostały zapisane.",
+    "versionNotFound": "Ta wersja nie istnieje albo została usunięta.",
+    "selectionChanged": "Folder się zmienił. Odśwież stronę i wybierz rozdziały ponownie.",
+    "selectChapters": "Wybierz rozdziały do przywrócenia albo usunięcia.",
+    "settingsInvalid": "Te ustawienia są nieprawidłowe.",
+    "passwordsInvalid": "Te hasła są nieprawidłowe.",
+    "newPasswordsDoNotMatch": "Nowe hasła nie są takie same.",
+    "currentPasswordIncorrect": "Obecne hasło jest nieprawidłowe.",
+    "nicknameTaken": "Ten nick jest już zajęty.",
+    "detailsInvalid": "Te dane są nieprawidłowe.",
+    "tooManyAccounts": "Za dużo nowych kont. Spróbuj ponownie później.",
+    "tooManyAttempts": "Za dużo prób. Spróbuj ponownie za kilka minut.",
+    "invalidCredentials": "Nieprawidłowy nick lub hasło.",
+    "nothingToImport": "Nie ma nic do zaimportowania.",
+    "importTooManyChapters": "Plik może mieć najwyżej {max} rozdziałów.",
+    "importTitleTooLong": "Tytuł może mieć najwyżej {max} znaków.",
+    "folderTagLimit": "„{title}” miałby więcej niż {max} tagów, licząc tagi tego folderu.",
+    "offline": "Nie udało się połączyć z serwerem. Sprawdź połączenie.",
+    "importUnpackedTooLarge": "Rozpakowany plik jest za duży.",
+    "importUnsupported": "Nieobsługiwany typ pliku: {extension}.",
+    "importUnsupportedNone": "Nieobsługiwany typ pliku: brak rozszerzenia.",
+    "importEmpty": "Ten plik nie zawiera tekstu do zaimportowania.",
+    "importFb2Invalid": "Nie udało się odczytać pliku FictionBook.",
+    "importOdtInvalid": "Nie udało się odczytać pliku OpenDocument.",
+    "importEpubInvalid": "Nie udało się odczytać pliku EPUB.",
+    "importFileTooLarge": "Ten plik jest większy niż 50 MB.",
+    "importUnreadable": "Nie udało się odczytać tego pliku.",
+    "importFailed": "Nie udało się zaimportować tego tekstu. Może być za duży."
+  },
+  "password": {
+    "mustContain": "Hasło musi zawierać:",
+    "requirements": {
+      "length": "{min}–{max} znaków",
+      "lowercase": "Małą literę (dowolny alfabet)",
+      "uppercase": "Wielką literę (dowolny alfabet)",
+      "digit": "Cyfrę (0–9)",
+      "special": "Znak specjalny, jeden z: {characters}"
+    }
+  },
+  "auth": {
+    "openDialog": "Zaloguj się / Załóż konto",
+    "createAccount": "Załóż konto",
+    "signIn": "Zaloguj się",
+    "haveAccount": "Masz już konto? ",
+    "noAccount": "Nie masz konta? ",
+    "createOne": "Załóż je",
+    "nickname": "Nick",
+    "password": "Hasło",
+    "signingIn": "Logowanie…",
+    "repeatPassword": "Powtórz hasło",
+    "passwordRequirements": "Wymagania hasła",
+    "met": "Spełnione: ",
+    "missing": "Brakuje: ",
+    "noRecovery": "Nie ma odzyskiwania hasła. Jeśli je zapomnisz, stracisz dostęp do konta i opowiadań.",
+    "creatingAccount": "Zakładanie konta…"
+  },
+  "changePassword": {
+    "title": "Zmień hasło",
+    "changed": "Hasło zostało zmienione.",
+    "current": "Obecne hasło",
+    "new": "Nowe hasło",
+    "repeat": "Powtórz nowe hasło"
+  },
+  "export": {
+    "loadFailed": "Nie udało się wczytać danych do eksportu.",
+    "createFailed": "Nie udało się utworzyć pliku.",
+    "exportAs": "Eksportuj jako…",
+    "title": "Eksportuj jako",
+    "format": "Format",
+    "includeExtras": "Dołącz komentarze i notatki",
+    "separateFiles": "Osobny plik na rozdział (.zip)",
+    "exporting": "Eksportowanie…",
+    "export": "Eksportuj",
+    "formats": {
+      "docx": "Word (.docx)",
+      "odt": "OpenDocument (.odt)",
+      "pdf": "PDF (.pdf)",
+      "epub": "EPUB (.epub)",
+      "fb2": "FictionBook (.fb2)",
+      "html": "Strona WWW (.html)",
+      "txt": "Zwykły tekst (.txt)",
+      "md": "Markdown, jeden plik (.md)"
+    }
+  },
+  "tags": {
+    "fromFolder": "Z folderu",
+    "tagsFor": "Tagi: {name}",
+    "tags": "Tagi",
+    "current": "Obecne tagi",
+    "remove": "Usuń {tag}",
+    "add": "Dodaj tag",
+    "addButton": "Dodaj"
+  },
+  "find": {
+    "invalidRegex": "Nieprawidłowe wyrażenie regularne",
+    "noResults": "Brak wyników",
+    "position": "{current} z {total}",
+    "matchCase": "Uwzględniaj wielkość liter",
+    "wholeWord": "Całe słowo",
+    "regex": "Wyrażenie regularne",
+    "find": "Znajdź",
+    "previous": "Poprzednie wystąpienie",
+    "next": "Następne wystąpienie",
+    "close": "Zamknij wyszukiwanie",
+    "replaceWith": "Zamień na",
+    "replacePlaceholder": "Zamień",
+    "replace": "Zamień",
+    "replaceAll": "Zamień wszystko"
+  },
+  "markdownEditor": {
+    "group": "Edytor: {label}",
+    "mode": "Tryb",
+    "preview": "Podgląd",
+    "source": "Źródło",
+    "findReplace": "Znajdź i zamień",
+    "bold": "Pogrubienie",
+    "italic": "Kursywa",
+    "heading1": "Nagłówek 1",
+    "heading2": "Nagłówek 2",
+    "heading3": "Nagłówek 3",
+    "bulletList": "Lista punktowana",
+    "orderedList": "Lista numerowana",
+    "quote": "Cytat",
+    "horizontalLine": "Linia pozioma",
+    "link": "Link",
+    "comment": "Komentarz",
+    "undo": "Cofnij",
+    "redo": "Ponów",
+    "invalidLink": "Użyj linku http, https albo mailto.",
+    "url": "URL",
+    "emptyRemoves": "Zostaw puste, aby usunąć link.",
+    "apply": "Zastosuj"
+  },
+  "versions": {
+    "beforeRestore": "Przed przywróceniem wersji {number}",
+    "title": "Wersje",
+    "none": "Nie ma jeszcze wersji.",
+    "versionName": "Wersja {number}: {name}",
+    "save": "Zapisz wersję",
+    "saveDescription": "Zapisuje tytuły i treść rozdziałów folderu w obecnym stanie, razem z kolejnością. Notatki nie są częścią wersji.",
+    "name": "Nazwa",
+    "label": "Wersja {number}",
+    "delete": "Usuń wersję {number}",
+    "deleteTitle": "Usunąć wersję?",
+    "deleteDescription": "Wersja {number} „{name}” zostanie usunięta. Rozdziały i inne wersje pozostaną bez zmian.",
+    "saved": "Zapisano <date></date>. Zmiany są pokazane od tej wersji do obecnego tekstu.",
+    "status": {
+      "changed": "zmieniony",
+      "unchanged": "bez zmian",
+      "deleted": "usunięty od tego czasu",
+      "added": "dodany od tego czasu"
+    },
+    "effects": {
+      "changed": "zostanie przywrócony",
+      "deleted": "wróci",
+      "added": "zostanie usunięty"
+    },
+    "fields": {
+      "title": "Tytuł",
+      "content": "Treść"
+    },
+    "chapters": "Rozdziały",
+    "selectAll": "Zaznacz wszystkie",
+    "restoreSelected": "Przywróć zaznaczone",
+    "emptyComparison": "Ta wersja nie ma rozdziałów i folder też ich teraz nie ma.",
+    "chaptersInVersion": "Rozdziały w tej wersji",
+    "showChanges": "Pokaż zmiany",
+    "notesNotIncluded": "Notatki nie są częścią wersji i pozostaną bez zmian.",
+    "willRevert": "{count, plural, one {# rozdział zostanie przywrócony} few {# rozdziały zostaną przywrócone} many {# rozdziałów zostanie przywróconych} other {# rozdziału zostanie przywrócone}}.",
+    "willReturn": "{count, plural, one {# rozdział wróci} few {# rozdziały wrócą} many {# rozdziałów wróci} other {# rozdziału wróci}}.",
+    "willRemove": "{count, plural, one {# rozdział dodany od tego czasu zostanie usunięty} few {# rozdziały dodane od tego czasu zostaną usunięte} many {# rozdziałów dodanych od tego czasu zostanie usuniętych} other {# rozdziału dodanego od tego czasu zostanie usunięte}}.",
+    "orderRestored": "Kolejność rozdziałów i sposób sortowania zostaną przywrócone.",
+    "restoring": "Przywracanie…",
+    "restoreEntire": "Przywróć całą wersję",
+    "restoreEntireTitle": "Przywrócić całą wersję?",
+    "restoreEntireDescription": "Folder będzie taki jak ta wersja. Obecny stan zostanie najpierw zapisany jako nowa wersja, więc możesz do niego wrócić.",
+    "restore": "Przywróć",
+    "tooManyChanges": "Za dużo zmian, aby je porównać."
+  },
+  "metadata": {
+    "stories": "Opowiadania – Story App",
+    "search": "Szukaj opowiadań – Story App",
+    "folder": "Folder – Story App",
+    "version": "Wersja – Story App",
+    "editor": "Edytor – Story App"
+  },
+  "folders": {
+    "title": "Foldery",
+    "sortFolders": "Sortuj foldery",
+    "sortUpdated": "Ostatnio zmienione",
+    "sortManual": "Ręcznie",
+    "sortAlpha": "A–Z",
+    "searchPlaceholder": "Szukaj w tytułach i treści wszystkich folderów, naciśnij Enter",
+    "searchLabel": "Szukaj opowiadań",
+    "filterByTag": "Filtruj po tagu",
+    "empty": "Nie ma jeszcze folderów. Utwórz folder albo nowe opowiadanie.",
+    "listLabel": "Foldery",
+    "chapterCount": "{count, plural, one {# rozdział} few {# rozdziały} many {# rozdziałów} other {# rozdziału}}",
+    "noMatch": "Żadne opowiadanie nie pasuje do „{query}”.",
+    "noMatchWithTags": "Żadne opowiadanie z wybranymi tagami nie pasuje do „{query}”.",
+    "noTagMatch": "Żadne opowiadanie nie ma wybranych tagów.",
+    "results": "Wyniki wyszukiwania",
+    "inFolder": "w folderze „{folder}”",
+    "newFolder": "Nowy folder",
+    "name": "Nazwa",
+    "deleteTitle": "Usunąć folder?",
+    "deleteDescription": "Folder „{name}” zostanie usunięty razem z {count, plural, one {# rozdziałem} few {# rozdziałami} many {# rozdziałami} other {# rozdziału}}.",
+    "renameTitle": "Zmień nazwę folderu",
+    "moveStory": "Przenieś {title}",
+    "moveTo": "Przenieś do…",
+    "noOtherFolders": "Nie ma innych folderów. Najpierw utwórz folder.",
+    "folderFor": "Folder dla „{title}”",
+    "moving": "Przenoszenie…",
+    "move": "Przenieś",
+    "publishChapter": "Opublikuj „{title}”",
+    "unpublishChapter": "Wycofaj publikację „{title}”",
+    "notes": "Notatki folderu",
+    "notesPlaceholder": "Notatki do tego folderu…",
+    "publish": "Opublikuj",
+    "unpublish": "Wycofaj publikację",
+    "publishAll": "Opublikuj wszystkie",
+    "publishAllTitle": "Opublikować wszystkie rozdziały?",
+    "publishAllDescription": "{count, plural, one {# nieopublikowany rozdział zostanie opublikowany} few {# nieopublikowane rozdziały zostaną opublikowane} many {# nieopublikowanych rozdziałów zostanie opublikowanych} other {# nieopublikowanego rozdziału zostanie opublikowane}}.",
+    "isPublic": "Ten folder jest publiczny:",
+    "publicLink": "Link publiczny",
+    "copied": "Skopiowano",
+    "copyLink": "Kopiuj link",
+    "sortNewest": "Od najnowszych",
+    "allFolders": "← Wszystkie foldery",
+    "sortChapters": "Sortuj rozdziały",
+    "noChapters": "Nie ma jeszcze rozdziałów. Utwórz pierwszy.",
+    "chapters": "Rozdziały"
+  },
+  "reorder": {
+    "moveUp": "Przesuń {name} w górę",
+    "moveDown": "Przesuń {name} w dół",
+    "up": "W górę",
+    "down": "W dół"
+  },
+  "stories": {
+    "newStory": "Nowe opowiadanie",
+    "folder": "Folder",
+    "folderPlaceholder": "Wybierz albo wpisz nowy folder",
+    "title": "Tytuł",
+    "delete": "Usuń {title}",
+    "deleteTitle": "Usunąć opowiadanie?",
+    "deleteDescription": "„{title}” zostanie usunięte z twoich opowiadań."
+  },
+  "save": {
+    "saving": "Zapisywanie…",
+    "saved": "Zapisano"
+  },
+  "editor": {
+    "views": {
+      "story": "Opowiadanie",
+      "notes": "Notatki",
+      "chapters": "Rozdziały",
+      "tools": "Narzędzia"
+    },
+    "panelNames": {
+      "notes": "notatki",
+      "chapters": "rozdziały",
+      "tools": "narzędzia"
+    },
+    "notSavedNotes": "Notatki folderu nie zostały zapisane: {message}",
+    "notSavedChapter": "Rozdział nie został zapisany. Zobacz komunikat powyżej.",
+    "content": "Treść",
+    "contentPlaceholder": "Napisz opowiadanie…",
+    "stats": "{words, plural, one {# słowo} few {# słowa} many {# słów} other {# słowa}} · {characters, plural, one {# znak} few {# znaki} many {# znaków} other {# znaku}} · {minutes, plural, one {# minuta} few {# minuty} many {# minut} other {# minuty}} czytania na głos",
+    "notes": "Notatki",
+    "notesPlaceholder": "Notatki do tego rozdziału…",
+    "resizeFolderNotes": "Zmień wysokość notatek folderu",
+    "moveLeft": "Przesuń {panel} w lewo",
+    "moveLeftShort": "W lewo",
+    "moveRight": "Przesuń {panel} w prawo",
+    "moveRightShort": "W prawo",
+    "sidePanel": "Panel boczny",
+    "hide": "Ukryj {panel}",
+    "show": "Pokaż {panel}",
+    "resizeColumn": "Zmień szerokość kolumny: {panel}",
+    "backTo": "Wróć do {folder}",
+    "title": "Tytuł",
+    "split": "Kolumny",
+    "isPublic": "Ten rozdział jest publiczny:",
+    "view": "Widok"
+  },
+  "chapters": {
+    "noFolder": "To opowiadanie nie jest w folderze.",
+    "list": "Rozdziały",
+    "newChapter": "Nowy rozdział",
+    "title": "Tytuł"
+  },
+  "tools": {
+    "list": "Narzędzia",
+    "loading": "Wczytywanie…",
+    "comingSoon": "Wkrótce.",
+    "items": {
+      "name-generator": {
+        "label": "Generator nazw",
+        "description": "Znajdź imiona i nazwy dla postaci i miejsc."
+      },
+      "synonyms": {
+        "label": "Synonimy",
+        "description": "Znajdź inne słowa o tym samym znaczeniu."
+      },
+      "rhymes": {
+        "label": "Rymy",
+        "description": "Znajdź słowa, które się rymują."
+      }
+    }
+  },
+  "nameGenerator": {
+    "typeGroups": {
+      "characters": "Postacie",
+      "places": "Miejsca",
+      "organizations": "Organizacje",
+      "things": "Przedmioty i istoty"
+    },
+    "types": {
+      "first-name": "Imię",
+      "surname": "Nazwisko",
+      "full-name": "Imię i nazwisko",
+      "epithet": "Przydomek",
+      "city": "Miasto",
+      "village": "Wieś",
+      "river": "Rzeka",
+      "mountains": "Góry",
+      "forest": "Las",
+      "kingdom": "Królestwo",
+      "inn": "Karczma",
+      "guild": "Gildia",
+      "order": "Zakon",
+      "house": "Ród",
+      "company": "Kompania",
+      "faction": "Frakcja",
+      "weapon": "Broń",
+      "artifact": "Artefakt",
+      "ship": "Statek",
+      "spell": "Zaklęcie",
+      "species": "Rasa",
+      "monster": "Potwór",
+      "deity": "Bóstwo"
+    },
+    "styles": {
+      "polish": "Polski/słowiański",
+      "english": "Angielski",
+      "german": "Niemiecki",
+      "nordic": "Nordycki",
+      "latin": "Łaciński",
+      "celtic": "Celtycki",
+      "elvish": "Elfi",
+      "dwarven": "Krasnoludzki",
+      "orcish": "Orkowy",
+      "scifi": "Sci-fi"
+    },
+    "groups": {
+      "gender": {
+        "label": "Płeć",
+        "options": {
+          "male": "Męska",
+          "female": "Żeńska",
+          "neutral": "Neutralna"
+        }
+      },
+      "sound": {
+        "label": "Brzmienie",
+        "options": {
+          "hard": "Twarde",
+          "soft": "Miękkie",
+          "neutral": "Neutralne"
+        }
+      },
+      "length": {
+        "label": "Długość",
+        "options": {
+          "short": "Krótka",
+          "medium": "Średnia",
+          "long": "Długa"
+        }
+      },
+      "pronunciation": {
+        "label": "Wymowa",
+        "options": {
+          "easy": "Łatwa",
+          "exotic": "Egzotyczna",
+          "unpronounceable": "Niewymawialna"
+        }
+      },
+      "balance": {
+        "label": "Proporcja liter",
+        "options": {
+          "vowel-heavy": "Dużo samogłosek",
+          "balanced": "Zrównoważona",
+          "consonant-heavy": "Dużo spółgłosek"
+        }
+      },
+      "mood": {
+        "label": "Nastrój",
+        "options": {
+          "dark": "Mroczny",
+          "noble": "Szlachetny",
+          "comic": "Komiczny",
+          "ethereal": "Eteryczny",
+          "common": "Zwyczajny"
+        }
+      },
+      "wordCount": {
+        "label": "Liczba słów",
+        "options": {
+          "one": "Jedno",
+          "two": "Dwa",
+          "three": "Trzy"
+        }
+      }
+    },
+    "crude": {
+      "exclude": "Wyklucz",
+      "allow": "Dopuść",
+      "only": "Tylko"
+    },
+    "toggles": {
+      "mixStyles": "Mieszaj style",
+      "alliteration": "Aliteracja",
+      "repeatedSyllable": "Powtórzona sylaba",
+      "punctuation": "Apostrofy i łączniki",
+      "easyInflect": "Łatwa odmiana"
+    },
+    "noPolishLetters": "Bez polskich liter",
+    "polishLetters": "Polskie litery",
+    "clears": "Wyłącza: {labels}",
+    "any": "Dowolne",
+    "style": "Styl",
+    "crudePart": "Wulgarny człon",
+    "options": "Opcje",
+    "textFields": {
+      "startsWith": "Zaczyna się od",
+      "endsWith": "Kończy się na",
+      "contains": "Zawiera",
+      "excludes": "Wyklucza (po przecinku)"
+    },
+    "reset": "Wyczyść filtry",
+    "generate": "Generuj",
+    "next": "Następne 10",
+    "noMatch": "Żadna nazwa nie pasuje do tych filtrów.",
+    "fewMatch": "Tylko {count, plural, one {# nazwa pasuje} few {# nazwy pasują} many {# nazw pasuje} other {# nazwy pasuje}} do tych filtrów.",
+    "names": "Nazwy",
+    "copy": "Kopiuj",
+    "copyName": "Kopiuj {name}",
+    "copyAll": "Kopiuj wszystkie"
+  },
+  "document": {
+    "notes": "Notatki",
+    "folderNotes": "Notatki folderu",
+    "chapter": "Rozdział {number}"
+  },
+  "import": {
+    "import": "Importuj…",
+    "title": "Import",
+    "file": "Plik",
+    "reading": "Odczytywanie…",
+    "lossy": "Formatowania nie da się zachować: PDF zwraca tylko tekst.",
+    "split": "Podziel na {count, plural, one {# rozdział} few {# rozdziały} many {# rozdziałów} other {# rozdziału}}",
+    "folder": "Folder",
+    "folderPlaceholder": "Wybierz albo wpisz nowy folder",
+    "storyTitle": "Tytuł",
+    "newFolder": "Nowy folder",
+    "chapterCount": "{count, plural, one {# rozdział} few {# rozdziały} many {# rozdziałów} other {# rozdziału}}",
+    "chapters": "Rozdziały do zaimportowania",
+    "importing": "Importowanie…",
+    "submit": "Importuj"
+  },
+  "public": {
+    "titleBy": "{title} – {nickname}",
+    "by": "autor: {nickname}",
+    "chapters": "Rozdziały",
+    "folderBy": "{folder} – {nickname}",
+    "contents": "Spis treści"
+  },
+  "search": {
+    "title": "Szukaj opowiadań",
+    "placeholder": "Szukaj w tytułach, tagach i tekście, naciśnij Enter",
+    "label": "Szukaj opublikowanych opowiadań",
+    "filterByTag": "Filtruj po tagu",
+    "tooMany": "Za dużo wyszukiwań. Spróbuj ponownie za minutę.",
+    "none": "Nie znaleziono opowiadań.",
+    "results": "Wyniki wyszukiwania",
+    "inFolderBy": "w folderze „{folder}”, autor: {nickname}"
+  },
+  "notFound": {
+    "text": "404 | Nie znaleziono tej strony."
+  }
+}

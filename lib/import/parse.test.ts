@@ -7,6 +7,7 @@ import { toExportDocument, type ExportSource } from "@/lib/export/document";
 import { EXPORT_FORMATS, type ExportFormatId } from "@/lib/export/formats";
 import { buildPdf, PDF_FONTS, type PdfFonts } from "@/lib/export/formats/pdf";
 import { buildFolderZip } from "@/lib/folders/export";
+import type { DocumentLabels } from "@/lib/i18n/english";
 import { assertUnpackedSize } from "./files";
 import { parseImportFile } from "./parse";
 
@@ -131,6 +132,24 @@ describe("export → import", () => {
       expect(file.folderNotes).toContain("Sekret folderu");
     },
   );
+
+  // A file exported in Polish imports in any language (D48).
+  it.each(STRUCTURED)("%s recognises Polish note headings", async (format) => {
+    const polish: DocumentLabels = {
+      notes: "Notatki",
+      folderNotes: "Notatki folderu",
+      chapter: (number) => `Rozdział ${number}`,
+    };
+    const data = await buildExport(format, folder, true, polish);
+    const file = await parseImportFile(
+      `export.${format}`,
+      typeof data === "string" ? strToU8(data) : data,
+    );
+    expect(file.chapters).toHaveLength(2);
+    expect(file.chapters[0].notes).toContain("Sekret rozdziału");
+    expect(file.chapters[0].content).not.toContain("Notatki");
+    expect(file.folderNotes).toContain("Sekret folderu");
+  });
 
   it.each(["html", "docx", "odt", "epub"] as const)(
     "%s restores the level of a story's own heading",

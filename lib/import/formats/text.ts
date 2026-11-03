@@ -1,4 +1,6 @@
 import { parse } from "yaml";
+import { NOTES_HEADINGS } from "@/lib/i18n/english";
+import { escapeRegex } from "@/lib/stories/search";
 import {
   structureMarkdown,
   type ImportedFile,
@@ -47,8 +49,13 @@ export function readMarkdown(
   };
 }
 
-const headed = (text: string) =>
-  text.replace(/\n\nNotes\n\n(?![\s\S]*\n\nNotes\n\n)/, "\n\n### Notes\n\n");
+// The last notes heading of any language, as plain text has no heading markup.
+const HEADINGS = NOTES_HEADINGS.map(escapeRegex).join("|");
+const NOTES_LINE = new RegExp(
+  `\\n\\n(${HEADINGS})\\n\\n(?![\\s\\S]*\\n\\n(?:${HEADINGS})\\n\\n)`,
+);
+
+const headed = (text: string) => text.replace(NOTES_LINE, "\n\n### $1\n\n");
 
 // A plain text export separates chapters with two empty lines, the title with one.
 export function readTxt(
