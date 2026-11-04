@@ -20,13 +20,9 @@ Zgłoszenie użytkownika (2026-11-03). Ustalenia z burzy mózgów 2026-11-04; na
 
 ### `publishedAt`
 
-- Nowe pole `stories.publishedAt` (Date, opcjonalne): moment, w którym rozdział ostatnio stał się widoczny publicznie. Każda publikacja ustawia je od nowa (decyzja użytkownika), więc Unpublish i ponowny Publish wypycha rozdział na górę listy.
-- Ustawiane w akcjach, które robią rozdział widocznym:
-  - `setFolderPublished(id, true)` na nieopublikowanym folderze: wszystkie aktywne rozdziały, które po zmianie są `public`.
-  - `publishAllChapters`: tylko rozdziały, które wcześniej nie były `public`.
-  - Publish rozdziału: gdy rozdział wcześniej nie był widoczny (nie był `public` albo folder nie był opublikowany).
-- Pole jest tylko przy rozdziałach widocznych publicznie: każde przejście w niewidoczny robi `$unset` – Unpublish folderu i rozdziału, Publish rozdziału w nieopublikowanym folderze (ukrywa pozostałe), przeniesienie do innego folderu (`arrivalUpdate`), przywrócenie z wersji jako `hidden` (D38). Usunięcie (`deletedAt`) pomijamy, bo nie da się go cofnąć. Import i nowy rozdział pola nie dostają.
-- Ustawienie i wyczyszczenie pola nie zmienia `updatedAt` (`timestamps: false`, jak `publication`): edytor wysyła `updatedAt` jako wersję oczekiwaną przy zapisie, więc zmiana dawałaby konflikt w otwartym edytorze (decyzja użytkownika przy implementacji, zmienia wcześniejsze ustalenie).
+- Nowe pole `stories.publishedAt` (Date, opcjonalne): moment pierwszej publikacji rozdziału. Ustawiane raz, nigdy nie zmieniane ani nie usuwane (decyzja użytkownika po zamknięciu taska, zastępuje „każda publikacja od nowa” i `$unset` przy ukryciu).
+- Ustawiane, gdy rozdział staje się publiczny i jeszcze go nie ma: `setFolderPublished(id, true)` na nieopublikowanym folderze, `publishAllChapters`, Publish rozdziału. Unpublish, przeniesienie i przywrócenie z wersji go nie ruszają. Import i nowy rozdział pola nie dostają.
+- Zapisy nie zmieniają `updatedAt` (`timestamps: false`, jak `publication`): edytor wysyła `updatedAt` jako wersję oczekiwaną przy zapisie, więc zmiana dawałaby konflikt w otwartym edytorze (decyzja użytkownika przy implementacji).
 - Migracja `006-published-at.ts`: rozdziały widoczne dziś publicznie dostają datę uruchomienia migracji (jedna wspólna wartość, kolejność rozstrzyga `_id`). Expand-only (D14).
 - Indeks `{ publication: 1, publishedAt: -1 }`, zakładany przez `syncIndexes()`.
 
@@ -67,7 +63,7 @@ CTA główne otwiera dialog w trybie rejestracji, drugie w trybie logowania (je�
 3. Wyszukiwarka działa na `/` jak dotąd (zapytanie, tagi, limit), a „Recently published” jest widoczne pod wynikami także w trakcie wyszukiwania.
 4. „Recently published” pokazuje 5 najnowszych po `publishedAt`; „Show more” dokłada po 5 do 15, potem znika; przy mniej niż 6 pozycjach przycisku nie ma; pusta lista pokazuje komunikat.
 5. Lista nie pokazuje rozdziałów ukrytych, z nieopublikowanych lub usuniętych folderów, usuniętych rozdziałów ani autorów bez nicku.
-6. Publish folderu, Publish rozdziału i Publish all ustawiają `publishedAt` zgodnie z regułami wyżej; ponowna publikacja po Unpublish ustawia nową datę; już publiczny rozdział przy Publish all zachowuje datę; każde przejście w niewidoczny usuwa pole; `updatedAt` się nie zmienia.
+6. Publish folderu, Publish rozdziału i Publish all ustawiają `publishedAt` rozdziałom, które go jeszcze nie mają; Unpublish, ponowna publikacja, przeniesienie i przywrócenie z wersji zachowują datę; `updatedAt` się nie zmienia.
 7. Migracja ustawia jedną datę rozdziałom widocznym publicznie i nie rusza pozostałych; ponowne uruchomienie nic nie zmienia.
 8. Data przy pozycji: względna do 7 dni, starsza jako data, w języku interfejsu.
 9. Sidebar nie ma pozycji Search; Home prowadzi na `/`.
