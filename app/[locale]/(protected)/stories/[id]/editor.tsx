@@ -1,11 +1,9 @@
 "use client";
 
-import { ExportDialog } from "@/components/export-dialog";
 import {
   ArrowLeftIcon,
   CheckIcon,
   CopyIcon,
-  GlobeIcon,
   LinkIcon,
   PanelRightCloseIcon,
   PanelRightOpenIcon,
@@ -45,8 +43,8 @@ import {
   useFolderNotes,
 } from "../../folders/[id]/folder-notes";
 import { saveStory, setChapterPublished } from "../actions";
-import { DeleteStoryButton } from "../delete-story-button";
 import { ChaptersPanel } from "./chapters-panel";
+import { EditorMenu } from "./editor-menu";
 import {
   flushLayoutSave,
   setMobileView,
@@ -100,7 +98,6 @@ export function Editor({
   );
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
   const [publicPath, setPublicPath] = useState(story.publicPath);
-  const [publishPending, setPublishPending] = useState(false);
   const [copied, setCopied] = useState(false);
   // Here, not in ToolsPanel: the dialog must outlive the desktop and mobile trees.
   const [openTool, setOpenTool] = useState<Tool | null>(null);
@@ -181,19 +178,12 @@ export function Editor({
   }
 
   async function togglePublished() {
-    setPublishPending(true);
-    try {
-      const result = await setChapterPublished(story.id, !publicPath);
-      if (result.ok) {
-        setPublicPath(result.publicPath);
-        setCopied(false);
-      } else {
-        setSaveState({ status: "error", message: result.message });
-      }
-    } catch {
-      setSaveState({ status: "error", message: tErrors("offline") });
+    const result = await setChapterPublished(story.id, !publicPath);
+    if (result.ok) {
+      setPublicPath(result.publicPath);
+      setCopied(false);
     }
-    setPublishPending(false);
+    return result;
   }
 
   async function copyPublicUrl() {
@@ -358,29 +348,12 @@ export function Editor({
           {saveState.status === "saved" && tSave("saved")}
           {saveState.status === "error" && saveState.message}
         </span>
-        <ExportDialog
-          dataUrl={`/stories/${story.id}/export/data`}
-          fallbackName="story"
-          beforeExport={saveForExport}
-        />
-        <WithTooltip
-          label={publicPath ? tFolders("unpublish") : tFolders("publish")}
-          className="md:hidden"
-        >
-          <Button
-            variant="outline"
-            onClick={togglePublished}
-            disabled={publishPending}
-          >
-            <GlobeIcon />
-            <span className="sr-only md:not-sr-only">
-              {publicPath ? tFolders("unpublish") : tFolders("publish")}
-            </span>
-          </Button>
-        </WithTooltip>
-        <DeleteStoryButton
+        <EditorMenu
           id={story.id}
           title={title}
+          isPublic={Boolean(publicPath)}
+          beforeExport={saveForExport}
+          togglePublished={togglePublished}
           onDeleted={() =>
             router.push(
               story.folderName === null

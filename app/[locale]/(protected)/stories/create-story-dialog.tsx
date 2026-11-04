@@ -11,25 +11,24 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createStory } from "./actions";
 
 export function CreateStoryDialog({
+  open,
+  onOpenChange,
   folderNames,
   defaultFolder,
 }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   folderNames: string[];
   defaultFolder: string;
 }) {
-  const t = useTranslations("stories");
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button>{t("newStory")}</Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <CreateStoryForm
           folderNames={folderNames}

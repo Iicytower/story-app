@@ -1,17 +1,14 @@
 "use client";
 
-import { FileDownIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { WithTooltip } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import type { ExportSource } from "@/lib/export/document";
@@ -30,17 +27,20 @@ function download(data: Uint8Array | string, name: string, mime: string) {
 }
 
 export function ExportDialog({
+  open,
+  onOpenChange: setOpen,
   dataUrl,
   fallbackName,
   beforeExport,
   chapterFiles = false,
 }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   dataUrl: string;
   fallbackName: string;
   beforeExport?: () => Promise<boolean>;
   chapterFiles?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
   const [formatId, setFormatId] = useState<ExportFormatId>("docx");
   const [includeExtras, setIncludeExtras] = useState(false);
   const [separateFiles, setSeparateFiles] = useState(false);
@@ -89,14 +89,6 @@ export function ExportDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <WithTooltip label={t("exportAs")} className="md:hidden">
-        <DialogTrigger asChild>
-          <Button variant="outline">
-            <FileDownIcon />
-            <span className="sr-only md:not-sr-only">{t("exportAs")}</span>
-          </Button>
-        </DialogTrigger>
-      </WithTooltip>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>

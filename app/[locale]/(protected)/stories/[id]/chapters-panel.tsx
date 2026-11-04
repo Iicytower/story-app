@@ -17,9 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { recallScroll, rememberScroll } from "@/lib/editor/scroll-memory";
 import type { EditorFolder } from "@/lib/folders/queries";
-import { ReorderButtons } from "../../folders/reorder-buttons";
-import { createStory, reorderChapter } from "../actions";
-import { DeleteStoryButton } from "../delete-story-button";
+import { createStory } from "../actions";
 
 export function ChaptersPanel({
   folder,
@@ -69,14 +67,11 @@ export function ChaptersPanel({
         }
         className="min-h-0 flex-1 overflow-y-auto py-1"
       >
-        {folder.chapters.map((chapter, index) => {
+        {folder.chapters.map((chapter) => {
           const current = chapter.id === currentId;
           const href = `/stories/${chapter.id}`;
           return (
-            <li
-              key={chapter.id}
-              className={`flex items-center gap-1 pr-2 ${current ? "bg-muted" : ""}`}
-            >
+            <li key={chapter.id} className={current ? "bg-muted" : undefined}>
               <Link
                 href={href}
                 aria-current={current ? "page" : undefined}
@@ -84,27 +79,10 @@ export function ChaptersPanel({
                   event.preventDefault();
                   if (!current) open(href);
                 }}
-                className={`hover:bg-muted/50 min-w-0 flex-1 truncate px-4 py-2 text-sm ${current ? "font-semibold" : ""}`}
+                className={`hover:bg-muted/50 block truncate px-4 py-2 text-sm ${current ? "font-semibold" : ""}`}
               >
                 {chapter.title}
               </Link>
-              {folder.chapterSort === "manual" && (
-                <ReorderButtons
-                  name={chapter.title}
-                  isFirst={index === 0}
-                  isLast={index === folder.chapters.length - 1}
-                  action={reorderChapter.bind(null, chapter.id)}
-                />
-              )}
-              <DeleteStoryButton
-                id={chapter.id}
-                title={chapter.title}
-                onDeleted={
-                  current
-                    ? () => router.push(`/folders/${folder.id}`)
-                    : undefined
-                }
-              />
             </li>
           );
         })}

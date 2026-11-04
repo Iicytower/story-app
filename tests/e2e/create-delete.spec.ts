@@ -6,7 +6,7 @@ import {
   seedStory,
 } from "./db";
 import { storageStatePath } from "./env";
-import { expect, test } from "./helpers";
+import { expect, menuAction, test } from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
@@ -14,7 +14,7 @@ test("creates a story from the modal and opens the editor", async ({
   page,
 }) => {
   await page.goto("/stories");
-  await page.getByRole("button", { name: "New story" }).click();
+  await menuAction(page, "Actions", "New story");
   const dialog = page.getByRole("dialog", { name: "New story" });
   await dialog.getByLabel("Folder").fill("Drafts");
   await dialog.getByLabel("Title").fill("Fresh story");
@@ -31,7 +31,7 @@ test("shows the duplicate title error in the modal", async ({ page }) => {
   await seedStory("alice", { title: "Taken" });
 
   await page.goto("/stories");
-  await page.getByRole("button", { name: "New story" }).click();
+  await menuAction(page, "Actions", "New story");
   const dialog = page.getByRole("dialog", { name: "New story" });
   // Prefilled with the most recently active folder.
   await expect(dialog.getByLabel("Folder")).toHaveValue("Unsorted");
@@ -47,7 +47,7 @@ test("shows the duplicate title error in the modal", async ({ page }) => {
 
 test("shows the empty title error in the modal", async ({ page }) => {
   await page.goto("/stories");
-  await page.getByRole("button", { name: "New story" }).click();
+  await menuAction(page, "Actions", "New story");
   const dialog = page.getByRole("dialog", { name: "New story" });
   await dialog.getByLabel("Title").fill("   ");
   await dialog.getByRole("button", { name: "Create" }).click();
@@ -60,12 +60,14 @@ test("deletes a story from the folder after confirmation", async ({ page }) => {
   await seedStory("alice", { title: "Survivor" });
 
   await page.goto(`/folders/${await seedFolder("alice", "Unsorted")}`);
-  await page.getByRole("button", { name: "Delete Doomed" }).click();
+  await menuAction(page, "Actions for Doomed", "Delete");
   const dialog = page.getByRole("alertdialog", { name: "Delete story?" });
   await dialog.getByRole("button", { name: "Delete" }).click();
 
   await expect(dialog).toBeHidden();
-  await expect(page.getByRole("listitem")).toHaveCount(1);
+  await expect(
+    page.getByRole("list", { name: "Chapters" }).getByRole("listitem"),
+  ).toHaveCount(1);
   await expect(page.getByText("Survivor")).toBeVisible();
   expect((await findStory("Doomed"))?.deletedAt).toBeInstanceOf(Date);
 });
@@ -74,7 +76,7 @@ test("keeps the story when the confirmation is cancelled", async ({ page }) => {
   await seedStory("alice", { title: "Kept" });
 
   await page.goto(`/folders/${await seedFolder("alice", "Unsorted")}`);
-  await page.getByRole("button", { name: "Delete Kept" }).click();
+  await menuAction(page, "Actions for Kept", "Delete");
   const dialog = page.getByRole("alertdialog", { name: "Delete story?" });
   await dialog.getByRole("button", { name: "Cancel" }).click();
 

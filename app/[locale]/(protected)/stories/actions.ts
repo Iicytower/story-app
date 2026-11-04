@@ -9,14 +9,14 @@ import { actionError, translateError } from "@/lib/i18n/action-error";
 import type { ErrorKey, ErrorValues } from "@/lib/i18n/messages";
 import {
   findOrCreateFolder,
-  moveInList,
+  moveToIndex,
   nextChapterPosition,
   nextFolderPosition,
   savePositions,
   touchFolder,
 } from "@/lib/folders/mutations";
 import { findChaptersInOrder } from "@/lib/folders/queries";
-import { chapterOrder, isDirection, type Direction } from "@/lib/folders/sort";
+import { chapterOrder, isPositionIndex } from "@/lib/folders/sort";
 import {
   importTextBytes,
   MAX_IMPORT_CHAPTERS,
@@ -357,14 +357,14 @@ export async function setStoryTags(
   return { ok: true };
 }
 
-export async function reorderChapter(
+export async function moveChapter(
   id: string,
-  direction: Direction,
+  index: number,
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
   if (!isObjectIdOrHexString(id)) return NOT_FOUND();
-  if (!isDirection(direction)) {
+  if (!isPositionIndex(index)) {
     return actionError("INVALID_INPUT", "optionUnavailable");
   }
 
@@ -384,7 +384,7 @@ export async function reorderChapter(
   )
     .select({ position: 1 })
     .lean();
-  await savePositions(Story, moveInList(chapters, id, direction)!);
+  await savePositions(Story, moveToIndex(chapters, id, index)!);
 
   refresh();
   return { ok: true };

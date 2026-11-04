@@ -1,7 +1,13 @@
 import type { Locator } from "@playwright/test";
 import { seedFolder, seedStory } from "./db";
 import { storageStatePath } from "./env";
-import { expect, markdownEditor, test } from "./helpers";
+import {
+  expect,
+  markdownEditor,
+  menuAction,
+  publishFromEditor,
+  test,
+} from "./helpers";
 
 test.use({
   storageState: storageStatePath("alice"),
@@ -40,7 +46,7 @@ test("story text fields are spell checked in Polish", async ({ page }) => {
   await expectPolish(markdownEditor(page, "Folder notes").field);
 
   await page.goto("/stories");
-  await page.getByRole("button", { name: "New story" }).click();
+  await menuAction(page, "Actions", "New story");
   const story = page.getByRole("dialog", { name: "New story" });
   await expectPolish(story.getByLabel("Title"));
   await expect(story.getByLabel("Folder")).not.toHaveAttribute("lang", "pl");
@@ -54,7 +60,7 @@ test("the rest of the UI is not marked as Polish", async ({ page }) => {
   await expect(
     markdownEditor(page, "Content").button("Bold"),
   ).not.toHaveAttribute("lang", "pl");
-  await page.getByRole("button", { name: "Publish", exact: true }).click();
+  await publishFromEditor(page);
   await expect(
     page.getByRole("textbox", { name: "Public link" }),
   ).not.toHaveAttribute("lang", "pl");

@@ -125,7 +125,8 @@ test("a Server Action error is in Polish on /pl", async ({ browser }) => {
 test("a signed-in action error is in Polish on /pl", async ({ browser }) => {
   const page = await signedIn(browser);
   await page.goto("/pl/stories");
-  await page.getByRole("button", { name: "Nowy folder" }).click();
+  await page.getByRole("button", { name: "Akcje", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Nowy folder" }).click();
   await page.getByRole("button", { name: "Utwórz" }).click();
   await expect(page.getByRole("alert")).toHaveText(
     "Nazwa folderu jest wymagana.",

@@ -7,7 +7,7 @@ import { requireUser } from "@/lib/auth/session";
 import { connectDB, isDuplicateKeyError } from "@/lib/db";
 import { actionError, translateError } from "@/lib/i18n/action-error";
 import {
-  moveInList,
+  moveToIndex,
   nextFolderPosition,
   savePositions,
 } from "@/lib/folders/mutations";
@@ -16,9 +16,8 @@ import {
   chapterOrder,
   folderOrder,
   isChapterSort,
-  isDirection,
   isFolderSort,
-  type Direction,
+  isPositionIndex,
 } from "@/lib/folders/sort";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
@@ -240,20 +239,20 @@ export async function setChapterSort(
   return { ok: true };
 }
 
-export async function reorderFolder(
+export async function moveFolder(
   id: string,
-  direction: Direction,
+  index: number,
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
   if (!isObjectIdOrHexString(id)) return NOT_FOUND();
-  if (!isDirection(direction)) return INVALID_INPUT();
+  if (!isPositionIndex(index)) return INVALID_INPUT();
 
   await connectDB();
   const folders = await findFoldersInOrder(user.userId, folderOrder("manual"))
     .select({ position: 1 })
     .lean();
-  const moved = moveInList(folders, id, direction);
+  const moved = moveToIndex(folders, id, index);
   if (!moved) return NOT_FOUND();
   await savePositions(Folder, moved);
 
