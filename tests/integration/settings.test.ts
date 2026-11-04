@@ -77,6 +77,18 @@ describe("saveSettings", () => {
     });
   });
 
+  it("saves the system theme as null", async () => {
+    await saveSettings({ appearance: { theme: "dark" } });
+    expect(await saveSettings({ appearance: { theme: null } })).toEqual({
+      ok: true,
+    });
+
+    const [stored] = await Settings.find().lean();
+    expect(stored.appearance).toEqual({ theme: null });
+    const { appearance } = await getUserSettings(alice.toString());
+    expect(appearance.theme).toBeNull();
+  });
+
   it("saves the collapsed sidebar", async () => {
     await saveSettings({ appearance: { sidebarCollapsed: true } });
 

@@ -18,10 +18,14 @@ function storedTheme(): string | null {
   }
 }
 
-export function rememberTheme(theme: Theme): void {
+// null: follow the system. Mirrors what themeScript does with data-theme on the next load.
+export function setTheme(theme: Theme | null): void {
+  document.documentElement.setAttribute("data-theme", theme ?? "system");
   try {
-    localStorage.setItem(THEME_STORAGE_KEY, theme);
+    if (theme) localStorage.setItem(THEME_STORAGE_KEY, theme);
+    else localStorage.removeItem(THEME_STORAGE_KEY);
   } catch {}
+  applyTheme();
 }
 
 // The same choice as themeScript, for after hydration.

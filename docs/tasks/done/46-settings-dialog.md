@@ -17,6 +17,7 @@ Zgłoszenie użytkownika (2026-11-03). Opcje konta i wyglądu przechodzą z side
 - Dialog, nie osobna strona (decyzja użytkownika): bez nowego adresu, jak dziś zmiana hasła.
 - Usuwamy tylko pozycje sidebaru; akcje (`saveSettings`, `changeLocale`, `changePassword`, `logout`) zostają bez zmian.
 - Wybór „systemowy” to nowość: dziś przełącznik zna tylko jasny i ciemny.
+- Listy rozwijane, wspólne „Save” (aktywne tylko po zmianie) i „Cancel”, bez podglądu; po zapisie dialog zostaje otwarty; zmiana hasła jako osobny widok dialogu z własnym „Save” (decyzje użytkownika, D50).
 
 ## Kryteria akceptacji
 
