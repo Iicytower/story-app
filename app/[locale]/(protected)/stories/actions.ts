@@ -29,6 +29,7 @@ import { Story } from "@/lib/models/story";
 import {
   arrivalUpdate,
   publicationFor,
+  stampPublishedAt,
   rememberChapterSlug,
 } from "@/lib/publish/mutations";
 import { chapterPublicPath } from "@/lib/publish/queries";
@@ -472,9 +473,7 @@ export async function setChapterPublished(
 
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };
-  const story = await Story.findOne(owned)
-    .select({ folderId: 1, publication: 1 })
-    .lean();
+  const story = await Story.findOne(owned).select({ folderId: 1 }).lean();
   if (!story) return NOT_FOUND();
   const folder = await Folder.findOne({
     _id: story.folderId,
@@ -488,7 +487,7 @@ export async function setChapterPublished(
   if (!enabled) {
     await Story.updateOne(
       owned,
-      { $set: { publication: "hidden" }, $unset: { publishedAt: 1 } },
+      { $set: { publication: "hidden" } },
       { timestamps: false },
     );
     refresh();
@@ -505,21 +504,16 @@ export async function setChapterPublished(
         deletedAt: null,
         _id: { $ne: id },
       },
-      { $set: { publication: "hidden" }, $unset: { publishedAt: 1 } },
+      { $set: { publication: "hidden" } },
       { timestamps: false },
     );
   }
-  const visible = folder.published && story.publication === "public";
   await Story.updateOne(
     owned,
-    {
-      $set: {
-        publication: "public",
-        ...(!visible && { publishedAt: new Date() }),
-      },
-    },
+    { $set: { publication: "public" } },
     { timestamps: false },
   );
+  await stampPublishedAt(owned);
   if (!folder.published) {
     await Folder.updateOne(
       { _id: folder._id },

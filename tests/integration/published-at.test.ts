@@ -69,71 +69,55 @@ function tick(): Date {
 }
 
 describe("publishedAt", () => {
-  it("is set by Publish of the folder and removed by Unpublish", async () => {
+  it("is set by the first Publish of the folder and kept for good", async () => {
     const { folderId, ids } = await seedBook();
-    await setFolderPublished(folderId, true);
-    await setChapterPublished(ids[1], false);
-    await setFolderPublished(folderId, false);
-
     const first = tick();
     await setFolderPublished(folderId, true);
-    // Two keeps its explicit hidden state and gets no date.
-    expect(await dates(ids)).toEqual([first, undefined, first]);
+    expect(await dates(ids)).toEqual([first, first, first]);
 
     tick();
     await setFolderPublished(folderId, false);
-    expect(await dates(ids)).toEqual([undefined, undefined, undefined]);
-
-    const again = tick();
-    await setFolderPublished(folderId, true);
-    expect(await dates(ids)).toEqual([again, undefined, again]);
-  });
-
-  it("is kept by Publish of an already published folder", async () => {
-    const { folderId, ids } = await seedBook();
-    const first = tick();
-    await setFolderPublished(folderId, true);
+    expect(await dates(ids)).toEqual([first, first, first]);
     tick();
     await setFolderPublished(folderId, true);
     expect(await dates(ids)).toEqual([first, first, first]);
   });
 
-  it("is set by Publish all only for chapters that were not public", async () => {
+  it("is not set for a chapter that stays hidden", async () => {
+    const { folderId, ids } = await seedBook();
+    await setChapterPublished(ids[0], true);
+    expect(await dates(ids)).toEqual([expect.any(Date), undefined, undefined]);
+    await setFolderPublished(folderId, false);
+    await setFolderPublished(folderId, true);
+    expect((await dates(ids)).slice(1)).toEqual([undefined, undefined]);
+  });
+
+  it("is set by Publish all only for chapters never published", async () => {
     const { folderId, ids } = await seedBook();
     const first = tick();
-    await setFolderPublished(folderId, true);
+    await setChapterPublished(ids[0], true);
     await setChapterPublished(ids[0], false);
     const second = tick();
     await publishAllChapters(folderId);
-    expect(await dates(ids)).toEqual([second, first, first]);
+    expect(await dates(ids)).toEqual([first, second, second]);
   });
 
-  it("is set by Publish of a chapter only when it was not visible", async () => {
+  it("is kept by Unpublish and Publish of a chapter", async () => {
     const { folderId, ids } = await seedBook();
     const first = tick();
     await setFolderPublished(folderId, true);
     tick();
+    await setChapterPublished(ids[0], false);
+    expect((await chapter(ids[0])).publishedAt).toEqual(first);
+    tick();
     await setChapterPublished(ids[0], true);
     expect((await chapter(ids[0])).publishedAt).toEqual(first);
-
-    tick();
-    await setChapterPublished(ids[0], false);
-    expect((await chapter(ids[0])).publishedAt).toBeUndefined();
-    const again = tick();
-    await setChapterPublished(ids[0], true);
-    expect((await chapter(ids[0])).publishedAt).toEqual(again);
-
-    // A public chapter of an unpublished folder is not visible, so it gets a new date.
-    tick();
-    await setFolderPublished(folderId, false);
-    const later = tick();
-    await setChapterPublished(ids[1], true);
-    expect(await dates(ids)).toEqual([undefined, later, undefined]);
   });
 
-  it("is removed when a chapter is moved or a version brings it back hidden", async () => {
+  it("is kept when a chapter is moved or a version brings it back hidden", async () => {
     const { folderId, ids } = await seedBook();
     await createFolderVersion(folderId, "One");
+    const first = tick();
     await setFolderPublished(folderId, true);
     const other = await Folder.create({
       userId: alice,
@@ -141,14 +125,17 @@ describe("publishedAt", () => {
       published: true,
     });
     await moveStory(ids[0], other._id.toString());
-    expect(await chapter(ids[0])).toMatchObject({ publication: "hidden" });
-    expect((await chapter(ids[0])).publishedAt).toBeUndefined();
+    expect(await chapter(ids[0])).toMatchObject({
+      publication: "hidden",
+      publishedAt: first,
+    });
 
     await deleteStory(ids[1]);
-    expect((await chapter(ids[1])).publishedAt).toBeDefined();
     await restoreFolderVersion(folderId, 1, [ids[1]], []);
-    expect(await chapter(ids[1])).toMatchObject({ publication: "hidden" });
-    expect((await chapter(ids[1])).publishedAt).toBeUndefined();
+    expect(await chapter(ids[1])).toMatchObject({
+      publication: "hidden",
+      publishedAt: first,
+    });
   });
 
   it("does not change updatedAt", async () => {

@@ -22,7 +22,7 @@ import {
 } from "@/lib/folders/sort";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
-import { rememberFolderSlug } from "@/lib/publish/mutations";
+import { rememberFolderSlug, stampPublishedAt } from "@/lib/publish/mutations";
 import { getUserSettings, updateUserSettings } from "@/lib/settings/queries";
 import { exceedsTagLimit, MAX_TAGS, normalizeTags } from "@/lib/tags/tags";
 
@@ -262,7 +262,7 @@ export async function reorderFolder(
 }
 
 // Organizational change, like tags. Chapters keep their explicit state, so unpublishing and
-// publishing again brings back the same set, with a new publishedAt.
+// publishing again brings back the same set.
 export async function setFolderPublished(
   id: string,
   enabled: boolean,
@@ -282,18 +282,7 @@ export async function setFolderPublished(
       { $set: { publication: "public" } },
       { timestamps: false },
     );
-    await Story.updateMany(
-      { ...chapters, publication: "public" },
-      { $set: { publishedAt: new Date() } },
-      { timestamps: false },
-    );
-  }
-  if (!enabled && folder.published) {
-    await Story.updateMany(
-      chapters,
-      { $unset: { publishedAt: 1 } },
-      { timestamps: false },
-    );
+    await stampPublishedAt(chapters);
   }
   await Folder.updateOne(
     owned,
@@ -313,17 +302,13 @@ export async function publishAllChapters(id: string): Promise<ActionResult> {
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };
   if (!(await Folder.exists({ ...owned, published: true }))) return NOT_FOUND();
-  // Chapters already public keep their publishedAt.
+  const chapters = { userId: user.userId, folderId: id, deletedAt: null };
   await Story.updateMany(
-    {
-      userId: user.userId,
-      folderId: id,
-      deletedAt: null,
-      publication: { $ne: "public" },
-    },
-    { $set: { publication: "public", publishedAt: new Date() } },
+    chapters,
+    { $set: { publication: "public" } },
     { timestamps: false },
   );
+  await stampPublishedAt(chapters);
 
   refresh();
   return { ok: true };
