@@ -1,11 +1,9 @@
 "use client";
 
-import { FileUpIcon } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { WithTooltip } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogClose,
@@ -13,7 +11,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,33 +26,27 @@ import { importStories, type ImportTarget } from "./actions";
 const ACCEPT = ".md,.txt,.html,.docx,.odt,.pdf,.epub,.fb2,.zip";
 
 export function ImportDialog({
+  open,
+  onOpenChange,
   folderNames = [],
   defaultFolder = "",
   folderId,
 }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   folderNames?: string[];
   defaultFolder?: string;
   // Set on a folder's page: everything goes into that folder.
   folderId?: string;
 }) {
-  const [open, setOpen] = useState(false);
-  const t = useTranslations("import");
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <WithTooltip label={t("import")} className="md:hidden">
-        <DialogTrigger asChild>
-          <Button variant="outline">
-            <FileUpIcon />
-            <span className="sr-only md:not-sr-only">{t("import")}</span>
-          </Button>
-        </DialogTrigger>
-      </WithTooltip>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <ImportForm
           folderNames={folderNames}
           defaultFolder={defaultFolder}
           folderId={folderId}
-          onImported={() => setOpen(false)}
+          onImported={() => onOpenChange(false)}
         />
       </DialogContent>
     </Dialog>

@@ -33,45 +33,56 @@ async function expectNoTooltip(page: Page) {
   await expect(tooltip(page)).toHaveCount(0);
 }
 
-test("chapter row buttons show their name on hover and on keyboard focus", async ({
+test("the chapter row ⋮ and publication icon show their name on hover and on keyboard focus", async ({
   page,
 }) => {
   const { folderId } = await seedChapter();
   await page.goto(`/folders/${folderId}`);
-  const tags = page.getByRole("button", { name: "Tags for Dragon tale" });
-  const publish = page.getByRole("button", { name: 'Publish "Dragon tale"' });
-  await expect(tags).not.toHaveAttribute("title");
-  await expect(publish).not.toHaveAttribute("title");
+  const menu = page.getByRole("button", { name: "Actions for Dragon tale" });
+  const status = page
+    .getByRole("list", { name: "Chapters" })
+    .getByRole("img", { name: "Not public" });
+  await expect(menu).not.toHaveAttribute("title");
 
-  await tags.hover();
-  await expect(tooltip(page)).toHaveText(["Tags for Dragon tale"]);
-  await publish.hover();
-  await expect(tooltip(page)).toHaveText(['Publish "Dragon tale"']);
+  await menu.hover();
+  await expect(tooltip(page)).toHaveText(["Actions for Dragon tale"]);
+  await status.hover();
+  await expect(tooltip(page)).toHaveText(["Not public"]);
 
   await page.mouse.move(0, 400);
   await expect(tooltip(page)).toHaveCount(0);
-  await tabTo(page, tags);
-  await expect(tooltip(page)).toHaveText(["Tags for Dragon tale"]);
+  await tabTo(page, menu);
+  await expect(tooltip(page)).toHaveText(["Actions for Dragon tale"]);
 });
 
-test("a button with a visible label gets no tooltip", async ({ page }) => {
+test("menu items have a visible label and no tooltip", async ({ page }) => {
   const { folderId } = await seedChapter();
   await page.goto(`/folders/${folderId}`);
-  await page.getByRole("button", { name: "Tags", exact: true }).hover();
+  await page.getByRole("button", { name: "Actions for Dragon tale" }).click();
+  const tags = page.getByRole("menuitem", { name: "Tags", exact: true });
+  await expect(tags).toBeVisible();
+  await page.mouse.move(0, 400);
+  await tags.hover();
   await expectNoTooltip(page);
 });
 
-test("closing a dialog with the mouse does not show its trigger's tooltip", async ({
+test("closing a dialog opened from the menu leaves the page usable and shows no tooltip", async ({
   page,
 }) => {
   const { folderId } = await seedChapter();
   await page.goto(`/folders/${folderId}`);
-  await page.getByRole("button", { name: "Tags for Dragon tale" }).click();
+  const menu = page.getByRole("button", { name: "Actions for Dragon tale" });
+  await menu.click();
+  await page.getByRole("menuitem", { name: "Tags", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Tags for Dragon tale" });
   await dialog.getByRole("button", { name: "Cancel" }).click();
   await expect(dialog).toBeHidden();
   await page.mouse.move(0, 400);
   await expectNoTooltip(page);
+
+  await menu.click();
+  await page.getByRole("menuitem", { name: "Move to…" }).click();
+  await expect(page.getByRole("dialog", { name: "Move to…" })).toBeVisible();
 });
 
 test("the editor toolbar shows Bold as a tooltip", async ({ page }) => {
@@ -100,9 +111,17 @@ test("the collapsed sidebar shows tooltips, the expanded one does not", async ({
   await expect(tooltip(page)).toHaveText(["Expand sidebar"]);
 });
 
-test("tooltips are in Polish on /pl", async ({ page }) => {
+test("tooltips and menu items are in Polish on /pl", async ({ page }) => {
   const { folderId } = await seedChapter();
   await page.goto(`/pl/folders/${folderId}`);
-  await page.getByRole("button", { name: "Tagi: Dragon tale" }).hover();
-  await expect(tooltip(page)).toHaveText(["Tagi: Dragon tale"]);
+  const menu = page.getByRole("button", { name: "Akcje: Dragon tale" });
+  await menu.hover();
+  await expect(tooltip(page)).toHaveText(["Akcje: Dragon tale"]);
+  await menu.click();
+  await expect(page.getByRole("menuitem")).toHaveText([
+    "Tagi",
+    "Przenieś do…",
+    "Opublikuj",
+    "Usuń",
+  ]);
 });

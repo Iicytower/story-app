@@ -1,23 +1,13 @@
 "use client";
 
-import { HistoryIcon, Trash2Icon } from "lucide-react";
+import { HistoryIcon, RotateCcwIcon, Trash2Icon } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { LocalDate } from "@/components/local-date";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ActionMenu } from "@/components/action-menu";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
-import { WithTooltip } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogClose,
@@ -27,11 +17,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { VersionListItem } from "@/lib/versions/queries";
 import { VERSION_NAME_MAX_LENGTH } from "@/lib/versions/versions";
-import { createFolderVersion, deleteFolderVersion } from "./actions";
+import {
+  createFolderVersion,
+  deleteFolderVersion,
+  restoreEntireVersion,
+} from "./actions";
 
 export function FolderVersions({
   folderId,
@@ -74,7 +72,7 @@ export function FolderVersions({
                   {tFolders("chapterCount", { count: version.chapterCount })}
                 </span>
               </Link>
-              <DeleteVersionButton folderId={folderId} version={version} />
+              <VersionMenu folderId={folderId} version={version} />
             </li>
           ))}
         </ul>
@@ -158,73 +156,59 @@ function SaveVersionForm({
   );
 }
 
-function DeleteVersionButton({
+function VersionMenu({
   folderId,
   version,
 }: {
   folderId: string;
   version: VersionListItem;
 }) {
-  const [open, setOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [dialog, setDialog] = useState<"restore" | "delete" | null>(null);
   const t = useTranslations("versions");
+  const tMenu = useTranslations("menu");
   const tCommon = useTranslations("common");
-
-  function handleOpenChange(next: boolean) {
-    setOpen(next);
-    if (!next) setError(null);
-  }
-
-  function handleDelete(event: React.MouseEvent) {
-    // Keep the dialog open until the action finishes so errors can be shown.
-    event.preventDefault();
-    startTransition(async () => {
-      const result = await deleteFolderVersion(folderId, version.number);
-      if (result.ok) setOpen(false);
-      else setError(result.message);
-    });
-  }
+  const label = t("label", { number: version.number });
+  const dialogProps = (name: "restore" | "delete") => ({
+    open: dialog === name,
+    onOpenChange: (open: boolean) => setDialog(open ? name : null),
+  });
 
   return (
-    <AlertDialog open={open} onOpenChange={handleOpenChange}>
-      <WithTooltip label={t("delete", { number: version.number })}>
-        <AlertDialogTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={t("delete", { number: version.number })}
-          >
-            <Trash2Icon />
-          </Button>
-        </AlertDialogTrigger>
-      </WithTooltip>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {t("deleteDescription", {
-              number: version.number,
-              name: version.name,
-            })}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        {error && (
-          <p role="alert" className="text-destructive text-sm">
-            {error}
-          </p>
-        )}
-        <AlertDialogFooter>
-          <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
-          <AlertDialogAction
-            variant="destructive"
-            disabled={pending}
-            onClick={handleDelete}
-          >
-            {pending ? tCommon("deleting") : tCommon("delete")}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <>
+      <ActionMenu label={tMenu("actionsFor", { name: label })}>
+        <DropdownMenuItem onSelect={() => setDialog("restore")}>
+          <RotateCcwIcon />
+          {t("restore")}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          onSelect={() => setDialog("delete")}
+        >
+          <Trash2Icon />
+          {tCommon("delete")}
+        </DropdownMenuItem>
+      </ActionMenu>
+      <ConfirmDialog
+        {...dialogProps("restore")}
+        title={tMenu("restoreVersion", { number: version.number })}
+        description={t("restoreEntireDescription")}
+        confirmLabel={t("restore")}
+        pendingLabel={t("restoring")}
+        action={() => restoreEntireVersion(folderId, version.number)}
+      />
+      <ConfirmDialog
+        {...dialogProps("delete")}
+        title={t("deleteTitle")}
+        description={t("deleteDescription", {
+          number: version.number,
+          name: version.name,
+        })}
+        confirmLabel={tCommon("delete")}
+        pendingLabel={tCommon("deleting")}
+        destructive
+        action={() => deleteFolderVersion(folderId, version.number)}
+      />
+    </>
   );
 }

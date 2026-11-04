@@ -7,7 +7,7 @@ import {
   updateStoryById,
 } from "./db";
 import { storageStatePath } from "./env";
-import { expect, test } from "./helpers";
+import { expect, menuAction, test } from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
@@ -246,16 +246,44 @@ test("deletes a version after confirmation", async ({ page }) => {
   await saveVersion(page, "Old");
   await saveVersion(page, "New");
 
-  await page.getByRole("button", { name: "Delete Version 1" }).click();
+  await menuAction(page, "Actions for Version 1", "Delete");
   const dialog = page.getByRole("alertdialog", { name: "Delete version?" });
   await expect(dialog).toContainText("Version 1 “Old” will be removed.");
   await dialog.getByRole("button", { name: "Cancel" }).click();
   await expect(versions(page).getByRole("listitem")).toHaveCount(2);
 
-  await page.getByRole("button", { name: "Delete Version 1" }).click();
+  await menuAction(page, "Actions for Version 1", "Delete");
   await dialog.getByRole("button", { name: "Delete" }).click();
   await expect(dialog).toBeHidden();
   await expect(versions(page).getByRole("link")).toHaveText([/Version 2: New/]);
   expect(await findFolderVersion(1)).toBeNull();
   expect(await findFolderVersion(2)).toMatchObject({ name: "New" });
+});
+
+test("restores an entire version from the list after confirmation", async ({
+  page,
+}) => {
+  const {
+    folderId,
+    ids: [a],
+  } = await seedBook("A");
+  await page.goto(`/folders/${folderId}`);
+  await saveVersion(page, "Original");
+  await updateStoryById(a, { content: "A rewritten" });
+
+  await menuAction(page, "Actions for Version 1", "Restore");
+  const dialog = page.getByRole("alertdialog", {
+    name: "Restore version 1?",
+  });
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toBeHidden();
+  expect((await findStoryById(a))?.content).toBe("A rewritten");
+
+  await menuAction(page, "Actions for Version 1", "Restore");
+  await dialog.getByRole("button", { name: "Restore" }).click();
+  await expect(dialog).toBeHidden();
+  expect((await findStoryById(a))?.content).toBe("A content");
+  await expect(versions(page).getByRole("link").first()).toHaveText(
+    /Version 2: Before restoring version 1/,
+  );
 });

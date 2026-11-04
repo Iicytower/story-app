@@ -1,12 +1,12 @@
 import type { Page } from "@playwright/test";
 import { findFolder, seedStory } from "./db";
 import { storageStatePath } from "./env";
-import { expect, test } from "./helpers";
+import { editorAction, expect, test } from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
 async function submitExport(page: Page) {
-  await page.getByRole("button", { name: "Export as…" }).click();
+  await editorAction(page, "Export as…");
   await page.getByRole("button", { name: "Export", exact: true }).click();
 }
 

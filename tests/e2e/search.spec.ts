@@ -1,7 +1,7 @@
 import type { Browser, Page } from "@playwright/test";
 import { exhaustSearchLimit, findFolder, seedStory, withE2EDb } from "./db";
 import { storageStatePath } from "./env";
-import { expect, test } from "./helpers";
+import { expect, menuAction, test } from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
@@ -127,26 +127,28 @@ test("unpublishing and deleting take a story out of the results", async ({
   await expect(results(visitor)).toHaveCount(1);
 
   await page.goto(`/folders/${folderId}`);
-  await page.getByRole("button", { name: "Unpublish", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Publish", exact: true }),
-  ).toBeVisible();
+  await menuAction(page, "Actions for Book", "Unpublish");
+  await page
+    .getByRole("alertdialog", { name: "Unpublish folder?" })
+    .getByRole("button", { name: "Unpublish" })
+    .click();
+  await expect(page.getByRole("textbox", { name: "Public link" })).toBeHidden();
   await search(visitor, "dragon");
   await expect(visitor.getByText("No stories found.")).toBeVisible();
   await expect(visitor.getByRole("link", { name: "smoki" })).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Publish", exact: true }).click();
+  await menuAction(page, "Actions for Book", "Publish");
+  await page
+    .getByRole("alertdialog", { name: "Publish folder?" })
+    .getByRole("button", { name: "Publish" })
+    .click();
   await expect(
-    page.getByRole("button", { name: "Unpublish", exact: true }),
+    page.getByRole("textbox", { name: "Public link" }),
   ).toBeVisible();
   await search(visitor, "dragon");
   await expect(results(visitor)).toHaveCount(1);
 
-  await page
-    .getByRole("listitem")
-    .filter({ hasText: "Dragon Tale" })
-    .getByRole("button", { name: /Delete/ })
-    .click();
+  await menuAction(page, "Actions for Dragon Tale", "Delete");
   await page
     .getByRole("alertdialog")
     .getByRole("button", { name: "Delete" })

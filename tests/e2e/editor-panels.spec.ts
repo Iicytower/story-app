@@ -10,7 +10,7 @@ import {
   withE2EDb,
 } from "./db";
 import { storageStatePath } from "./env";
-import { expect, runAutosaveDelay, test } from "./helpers";
+import { expect, menuAction, runAutosaveDelay, test } from "./helpers";
 
 test.use({
   storageState: storageStatePath("alice"),
@@ -336,7 +336,9 @@ test("Chapters panel stays on the chapter when saving fails or the title is empt
   await expect(page).toHaveURL(`/en/stories/${first}`);
 });
 
-test("Chapters panel adds, reorders and deletes chapters", async ({ page }) => {
+test("Chapters panel lists chapters in manual order and adds one, without row actions", async ({
+  page,
+}) => {
   const { first } = await seedBook();
   const book = await findFolder("Book");
   await withE2EDb((connection) =>
@@ -349,35 +351,29 @@ test("Chapters panel adds, reorders and deletes chapters", async ({ page }) => {
   await e.sideTab("Chapters").click();
   // Manual order from the seeds: First (position 0), Second (position 1).
   await expect(e.chapters.getByRole("link")).toHaveText(["First", "Second"]);
-
-  const updatedAt = (await findStoryById(first))?.updatedAt;
-  await page.getByRole("button", { name: "Move Second up" }).click();
-  await expect(e.chapters.getByRole("link")).toHaveText(["Second", "First"]);
-  expect((await findStoryById(first))?.updatedAt).toEqual(updatedAt);
-
-  await e.chapters.getByRole("button", { name: "Delete Second" }).click();
-  await page
-    .getByRole("alertdialog", { name: "Delete story?" })
-    .getByRole("button", { name: "Delete" })
-    .click();
-  await expect(e.chapters.getByRole("link")).toHaveText(["First"]);
-  await expect(page).toHaveURL(`/en/stories/${first}`);
+  await expect(
+    e.chapters.getByRole("listitem").getByRole("button"),
+  ).toHaveCount(0);
 
   await page.getByRole("button", { name: "New chapter" }).click();
   const dialog = page.getByRole("dialog", { name: "New chapter" });
   await dialog.getByLabel("Title").fill("Third");
   await dialog.getByRole("button", { name: "Create" }).click();
   await expect(e.title).toHaveValue("Third");
-  await expect(e.chapters.getByRole("link")).toHaveText(["First", "Third"]);
-  const third = await findStory("Third");
-  expect(third?.deletedAt).toBeNull();
+  await expect(e.chapters.getByRole("link")).toHaveText([
+    "First",
+    "Second",
+    "Third",
+  ]);
+  expect((await findStory("Third"))?.deletedAt).toBeNull();
 
-  await e.chapters.getByRole("button", { name: "Delete Third" }).click();
+  await menuAction(page, "Actions for Third", "Delete");
   await page
     .getByRole("alertdialog", { name: "Delete story?" })
     .getByRole("button", { name: "Delete" })
     .click();
   await expect(page).toHaveURL(`/en/folders/${book!._id}`);
+  expect((await findStory("Third"))?.deletedAt).toBeInstanceOf(Date);
 });
 
 test("works with the default layout when localStorage throws", async ({

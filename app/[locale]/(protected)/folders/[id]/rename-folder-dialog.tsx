@@ -1,6 +1,5 @@
 "use client";
 
-import { PencilIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,25 +10,30 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { renameFolder } from "../actions";
 
-export function RenameFolderDialog({ id, name }: { id: string; name: string }) {
-  const [open, setOpen] = useState(false);
-  const tCommon = useTranslations("common");
+export function RenameFolderDialog({
+  open,
+  onOpenChange,
+  id,
+  name,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  id: string;
+  name: string;
+}) {
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <PencilIcon />
-          {tCommon("rename")}
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <RenameFolderForm id={id} name={name} onDone={() => setOpen(false)} />
+        <RenameFolderForm
+          id={id}
+          name={name}
+          onDone={() => onOpenChange(false)}
+        />
       </DialogContent>
     </Dialog>
   );

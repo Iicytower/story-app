@@ -4,14 +4,14 @@ Your stories, from the first line to the first reader. Story App gives writers a
 
 ## Tech stack
 
-| Area      | Choice                                                                              |
-| --------- | ----------------------------------------------------------------------------------- |
-| Framework | Next.js 16 (App Router, Server Components, Server Actions), React 19, TypeScript    |
-| Data      | MongoDB (Atlas in the cloud, Docker locally) with Mongoose                          |
-| Auth      | Auth.js v5, Credentials provider, JWT sessions, `bcryptjs`                          |
-| UI        | Tailwind CSS 4, shadcn/ui (Radix), Tiptap v3, `react-resizable-panels`, `next-intl` |
-| Tests     | Vitest (unit and integration against a real MongoDB), Playwright (E2E)              |
-| Hosting   | Vercel (production and staging), MongoDB Atlas                                      |
+| Area      | Choice                                                                                         |
+| --------- | ---------------------------------------------------------------------------------------------- |
+| Framework | Next.js 16 (App Router, Server Components, Server Actions), React 19, TypeScript               |
+| Data      | MongoDB (Atlas in the cloud, Docker locally) with Mongoose                                     |
+| Auth      | Auth.js v5, Credentials provider, JWT sessions, `bcryptjs`                                     |
+| UI        | Tailwind CSS 4, shadcn/ui (Radix), Tiptap v3, `react-resizable-panels`, `dnd-kit`, `next-intl` |
+| Tests     | Vitest (unit and integration against a real MongoDB), Playwright (E2E)                         |
+| Hosting   | Vercel (production and staging), MongoDB Atlas                                                 |
 
 The main architectural rules:
 

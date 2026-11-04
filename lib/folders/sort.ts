@@ -6,8 +6,6 @@ export type FolderSort = (typeof FOLDER_SORTS)[number];
 export const CHAPTER_SORTS = ["created", "manual", "alpha"] as const;
 export type ChapterSort = (typeof CHAPTER_SORTS)[number];
 
-export type Direction = "up" | "down";
-
 export interface Order {
   sort: Record<string, 1 | -1>;
   collation?: mongo.CollationOptions;
@@ -46,6 +44,6 @@ export function isChapterSort(value: unknown): value is ChapterSort {
   return CHAPTER_SORTS.includes(value as ChapterSort);
 }
 
-export function isDirection(value: unknown): value is Direction {
-  return value === "up" || value === "down";
+export function isPositionIndex(value: unknown): value is number {
+  return Number.isSafeInteger(value) && (value as number) >= 0;
 }

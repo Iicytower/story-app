@@ -1,6 +1,6 @@
 import { findStory, seedStory, seedFolder } from "./db";
 import { storageStatePath } from "./env";
-import { expect, markdownEditor, test } from "./helpers";
+import { editorAction, expect, markdownEditor, test } from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
@@ -127,7 +127,7 @@ test("deletes the story and returns to its folder", async ({ page }) => {
   const folderId = await seedFolder("alice", "Book");
 
   await page.goto(`/stories/${id}`);
-  await page.getByRole("button", { name: "Delete Doomed" }).click();
+  await editorAction(page, "Delete");
   const dialog = page.getByRole("alertdialog", { name: "Delete story?" });
   await dialog.getByRole("button", { name: "Delete" }).click();
 

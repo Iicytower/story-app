@@ -1,4 +1,9 @@
-import { expect, test as base, type Page } from "@playwright/test";
+import {
+  expect,
+  test as base,
+  type Locator,
+  type Page,
+} from "@playwright/test";
 import { createTranslator } from "next-intl";
 import { AUTOSAVE_DELAY_MS } from "@/lib/autosave";
 import {
@@ -127,4 +132,69 @@ export async function saveTheme(
   await expect(dialog.getByRole("button", { name: "Save" })).toBeDisabled();
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
+}
+
+// Right after a load the trigger may not be hydrated yet, so the click is repeated until
+// the menu shows.
+export async function openMenu(trigger: Locator) {
+  const page = trigger.page();
+  await expect(async () => {
+    if ((await page.getByRole("menu").count()) === 0) await trigger.click();
+    await expect(page.getByRole("menu")).toBeVisible({ timeout: 1000 });
+  }).toPass();
+}
+
+// Opens a ⋮ menu by its label (D55) and picks an item; `scope` narrows it to a row.
+export async function menuAction(
+  page: Page,
+  menu: string,
+  item: string,
+  scope: Pick<Page, "getByRole"> = page,
+) {
+  await openMenu(scope.getByRole("button", { name: menu, exact: true }));
+  await page.getByRole("menuitem", { name: item, exact: true }).click();
+  await expect(page.getByRole("menu")).toHaveCount(0);
+}
+
+// The first ⋮ menu on the page: the editor's top bar or the folder header.
+export async function editorAction(page: Page, item: string) {
+  await openMenu(page.getByRole("button", { name: /^Actions for/ }).first());
+  await page.getByRole("menuitem", { name: item, exact: true }).click();
+  await expect(page.getByRole("menu")).toHaveCount(0);
+}
+
+export async function publishFromEditor(page: Page) {
+  await editorAction(page, "Publish");
+  await page
+    .getByRole("alertdialog", { name: "Publish chapter?" })
+    .getByRole("button", { name: "Publish", exact: true })
+    .click();
+  await expect(page.getByRole("alertdialog")).toBeHidden();
+}
+
+// Picks a sort option from the "Sort" submenu of a ⋮ menu.
+export async function sortBy(page: Page, menu: string, option: string) {
+  await openMenu(page.getByRole("button", { name: menu, exact: true }));
+  await page.getByRole("menuitem", { name: "Sort", exact: true }).hover();
+  await page.getByRole("menuitemradio", { name: option, exact: true }).click();
+  await expect(page.getByRole("menu")).toHaveCount(0);
+}
+
+// Selects to the start of the line. ProseMirror copies the DOM selection into its state on
+// the asynchronous selectionchange event; a shortcut pressed before it acts on the old caret.
+export async function selectToLineStart(page: Page) {
+  const changed = page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        document.addEventListener(
+          "selectionchange",
+          () => setTimeout(resolve),
+          {
+            once: true,
+          },
+        ),
+      ),
+  );
+  await page.keyboard.press("Shift+Home");
+  await changed;
 }

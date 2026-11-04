@@ -4,12 +4,18 @@ import type { Page } from "@playwright/test";
 import { EXPORT_FORMATS } from "@/lib/export/formats";
 import { findFolder, seedStory } from "./db";
 import { storageStatePath } from "./env";
-import { expect, markdownEditor, test } from "./helpers";
+import {
+  editorAction,
+  expect,
+  markdownEditor,
+  menuAction,
+  test,
+} from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
 async function exportAs(page: Page, id: string, extras = false) {
-  await page.getByRole("button", { name: "Export as…" }).click();
+  await editorAction(page, "Export as…");
   await page.getByLabel("Format").selectOption(id);
   if (extras) await page.getByLabel("Include comments and notes").check();
   const downloadPromise = page.waitForEvent("download");
@@ -73,7 +79,7 @@ for (const id of ["docx", "pdf"] as const) {
     const folder = await findFolder("Książka");
     await page.goto(`/folders/${folder!._id}`);
 
-    await page.getByRole("button", { name: "Export as…" }).click();
+    await menuAction(page, "Actions for Książka", "Export as…");
     await page.getByLabel("Format").selectOption(id);
     await page.getByLabel("One file per chapter (.zip)").check();
     const downloadPromise = page.waitForEvent("download");
@@ -92,6 +98,6 @@ for (const id of ["docx", "pdf"] as const) {
 test("offers separate chapter files only for folders", async ({ page }) => {
   const id = await seedStory("alice", { title: "Solo" });
   await page.goto(`/stories/${id}`);
-  await page.getByRole("button", { name: "Export as…" }).click();
+  await editorAction(page, "Export as…");
   await expect(page.getByLabel("One file per chapter (.zip)")).toHaveCount(0);
 });
