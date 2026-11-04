@@ -432,6 +432,7 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 
 - Tryb „Split” (prawy panel jako osobne kolumny) znika razem z kodem; edytor ma tylko panel boczny z zakładkami (decyzja użytkownika, task 47).
 - Zapisane `split`, `order` i szerokości kolumn są ignorowane przy odczycie, bez migracji.
+- `widths` to teraz jedna para rozmiarów `story-column` / `side-column`. Przy odczycie starego zapisu (rekord per zestaw kolumn) `normalizeLayout` bierze szerokość zakładek spod klucza `story,side`, więc użytkownik nie traci ustawionej szerokości. Zmienia D27 i odpowiednie punkty o Split w D12, D19 i przy panelu Tools.
 
 ## D52 – Łagodniejszy kontrast i jeden motyw kolorystyczny (2026-11-03)
 

@@ -11,7 +11,8 @@ test.use({
 const seedChapter = () =>
   seedStory("alice", { title: "Chapter", folder: "Book" });
 
-const split = (page: Page) => page.getByRole("button", { name: "Split" });
+const sideTab = (page: Page, name: string) =>
+  page.getByRole("tablist", { name: "Side panel" }).getByRole("tab", { name });
 const html = (page: Page) => page.locator("html");
 
 // A fresh browser profile: no localStorage, only the session cookie.
@@ -34,18 +35,17 @@ test("the desktop layout is restored in another browser and rendered by the serv
 }) => {
   const id = await seedChapter();
   await page.goto(`/stories/${id}`);
-  await split(page).click();
-  await page.getByRole("button", { name: "Move notes right" }).click();
+  await sideTab(page, "Chapters").click();
   await expect
     .poll(async () => (await findSettings("alice"))?.editor?.layout)
-    .toMatchObject({ split: true, order: ["chapters", "notes", "tools"] });
+    .toMatchObject({ tab: "chapters" });
 
   const other = await newBrowser(browser, "alice");
   await other.page.goto(`/stories/${id}`);
-  await expect(split(other.page)).toHaveAttribute("aria-pressed", "true");
-  await expect(
-    other.page.getByRole("button", { name: "Move chapters left" }),
-  ).toBeDisabled();
+  await expect(sideTab(other.page, "Chapters")).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
   await other.context.close();
 
   // Without JavaScript only the server HTML is shown: no default layout first.
@@ -53,7 +53,10 @@ test("the desktop layout is restored in another browser and rendered by the serv
     javaScriptEnabled: false,
   });
   await noScript.page.goto(`/stories/${id}`);
-  await expect(split(noScript.page)).toHaveAttribute("aria-pressed", "true");
+  await expect(sideTab(noScript.page, "Chapters")).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
   await expect(
     noScript.page.getByRole("list", { name: "Chapters" }),
   ).toBeVisible();
@@ -66,19 +69,22 @@ test("another user keeps the default layout and theme", async ({
 }) => {
   const id = await seedChapter();
   await page.goto(`/stories/${id}`);
-  await split(page).click();
+  await sideTab(page, "Chapters").click();
   await saveTheme(page, "Dark");
   await expect
     .poll(() => findSettings("alice"))
     .toMatchObject({
       appearance: { theme: "dark" },
-      editor: { layout: { split: true } },
+      editor: { layout: { tab: "chapters" } },
     });
 
   const bobId = await seedStory("bob", { title: "Bob's", folder: "Bob" });
   const bob = await newBrowser(browser, "bob");
   await bob.page.goto(`/stories/${bobId}`);
-  await expect(split(bob.page)).toHaveAttribute("aria-pressed", "false");
+  await expect(sideTab(bob.page, "Notes")).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
   await expect(html(bob.page)).not.toHaveClass(/\bdark\b/);
   await bob.context.close();
 });
@@ -155,7 +161,7 @@ test("dragging a separator sends only a few saves", async ({ page }) => {
 
   await expect
     .poll(async () => (await findSettings("alice"))?.editor?.layout)
-    .toMatchObject({ widths: { "story,side": expect.any(Object) } });
+    .toMatchObject({ widths: { "story-column": expect.any(Number) } });
   await page.waitForTimeout(1000);
   expect(requests.length).toBeGreaterThanOrEqual(1);
   expect(requests.length).toBeLessThanOrEqual(2);

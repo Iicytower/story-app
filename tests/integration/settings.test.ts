@@ -36,7 +36,7 @@ beforeEach(async () => {
   signInAs(alice);
 });
 
-const layout = { ...DEFAULT_LAYOUT, split: true, tab: "chapters" as const };
+const layout = { ...DEFAULT_LAYOUT, tab: "chapters" as const };
 const stored = (userId: Types.ObjectId) => Settings.findOne({ userId }).lean();
 
 describe("saveSettings", () => {
@@ -134,10 +134,10 @@ describe("saveSettings", () => {
     expect(await stored(alice)).toBeNull();
 
     await saveSettings({
-      editor: { layout: { split: true, widths: { x: 1 } } },
+      editor: { layout: { tab: "tools", widths: { x: 1 } } },
     });
     expect((await stored(alice))?.editor).toEqual({
-      layout: { ...DEFAULT_LAYOUT, split: true },
+      layout: { ...DEFAULT_LAYOUT, tab: "tools" },
     });
   });
 

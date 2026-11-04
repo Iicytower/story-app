@@ -264,7 +264,7 @@ test.describe("wide screen", () => {
     expect(await scrollTop(chapters)).toBe(300);
   });
 
-  test("Split and Hide keep the story position", async ({ page }) => {
+  test("Hide and Show keep the story position", async ({ page }) => {
     await page.goto(`/stories/${await seedLongBook()}`);
     const content = markdownEditor(page, "Content").field;
     await expect(
@@ -272,13 +272,10 @@ test.describe("wide screen", () => {
     ).toBeAttached();
     await scrollPreviewToText(content, "Paragraph 61");
 
-    await page.getByRole("button", { name: "Split" }).click();
-    await expect(page.getByRole("list", { name: "Chapters" })).toBeVisible();
-    await expect.poll(() => topBlock(content)).toBe("Paragraph 61");
-
     await page.getByRole("button", { name: "Hide notes" }).click();
+    await page.getByRole("button", { name: "Show notes" }).click();
     await expect(
-      page.getByRole("button", { name: "Show notes" }),
+      page.getByRole("button", { name: "Hide notes" }),
     ).toBeVisible();
     await expect.poll(() => topBlock(content)).toBe("Paragraph 61");
   });
