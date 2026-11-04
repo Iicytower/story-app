@@ -33,8 +33,11 @@ export default async function LocaleLayout({
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   const userId = (await auth())?.user?.id;
-  const theme: ThemeAttribute | undefined = userId
-    ? ((await getUserSettings(userId)).appearance.theme ?? "system")
+  const appearance = userId
+    ? (await getUserSettings(userId)).appearance
+    : undefined;
+  const theme: ThemeAttribute | undefined = appearance
+    ? (appearance.theme ?? "system")
     : undefined;
 
   return (
@@ -43,6 +46,8 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       data-theme={theme}
+      // Without a session the default palette from :root.
+      data-accent={appearance?.accent}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >

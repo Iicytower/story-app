@@ -30,6 +30,14 @@
       "dark": "Dark",
       "system": "System"
     },
+    "accent": "Accent color",
+    "accents": {
+      "sepia": "Sepia",
+      "navy": "Navy",
+      "sage": "Sage",
+      "plum": "Plum",
+      "teal": "Teal"
+    },
     "languageSection": "Language",
     "language": "Interface language",
     "account": "Account",

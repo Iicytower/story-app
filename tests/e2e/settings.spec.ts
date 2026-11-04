@@ -1,7 +1,13 @@
 import type { Browser, Page } from "@playwright/test";
 import { findSettings, seedStory } from "./db";
 import { storageStatePath, type UserName } from "./env";
-import { countActionRequests, expect, saveTheme, test } from "./helpers";
+import {
+  countActionRequests,
+  expect,
+  openSettings,
+  saveTheme,
+  test,
+} from "./helpers";
 
 test.use({
   storageState: storageStatePath("alice"),
@@ -141,6 +147,62 @@ test("the sign-in page uses the browser's saved theme, otherwise the system one"
   await page.reload();
   await expect(html(page)).not.toHaveClass(/\bdark\b/);
   await visitor.close();
+});
+
+test("the accent color is picked from swatches and kept for the user", async ({
+  page,
+  browser,
+}) => {
+  await page.goto("/stories");
+  const primary = () =>
+    page.evaluate(() =>
+      getComputedStyle(document.body).getPropertyValue("--primary"),
+    );
+  const sepia = await primary();
+  const dialog = await openSettings(page);
+  const accents = dialog.getByRole("radiogroup", { name: "Accent color" });
+  await expect(accents.getByRole("radio")).toHaveCount(5);
+  await expect(accents.getByRole("radio", { name: "Sepia" })).toBeChecked();
+
+  await accents.getByRole("radio", { name: "Navy" }).check();
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await expect(dialog.getByRole("button", { name: "Save" })).toBeDisabled();
+  await expect(html(page)).toHaveAttribute("data-accent", "navy");
+  expect(await primary()).not.toBe(sepia);
+  await expect
+    .poll(async () => (await findSettings("alice"))?.appearance?.accent)
+    .toBe("navy");
+
+  // Server HTML of another browser, and the public pages of the signed-in user.
+  const other = await newBrowser(browser, "alice");
+  await other.page.goto("/");
+  await expect(html(other.page)).toHaveAttribute("data-accent", "navy");
+  await other.context.close();
+
+  const visitor = await browser.newContext({
+    storageState: { cookies: [], origins: [] },
+  });
+  const visitorPage = await visitor.newPage();
+  await visitorPage.goto("/");
+  await expect(html(visitorPage)).not.toHaveAttribute("data-accent");
+  await visitor.close();
+});
+
+test("the dark theme sets a dark color-scheme for native controls", async ({
+  browser,
+}) => {
+  for (const colorScheme of ["dark", "light"] as const) {
+    const user = await newBrowser(browser, "alice", { colorScheme });
+    await user.page.goto("/stories");
+    await expect
+      .poll(() =>
+        user.page.evaluate(
+          () => getComputedStyle(document.documentElement).colorScheme,
+        ),
+      )
+      .toBe(colorScheme);
+    await user.context.close();
+  }
 });
 
 test("dragging a separator sends only a few saves", async ({ page }) => {

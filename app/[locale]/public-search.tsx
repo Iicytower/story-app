@@ -117,7 +117,7 @@ async function Results({ results }: { results: PublicSearchResult[] }) {
               <span className="text-muted-foreground line-clamp-2 text-sm">
                 {snippet.before}
                 {snippet.match && (
-                  <mark className="text-foreground rounded-sm bg-yellow-200 dark:bg-yellow-500/40">
+                  <mark className="text-foreground bg-highlight rounded-sm">
                     {snippet.match}
                   </mark>
                 )}
