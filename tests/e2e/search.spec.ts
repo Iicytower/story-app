@@ -189,7 +189,7 @@ test("a signed-in user searches in the sidebar view", async ({ page }) => {
   await page.goto("/stories");
   await page
     .getByRole("navigation", { name: "Main" })
-    .getByRole("link", { name: "Search" })
+    .getByRole("link", { name: "Home" })
     .click();
   await expect(page).toHaveURL("/en");
   await page.getByRole("searchbox").fill("dragon");

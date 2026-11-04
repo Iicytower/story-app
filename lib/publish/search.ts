@@ -3,6 +3,7 @@ import { normalizeTag } from "@/lib/tags/tags";
 
 export const MAX_QUERY_LENGTH = 100;
 export const MAX_RESULTS = 50;
+export const MAX_RECENT = 15;
 
 interface PublishedFolder {
   _id: unknown;

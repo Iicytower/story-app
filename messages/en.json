@@ -13,7 +13,6 @@
   },
   "sidebar": {
     "home": "Home",
-    "search": "Search",
     "folders": "Folders",
     "menu": "Menu",
     "mainNav": "Main",
@@ -252,7 +251,7 @@
   },
   "metadata": {
     "stories": "Stories – Story App",
-    "search": "Search stories – Story App",
+    "home": "Story App – write and publish stories",
     "folder": "Folder – Story App",
     "version": "Version – Story App",
     "editor": "Editor – Story App"
@@ -553,6 +552,15 @@
     "none": "No stories found.",
     "results": "Search results",
     "inFolderBy": "in {folder} by {nickname}"
+  },
+  "home": {
+    "heroTitle": "Your stories, from the first line to the first reader",
+    "heroDescription": "Write chapter by chapter with definitions, synonyms, rhymes and proofreading at hand. Go back to any earlier version whenever you like. When your text is ready, publish it with a single click.",
+    "createAccount": "Create account",
+    "logIn": "Log in",
+    "recent": "Recently published",
+    "showMore": "Show more",
+    "recentNone": "Nothing has been published yet."
   },
   "notFound": {
     "text": "404 | This page could not be found."

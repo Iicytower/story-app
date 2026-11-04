@@ -13,7 +13,6 @@
   },
   "sidebar": {
     "home": "Strona główna",
-    "search": "Szukaj",
     "folders": "Foldery",
     "menu": "Menu",
     "mainNav": "Główna",
@@ -252,7 +251,7 @@
   },
   "metadata": {
     "stories": "Opowiadania – Story App",
-    "search": "Szukaj opowiadań – Story App",
+    "home": "Story App – pisz i publikuj opowiadania",
     "folder": "Folder – Story App",
     "version": "Wersja – Story App",
     "editor": "Edytor – Story App"
@@ -553,6 +552,15 @@
     "none": "Nie znaleziono opowiadań.",
     "results": "Wyniki wyszukiwania",
     "inFolderBy": "w folderze „{folder}”, autor: {nickname}"
+  },
+  "home": {
+    "heroTitle": "Twoje opowiadania od pierwszego zdania do pierwszego czytelnika",
+    "heroDescription": "Pisz rozdział po rozdziale, mając pod ręką definicje, synonimy, rymy i korektę. Do wcześniejszych wersji wrócisz w każdej chwili. Gdy tekst będzie gotowy, opublikujesz go jednym kliknięciem.",
+    "createAccount": "Załóż konto",
+    "logIn": "Zaloguj się",
+    "recent": "Ostatnio opublikowane",
+    "showMore": "Pokaż więcej",
+    "recentNone": "Nic jeszcze nie opublikowano."
   },
   "notFound": {
     "text": "404 | Nie znaleziono tej strony."

@@ -17,12 +17,17 @@ export async function publicationFor(
   return published ? "hidden" : undefined;
 }
 
-// Update parts for a chapter arriving in a folder; old addresses belonged to the old folder.
+// Update parts for a chapter arriving in a folder; old addresses belonged to the old folder,
+// and it arrives hidden or undecided, so it is no longer published.
 export async function arrivalUpdate(folderId: Id) {
   const publication = await publicationFor(folderId);
   return {
     set: publication ? { publication } : {},
-    unset: { formerSlugs: 1, ...(!publication && { publication: 1 }) },
+    unset: {
+      formerSlugs: 1,
+      publishedAt: 1,
+      ...(!publication && { publication: 1 }),
+    },
   };
 }
 

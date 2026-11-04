@@ -306,7 +306,7 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Nick: 3–30 znaków, `A-Za-z0-9_-`. Hasło: 17–256 znaków (punktów kodowych), mała i wielka litera (także Unicode), cyfra, znak specjalny ASCII. Walidacja w `lib/credentials.ts`, egzekwowana też w `createOrUpdateUser`. Istniejące hasła nie są sprawdzane.
 - bcrypt uwzględnia tylko 72 bajty, więc nowe hasła idą przez SHA-256 (hex), a hash ma prefiks `sha256$`. Hash bez prefiksu to bcrypt surowego hasła sprzed D37 i działa dalej. Bez nowych pakietów.
 
-## D38 – Publikacja zamiast udostępniania linkiem (2026-11-01)
+## D38 – Publikacja zamiast udostępniania linkiem (2026-11-01, zmienione 2026-11-04 w D54)
 
 - Zmienia D1, D11, D18, D25 i spec („Udostępnianie przez link”). Decyzja użytkownika: „Share” znika całkowicie. Usunięte trasy `/s/...`, akcje `setSharing` i `setFolderSharing`, nagłówki `X-Robots-Tag`, przyciski. Wysłane linki przestają działać i nie są przenoszone do publikacji. `shareToken` zostaje w dokumentach (D14, expand-only), usuwamy go ze schematu, a `syncIndexes()` w buildzie usuwa indeksy.
 - Bez pliku migracji: brak `published` to nieopublikowany folder, brak `publication` to brak decyzji, więc po wdrożeniu nic nie jest publiczne.
@@ -351,7 +351,7 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - `normalizeLayout` uzupełnia `order` o brakujące panele zamiast go odrzucać. Zapisany układ ze Split bez `tools` dostaje `collapsed.tools = true`, bo trzecia widoczna kolumna zmieniłaby klucz szerokości i wyzerowała układ. Przycisk „Show tools” stoi przy prawej krawędzi.
 - Przy trzech kolumnach bocznych domyślna szerokość to 20%, żeby Story nie spadło poniżej `minSize` 30%. `moveColumn` przeskakuje schowane kolumny, inaczej Move left/right bywałby bez widocznego efektu.
 
-## D42 – Publiczna wyszukiwarka, strona główna i sidebar (2026-11-01)
+## D42 – Publiczna wyszukiwarka, strona główna i sidebar (2026-11-01, zmienione 2026-11-04 w D54)
 
 - Zmienia D1, D4, D29, D36, D38 i D40. Strona `/` to publiczna wyszukiwarka i widok domyślny po zalogowaniu (logowanie, rejestracja i Home prowadzą na `/`). Zalogowany widzi tę samą stronę z sidebarem.
 - Treść: regex bez rozróżniania wielkości liter, jak na `/stories`. `$text` nie zna polskiego, Atlas Search wymagałby innego obrazu Dockera i indeksu poza `syncIndexes()`, a embeddingi wysyłają tekst do dostawcy i kosztują. Regex nie zna odmiany („ręka” nie znajdzie „ręce”), nie widzi tekstu rozdzielonego znacznikami (`**a** b` dla „a b”) i przegląda wszystkie publiczne rozdziały. Przy dużej liczbie tekstów trzeba wrócić do Atlas Search.
@@ -387,7 +387,7 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Egzekwuje to hook PreToolUse `.claude/hooks/protect-branches.sh`: blokuje `git merge` na tych branchach, `git push` na nie i wszystkie `gh pr merge` (każdy PR w tym repo celuje w `staging` albo `main`).
 - `resolve-pr-conflicts` pomija PR-y z headem `staging` lub `main` i podaje komendy użytkownikowi.
 
-## D46 – Wielojęzyczny interfejs z prefiksem w adresie (2026-11-03)
+## D46 – Wielojęzyczny interfejs z prefiksem w adresie (2026-11-03, zmienione 2026-11-04 w D54)
 
 - Zmienia zasadę „UI w całości po angielsku” i założenie prywatnej aplikacji: aplikacja docelowo jest publiczna, interfejs ma wybór języka. Na start angielski i polski; kolejny język to tylko nowy plik tłumaczeń i wpis na liście języków (decyzja użytkownika).
 - Biblioteka `next-intl` (decyzja użytkownika, instalacja w tasku 43).
@@ -446,3 +446,14 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 
 - Przyciski bez widocznej etykiety mają stylizowany tooltip (shadcn Tooltip na Radix) z tekstem jak `aria-label`, zamiast natywnego `title` (decyzja użytkownika, task 50).
 - `WithTooltip` w `components/ui/tooltip.tsx`, jeden `TooltipProvider` w `app/[locale]/layout.tsx` (opóźnienie 300 ms). Fokus otwiera tooltip tylko przy `:focus-visible`; treść nie przyjmuje kursora. Przyciski chowające etykietę na wąskim ekranie mają tooltip tylko poniżej `md`, zwinięty sidebar po prawej stronie ikon.
+
+## D54 – Strona główna z hero i ostatnio opublikowanymi (2026-11-04)
+
+- Zmienia D38, D42 i D46 (task 49). `/` zostaje jedną stroną dla gościa i zalogowanego, wyszukiwarka zostaje na `/`. Gość widzi hero (nagłówek, opis, „Create account” i „Log in”), potem wyszukiwarkę i „Recently published”; zalogowany to samo bez hero, z sidebarem. Sidebar traci pozycję Search, zostaje Home (decyzje użytkownika).
+- Dialog logowania z D42 bez zmian; przycisk w prawym górnym rogu i CTA hero otwierają ten sam dialog, CTA w trybie rejestracji albo logowania.
+- „Recently published”: rozdziały widoczne publicznie (warunki jak w wyszukiwarce), sortowane po `publishedAt` malejąco, remis `_id` malejąco. Serwer pobiera 15, klient pokazuje 5 i dokłada po 5. Lista nie zużywa `SEARCH_LIMIT`. Data względna do 7 dni, starsza jako data w języku interfejsu, liczona na serwerze w UTC.
+- Nowe pole `stories.publishedAt`: moment, w którym rozdział ostatnio stał się widoczny publicznie. Każda publikacja ustawia je od nowa (Publish folderu, Publish all dla rozdziałów wcześniej niepublicznych, Publish rozdziału wcześniej niewidocznego); każde przejście w niewidoczny robi `$unset` (Unpublish folderu i rozdziału, ukrycie pozostałych przy Publish rozdziału, przeniesienie, przywrócenie z wersji). Usunięcie pomijamy. Zapisy z `timestamps: false`: edytor wysyła `updatedAt` jako wersję oczekiwaną, więc zmiana publikacji nie może go zmieniać (decyzja użytkownika).
+- Rozdział bez `publishedAt` nie trafia na listę. Powtarzalna migracja `006-published-at` daje widocznym rozdziałom bez pola datę uruchomienia (także tym opublikowanym przez starą wersję w trakcie builda). Indeks `{ publication: 1, publishedAt: -1 }`.
+- Link Home w sidebarze ma `prefetch={false}`: render `/` czyta listy publiczne, a prefetch z każdej strony (także edytora) robiłby to przy każdym wejściu; jego spóźniona odpowiedź psuła też zaznaczenie w testach E2E edytora.
+- Tytuł strony głównej „Story App – write and publish stories” z opisem z hero. U gościa `h1` to nagłówek hero, u zalogowanego „Search stories”.
+- Odstępstwo od „tylko desktop” (D46): strona główna jest dopracowana pod wąski ekran (od 375 px); reszta aplikacji w tasku 51 (decyzja użytkownika).

@@ -262,7 +262,7 @@ export async function reorderFolder(
 }
 
 // Organizational change, like tags. Chapters keep their explicit state, so unpublishing and
-// publishing again brings back the same set.
+// publishing again brings back the same set, with a new publishedAt.
 export async function setFolderPublished(
   id: string,
   enabled: boolean,
@@ -275,15 +275,23 @@ export async function setFolderPublished(
   const owned = { _id: id, userId: user.userId, deletedAt: null };
   const folder = await Folder.findOne(owned).select({ published: 1 }).lean();
   if (!folder) return NOT_FOUND();
+  const chapters = { userId: user.userId, folderId: id, deletedAt: null };
   if (enabled && !folder.published) {
     await Story.updateMany(
-      {
-        userId: user.userId,
-        folderId: id,
-        deletedAt: null,
-        publication: { $exists: false },
-      },
+      { ...chapters, publication: { $exists: false } },
       { $set: { publication: "public" } },
+      { timestamps: false },
+    );
+    await Story.updateMany(
+      { ...chapters, publication: "public" },
+      { $set: { publishedAt: new Date() } },
+      { timestamps: false },
+    );
+  }
+  if (!enabled && folder.published) {
+    await Story.updateMany(
+      chapters,
+      { $unset: { publishedAt: 1 } },
       { timestamps: false },
     );
   }
@@ -305,9 +313,15 @@ export async function publishAllChapters(id: string): Promise<ActionResult> {
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };
   if (!(await Folder.exists({ ...owned, published: true }))) return NOT_FOUND();
+  // Chapters already public keep their publishedAt.
   await Story.updateMany(
-    { userId: user.userId, folderId: id, deletedAt: null },
-    { $set: { publication: "public" } },
+    {
+      userId: user.userId,
+      folderId: id,
+      deletedAt: null,
+      publication: { $ne: "public" },
+    },
+    { $set: { publication: "public", publishedAt: new Date() } },
     { timestamps: false },
   );
 
