@@ -34,7 +34,7 @@ export const Comment = Node.create<{ label: string }>({
         "data-comment": "",
         "aria-label": this.options.label,
         class:
-          "my-2 whitespace-pre-wrap rounded-md border-l-4 border-amber-400 bg-amber-100/60 px-3 py-1 text-sm italic dark:bg-amber-500/15",
+          "my-2 whitespace-pre-wrap rounded-md border-l-4 border-comment-border bg-comment px-3 py-1 text-sm italic",
       },
       0,
     ];

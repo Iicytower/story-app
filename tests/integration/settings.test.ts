@@ -69,11 +69,19 @@ describe("saveSettings", () => {
     expect(await saveSettings({ editor: { mobileView: "notes" } })).toEqual({
       ok: true,
     });
+    expect(await saveSettings({ appearance: { accent: "navy" } })).toEqual({
+      ok: true,
+    });
 
     expect(await getUserSettings(alice.toString())).toEqual({
       ...DEFAULT_SETTINGS,
       editor: { layout, mobileView: "notes" },
-      appearance: { sidebarCollapsed: false, theme: "dark", locale: null },
+      appearance: {
+        sidebarCollapsed: false,
+        theme: "dark",
+        accent: "navy",
+        locale: null,
+      },
     });
   });
 
@@ -121,6 +129,7 @@ describe("saveSettings", () => {
   it("rejects invalid input and folder settings, and stores a normalized layout", async () => {
     for (const patch of [
       { appearance: { theme: "blue" } },
+      { appearance: { accent: "red" } },
       { folders: { manualOrder: true } },
       // Only through changeLocale, which also sets the cookie.
       { appearance: { locale: "pl" } },

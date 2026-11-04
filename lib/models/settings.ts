@@ -1,7 +1,7 @@
 import mongoose, { Schema, type Model, type Types } from "mongoose";
 import { FOLDER_SORTS } from "@/lib/folders/sort";
 import { routing } from "@/i18n/routing";
-import { MOBILE_VIEWS, THEMES } from "@/lib/settings/settings";
+import { ACCENTS, MOBILE_VIEWS, THEMES } from "@/lib/settings/settings";
 
 // Only values the user chose are stored, without defaults: getUserSettings fills in the
 // rest, so a changed default reaches existing users too.
@@ -10,6 +10,7 @@ export interface SettingsFields {
   editor?: { layout?: unknown; mobileView?: string };
   appearance?: {
     theme?: string | null;
+    accent?: string;
     sidebarCollapsed?: boolean;
     locale?: string | null;
   };
@@ -33,6 +34,7 @@ const settingsSchema = new Schema<SettingsFields>(
     },
     appearance: {
       theme: { type: String, enum: [...THEMES, null] },
+      accent: { type: String, enum: ACCENTS },
       sidebarCollapsed: { type: Boolean },
       locale: { type: String, enum: [...routing.locales, null] },
     },

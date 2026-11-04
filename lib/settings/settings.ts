@@ -9,6 +9,10 @@ import { type Locale, routing } from "@/i18n/routing";
 export const THEMES = ["light", "dark"] as const;
 export type Theme = (typeof THEMES)[number];
 
+// Accent palettes in app/globals.css (D52); the first is the default.
+export const ACCENTS = ["sepia", "navy", "sage", "plum", "teal"] as const;
+export type Accent = (typeof ACCENTS)[number];
+
 // Below the md breakpoint only one panel is shown at a time.
 export const MOBILE_VIEWS = ["story", "notes", "chapters", "tools"] as const;
 export type MobileView = (typeof MOBILE_VIEWS)[number];
@@ -48,6 +52,7 @@ const SETTINGS = {
     theme: field<Theme | null>(null, (value) =>
       value === null ? null : oneOf(THEMES)(value),
     ),
+    accent: field<Accent>(ACCENTS[0], oneOf(ACCENTS)),
     // null: not chosen yet, the language comes from the cookie or Accept-Language (D46).
     // Set by changeLocale, which also sets the cookie.
     locale: field<Locale | null>(

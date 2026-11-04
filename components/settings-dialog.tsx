@@ -20,8 +20,14 @@ import {
 import { Label } from "@/components/ui/label";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { type Locale, LOCALE_NAMES, routing } from "@/i18n/routing";
-import { THEMES, type Theme } from "@/lib/settings/settings";
-import { setTheme } from "@/lib/theme";
+import { WithTooltip } from "@/components/ui/tooltip";
+import {
+  type Accent,
+  ACCENTS,
+  THEMES,
+  type Theme,
+} from "@/lib/settings/settings";
+import { setAccent, setTheme } from "@/lib/theme";
 
 const SYSTEM = "system";
 type ThemeChoice = Theme | typeof SYSTEM;
@@ -33,6 +39,11 @@ function savedTheme(): ThemeChoice {
   return THEME_CHOICES.includes(value as ThemeChoice)
     ? (value as ThemeChoice)
     : SYSTEM;
+}
+
+function savedAccent(): Accent {
+  const value = document.documentElement.getAttribute("data-accent");
+  return ACCENTS.includes(value as Accent) ? (value as Accent) : ACCENTS[0];
 }
 
 // A new language remounts the layout with the sidebar, so the dialog is reopened from here.
@@ -84,10 +95,13 @@ function SettingsContent() {
   const [changingPassword, setChangingPassword] = useState(false);
   const [saved, setSaved] = useState(savedTheme);
   const [theme, setThemeChoice] = useState(saved);
+  const [savedAccentValue, setSavedAccent] = useState(savedAccent);
+  const [accent, setAccentChoice] = useState(savedAccentValue);
   const [language, setLanguage] = useState(locale);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const changed = theme !== saved || language !== locale;
+  const changed =
+    theme !== saved || accent !== savedAccentValue || language !== locale;
 
   if (changingPassword) {
     return <ChangePasswordForm onDone={() => setChangingPassword(false)} />;
@@ -102,6 +116,12 @@ function SettingsContent() {
         if (!result.ok) return setError(result.message);
         setTheme(value);
         setSaved(theme);
+      }
+      if (accent !== savedAccentValue) {
+        const result = await saveSettings({ appearance: { accent } });
+        if (!result.ok) return setError(result.message);
+        setAccent(accent);
+        setSavedAccent(accent);
       }
       if (language !== locale) {
         const result = await changeLocale(language);
@@ -143,6 +163,35 @@ function SettingsContent() {
             </option>
           ))}
         </select>
+        <span id="settings-accent" className="text-sm">
+          {t("accent")}
+        </span>
+        <div
+          role="radiogroup"
+          aria-labelledby="settings-accent"
+          className="flex gap-3 py-1"
+        >
+          {ACCENTS.map((choice) => (
+            <WithTooltip key={choice} label={t(`accents.${choice}`)}>
+              <label className="relative">
+                <input
+                  type="radio"
+                  name="accent"
+                  value={choice}
+                  aria-label={t(`accents.${choice}`)}
+                  checked={accent === choice}
+                  onChange={() => setAccentChoice(choice)}
+                  className="peer absolute inset-0 cursor-pointer opacity-0"
+                />
+                {/* data-accent gives the swatch that palette's --primary. */}
+                <span
+                  data-accent={choice}
+                  className="bg-primary ring-offset-background peer-checked:ring-foreground peer-focus-visible:outline-ring block size-7 rounded-full ring-offset-2 peer-checked:ring-2 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-4"
+                />
+              </label>
+            </WithTooltip>
+          ))}
+        </div>
       </section>
       <section aria-labelledby="settings-language" className="grid gap-2">
         <h3 id="settings-language" className="font-medium">

@@ -13,14 +13,14 @@ Zgłoszenie użytkownika (2026-11-03). Tryb ciemny i jasny mają mieć mniejszy 
 
 ## Ustalenia
 
-- Jeden motyw kolorystyczny dla wszystkich, bez wyboru w ustawieniach (decyzja użytkownika). Wybór należy do użytkownika przed zamknięciem taska.
+- ~~Jeden motyw kolorystyczny dla wszystkich, bez wyboru w ustawieniach.~~ Po obejrzeniu pięciu propozycji (zrzuty Playwrighta, 2026-11-04) użytkownik zdecydował, że wszystkie pięć jest do wyboru w ustawieniach jako próbki kolorów; domyślna sepia; strony publiczne w palecie oglądającego (D52).
 - Kontrast tekstu do tła co najmniej WCAG AA (4,5:1 dla zwykłego tekstu, także `muted-foreground`).
 
 ## Kryteria akceptacji
 
 1. W trybie ciemnym tło nie jest czarne, a tekst nie jest czysto biały; w trybie jasnym tło nie jest czysto białe, a tekst nie jest czysto czarny.
 2. Wszystkie pary tekst–tło spełniają WCAG AA.
-3. Użytkownik dostał 2–3 propozycje palety i wybrał jedną; wybrana działa w obu trybach.
+3. Użytkownik dostał propozycje palety (pięć) i wybrał; zmiana: wszystkie pięć do wyboru w ustawieniach, każda działa w obu trybach.
 4. W trybie ciemnym opcje wszystkich list rozwijanych są czytelne bez podświetlania.
 5. Nic w komponentach nie używa kolorów na sztywno, które omijałyby nowe zmienne (np. `bg-white`, `text-black`).
 

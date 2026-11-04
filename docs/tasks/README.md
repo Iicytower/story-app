@@ -33,7 +33,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-01): najp
 | 46 | [Dialog ustawień zamiast osobnych pozycji w sidebarze](done/46-settings-dialog.md) | 45 | [x] |
 | 47 | [Usunięcie trybu kolumn w edytorze](done/47-remove-split.md) | – | [x] |
 | 50 | [Podpowiedzi przy przyciskach z samą ikoną](done/50-icon-tooltips.md) | – | [x] |
-| 48 | [Łagodniejszy kontrast i motyw kolorystyczny](48-softer-colors.md) | – | [ ] |
+| 48 | [Łagodniejszy kontrast i motyw kolorystyczny](done/48-softer-colors.md) | – | [x] |
 | 49 | [Przebudowa strony głównej](49-home-page.md) | – | [ ] |
 | 51 | [Poprawa wyglądu (mobile i web)](51-ui-polish.md) | – | [ ] |
 | 26 | [Upload okładek](26-cover-upload.md) | – | [ ] |

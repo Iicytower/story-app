@@ -35,7 +35,7 @@ test("Ctrl+F finds matches in Preview and steps through them", async ({
   await page.keyboard.type("kot");
   await expect(content.group.getByText("1 of 3")).toBeVisible();
   await expect(content.field.locator("[data-find-current]")).toHaveText("kot");
-  await expect(content.field.locator(".bg-yellow-300\\/60")).toHaveCount(2);
+  await expect(content.field.locator(".bg-highlight")).toHaveCount(2);
 
   await page.keyboard.press("Enter");
   await expect(content.group.getByText("2 of 3")).toBeVisible();

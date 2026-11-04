@@ -1,4 +1,4 @@
-import type { Theme } from "@/lib/settings/settings";
+import type { Accent, Theme } from "@/lib/settings/settings";
 
 export const THEME_STORAGE_KEY = "theme";
 
@@ -39,4 +39,8 @@ export function applyTheme(): void {
       (theme !== "light" &&
         window.matchMedia("(prefers-color-scheme: dark)").matches),
   );
+}
+
+export function setAccent(accent: Accent): void {
+  document.documentElement.setAttribute("data-accent", accent);
 }

@@ -14,14 +14,14 @@ export function TextDiff({ parts }: { parts: DiffPart[] | null }) {
         part.added ? (
           <ins
             key={index}
-            className="bg-green-500/20 text-green-900 no-underline dark:text-green-200"
+            className="bg-diff-added text-diff-added-foreground no-underline"
           >
             {part.value}
           </ins>
         ) : part.removed ? (
           <del
             key={index}
-            className="bg-red-500/20 text-red-900 dark:text-red-200"
+            className="bg-diff-removed text-diff-removed-foreground"
           >
             {part.value}
           </del>

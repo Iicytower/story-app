@@ -11,7 +11,12 @@ describe("DEFAULT_SETTINGS", () => {
   it("groups the defaults", () => {
     expect(DEFAULT_SETTINGS).toEqual({
       editor: { layout: DEFAULT_LAYOUT, mobileView: "story" },
-      appearance: { sidebarCollapsed: false, theme: null, locale: null },
+      appearance: {
+        sidebarCollapsed: false,
+        theme: null,
+        accent: "sepia",
+        locale: null,
+      },
       folders: { sort: "updated", manualOrder: false },
     });
   });
@@ -44,7 +49,12 @@ describe("normalizeSettings", () => {
         },
         mobileView: "story",
       },
-      appearance: { sidebarCollapsed: false, theme: "dark", locale: null },
+      appearance: {
+        sidebarCollapsed: false,
+        theme: "dark",
+        accent: "sepia",
+        locale: null,
+      },
       folders: { sort: "alpha", manualOrder: false },
     });
     expect(
