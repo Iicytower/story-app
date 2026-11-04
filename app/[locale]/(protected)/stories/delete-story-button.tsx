@@ -15,6 +15,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { WithTooltip } from "@/components/ui/tooltip";
 import { deleteStory } from "./actions";
 
 export function DeleteStoryButton({
@@ -53,11 +54,17 @@ export function DeleteStoryButton({
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
-      <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={t("delete", { title })}>
-          <Trash2Icon />
-        </Button>
-      </AlertDialogTrigger>
+      <WithTooltip label={t("delete", { title })}>
+        <AlertDialogTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t("delete", { title })}
+          >
+            <Trash2Icon />
+          </Button>
+        </AlertDialogTrigger>
+      </WithTooltip>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>

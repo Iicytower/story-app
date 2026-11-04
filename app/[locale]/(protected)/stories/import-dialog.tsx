@@ -5,6 +5,7 @@ import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { WithTooltip } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogClose,
@@ -41,12 +42,14 @@ export function ImportDialog({
   const t = useTranslations("import");
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <FileUpIcon />
-          <span className="sr-only md:not-sr-only">{t("import")}</span>
-        </Button>
-      </DialogTrigger>
+      <WithTooltip label={t("import")} className="md:hidden">
+        <DialogTrigger asChild>
+          <Button variant="outline">
+            <FileUpIcon />
+            <span className="sr-only md:not-sr-only">{t("import")}</span>
+          </Button>
+        </DialogTrigger>
+      </WithTooltip>
       <DialogContent>
         <ImportForm
           folderNames={folderNames}

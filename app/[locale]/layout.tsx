@@ -7,6 +7,7 @@ import { auth } from "@/auth";
 import { routing } from "@/i18n/routing";
 import { getUserSettings } from "@/lib/settings/queries";
 import { InlineScript } from "@/components/inline-script";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { type ThemeAttribute, themeScript } from "@/lib/theme";
 import "../globals.css";
 
@@ -49,7 +50,9 @@ export default async function LocaleLayout({
         <InlineScript html={themeScript} />
       </head>
       <body className="flex min-h-full flex-col">
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          <TooltipProvider>{children}</TooltipProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
