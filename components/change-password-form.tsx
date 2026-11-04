@@ -5,9 +5,6 @@ import { useState, useTransition } from "react";
 import { changePassword } from "@/app/[locale]/(protected)/actions";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -19,23 +16,8 @@ import {
   PASSWORD_REQUIREMENTS,
 } from "@/lib/credentials";
 
-export function ChangePasswordDialog({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <ChangePasswordForm />
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function ChangePasswordForm() {
+// Shown inside the settings dialog; onDone goes back to the settings.
+export function ChangePasswordForm({ onDone }: { onDone: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [changed, setChanged] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -67,9 +49,7 @@ function ChangePasswordForm() {
           {t("changed")}
         </p>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button>{tCommon("close")}</Button>
-          </DialogClose>
+          <Button onClick={onDone}>{tCommon("close")}</Button>
         </DialogFooter>
       </div>
     );
@@ -87,6 +67,7 @@ function ChangePasswordForm() {
           name="currentPassword"
           type="password"
           autoComplete="current-password"
+          autoFocus
           required
         />
       </div>
@@ -133,11 +114,9 @@ function ChangePasswordForm() {
         </p>
       )}
       <DialogFooter>
-        <DialogClose asChild>
-          <Button type="button" variant="outline">
-            {tCommon("cancel")}
-          </Button>
-        </DialogClose>
+        <Button type="button" variant="outline" onClick={onDone}>
+          {tCommon("cancel")}
+        </Button>
         <Button type="submit" disabled={pending}>
           {pending ? tCommon("saving") : tCommon("save")}
         </Button>

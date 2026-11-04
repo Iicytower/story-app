@@ -30,7 +30,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-01): najp
 | 43 | [Routing z prefiksem języka](done/43-locale-routing.md) | – | [x] |
 | 44 | [Słowniki tekstów interfejsu](done/44-ui-dictionaries.md) | 43 | [x] |
 | 45 | [Przełącznik języka i polski interfejs](done/45-polish-ui.md) | 44 | [x] |
-| 46 | [Dialog ustawień zamiast osobnych pozycji w sidebarze](46-settings-dialog.md) | 45 | [ ] |
+| 46 | [Dialog ustawień zamiast osobnych pozycji w sidebarze](done/46-settings-dialog.md) | 45 | [x] |
 | 47 | [Usunięcie trybu kolumn w edytorze](47-remove-split.md) | – | [ ] |
 | 50 | [Podpowiedzi przy przyciskach z samą ikoną](50-icon-tooltips.md) | – | [ ] |
 | 48 | [Łagodniejszy kontrast i motyw kolorystyczny](48-softer-colors.md) | – | [ ] |

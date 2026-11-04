@@ -15,14 +15,26 @@
     "home": "Home",
     "search": "Search",
     "folders": "Folders",
-    "toggleTheme": "Toggle theme",
-    "changePassword": "Change password",
-    "logOut": "Log out",
     "menu": "Menu",
     "mainNav": "Main",
     "expand": "Expand sidebar",
     "collapse": "Collapse sidebar",
-    "language": "Language"
+    "settings": "Settings"
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": "Appearance",
+    "theme": "Theme",
+    "themes": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "languageSection": "Language",
+    "language": "Interface language",
+    "account": "Account",
+    "changePassword": "Change password",
+    "logOut": "Log out"
   },
   "errors": {
     "nicknameRequirement": "Nickname must be 3-30 characters: letters a-z, digits, _ and -.",

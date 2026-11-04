@@ -15,14 +15,26 @@
     "home": "Strona główna",
     "search": "Szukaj",
     "folders": "Foldery",
-    "toggleTheme": "Przełącz motyw",
-    "changePassword": "Zmień hasło",
-    "logOut": "Wyloguj",
     "menu": "Menu",
     "mainNav": "Główna",
     "expand": "Rozwiń pasek boczny",
     "collapse": "Zwiń pasek boczny",
-    "language": "Język"
+    "settings": "Ustawienia"
+  },
+  "settings": {
+    "title": "Ustawienia",
+    "appearance": "Wygląd",
+    "theme": "Motyw",
+    "themes": {
+      "light": "Jasny",
+      "dark": "Ciemny",
+      "system": "Systemowy"
+    },
+    "languageSection": "Język",
+    "language": "Język interfejsu",
+    "account": "Konto",
+    "changePassword": "Zmień hasło",
+    "logOut": "Wyloguj"
   },
   "errors": {
     "nicknameRequirement": "Nick musi mieć 3–30 znaków: litery a-z, cyfry, _ i -.",

@@ -6,7 +6,7 @@ import {
   expectSignedOut,
   login,
   PASSWORD_REQUIREMENT_TEXTS,
-  sidebarAction,
+  openSettings,
   test,
 } from "./helpers";
 
@@ -34,7 +34,8 @@ async function signIn(page: Page, password: string) {
 test.beforeEach(async ({ page }) => {
   await restorePassword("carol");
   await login(page, "carol");
-  await sidebarAction(page, "Change password");
+  const settings = await openSettings(page);
+  await settings.getByRole("button", { name: "Change password" }).click();
 });
 
 test("the dialog lists the password requirements at the new password field", async ({
@@ -71,13 +72,17 @@ test("after the change only the new password signs in", async ({ page }) => {
   await expect(page.getByRole("status")).toHaveText(
     "Your password has been changed.",
   );
+  // Close goes back to the settings.
   await page.getByRole("button", { name: "Close" }).first().click();
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+  await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toBeHidden();
 
   // The menu still responds after the dialog, and this session outlives the change.
   await page.reload();
   await expect(page).toHaveURL("/en");
-  await sidebarAction(page, "Log out");
+  const settings = await openSettings(page);
+  await settings.getByRole("button", { name: "Log out" }).click();
   await expectSignedOut(page);
 
   await signIn(page, USERS.carol.password);
@@ -91,11 +96,20 @@ test("after the change only the new password signs in", async ({ page }) => {
   await expect(page).toHaveURL("/en");
 });
 
-test("closing the dialog clears what was typed", async ({ page }) => {
+test("Cancel goes back to the settings and clears what was typed", async ({
+  page,
+}) => {
   await page.getByLabel("Current password").fill("typed");
   await page.getByRole("button", { name: "Cancel" }).click();
-  await expect(page.getByRole("dialog")).toBeHidden();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await expect(settings.getByRole("region", { name: "Account" })).toBeVisible();
 
-  await sidebarAction(page, "Change password");
+  await settings.getByRole("button", { name: "Change password" }).click();
   await expect(page.getByLabel("Current password")).toHaveValue("");
+
+  // Closing the whole dialog starts from the settings next time.
+  await page.getByLabel("Current password").fill("typed");
+  await page.keyboard.press("Escape");
+  await openSettings(page);
+  await expect(settings.getByRole("region", { name: "Account" })).toBeVisible();
 });

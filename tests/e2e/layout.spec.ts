@@ -1,36 +1,110 @@
 import { findSettings, seedStory } from "./db";
 import { storageStatePath } from "./env";
-import { expect, expectSignedOut, sidebarAction, test } from "./helpers";
+import {
+  expect,
+  expectSignedOut,
+  openSettings,
+  saveTheme,
+  sidebarAction,
+  test,
+} from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
-test("dark theme survives a reload", async ({ page }) => {
+// Moved to the settings dialog (D50).
+const OLD_ITEMS = ["Toggle theme", "Language", "Change password", "Log out"];
+
+test("the sidebar keeps the views and opens the settings", async ({ page }) => {
+  await page.goto("/stories");
+  const nav = page.getByRole("navigation", { name: "Main" });
+  for (const name of OLD_ITEMS)
+    await expect(nav.getByRole("button", { name })).toHaveCount(0);
+  await nav.getByRole("button", { name: "Collapse sidebar" }).click();
+  for (const name of OLD_ITEMS)
+    await expect(nav.getByRole("button", { name })).toHaveCount(0);
+  await nav.getByRole("button", { name: "Settings" }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Settings" });
+  for (const name of ["Appearance", "Language", "Account"])
+    await expect(dialog.getByRole("region", { name })).toBeVisible();
+  await page.mouse.click(5, 5);
+  await expect(dialog).toBeHidden();
+  await nav.getByRole("button", { name: "Expand sidebar" }).click();
+});
+
+test("each theme applies at once and survives a reload", async ({ page }) => {
   await page.goto("/stories");
   const html = page.locator("html");
   await expect(html).not.toHaveClass(/\bdark\b/);
 
-  await sidebarAction(page, "Toggle theme");
+  await saveTheme(page, "Dark");
   await expect(html).toHaveClass(/\bdark\b/);
   await expect
     .poll(async () => (await findSettings("alice"))?.appearance?.theme)
     .toBe("dark");
-
   await page.reload();
   await expect(html).toHaveClass(/\bdark\b/);
 
-  await sidebarAction(page, "Toggle theme");
+  await saveTheme(page, "Light");
+  await expect(html).not.toHaveClass(/\bdark\b/);
   await expect
     .poll(async () => (await findSettings("alice"))?.appearance?.theme)
     .toBe("light");
   await page.reload();
   await expect(html).not.toHaveClass(/\bdark\b/);
+
+  await page.emulateMedia({ colorScheme: "dark" });
+  await saveTheme(page, "System");
+  await expect(html).toHaveClass(/\bdark\b/);
+  await expect
+    .poll(async () => (await findSettings("alice"))?.appearance?.theme)
+    .toBeNull();
+  await page.reload();
+  await expect(html).toHaveClass(/\bdark\b/);
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.reload();
+  await expect(html).not.toHaveClass(/\bdark\b/);
+  const dialog = await openSettings(page);
+  await expect(dialog.getByLabel("Theme")).toHaveValue("system");
+});
+
+test("Save is enabled only after a change, and Cancel discards it", async ({
+  page,
+}) => {
+  await page.goto("/stories");
+  const dialog = await openSettings(page);
+  const save = dialog.getByRole("button", { name: "Save" });
+  const theme = dialog.getByLabel("Theme");
+  await expect(save).toBeDisabled();
+  await expect(theme).toHaveValue("system");
+  await theme.selectOption({ label: "Dark" });
+  await expect(save).toBeEnabled();
+  await theme.selectOption({ label: "System" });
+  await expect(save).toBeDisabled();
+
+  await theme.selectOption({ label: "Dark" });
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.locator("html")).not.toHaveClass(/\bdark\b/);
+
+  await openSettings(page);
+  await expect(theme).toHaveValue("system");
+  await theme.selectOption({ label: "Dark" });
+  await dialog.getByRole("button", { name: "Close" }).click();
+  await expect(dialog).toBeHidden();
+  await openSettings(page);
+  await expect(theme).toHaveValue("system");
+  await expect
+    .poll(async () => (await findSettings("alice"))?.appearance?.theme ?? null)
+    .toBeNull();
 });
 
 test("log out returns to the home page and protects /stories again", async ({
   page,
 }) => {
   await page.goto("/stories");
-  await sidebarAction(page, "Log out");
+  const dialog = await openSettings(page);
+  await dialog.getByRole("button", { name: "Log out" }).click();
   await expect(page).toHaveURL("/en");
   await expectSignedOut(page);
 
@@ -66,11 +140,11 @@ for (const [name, viewport] of [
 
       await page.getByRole("link", { name: /Book/ }).click();
       await expect(page).toHaveURL(/\/folders\//);
-      await sidebarAction(page, "Toggle theme");
+      await saveTheme(page, "Dark");
       await expect
         .poll(async () => (await findSettings("alice"))?.appearance?.theme)
         .toBe("dark");
-      await sidebarAction(page, "Toggle theme");
+      await saveTheme(page, "Light");
       await expect
         .poll(async () => (await findSettings("alice"))?.appearance?.theme)
         .toBe("light");
@@ -122,6 +196,12 @@ test.describe("on a narrow screen", () => {
   test("the drawer closes after choosing a view", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Menu" }).click();
+    const drawer = page.getByRole("dialog", { name: "Menu" });
+    await expect(
+      drawer.getByRole("button", { name: "Settings" }),
+    ).toBeVisible();
+    for (const name of OLD_ITEMS)
+      await expect(drawer.getByRole("button", { name })).toHaveCount(0);
     await page.getByRole("link", { name: "Folders" }).click();
     await expect(page).toHaveURL("/en/stories");
     await expect(page.getByRole("dialog")).toBeHidden();

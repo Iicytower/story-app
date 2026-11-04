@@ -98,7 +98,7 @@ export function countActionRequests(page: Page) {
   return requests;
 }
 
-// Views, the theme and logging out live in the sidebar, a drawer on narrow screens.
+// Views and the settings live in the sidebar, a drawer on narrow screens.
 export async function sidebarAction(page: Page, name: string) {
   const menu = page.getByRole("button", { name: "Menu", exact: true });
   // The drawer of a previous action may still be animating away.
@@ -108,4 +108,23 @@ export async function sidebarAction(page: Page, name: string) {
     .getByRole("navigation", { name: "Main" })
     .getByRole(name === "Folders" ? "link" : "button", { name, exact: true })
     .click();
+}
+
+// Opens the settings dialog from the sidebar (D50).
+export async function openSettings(page: Page) {
+  await sidebarAction(page, "Settings");
+  return page.getByRole("dialog", { name: "Settings" });
+}
+
+// Picks a theme in the settings dialog and saves it; the dialog stays open.
+export async function saveTheme(
+  page: Page,
+  theme: "Light" | "Dark" | "System",
+) {
+  const dialog = await openSettings(page);
+  await dialog.getByLabel("Theme").selectOption({ label: theme });
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await expect(dialog.getByRole("button", { name: "Save" })).toBeDisabled();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
 }
