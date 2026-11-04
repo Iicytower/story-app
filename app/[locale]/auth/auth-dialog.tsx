@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,21 +13,33 @@ import {
 import { LoginForm } from "./login-form";
 import { RegisterForm } from "./register-form";
 
+type Mode = "login" | "register";
+
 export function AuthDialog({
-  defaultOpen,
+  defaultOpen = false,
   callbackUrl,
+  initialMode = "login",
+  trigger,
 }: {
-  defaultOpen: boolean;
+  defaultOpen?: boolean;
   callbackUrl: string;
+  initialMode?: Mode;
+  // Defaults to the "Log in / Create account" button.
+  trigger?: ReactNode;
 }) {
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<Mode>(initialMode);
   const registering = mode === "register";
   const t = useTranslations("auth");
 
   return (
-    <Dialog defaultOpen={defaultOpen}>
+    <Dialog
+      defaultOpen={defaultOpen}
+      onOpenChange={(open) => {
+        if (open) setMode(initialMode);
+      }}
+    >
       <DialogTrigger asChild>
-        <Button variant="outline">{t("openDialog")}</Button>
+        {trigger ?? <Button variant="outline">{t("openDialog")}</Button>}
       </DialogTrigger>
       <DialogContent
         aria-describedby={undefined}

@@ -35,7 +35,7 @@ Aplikacja webowa do pisania opowiadań (docelowo publiczna, D46) w markdown (Nex
 
 ## Zasady projektu
 
-- UI wielojęzyczne (D46): angielski i polski, wybór w sidebarze; tylko desktop, dark mode.
+- UI wielojęzyczne (D46): angielski i polski, wybór w sidebarze; dark mode. Projektowane pod desktop; strona główna (D54) i edytor (D12) działają też na wąskim ekranie.
 - Wielu użytkowników (D1): każde zapytanie o `stories` filtruje po `userId` z sesji; cudze = `NOT_FOUND`/404. `userId` nigdy z wejścia klienta.
 - Odczyt: Server Components bezpośrednio z bazy. Zapis: Server Actions. Route Handlers tylko dla eksportu i Auth.js.
 - Każda Server Action sprawdza sesję i zwraca `{ ok: true, ... } | { ok: false, error, message }` – nie rzuca wyjątków.

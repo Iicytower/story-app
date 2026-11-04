@@ -6,7 +6,6 @@ import {
   MenuIcon,
   PanelLeftCloseIcon,
   PanelLeftOpenIcon,
-  SearchIcon,
   SettingsIcon,
 } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
@@ -31,6 +30,7 @@ function NavLink({
   icon,
   compact,
   current,
+  prefetch,
   onClick,
 }: {
   href: string;
@@ -38,6 +38,7 @@ function NavLink({
   icon: ReactNode;
   compact: boolean;
   current?: boolean;
+  prefetch?: false;
   onClick: () => void;
 }) {
   const link = (
@@ -46,6 +47,7 @@ function NavLink({
         href={href}
         aria-label={label}
         aria-current={current ? "page" : undefined}
+        prefetch={prefetch}
         onClick={onClick}
       >
         {icon}
@@ -106,14 +108,10 @@ function NavItems({
         label={t("home")}
         icon={<HouseIcon />}
         compact={compact}
-        onClick={onDone}
-      />
-      <NavLink
-        href="/"
-        label={t("search")}
-        icon={<SearchIcon />}
-        compact={compact}
         current={pathname === "/"}
+        // Rendering the home page reads the public lists; a prefetch from every page,
+        // also the editor, would do it on each visit.
+        prefetch={false}
         onClick={onDone}
       />
       <NavLink
