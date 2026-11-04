@@ -4,6 +4,7 @@ import { FileDownIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { WithTooltip } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -88,12 +89,14 @@ export function ExportDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <FileDownIcon />
-          <span className="sr-only md:not-sr-only">{t("exportAs")}</span>
-        </Button>
-      </DialogTrigger>
+      <WithTooltip label={t("exportAs")} className="md:hidden">
+        <DialogTrigger asChild>
+          <Button variant="outline">
+            <FileDownIcon />
+            <span className="sr-only md:not-sr-only">{t("exportAs")}</span>
+          </Button>
+        </DialogTrigger>
+      </WithTooltip>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>

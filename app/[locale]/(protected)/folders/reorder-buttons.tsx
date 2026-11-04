@@ -4,6 +4,7 @@ import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { WithTooltip } from "@/components/ui/tooltip";
 import type { ActionResult } from "@/lib/action-result";
 import type { Direction } from "@/lib/folders/sort";
 
@@ -37,26 +38,28 @@ export function ReorderButtons({
           {error}
         </p>
       )}
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label={t("moveUp", { name })}
-        title={t("up")}
-        disabled={pending || isFirst}
-        onClick={() => move("up")}
-      >
-        <ArrowUpIcon />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label={t("moveDown", { name })}
-        title={t("down")}
-        disabled={pending || isLast}
-        onClick={() => move("down")}
-      >
-        <ArrowDownIcon />
-      </Button>
+      <WithTooltip label={t("moveUp", { name })}>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={t("moveUp", { name })}
+          disabled={pending || isFirst}
+          onClick={() => move("up")}
+        >
+          <ArrowUpIcon />
+        </Button>
+      </WithTooltip>
+      <WithTooltip label={t("moveDown", { name })}>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={t("moveDown", { name })}
+          disabled={pending || isLast}
+          onClick={() => move("down")}
+        >
+          <ArrowDownIcon />
+        </Button>
+      </WithTooltip>
     </>
   );
 }

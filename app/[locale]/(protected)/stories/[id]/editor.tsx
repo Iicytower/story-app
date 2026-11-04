@@ -22,6 +22,7 @@ import {
 } from "react";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { Button } from "@/components/ui/button";
+import { WithTooltip } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import {
   ResizableHandle,
@@ -362,16 +363,21 @@ export function Editor({
           fallbackName="story"
           beforeExport={saveForExport}
         />
-        <Button
-          variant="outline"
-          onClick={togglePublished}
-          disabled={publishPending}
+        <WithTooltip
+          label={publicPath ? tFolders("unpublish") : tFolders("publish")}
+          className="md:hidden"
         >
-          <GlobeIcon />
-          <span className="sr-only md:not-sr-only">
-            {publicPath ? tFolders("unpublish") : tFolders("publish")}
-          </span>
-        </Button>
+          <Button
+            variant="outline"
+            onClick={togglePublished}
+            disabled={publishPending}
+          >
+            <GlobeIcon />
+            <span className="sr-only md:not-sr-only">
+              {publicPath ? tFolders("unpublish") : tFolders("publish")}
+            </span>
+          </Button>
+        </WithTooltip>
         <DeleteStoryButton
           id={story.id}
           title={title}
@@ -397,12 +403,17 @@ export function Editor({
             onFocus={(event) => event.target.select()}
             className="h-8 max-w-xl min-w-0"
           />
-          <Button variant="outline" size="sm" onClick={copyPublicUrl}>
-            {copied ? <CheckIcon /> : <CopyIcon />}
-            <span className="sr-only md:not-sr-only">
-              {copied ? tFolders("copied") : tFolders("copyLink")}
-            </span>
-          </Button>
+          <WithTooltip
+            label={copied ? tFolders("copied") : tFolders("copyLink")}
+            className="md:hidden"
+          >
+            <Button variant="outline" size="sm" onClick={copyPublicUrl}>
+              {copied ? <CheckIcon /> : <CopyIcon />}
+              <span className="sr-only md:not-sr-only">
+                {copied ? tFolders("copied") : tFolders("copyLink")}
+              </span>
+            </Button>
+          </WithTooltip>
         </div>
       )}
       {isDesktop ? (
@@ -464,15 +475,16 @@ export function Editor({
                           </button>
                         ))}
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={t("hide", { panel: sideName })}
-                        title={t("hide", { panel: sideName })}
-                        onClick={() => setCollapsed(layout.tab, true)}
-                      >
-                        <PanelRightCloseIcon />
-                      </Button>
+                      <WithTooltip label={t("hide", { panel: sideName })}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={t("hide", { panel: sideName })}
+                          onClick={() => setCollapsed(layout.tab, true)}
+                        >
+                          <PanelRightCloseIcon />
+                        </Button>
+                      </WithTooltip>
                     </div>
                     <div className="relative min-h-0 flex-1">
                       {SIDE_PANELS.map((side) => (
@@ -488,15 +500,16 @@ export function Editor({
           </ResizablePanelGroup>
           {!sideOpen && (
             <div className="flex flex-col gap-1 border-l p-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={t("show", { panel: sideName })}
-                title={t("show", { panel: sideName })}
-                onClick={() => setCollapsed(layout.tab, false)}
-              >
-                <PanelRightOpenIcon />
-              </Button>
+              <WithTooltip label={t("show", { panel: sideName })} side="left">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t("show", { panel: sideName })}
+                  onClick={() => setCollapsed(layout.tab, false)}
+                >
+                  <PanelRightOpenIcon />
+                </Button>
+              </WithTooltip>
             </div>
           )}
         </div>

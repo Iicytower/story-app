@@ -4,6 +4,7 @@ import { TagIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useId, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { WithTooltip } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogClose,
@@ -33,22 +34,26 @@ export function TagsDialog(props: TagsDialogProps) {
   const t = useTranslations("tags");
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {props.compact ? (
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={t("tagsFor", { name: props.name })}
-          >
-            <TagIcon />
-          </Button>
-        ) : (
+      {props.compact ? (
+        <WithTooltip label={t("tagsFor", { name: props.name })}>
+          <DialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={t("tagsFor", { name: props.name })}
+            >
+              <TagIcon />
+            </Button>
+          </DialogTrigger>
+        </WithTooltip>
+      ) : (
+        <DialogTrigger asChild>
           <Button variant="outline">
             <TagIcon />
             {t("tags")}
           </Button>
-        )}
-      </DialogTrigger>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <TagsForm {...props} onDone={() => setOpen(false)} />
       </DialogContent>
@@ -103,13 +108,17 @@ function TagsForm({
               className="bg-muted flex items-center gap-1 rounded-full py-0.5 pr-1 pl-2 text-xs"
             >
               {tag}
-              <button
-                type="button"
-                aria-label={t("remove", { tag })}
-                onClick={() => setTags(tags.filter((other) => other !== tag))}
-              >
-                <XIcon className="size-3" />
-              </button>
+              <WithTooltip label={t("remove", { tag })}>
+                <button
+                  type="button"
+                  aria-label={t("remove", { tag })}
+                  onClick={() =>
+                    setTags(tags.filter((other) => other !== tag))
+                  }
+                >
+                  <XIcon className="size-3" />
+                </button>
+              </WithTooltip>
             </li>
           ))}
           {inherited.map((tag) => (

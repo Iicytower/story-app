@@ -4,6 +4,7 @@ import { FolderInputIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { WithTooltip } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogClose,
@@ -31,15 +32,17 @@ export function MoveStoryDialog({
   const t = useTranslations("folders");
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={t("moveStory", { title })}
-        >
-          <FolderInputIcon />
-        </Button>
-      </DialogTrigger>
+      <WithTooltip label={t("moveStory", { title })}>
+        <DialogTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t("moveStory", { title })}
+          >
+            <FolderInputIcon />
+          </Button>
+        </DialogTrigger>
+      </WithTooltip>
       <DialogContent>
         <MoveStoryForm
           id={id}

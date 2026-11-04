@@ -19,6 +19,7 @@ import {
   settingsReopenRequested,
 } from "@/components/settings-dialog";
 import { Button } from "@/components/ui/button";
+import { WithTooltip } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { applyTheme } from "@/lib/theme";
 
@@ -39,11 +40,10 @@ function NavLink({
   current?: boolean;
   onClick: () => void;
 }) {
-  return (
+  const link = (
     <Button variant={current ? "secondary" : "ghost"} asChild className={ITEM}>
       <Link
         href={href}
-        title={label}
         aria-label={label}
         aria-current={current ? "page" : undefined}
         onClick={onClick}
@@ -52,6 +52,13 @@ function NavLink({
         {!compact && label}
       </Link>
     </Button>
+  );
+  return compact ? (
+    <WithTooltip label={label} side="right">
+      {link}
+    </WithTooltip>
+  ) : (
+    link
   );
 }
 
@@ -66,17 +73,18 @@ function ActionButton({
   compact: boolean;
   onClick: () => void;
 }) {
-  return (
-    <Button
-      variant="ghost"
-      title={label}
-      aria-label={label}
-      className={ITEM}
-      onClick={onClick}
-    >
+  const button = (
+    <Button variant="ghost" aria-label={label} className={ITEM} onClick={onClick}>
       {icon}
       {!compact && label}
     </Button>
+  );
+  return compact ? (
+    <WithTooltip label={label} side="right">
+      {button}
+    </WithTooltip>
+  ) : (
+    button
   );
 }
 
@@ -158,16 +166,17 @@ export function AppSidebar({
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        aria-label={t("menu")}
-        title={t("menu")}
-        className="absolute top-1 left-1 z-40 md:hidden"
-        onClick={() => setDrawerOpen(true)}
-      >
-        <MenuIcon />
-      </Button>
+      <WithTooltip label={t("menu")} side="right">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t("menu")}
+          className="absolute top-1 left-1 z-40 md:hidden"
+          onClick={() => setDrawerOpen(true)}
+        >
+          <MenuIcon />
+        </Button>
+      </WithTooltip>
       <Dialog open={drawerOpen} onOpenChange={setDrawerOpen}>
         <DialogContent
           aria-describedby={undefined}

@@ -4,6 +4,7 @@ import { GlobeIcon, GlobeLockIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { WithTooltip } from "@/components/ui/tooltip";
 import { setChapterPublished } from "../../stories/actions";
 
 export function PublishChapterButton({
@@ -20,19 +21,20 @@ export function PublishChapterButton({
   const label = t(isPublic ? "unpublishChapter" : "publishChapter", { title });
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      aria-label={label}
-      title={label}
-      disabled={pending}
-      onClick={() =>
-        startTransition(async () => {
-          await setChapterPublished(id, !isPublic);
-        })
-      }
-    >
-      {isPublic ? <GlobeIcon /> : <GlobeLockIcon />}
-    </Button>
+    <WithTooltip label={label}>
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label={label}
+        disabled={pending}
+        onClick={() =>
+          startTransition(async () => {
+            await setChapterPublished(id, !isPublic);
+          })
+        }
+      >
+        {isPublic ? <GlobeIcon /> : <GlobeLockIcon />}
+      </Button>
+    </WithTooltip>
   );
 }

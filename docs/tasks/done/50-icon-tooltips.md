@@ -17,6 +17,9 @@ Zgłoszenie użytkownika (2026-11-03). Przyciski bez widocznego opisu (np. tagi,
 
 - Stylizowany tooltip, nie natywny `title` (decyzja użytkownika): w kolorach aplikacji, krótkie opóźnienie, pokazuje się też przy fokusie z klawiatury.
 - Przyciski z widoczną etykietą nie dostają tooltipa.
+- Przyciski, które chowają etykietę tylko na wąskim ekranie (eksport, import, publikacja, kopiowanie linku), mają tooltip ukryty od `md`, gdzie etykieta jest widoczna. Sidebar ma tooltipy tylko po zwinięciu.
+- Tooltip przy fokusie pokazuje się tylko przy `:focus-visible`, więc fokus wracający do przycisku po zamknięciu dialogu myszą go nie otwiera.
+- Treść tooltipa nie łapie kursora (`pointer-events-none`, `disableHoverableContent`), więc nie zasłania sąsiednich przycisków.
 
 ## Kryteria akceptacji
 
