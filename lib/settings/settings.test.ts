@@ -29,13 +29,19 @@ describe("normalizeSettings", () => {
       normalizeSettings({
         userId: "x",
         appearance: { theme: "dark" },
-        editor: { mobileView: "preview", layout: { split: true, tab: 3 } },
+        editor: {
+          mobileView: "preview",
+          layout: { tab: 3, collapsed: { tools: true } },
+        },
         folders: { sort: "alpha", manualOrder: "yes" },
         other: { a: 1 },
       }),
     ).toEqual({
       editor: {
-        layout: { ...DEFAULT_LAYOUT, split: true },
+        layout: {
+          ...DEFAULT_LAYOUT,
+          collapsed: { notes: false, chapters: false, tools: true },
+        },
         mobileView: "story",
       },
       appearance: { sidebarCollapsed: false, theme: "dark", locale: null },
@@ -78,9 +84,9 @@ describe("parseSettingsPatch", () => {
   it("normalizes the layout like stored data", () => {
     expect(
       parseSettingsPatch({
-        editor: { layout: { split: true, widths: { x: {} } } },
+        editor: { layout: { tab: "tools", widths: { x: {} } } },
       }),
-    ).toEqual({ editor: { layout: { ...DEFAULT_LAYOUT, split: true } } });
+    ).toEqual({ editor: { layout: { ...DEFAULT_LAYOUT, tab: "tools" } } });
   });
 
   it("rejects invalid values, unknown fields, folder settings and an empty patch", () => {

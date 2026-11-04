@@ -88,7 +88,7 @@ test("separators resize the columns and the notes split, and the layout survives
   await expect
     .poll(async () => (await findSettings("alice"))?.editor?.layout)
     .toMatchObject({
-      widths: { "story,side": expect.any(Object) },
+      widths: { "story-column": expect.any(Number) },
       notesHeights: expect.any(Object),
     });
   await page.reload();
@@ -99,51 +99,32 @@ test("separators resize the columns and the notes split, and the layout survives
     .toBeCloseTo(resizedHeight, -1);
 });
 
-test("splits the side panel, reorders and collapses the columns", async ({
+test("there is no Split mode; a hidden side panel stays hidden after a reload", async ({
   page,
 }) => {
   const { first } = await seedBook();
   await page.goto(`/stories/${first}`);
   const e = editor(page);
+  await expect(e.notes).toBeVisible();
+  await expect(page.getByRole("button", { name: "Split" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^Move / })).toHaveCount(0);
 
   await e.sideTab("Chapters").click();
   await expect(e.chapters).toBeVisible();
-  await expect(e.notes).toBeHidden();
-
-  await page.getByRole("button", { name: "Split" }).click();
-  await expect(e.notes).toBeVisible();
-  await expect(e.chapters).toBeVisible();
-  const x = async (locator: ReturnType<Page["getByRole"]>) =>
-    (await locator.boundingBox())!.x;
-  expect(await x(e.notes)).toBeLessThan(await x(e.chapters));
-  await expect(
-    page.getByRole("button", { name: "Move notes left" }),
-  ).toBeDisabled();
-
-  await page.getByRole("button", { name: "Move notes right" }).click();
-  await expect
-    .poll(async () => (await x(e.chapters)) < (await x(e.notes)))
-    .toBe(true);
-
   await page.getByRole("button", { name: "Hide chapters" }).click();
   await expect(e.chapters).toBeHidden();
-  await expect(e.notes).toBeVisible();
-  await page.getByRole("button", { name: "Hide notes" }).click();
   await expect(e.notes).toBeHidden();
-  const contentWidth = (await e.content.boundingBox())!.width;
-  expect(contentWidth).toBeGreaterThan(500);
+  expect((await e.content.boundingBox())!.width).toBeGreaterThan(500);
 
   await expect
     .poll(async () => (await findSettings("alice"))?.editor?.layout)
-    .toMatchObject({ collapsed: { notes: true, chapters: true } });
+    .toMatchObject({ tab: "chapters", collapsed: { chapters: true } });
   await page.reload();
   await expect(e.content).toBeVisible();
-  await expect(e.notes).toBeHidden();
+  await expect(e.chapters).toBeHidden();
   await page.getByRole("button", { name: "Show chapters" }).click();
-  await page.getByRole("button", { name: "Show notes" }).click();
-  await expect(e.notes).toBeVisible();
   await expect(e.chapters).toBeVisible();
-  expect(await x(e.chapters)).toBeLessThan(await x(e.notes));
+  await expect(e.sideTab("Chapters")).toHaveAttribute("aria-selected", "true");
 });
 
 test("Tools shows tiles, and a tile opens its tool in a dialog", async ({
@@ -211,61 +192,7 @@ test("the side panel keeps one width across its tabs", async ({ page }) => {
   expect((await e.content.boundingBox())!.width).toBeCloseTo(resized, 0);
 });
 
-test("Tools works as a Split column: move, hide, show and resize", async ({
-  page,
-}) => {
-  const { first } = await seedBook();
-  await page.goto(`/stories/${first}`);
-  const e = editor(page);
-  const x = async (locator: ReturnType<Page["getByRole"]>) =>
-    (await locator.boundingBox())!.x;
-
-  await page.getByRole("button", { name: "Split" }).click();
-  await expect(e.tools).toBeVisible();
-  expect(await x(e.chapters)).toBeLessThan(await x(e.tools));
-  expect((await e.content.boundingBox())!.width).toBeGreaterThan(300);
-  await expect(
-    page.getByRole("button", { name: "Move tools right" }),
-  ).toBeDisabled();
-
-  await page.getByRole("button", { name: "Move tools left" }).click();
-  await expect
-    .poll(async () => (await x(e.tools)) < (await x(e.chapters)))
-    .toBe(true);
-
-  // Past a hidden column, a move still has to change something on screen.
-  await page.getByRole("button", { name: "Hide chapters" }).click();
-  await page.getByRole("button", { name: "Move tools left" }).click();
-  await expect
-    .poll(async () => (await x(e.tools)) < (await x(e.notes)))
-    .toBe(true);
-  await page.getByRole("button", { name: "Show chapters" }).click();
-  await expect(e.chapters).toBeVisible();
-
-  const tile = e.tools.getByRole("button", { name: "Rhymes" });
-  const tileWidth = (await tile.boundingBox())!.width;
-  const column = page.getByRole("separator", { name: "Resize tools column" });
-  await column.focus();
-  for (let i = 0; i < 5; i++) await column.press("ArrowRight");
-  await expect
-    .poll(async () => (await tile.boundingBox())!.width)
-    .not.toBeCloseTo(tileWidth, 0);
-
-  await page.getByRole("button", { name: "Hide tools" }).click();
-  await expect(e.tools).toBeHidden();
-  await expect
-    .poll(async () => (await findSettings("alice"))?.editor?.layout)
-    .toMatchObject({
-      order: ["tools", "notes", "chapters"],
-      collapsed: { tools: true },
-    });
-  await page.reload();
-  await expect(e.tools).toBeHidden();
-  await page.getByRole("button", { name: "Show tools" }).click();
-  await expect(e.tools).toBeVisible();
-});
-
-test("a stored Split layout from before Tools stays as it was", async ({
+test("a stored Split layout shows the tabs with the saved tab width", async ({
   page,
 }) => {
   const { first } = await seedBook();
@@ -273,15 +200,17 @@ test("a stored Split layout from before Tools stays as it was", async ({
     editor: {
       layout: {
         split: true,
-        tab: "notes",
-        order: ["chapters", "notes"],
-        collapsed: { notes: false, chapters: false },
+        tab: "chapters",
+        order: ["tools", "chapters", "notes"],
+        collapsed: { notes: false, chapters: false, tools: false },
         widths: {
-          "story,chapters,notes": {
+          "story,tools,chapters,notes": {
             "story-column": 40,
-            "chapters-column": 40,
+            "tools-column": 20,
+            "chapters-column": 20,
             "notes-column": 20,
           },
+          "story,side": { "story-column": 50, "side-column": 50 },
         },
       },
     },
@@ -289,15 +218,13 @@ test("a stored Split layout from before Tools stays as it was", async ({
   await page.goto(`/stories/${first}`);
   const e = editor(page);
 
-  await expect(e.notes).toBeVisible();
+  await expect(e.sideTab("Chapters")).toHaveAttribute("aria-selected", "true");
   await expect(e.chapters).toBeVisible();
+  await expect(e.notes).toBeHidden();
   await expect(e.tools).toBeHidden();
-  const box = (await e.chapters.boundingBox())!;
-  expect(box.x).toBeLessThan((await e.notes.boundingBox())!.x);
-  expect(box.width).toBeGreaterThan(400);
-
-  await page.getByRole("button", { name: "Show tools" }).click();
-  await expect(e.tools).toBeVisible();
+  const side = (await e.chapters.boundingBox())!;
+  const story = (await e.content.boundingBox())!;
+  expect(side.width).toBeGreaterThan(story.width * 0.7);
 });
 
 test("folder and chapter notes save separately; folder notes show in another chapter", async ({
@@ -480,7 +407,7 @@ test("works with the default layout when localStorage throws", async ({
   const e = editor(page);
   await expect(e.content).toHaveText("First content");
   await expect(e.notes).toBeVisible();
-  await page.getByRole("button", { name: "Split" }).click();
+  await e.sideTab("Chapters").click();
   await expect(e.chapters).toBeVisible();
   await e.content.fill("Saved without storage");
   await runAutosaveDelay(page);

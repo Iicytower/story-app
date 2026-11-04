@@ -14,6 +14,7 @@ Zgłoszenie użytkownika (2026-11-03). Przycisk „Split” zamienia prawy panel
 
 - Usuwamy też kod pod spodem, nie tylko przycisk (decyzja użytkownika).
 - Bez migracji: stare pola `split`, `order` i szerokości kolumn w bazie są ignorowane przy odczycie i nadpisywane przy kolejnym zapisie układu.
+- Szerokość zakładek z dawnego klucza `story,side` jest przenoszona do nowego `widths` przy odczycie (D51).
 
 ## Kryteria akceptacji
 
