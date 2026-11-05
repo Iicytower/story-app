@@ -48,7 +48,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-01): najp
 | 29 | [LanguageTool na serwerze, akcja sprawdzania i język folderu](29-languagetool.md) | 28 | [ ] |
 | 23 | [Korekta tekstu w dialogu](23-proofreading.md) | 27, 29 | [ ] |
 | 30 | [Słownik użytkownika w korekcie](30-user-dictionary.md) | 23 | [ ] |
-| 53 | [Projekt systemu społecznościowego i plan tasków](53-social-system-plan.md) | – | [ ] |
+| 53 | [Projekt systemu społecznościowego i plan tasków](53-social-system-plan.md) (zawieszony) | – | [ ] |
 
 ## Backlog
 
