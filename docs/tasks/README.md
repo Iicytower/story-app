@@ -49,7 +49,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 51 | [Poprawa wyglądu (mobile i web)](51-ui-polish.md) | – | [ ] |
 | 26 | [Upload okładek](26-cover-upload.md) | – | [ ] |
 | 40 | [Wyświetlanie okładek](40-cover-display.md) | 26 | [ ] |
-| 28 | [Serwer na Mikrusie](28-mikrus-server.md) | 54, 25, 29 | [ ] |
+| 28 | [Serwer na Mikrusie](28-mikrus-server.md) | 54, 25, 29 | [~] |
 | 53 | [Projekt systemu społecznościowego i plan tasków](53-social-system-plan.md) (zawieszony) | – | [ ] |
 
 ## Backlog

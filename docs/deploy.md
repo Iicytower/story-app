@@ -105,6 +105,85 @@ npm run up
 
 Reset generuje nowe sekrety i nowe hasło admina. Usuwać zawsze razem wolumeny i `.tools/`: same `.tools/` przy starych wolumenach daje Coolify nowe `APP_KEY` i hasła niezgodne z bazą, a same `.tools/ssh` – klucz niezgodny z zapisanym w Coolify. Nie używać `docker compose down -v`: usunęłoby też wolumen `mongo-data` z lokalną bazą.
 
+## Serwer narzędzi na Mikrusie (task 28)
+
+Produkcyjny odpowiednik lokalnego serwera narzędzi: ten sam stos (Coolify 4.6.0, bramka Caddy z `X-Tools-Secret`, LanguageTool, serwis słownikowy), ale Coolify stoi na samym VPS-ie i wdraża usługę na własny host (serwer `localhost` z instalatora). Wszystko robi `npm run tools:remote` z Twojego komputera przez SSH, a bazy wysyła `npm run dict:upload:remote`. Produkcja i staging używają jednego serwera i jednego sekretu.
+
+Skrypt sprawdzony na „fałszywym Mikrusie” (kontener Ubuntu 24.04 z systemd i SSH, profil `fake-mikrus` w `docker-compose.yml`). Na prawdziwym Mikrusie nie sprawdzono jeszcze: Dockera i Coolify w kontenerze LXC, `wykr.es` przed bramką, opóźnienia z Vercela i restartu maszyny. To kryteria taska 28 do odhaczenia przy pierwszym wdrożeniu.
+
+### Pierwsze wdrożenie
+
+1. **Zakup:** Mikrus 3.5 (4 GB RAM, 40 GB dysku) na [mikr.us](https://mikr.us/), system **Ubuntu 24.04**. Z maila zapisz nazwę serwera (`srvNN`), numer ID i hasło roota.
+2. **Porty** (bez klikania w panelu): SSH to `10000+ID`, bramka dostaje domyślny port z puli `20000+ID`. Publiczny adres bramki to `https://srvNN-20ID.wykr.es` (np. ID 123 → `srv12-20123.wykr.es`). Subdomena `wykr.es` działa sama, a SSL zapewnia Mikrus.
+3. **Klucz SSH** (raz, z hasłem z maila): `ssh-copy-id -p 10ID root@srvNN.mikr.us`. Potem sprawdź logowanie bez hasła: `ssh -p 10ID root@srvNN.mikr.us true`.
+4. **Konfiguracja:** utwórz `.tools/mikrus/remote.env` (katalog w `.gitignore`):
+   ```sh
+   SSH_HOST=srvNN.mikr.us
+   SSH_PORT=10ID
+   GATEWAY_PORT=20ID
+   TOOLS_API_URL=https://srvNN-20ID.wykr.es
+   # SSH_USER=root (domyślnie), SSH_KEY=ścieżka do klucza, jeśli nie ten z ~/.ssh
+   ```
+5. **Instalacja i wdrożenie:** `npm run tools:remote`. Pierwszy raz trwa ok. 15–25 min (Docker, Coolify, obraz LanguageTool 0,75 GB). Skrypt:
+   - zapisuje `docker/mikrus/docker-compose.custom.yml` jako override Coolify, więc panel (8000, 6001, 6002) słucha tylko na `127.0.0.1`;
+   - instaluje Dockera (skryptem Mikrusa `chce_dockera.sh`, gdy jest) i Coolify w wersji 4.6.0;
+   - przez tunel SSH zakłada konto admina, wyłącza rejestrację i automatyczne aktualizacje, tworzy token API;
+   - wyłącza proxy (Traefik) na serwerze `localhost`;
+   - wdraża usługę `story-app-tools` z `docker/tools/compose.yml` z `GATEWAY_PORT` i sekretem;
+   - czeka na `/health` i rozgrzewa LanguageTool przez publiczny adres.
+
+   Sekrety (hasło admina, `TOOLS_API_SECRET`) skrypt generuje w `.tools/mikrus/tools.env` i nigdy ich nie wypisuje. Na końcu podaje, co ustawić na Vercelu.
+6. **Bazy słownikowe:** `npm run dict:build` (jeśli nie ma ich w `.tools/dict/`), potem `npm run dict:upload:remote`. Wysyłka idzie przez SSH z kompresją (ok. 1,2 GB, w tym rymy ok. 730 MB). Przerwana wysyłka zostawia starą bazę, więc wystarczy ją powtórzyć. Kolejność przy zmianie schematu bazy: najpierw baza, potem `npm run tools:remote` (D65).
+7. **Vercel:** Settings → Environment Variables, tylko po stronie serwera (bez `NEXT_PUBLIC_`), dla **Production** oraz **Preview z branchem `staging`**:
+   - `TOOLS_API_URL` = `https://srvNN-20ID.wykr.es`
+   - `TOOLS_API_SECRET` = wartość `TOOLS_API_SECRET` z `.tools/mikrus/tools.env`
+
+   Potem Redeploy obu środowisk. Bez tych zmiennych narzędzia pokazują „not available” (D56).
+8. **Sprawdzenie** (kryteria taska 28):
+   ```sh
+   URL=https://srvNN-20ID.wykr.es
+   set -a; source <(grep TOOLS_API_SECRET .tools/mikrus/tools.env); set +a
+   curl -s -o /dev/null -w "%{http_code}\n" "$URL/health"                                         # 401
+   curl -s -o /dev/null -w "%{http_code}\n" -H "X-Tools-Secret: $TOOLS_API_SECRET" "$URL/health"  # 200
+   curl -s -H "X-Tools-Secret: $TOOLS_API_SECRET" "$URL/dict/health"                               # daty baz
+   curl -s -o /dev/null -w "%{time_total}\n" -H "X-Tools-Secret: $TOOLS_API_SECRET" "$URL/health" # opóźnienie
+   ssh -p 10ID root@srvNN.mikr.us 'ip -6 addr show scope global'    # adres IPv6 serwera
+   curl -g -s -m 5 -o /dev/null -w "%{http_code}\n" "http://[IPv6]:20ID/health"   # 401
+   curl -g -s -m 5 "http://[IPv6]:8000" || echo "panel niedostępny – dobrze"
+   ```
+   Restart: `ssh -p 10ID root@srvNN.mikr.us reboot`, potem `/health` z sekretem znowu daje 200 (usługi mają `restart: unless-stopped`; na fałszywym Mikrusie po ok. 10 s). LanguageTool przez pierwsze kilkadziesiąt sekund odpowiada 502, a aplikacja pokazuje wtedy „not available”. Na końcu smoke test narzędzi na stagingu (sekcja „Smoke test”, kroki 7–8).
+
+### Obsługa
+
+- **Panel Coolify:** `ssh -N -L 8000:127.0.0.1:8000 -p 10ID root@srvNN.mikr.us`, potem `http://localhost:8000`. Login `admin@story-app.localhost`, hasło w `.tools/mikrus/tools.env`.
+- **Zmiana `docker/tools/compose.yml` lub Caddyfile:** `npm run tools:remote` (idempotentny; restartuje usługę, gdy plik się zmienił, jak lokalnie).
+- **Wymiana sekretu:** nowa wartość `TOOLS_API_SECRET` w `.tools/mikrus/tools.env` (`openssl rand -hex 32`), `npm run tools:remote`, potem ta sama wartość na Vercelu (Production i Preview `staging`) i Redeploy. Do czasu Redeployu narzędzia odpowiadają 401, a aplikacja pokazuje „not available”.
+- **Logi:** `ssh -p 10ID root@srvNN.mikr.us 'docker ps --format "{{.Names}} {{.Status}}"'`, potem `docker logs --tail 100 <nazwa>`.
+- **Aktualizacja Coolify:** automatyczne aktualizacje są wyłączone. Nową wersję trzeba najpierw sprawdzić lokalnie (obraz w `docker-compose.yml`), potem zmienić `COOLIFY_VERSION` w `scripts/tools.ts` i na serwerze uruchomić `curl -fsSL https://cdn.coollabs.io/coolify/install.sh | bash -s <wersja>`.
+- **Kopia `.tools/mikrus/` i `/data/coolify/source/.env` z serwera** (klucze Coolify, instalator o to prosi): trzymaj je w menedżerze haseł. Bez `tools.env` skrypt wygeneruje nowe hasło admina i nowy sekret (wtedy trzeba zmienić Vercel), a stare konto admina zostanie z dawnym hasłem.
+- **Bazy po przebudowie formy:** przebuduj i wgraj też rymy (przechowują id lematów).
+
+### Problemy
+
+- **Docker nie startuje w LXC:** na Mikrusie uruchom `cd /opt/noobs/scripts && ./chce_dockera.sh`, potem ponownie `npm run tools:remote`.
+- **„toomanyrequests” z Docker Huba:** polecenie Mikrusa `docker_proxy` na serwerze, potem ponownie `npm run tools:remote`.
+- **Walidacja serwera w Coolify:** błąd z `validation_logs` pokazuje skrypt. Po poprawce użyj Validate przy serwerze `localhost` w panelu albo uruchom skrypt ponownie.
+- **`wykr.es` nie odpowiada:** sprawdź bramkę na serwerze: `ssh … 'curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:20ID/health'` (401 = bramka działa, problem po stronie subdomeny). Nie wiadomo jeszcze, czy proxy `wykr.es` mówi do portu po HTTP (tak zakładamy).
+- **Zmiana klucza hosta SSH** (np. reinstalacja systemu): usuń `.tools/mikrus/known_hosts`.
+
+### Test na fałszywym Mikrusie
+
+```sh
+mkdir -p -m 700 .tools/fake-mikrus
+ssh-keygen -q -t ed25519 -N '' -f .tools/fake-mikrus/id_ed25519
+printf 'SSH_HOST=127.0.0.1\nSSH_PORT=10022\nSSH_KEY=.tools/fake-mikrus/id_ed25519\nGATEWAY_PORT=20110\nTOOLS_API_URL=http://127.0.0.1:20110\n' > .tools/fake-mikrus/remote.env
+docker compose --profile fake-mikrus up -d --build fake-mikrus
+TOOLS_REMOTE_DIR=.tools/fake-mikrus npm run tools:remote
+TOOLS_REMOTE_DIR=.tools/fake-mikrus npm run dict:upload:remote
+```
+
+Kontener ma systemd i nie ma Dockera, jak świeży VPS (potrzebuje `privileged` i `cgroup: host`). Wolumen `/var/lib/containerd` jest potrzebny, bo Docker 29 trzyma tam obrazy, a na overlayu kontenera ich warstwy się nie rozpakowują (na LXC Mikrusa tego problemu nie ma). Wynik (2026-11-06): pierwsze `npm run tools:remote` ok. 6 min, kolejne 36 s; `dict:upload:remote` 83 s; po restarcie kontenera wszystko wstaje samo, bez Traefika; panel tylko na `127.0.0.1`. Usunięcie: `docker compose --profile fake-mikrus down` i `docker volume rm story_app_fake-mikrus-docker story_app_fake-mikrus-containerd story_app_fake-mikrus-data`, potem `rm .tools/fake-mikrus/known_hosts` (nowe klucze hosta).
+
 ## Backup bazy
 
 `scripts/backup.sh` (D26): sam bash + Docker (`mongodump` i `mongoexport` w kontenerze `mongo:8`), bez Node i kodu aplikacji, więc da się go skopiować i uruchomić np. na VPS. Uruchamia użytkownik: `npm run backup` albo `bash scripts/backup.sh`.
@@ -155,3 +234,5 @@ docker run --rm --network host -v "$BACKUP:/backup:ro" mongo:8 mongoimport --uri
 4. „Publish”: adres `/p/...` w incognito pokazuje opowiadanie z nickiem, bez notatek i komentarzy; po „Unpublish” 404.
 5. Przełącznik motywu i wylogowanie.
 6. Foldery: nowy folder, rozdział o tym samym tytule w dwóch folderach, przeniesienie rozdziału, notatki folderu z autozapisem.
+7. Narzędzia (gdy `TOOLS_API_*` ustawione): „Korekta” → „Sprawdź” na rozdziale z błędem („Napewno”) podkreśla go w tekście, ✓ poprawia, a po odświeżeniu nierozpatrzone poprawki wracają. Pierwsze sprawdzenie po restarcie serwera może trwać do ok. minuty.
+8. „Definicje” („kota”), „Synonimy” („dom”) i „Rymy” („kota”, z filtrem części mowy) zwracają wyniki ze źródłami.

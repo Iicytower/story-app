@@ -1,0 +1,10 @@
+# Coolify's own override on the tools server (task 28): /data/coolify/source/docker-compose.custom.yml,
+# kept by Coolify's upgrades. The panel (8000) and its realtime ports listen on the server's
+# loopback only, so they are not reachable from the internet (over IPv6 every port would be);
+# scripts/tools.ts and the admin reach them through an SSH tunnel.
+services:
+  coolify:
+    ports: !override
+      - "127.0.0.1:8000:8080"
+      - "127.0.0.1:6001:6001"
+      - "127.0.0.1:6002:6002"

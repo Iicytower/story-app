@@ -1,0 +1,10 @@
+[Unit]
+Description=Root's authorized key from the mounted file
+Before=ssh.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'cp /etc/fake-mikrus/authorized_keys /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys'
+
+[Install]
+WantedBy=multi-user.target

@@ -22,6 +22,15 @@ Do sprawdzenia na początku, bo od tego zależy reszta:
 - Czy funkcja Vercela dociera do `wykr.es` i jakie jest opóźnienie.
 - Jeden sekret na produkcję i staging czy dwa.
 
+### Przygotowanie przed zakupem (2026-11-06)
+
+Decyzje użytkownika: Coolify na Mikrusie jak lokalnie, bazy budowane lokalnie i wysyłane przez SSH, jeden sekret dla produkcji i stagingu.
+
+- `npm run tools:remote` (`scripts/tools.ts`, `scripts/remote.ts`): przez SSH instaluje Dockera i Coolify 4.6.0 z overridem panelu na `127.0.0.1` (`docker/mikrus/docker-compose.custom.yml`), zakłada admina i token przez tinker (sekrety przez stdin), wyłącza rejestrację, automatyczne aktualizacje i Traefika, wdraża usługę na serwer `localhost` Coolify z `GATEWAY_PORT` z puli i czeka na LanguageTool przez publiczny adres. Konfiguracja w `.tools/mikrus/remote.env`.
+- `npm run dict:upload:remote`: ta sama wysyłka co lokalnie, przez `ssh -C`.
+- Instrukcja krok po kroku: `docs/deploy.md`, „Serwer narzędzi na Mikrusie”.
+- Test na `fake-mikrus` (Ubuntu 24.04 z systemd w Dockerze): instalacja, idempotencja, wysyłka baz, 401 bez sekretu, panel tylko na loopbacku, restart. Na prawdziwym Mikrusie zostają wszystkie kryteria akceptacji.
+
 ## Dane z researchu
 
 Stan z 2026-10-31. **[pomiar]** to wynik policzony na pobranym pliku, **[wniosek]** to interpretacja, **[do weryfikacji]** nie potwierdzono u źródła. Uwagi o licencjach to odczyt tekstów, nie porada prawna.
