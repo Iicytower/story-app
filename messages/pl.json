@@ -363,7 +363,8 @@
     "backTo": "Wróć do {folder}",
     "title": "Tytuł",
     "isPublic": "Ten rozdział jest publiczny:",
-    "view": "Widok"
+    "view": "Widok",
+    "notSavedBeforeCheck": "Nie udało się zapisać rozdziału, więc nie został sprawdzony. Zobacz komunikat nad edytorem."
   },
   "chapters": {
     "noFolder": "To opowiadanie nie jest w folderze.",
@@ -376,6 +377,10 @@
     "loading": "Wczytywanie…",
     "comingSoon": "Wkrótce.",
     "items": {
+      "proofread": {
+        "label": "Korekta",
+        "description": "Pisownia, gramatyka, interpunkcja i styl tego rozdziału. Zdecyduj o każdej zmianie, a potem zatwierdź."
+      },
       "name-generator": {
         "label": "Generator nazw",
         "description": "Znajdź imiona i nazwy dla postaci i miejsc."
@@ -389,6 +394,33 @@
         "description": "Znajdź słowa, które się rymują."
       }
     }
+  },
+  "proofread": {
+    "checking": "Sprawdzanie rozdziału… Przy długim rozdziale może to chwilę potrwać.",
+    "failed": "Nie udało się uruchomić sprawdzania. Odśwież stronę i spróbuj ponownie.",
+    "changed": "Rozdział zmienił się w trakcie sprawdzania. Zamknij to okno i sprawdź ponownie.",
+    "noIssues": "Nie znaleziono błędów.",
+    "notShown": "Znaleziono błędy, ale żadnego nie da się pokazać w tekście (np. przechodzą przez formatowanie). Sprawdź rozdział ręcznie.",
+    "text": "Sprawdzany tekst",
+    "panel": "Zmiana",
+    "position": "{index} z {count}",
+    "previous": "Poprzednia zmiana",
+    "next": "Następna zmiana",
+    "kinds": {
+      "spelling": "Pisownia",
+      "grammar": "Gramatyka",
+      "punctuation": "Interpunkcja",
+      "style": "Styl",
+      "other": "Inne"
+    },
+    "suggestions": "Podpowiedzi",
+    "remove": "(usuń)",
+    "noSuggestion": "Brak podpowiedzi. Popraw tekst samodzielnie albo odrzuć zmianę.",
+    "apply": "Zastosuj zmianę",
+    "reject": "Odrzuć zmianę",
+    "allDecided": "Nie zostały żadne zmiany. Zatwierdź, aby zaktualizować rozdział.",
+    "cancel": "Anuluj",
+    "accept": "Zatwierdź"
   },
   "nameGenerator": {
     "typeGroups": {

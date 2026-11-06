@@ -18,7 +18,11 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { MarkdownEditor } from "@/components/markdown-editor";
+import { flushSync } from "react-dom";
+import {
+  MarkdownEditor,
+  type MarkdownEditorApi,
+} from "@/components/markdown-editor";
 import { Button } from "@/components/ui/button";
 import { WithTooltip } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
@@ -53,6 +57,7 @@ import {
   useEditorSettings,
   useIsDesktop,
 } from "./layout-store";
+import { type EditorTool, EditorToolContext } from "./tool-context";
 import type { Tool } from "./tools";
 import { ToolDialog, ToolsPanel } from "./tools-panel";
 
@@ -114,6 +119,9 @@ export function Editor({
   const saved = useRef<Values>(story);
   const updatedAt = useRef(story.updatedAt);
   const queue = useRef(Promise.resolve());
+  const contentApi = useRef<MarkdownEditorApi | null>(null);
+  // Content a tool accepted, written once its dialog has closed.
+  const accepted = useRef<string | null>(null);
   const words = countWords(content);
 
   // Saves run one at a time, so each one sends the updatedAt returned by the previous one.
@@ -179,6 +187,39 @@ export function Editor({
     return storySaved ? null : t("notSavedChapter");
   }
 
+  const editorTool: EditorTool = {
+    storyId: story.id,
+    lang,
+    // Saves before the check (task 23); the open dialog then blocks editing.
+    async prepare() {
+      if (!latest.current.title.trim()) {
+        const message = tErrors("titleRequired");
+        setSaveState({ status: "error", message });
+        return message;
+      }
+      const [storySaved] = await Promise.all([save(), folderNotes.flush()]);
+      return storySaved ? null : t("notSavedBeforeCheck");
+    },
+    content: () => latest.current.content,
+    apply(markdown) {
+      accepted.current = markdown;
+      setOpenTool(null);
+    },
+    close: () => setOpenTool(null),
+  };
+
+  // While the modal dialog is open it keeps the focus, which Source needs for its Undo.
+  function writeAccepted(event: Event) {
+    const markdown = accepted.current;
+    if (markdown === null) return;
+    accepted.current = null;
+    event.preventDefault();
+    // A field under visibility: hidden cannot take focus either.
+    if (!isDesktop) flushSync(() => setMobileView("story"));
+    contentApi.current?.replaceContent(markdown);
+    save();
+  }
+
   async function togglePublished() {
     const result = await setChapterPublished(story.id, !publicPath);
     if (result.ok) {
@@ -237,16 +278,23 @@ export function Editor({
     }));
   }
 
+  // Sets the latest values at once, so a save right after a proofreading change includes it.
+  function changeContent(value: string) {
+    latest.current = { ...latest.current, content: value };
+    setContent(value);
+  }
+
   const storyEditor = (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <MarkdownEditor
         value={content}
-        onChange={setContent}
+        onChange={changeContent}
         label={t("content")}
         placeholder={t("contentPlaceholder")}
         lang={lang}
         className="flex-1"
         scrollMemory={{ storyId: story.id, field: "content" }}
+        apiRef={contentApi}
       />
       <p className="text-muted-foreground border-t px-4 py-2 text-xs md:px-6">
         {t("stats", {
@@ -536,7 +584,13 @@ export function Editor({
           </div>
         </>
       )}
-      <ToolDialog tool={openTool} onClose={() => setOpenTool(null)} />
+      <EditorToolContext value={editorTool}>
+        <ToolDialog
+          tool={openTool}
+          onClose={() => setOpenTool(null)}
+          onCloseAutoFocus={writeAccepted}
+        />
+      </EditorToolContext>
     </div>
   );
 }

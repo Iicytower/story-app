@@ -38,7 +38,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 52 | [Menu akcji (⋮) i przeciąganie zamiast strzałek](done/52-action-menus.md) | – | [x] |
 | 54 | [Lokalny serwer narzędzi (Coolify w Dockerze)](done/54-local-tools-server.md) | – | [x] |
 | 29 | [LanguageTool na serwerze, akcja sprawdzania i język folderu](done/29-languagetool.md) | 54 | [x] |
-| 23 | [Korekta tekstu w dialogu](23-proofreading.md) | 27, 29 | [ ] |
+| 23 | [Korekta tekstu w dialogu](done/23-proofreading.md) | 27, 29 | [x] |
 | 30 | [Słownik użytkownika w korekcie](30-user-dictionary.md) | 23 | [ ] |
 | 25 | [Serwis słownikowy i tabela form](25-dictionary-service.md) | 54, 29 | [ ] |
 | 32 | [Definicje](32-definitions.md) | 25, 27 | [ ] |

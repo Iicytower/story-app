@@ -8,8 +8,8 @@ export const PROOFREAD_TIMEOUT_MS = 120_000;
 // Repetition within a sentence is off by default in LT and always on here (task 23).
 export const ENABLED_RULES = ["PL_WORD_REPEAT"];
 
-// Chosen in task 23 after trying real chapters.
-export const DISABLED_RULES: string[] = [];
+// Chosen in task 23 on sample prose: "Ale" opening a sentence is common in fiction (D59).
+export const DISABLED_RULES = ["BOWIEM_ZAS"];
 
 export type IssueKind =
   "spelling" | "grammar" | "punctuation" | "style" | "other";

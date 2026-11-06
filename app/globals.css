@@ -48,6 +48,7 @@
   --color-diff-added-foreground: var(--diff-added-foreground);
   --color-diff-removed: var(--diff-removed);
   --color-diff-removed-foreground: var(--diff-removed-foreground);
+  --color-proofread-note: var(--proofread-note);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -112,6 +113,7 @@
   --diff-added-foreground: oklch(0.38 0.09 150);
   --diff-removed: oklch(0.92 0.04 25);
   --diff-removed-foreground: oklch(0.42 0.13 25);
+  --proofread-note: oklch(0.93 0.09 95);
 }
 
 .dark,
@@ -151,6 +153,7 @@
   --diff-added-foreground: oklch(0.88 0.08 150);
   --diff-removed: oklch(0.32 0.05 25);
   --diff-removed-foreground: oklch(0.86 0.06 25);
+  --proofread-note: oklch(0.36 0.07 95);
 }
 
 [data-accent="navy"] {
@@ -188,6 +191,7 @@
   --diff-added-foreground: oklch(0.38 0.09 150);
   --diff-removed: oklch(0.92 0.04 25);
   --diff-removed-foreground: oklch(0.42 0.13 25);
+  --proofread-note: oklch(0.93 0.09 95);
 }
 
 .dark[data-accent="navy"],
@@ -226,6 +230,7 @@
   --diff-added-foreground: oklch(0.88 0.08 150);
   --diff-removed: oklch(0.32 0.05 25);
   --diff-removed-foreground: oklch(0.86 0.06 25);
+  --proofread-note: oklch(0.36 0.07 95);
 }
 
 [data-accent="sage"] {
@@ -263,6 +268,7 @@
   --diff-added-foreground: oklch(0.38 0.09 150);
   --diff-removed: oklch(0.92 0.04 25);
   --diff-removed-foreground: oklch(0.42 0.13 25);
+  --proofread-note: oklch(0.93 0.09 95);
 }
 
 .dark[data-accent="sage"],
@@ -301,6 +307,7 @@
   --diff-added-foreground: oklch(0.88 0.08 150);
   --diff-removed: oklch(0.32 0.05 25);
   --diff-removed-foreground: oklch(0.86 0.06 25);
+  --proofread-note: oklch(0.36 0.07 95);
 }
 
 [data-accent="plum"] {
@@ -338,6 +345,7 @@
   --diff-added-foreground: oklch(0.38 0.09 150);
   --diff-removed: oklch(0.92 0.04 25);
   --diff-removed-foreground: oklch(0.42 0.13 25);
+  --proofread-note: oklch(0.93 0.09 95);
 }
 
 .dark[data-accent="plum"],
@@ -376,6 +384,7 @@
   --diff-added-foreground: oklch(0.88 0.08 150);
   --diff-removed: oklch(0.32 0.05 25);
   --diff-removed-foreground: oklch(0.86 0.06 25);
+  --proofread-note: oklch(0.36 0.07 95);
 }
 
 [data-accent="teal"] {
@@ -413,6 +422,7 @@
   --diff-added-foreground: oklch(0.38 0.09 150);
   --diff-removed: oklch(0.92 0.04 25);
   --diff-removed-foreground: oklch(0.42 0.13 25);
+  --proofread-note: oklch(0.93 0.09 95);
 }
 
 .dark[data-accent="teal"],
@@ -451,6 +461,7 @@
   --diff-added-foreground: oklch(0.88 0.08 150);
   --diff-removed: oklch(0.32 0.05 25);
   --diff-removed-foreground: oklch(0.86 0.06 25);
+  --proofread-note: oklch(0.36 0.07 95);
 }
 
 @layer base {
