@@ -99,9 +99,8 @@ test("keeps toolbar buttons accessible by name on a narrow screen", async ({
   const id = await seedStory("alice", { title: "Toolbar" });
 
   await page.goto(`/stories/${id}`);
-  await expect(page.getByRole("button", { name: "Export as…" })).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Publish", exact: true }),
+    page.getByRole("button", { name: "Actions for Toolbar" }),
   ).toBeVisible();
   expect(
     await page.evaluate(

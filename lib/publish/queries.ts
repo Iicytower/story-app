@@ -10,7 +10,12 @@ import { User } from "@/lib/models/user";
 import { buildSnippet, type Snippet } from "@/lib/stories/search";
 import { stripComments } from "@/lib/stories/strip-comments";
 import { inheritedOnly } from "@/lib/tags/tags";
-import { buildPublicFilter, matchesPublicText, MAX_RESULTS } from "./search";
+import {
+  buildPublicFilter,
+  matchesPublicText,
+  MAX_RECENT,
+  MAX_RESULTS,
+} from "./search";
 import {
   CHAPTER_SLUG_FALLBACK,
   FOLDER_SLUG_FALLBACK,
@@ -294,4 +299,52 @@ export async function searchPublishedChapters(
     folderTags,
     snippet: buildSnippet(text, query),
   }));
+}
+
+export interface RecentChapter extends PublicSearchResult {
+  publishedAt: Date;
+}
+
+export async function listRecentlyPublished(): Promise<RecentChapter[]> {
+  await connectDB();
+  const folders = await findSearchableFolders();
+  const folderById = new Map(
+    folders.map((folder) => [folder._id.toString(), folder]),
+  );
+  const chapters = await Story.find({
+    ...buildPublicFilter("", [], folders),
+    publishedAt: { $type: "date" },
+  })
+    .select({
+      userId: 1,
+      folderId: 1,
+      title: 1,
+      content: 1,
+      tags: 1,
+      publishedAt: 1,
+    })
+    .sort({ publishedAt: -1, _id: -1 })
+    .limit(MAX_RECENT)
+    .lean();
+
+  const paths = await findChapterPaths(
+    chapters,
+    new Map(
+      folders.map(({ userId, nickname }) => [userId.toString(), nickname]),
+    ),
+  );
+  return chapters.map((chapter) => {
+    const folder = folderById.get(chapter.folderId.toString())!;
+    const own = chapter.tags ?? [];
+    return {
+      title: chapter.title,
+      folderName: folder.name,
+      nickname: folder.nickname,
+      path: paths.get(chapter._id.toString())!,
+      tags: own,
+      folderTags: inheritedOnly(own, folder.tags),
+      snippet: buildSnippet(stripComments(chapter.content)),
+      publishedAt: chapter.publishedAt!,
+    };
+  });
 }

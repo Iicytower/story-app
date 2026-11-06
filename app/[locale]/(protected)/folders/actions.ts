@@ -7,7 +7,7 @@ import { requireUser } from "@/lib/auth/session";
 import { connectDB, isDuplicateKeyError } from "@/lib/db";
 import { actionError, translateError } from "@/lib/i18n/action-error";
 import {
-  moveInList,
+  moveToIndex,
   nextFolderPosition,
   savePositions,
 } from "@/lib/folders/mutations";
@@ -16,13 +16,12 @@ import {
   chapterOrder,
   folderOrder,
   isChapterSort,
-  isDirection,
   isFolderSort,
-  type Direction,
+  isPositionIndex,
 } from "@/lib/folders/sort";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
-import { rememberFolderSlug } from "@/lib/publish/mutations";
+import { rememberFolderSlug, stampPublishedAt } from "@/lib/publish/mutations";
 import { getUserSettings, updateUserSettings } from "@/lib/settings/queries";
 import { exceedsTagLimit, MAX_TAGS, normalizeTags } from "@/lib/tags/tags";
 
@@ -240,20 +239,20 @@ export async function setChapterSort(
   return { ok: true };
 }
 
-export async function reorderFolder(
+export async function moveFolder(
   id: string,
-  direction: Direction,
+  index: number,
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
   if (!isObjectIdOrHexString(id)) return NOT_FOUND();
-  if (!isDirection(direction)) return INVALID_INPUT();
+  if (!isPositionIndex(index)) return INVALID_INPUT();
 
   await connectDB();
   const folders = await findFoldersInOrder(user.userId, folderOrder("manual"))
     .select({ position: 1 })
     .lean();
-  const moved = moveInList(folders, id, direction);
+  const moved = moveToIndex(folders, id, index);
   if (!moved) return NOT_FOUND();
   await savePositions(Folder, moved);
 
@@ -275,17 +274,14 @@ export async function setFolderPublished(
   const owned = { _id: id, userId: user.userId, deletedAt: null };
   const folder = await Folder.findOne(owned).select({ published: 1 }).lean();
   if (!folder) return NOT_FOUND();
+  const chapters = { userId: user.userId, folderId: id, deletedAt: null };
   if (enabled && !folder.published) {
     await Story.updateMany(
-      {
-        userId: user.userId,
-        folderId: id,
-        deletedAt: null,
-        publication: { $exists: false },
-      },
+      { ...chapters, publication: { $exists: false } },
       { $set: { publication: "public" } },
       { timestamps: false },
     );
+    await stampPublishedAt(chapters);
   }
   await Folder.updateOne(
     owned,
@@ -305,11 +301,13 @@ export async function publishAllChapters(id: string): Promise<ActionResult> {
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };
   if (!(await Folder.exists({ ...owned, published: true }))) return NOT_FOUND();
+  const chapters = { userId: user.userId, folderId: id, deletedAt: null };
   await Story.updateMany(
-    { userId: user.userId, folderId: id, deletedAt: null },
+    chapters,
     { $set: { publication: "public" } },
     { timestamps: false },
   );
+  await stampPublishedAt(chapters);
 
   refresh();
   return { ok: true };

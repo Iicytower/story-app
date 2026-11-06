@@ -2,14 +2,14 @@ import { Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createFolder,
-  reorderFolder,
+  moveFolder,
   setChapterSort,
   setFolderSort,
 } from "@/app/[locale]/(protected)/folders/actions";
 import {
   createStory,
+  moveChapter,
   moveStory,
-  reorderChapter,
   saveStory,
 } from "@/app/[locale]/(protected)/stories/actions";
 import { requireUser } from "@/lib/auth/session";
@@ -97,7 +97,7 @@ describe("folder sort modes", () => {
   it("keeps the manual order after switching away and back", async () => {
     await setFolderSort("manual");
     const [, cherry] = (await listFolders(alice.toString())).folders;
-    await reorderFolder(cherry.id, "up");
+    await moveFolder(cherry.id, 0);
     await setFolderSort("alpha");
     await setFolderSort("manual");
     expect(await folderNames()).toEqual(["cherry", "banana", "Apple"]);
@@ -111,19 +111,21 @@ describe("folder sort modes", () => {
     expect((await listFolders(bob.toString())).sort).toBe("updated");
   });
 
-  it("moves a folder up and down, and not past either end", async () => {
+  it("moves a folder to a position, and past the end to the last place", async () => {
     await setFolderSort("manual");
     const [first, middle, last] = (await listFolders(alice.toString())).folders;
 
-    expect(await reorderFolder(first.id, "up")).toEqual({ ok: true });
-    expect(await reorderFolder(last.id, "down")).toEqual({ ok: true });
+    expect(await moveFolder(first.id, 0)).toEqual({ ok: true });
     expect(await folderNames()).toEqual(["banana", "cherry", "Apple"]);
 
-    await reorderFolder(middle.id, "up");
+    await moveFolder(last.id, 0);
+    expect(await folderNames()).toEqual(["Apple", "banana", "cherry"]);
+    await moveFolder(first.id, 2);
+    expect(await folderNames()).toEqual(["Apple", "cherry", "banana"]);
+    expect(await moveFolder(last.id, 99)).toEqual({ ok: true });
     expect(await folderNames()).toEqual(["cherry", "banana", "Apple"]);
-    await reorderFolder(middle.id, "down");
-    await reorderFolder(middle.id, "down");
-    expect(await folderNames()).toEqual(["banana", "Apple", "cherry"]);
+    await moveFolder(middle.id, 1);
+    expect(await folderNames()).toEqual(["banana", "cherry", "Apple"]);
   });
 
   it("adds a new folder at the end of the manual order", async () => {
@@ -147,17 +149,14 @@ describe("folder sort modes", () => {
       { $unset: { position: "" } },
     );
     const before = await folderNames();
-    await reorderFolder(
-      (await listFolders(alice.toString())).folders[2].id,
-      "up",
-    );
+    await moveFolder((await listFolders(alice.toString())).folders[2].id, 1);
     expect(await folderNames()).toEqual([before[0], before[2], before[1]]);
   });
 
   it("does not change lastActivityAt", async () => {
     const before = await Folder.find().sort({ _id: 1 }).lean();
     await setFolderSort("manual");
-    await reorderFolder(before[0]._id.toString(), "down");
+    await moveFolder(before[0]._id.toString(), 2);
     await setFolderSort("alpha");
     const after = await Folder.find().sort({ _id: 1 }).lean();
     expect(after.map((f) => f.lastActivityAt)).toEqual(
@@ -211,33 +210,28 @@ describe("chapter sort modes", () => {
     ]);
   });
 
-  it("moves a chapter up and down, and not past either end", async () => {
+  it("moves a chapter to a position within its folder only", async () => {
+    const other = await seedFolder("Other", day(1));
+    await seedStory(other, "Outside", day(1));
     await setChapterSort(folderId.toString(), "manual");
     const [first, , last] = (await getFolder(
       alice.toString(),
       folderId.toString(),
     ))!.chapters;
 
-    expect(await reorderChapter(first.id, "up")).toEqual({ ok: true });
-    expect(await reorderChapter(last.id, "down")).toEqual({ ok: true });
-    expect(await chapterTitles(folderId)).toEqual([
-      "Apple",
-      "cherry",
-      "banana",
-    ]);
-
-    await reorderChapter(last.id, "up");
-    expect(await chapterTitles(folderId)).toEqual([
-      "Apple",
-      "banana",
-      "cherry",
-    ]);
-    await reorderChapter(first.id, "down");
+    expect(await moveChapter(last.id, 0)).toEqual({ ok: true });
     expect(await chapterTitles(folderId)).toEqual([
       "banana",
       "Apple",
       "cherry",
     ]);
+    expect(await moveChapter(first.id, 10)).toEqual({ ok: true });
+    expect(await chapterTitles(folderId)).toEqual([
+      "banana",
+      "cherry",
+      "Apple",
+    ]);
+    expect(await chapterTitles(other)).toEqual(["Outside"]);
   });
 
   it("adds new and moved-in chapters at the end of the manual order", async () => {
@@ -263,7 +257,7 @@ describe("chapter sort modes", () => {
     const folder = await Folder.findById(folderId).lean();
 
     await setChapterSort(folderId.toString(), "manual");
-    await reorderChapter(story._id.toString(), "down");
+    await moveChapter(story._id.toString(), 2);
     await setChapterSort(folderId.toString(), "alpha");
 
     const after = await Story.findById(story._id).lean();
@@ -305,18 +299,14 @@ describe("isolation and input", () => {
     expect(await setChapterSort(bobsFolder.toString(), "alpha")).toMatchObject(
       notFound,
     );
-    expect(await reorderFolder(bobsFolder.toString(), "up")).toMatchObject(
-      notFound,
-    );
-    expect(await reorderChapter(bobsStory.toString(), "up")).toMatchObject(
-      notFound,
-    );
+    expect(await moveFolder(bobsFolder.toString(), 0)).toMatchObject(notFound);
+    expect(await moveChapter(bobsStory.toString(), 0)).toMatchObject(notFound);
     expect(await Folder.findById(bobsFolder).lean()).toMatchObject({
       chapterSort: "created",
     });
   });
 
-  it("rejects an unknown mode or direction", async () => {
+  it("rejects an unknown mode or a position that is not a whole number", async () => {
     const folderId = await seedFolder("Book", day(1));
     const storyId = await seedStory(folderId, "A", day(1));
     const invalid = { ok: false, error: "INVALID_INPUT" };
@@ -325,11 +315,13 @@ describe("isolation and input", () => {
     expect(await setChapterSort(folderId.toString(), "updated")).toMatchObject(
       invalid,
     );
-    expect(
-      await reorderFolder(folderId.toString(), "left" as "up"),
-    ).toMatchObject(invalid);
-    expect(
-      await reorderChapter(storyId.toString(), "left" as "up"),
-    ).toMatchObject(invalid);
+    for (const index of [-1, 1.5, Number.NaN, "1" as unknown as number]) {
+      expect(await moveFolder(folderId.toString(), index)).toMatchObject(
+        invalid,
+      );
+      expect(await moveChapter(storyId.toString(), index)).toMatchObject(
+        invalid,
+      );
+    }
   });
 });

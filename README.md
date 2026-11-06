@@ -1,0 +1,80 @@
+# Story App
+
+Your stories, from the first line to the first reader. Story App gives writers a calm, distraction-free place to draft books chapter by chapter, keep notes and versions close at hand, and publish their work with a single click. Readers discover it through public search and dive straight in. The interface is available in English and Polish.
+
+## Tech stack
+
+| Area      | Choice                                                                                         |
+| --------- | ---------------------------------------------------------------------------------------------- |
+| Framework | Next.js 16 (App Router, Server Components, Server Actions), React 19, TypeScript               |
+| Data      | MongoDB (Atlas in the cloud, Docker locally) with Mongoose                                     |
+| Auth      | Auth.js v5, Credentials provider, JWT sessions, `bcryptjs`                                     |
+| UI        | Tailwind CSS 4, shadcn/ui (Radix), Tiptap v3, `react-resizable-panels`, `dnd-kit`, `next-intl` |
+| Tests     | Vitest (unit and integration against a real MongoDB), Playwright (E2E)                         |
+| Hosting   | Vercel (production and staging), MongoDB Atlas                                                 |
+
+The main architectural rules:
+
+- Server Components read directly from the database, and Server Actions write. Route Handlers exist only for export and Auth.js.
+- Every query is scoped to the `userId` from the session. Another user's data looks like it does not exist (404).
+- Every Server Action checks the session and returns `{ ok: true, ... } | { ok: false, error, message }` instead of throwing.
+- Indexes and data changes are managed by a custom migration runner (`migrations/`). Migrations are expand-only, back up the affected collections first, and run automatically in the Vercel build.
+
+## How it is built
+
+The app is developed with [Claude Code](https://claude.com/claude-code) following a written, test-first process. The documentation in `docs/` is the source of truth for both the human and the agent:
+
+- **`docs/spec.md`**: the original functional specification.
+- **`docs/decisions.md`**: numbered decisions (D1, D2, …) recording every change to the spec and every non-obvious choice. Decisions override the spec.
+- **`docs/tasks/`**: one file per task with scope, acceptance criteria and the tests that cover them. Each task runs on its own `feature/NN-<slug>` branch from `develop` and ends with a single commit.
+- **`docs/testing.md`**: every acceptance criterion maps to a unit, integration or E2E test, or is explicitly marked `manual`. A task is done only when `npm run verify` (lint, typecheck, Vitest, Playwright) passes.
+- **`docs/deploy.md`**: environments, releases, migrations and backups.
+
+The agent is constrained by project configuration in `.claude/`:
+
+- **`CLAUDE.md` / `AGENTS.md`**: project rules, workflow and commands.
+- **Hooks**: ESLint and Prettier run after every edit, `tsc` runs before the agent finishes, and a guard blocks merges and pushes to `staging` and `main`. Releases (`develop` → `staging` → `main`) are made only by the human.
+- **Skills**: repeatable procedures such as `/tasks`, `/release-prs`, `/resolve-pr-conflicts` and `/local-setup`.
+
+## Running locally
+
+Requirements: Node.js 24+, npm, and Docker with Compose (your user must be able to run `docker`).
+
+### With Claude Code
+
+Open the repo in Claude Code and run:
+
+```
+/local-setup
+```
+
+The skill checks the requirements, installs dependencies, creates `.env.local` with a generated secret, starts MongoDB, applies migrations and starts the dev server.
+
+### Manually
+
+```sh
+git clone git@github.com:Iicytower/story-app.git
+cd story-app
+npm ci
+
+cp .env.example .env.local
+# set AUTH_SECRET in .env.local, e.g. to the output of:
+openssl rand -base64 32
+
+npm run db:up      # MongoDB 8 in Docker on 127.0.0.1:27017
+npm run migrate    # collections and indexes (the app does not create indexes itself)
+npm run dev        # http://localhost:3000
+```
+
+Create an account with "Log in / Create account" on the home page, or from the terminal with `npm run create-account`. Run `npm run migrate` again after pulling changes that touch schemas or `migrations/`. Stop the database with `npm run db:down`; the data stays in the Docker volume.
+
+### Tests
+
+```sh
+npx playwright install chromium   # once, for E2E
+npm test                          # unit + integration
+npm run test:e2e                  # Playwright
+npm run verify                    # lint, typecheck, all tests
+```
+
+Tests start the Docker container themselves and use only their own `story_app_test_*` and `story_app_e2e` databases, never the one from `.env.local`.

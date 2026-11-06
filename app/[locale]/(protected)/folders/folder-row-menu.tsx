@@ -1,0 +1,106 @@
+"use client";
+
+import {
+  GlobeIcon,
+  GlobeLockIcon,
+  PencilIcon,
+  TagIcon,
+  Trash2Icon,
+} from "lucide-react";
+import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
+import { useState } from "react";
+import { ActionMenu, PublicationIcon } from "@/components/action-menu";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { TagsDialog } from "@/components/tags-dialog";
+import {
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { DeleteFolderDialog } from "./[id]/delete-folder-dialog";
+import { RenameFolderDialog } from "./[id]/rename-folder-dialog";
+import { setFolderPublished, setFolderTags } from "./actions";
+
+type Dialog = "tags" | "rename" | "publish" | "delete";
+
+export function FolderRowMenu({
+  id,
+  name,
+  tags,
+  userTags,
+  isPublic,
+  chapterCount,
+}: {
+  id: string;
+  name: string;
+  tags: string[];
+  userTags: string[];
+  isPublic: boolean;
+  chapterCount: number;
+}) {
+  const router = useRouter();
+  const [dialog, setDialog] = useState<Dialog | null>(null);
+  const t = useTranslations("menu");
+  const tFolders = useTranslations("folders");
+  const tTags = useTranslations("tags");
+  const tCommon = useTranslations("common");
+  const dialogProps = (dialogName: Dialog) => ({
+    open: dialog === dialogName,
+    onOpenChange: (open: boolean) => setDialog(open ? dialogName : null),
+  });
+
+  return (
+    <>
+      <PublicationIcon isPublic={isPublic} />
+      <ActionMenu label={t("actionsFor", { name })}>
+        <DropdownMenuItem onSelect={() => setDialog("tags")}>
+          <TagIcon />
+          {tTags("tags")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => setDialog("rename")}>
+          <PencilIcon />
+          {tCommon("rename")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => setDialog("publish")}>
+          {isPublic ? <GlobeLockIcon /> : <GlobeIcon />}
+          {isPublic ? tFolders("unpublish") : tFolders("publish")}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          onSelect={() => setDialog("delete")}
+        >
+          <Trash2Icon />
+          {tCommon("delete")}
+        </DropdownMenuItem>
+      </ActionMenu>
+      <TagsDialog
+        {...dialogProps("tags")}
+        name={name}
+        tags={tags}
+        suggestions={userTags}
+        action={setFolderTags.bind(null, id)}
+      />
+      <RenameFolderDialog {...dialogProps("rename")} id={id} name={name} />
+      <ConfirmDialog
+        {...dialogProps("publish")}
+        title={isPublic ? t("unpublishFolderTitle") : t("publishFolderTitle")}
+        description={
+          isPublic
+            ? t("unpublishFolderDescription", { name })
+            : t("publishFolderDescription", { name })
+        }
+        confirmLabel={isPublic ? tFolders("unpublish") : tFolders("publish")}
+        action={() => setFolderPublished(id, !isPublic)}
+      />
+      <DeleteFolderDialog
+        {...dialogProps("delete")}
+        id={id}
+        name={name}
+        chapterCount={chapterCount}
+        // deleteFolder does not refresh: on the folder's own page it redirects instead.
+        onDeleted={() => router.refresh()}
+      />
+    </>
+  );
+}

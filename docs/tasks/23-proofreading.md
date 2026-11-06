@@ -72,7 +72,8 @@ Test na prozie z dialogami, myślnikami, mową potoczną i celowymi błędami:
 8. Błąd silnika, przekroczony czas albo „Failed to find Server Action” daje komunikat w dialogu i nie zmienia tekstu ani nie blokuje dalszej edycji.
 9. Rozdział bez błędów daje komunikat zamiast pustego widoku.
 10. Myślniki dialogowe i potoczne kwestie nie dają fałszywych alarmów ze sklejania akapitów.
+11. Bez zmiennych serwera narzędzi (D56) kafelek jest widoczny, a kliknięcie daje komunikat o niedostępności narzędzia.
 
 ## Testy
 
-Unit: mapowanie pozycji, składanie markdownu z wybranych zmian, stany decyzji. Integracyjne: atrapa akcji z taska 29, obsługa błędów. E2E: kafelek, dialog, podpowiedź, własny tekst, odrzucenie, „Accept” z Undo i zapisem, zamknięcie bez zmian. `manual`: jakość wyników dla polskiego na prawdziwych rozdziałach.
+Unit: mapowanie pozycji, składanie markdownu z wybranych zmian, stany decyzji. Integracyjne: atrapa akcji z taska 29, obsługa błędów. E2E: kafelek, dialog, komunikat bez zmiennych serwera narzędzi, podpowiedź, własny tekst, odrzucenie, „Accept” z Undo i zapisem, zamknięcie bez zmian. `manual`: jakość wyników dla polskiego na prawdziwych rozdziałach.

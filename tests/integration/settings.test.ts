@@ -36,7 +36,7 @@ beforeEach(async () => {
   signInAs(alice);
 });
 
-const layout = { ...DEFAULT_LAYOUT, split: true, tab: "chapters" as const };
+const layout = { ...DEFAULT_LAYOUT, tab: "chapters" as const };
 const stored = (userId: Types.ObjectId) => Settings.findOne({ userId }).lean();
 
 describe("saveSettings", () => {
@@ -69,12 +69,32 @@ describe("saveSettings", () => {
     expect(await saveSettings({ editor: { mobileView: "notes" } })).toEqual({
       ok: true,
     });
+    expect(await saveSettings({ appearance: { accent: "navy" } })).toEqual({
+      ok: true,
+    });
 
     expect(await getUserSettings(alice.toString())).toEqual({
       ...DEFAULT_SETTINGS,
       editor: { layout, mobileView: "notes" },
-      appearance: { sidebarCollapsed: false, theme: "dark", locale: null },
+      appearance: {
+        sidebarCollapsed: false,
+        theme: "dark",
+        accent: "navy",
+        locale: null,
+      },
     });
+  });
+
+  it("saves the system theme as null", async () => {
+    await saveSettings({ appearance: { theme: "dark" } });
+    expect(await saveSettings({ appearance: { theme: null } })).toEqual({
+      ok: true,
+    });
+
+    const [stored] = await Settings.find().lean();
+    expect(stored.appearance).toEqual({ theme: null });
+    const { appearance } = await getUserSettings(alice.toString());
+    expect(appearance.theme).toBeNull();
   });
 
   it("saves the collapsed sidebar", async () => {
@@ -109,6 +129,7 @@ describe("saveSettings", () => {
   it("rejects invalid input and folder settings, and stores a normalized layout", async () => {
     for (const patch of [
       { appearance: { theme: "blue" } },
+      { appearance: { accent: "red" } },
       { folders: { manualOrder: true } },
       // Only through changeLocale, which also sets the cookie.
       { appearance: { locale: "pl" } },
@@ -122,10 +143,10 @@ describe("saveSettings", () => {
     expect(await stored(alice)).toBeNull();
 
     await saveSettings({
-      editor: { layout: { split: true, widths: { x: 1 } } },
+      editor: { layout: { tab: "tools", widths: { x: 1 } } },
     });
     expect((await stored(alice))?.editor).toEqual({
-      layout: { ...DEFAULT_LAYOUT, split: true },
+      layout: { ...DEFAULT_LAYOUT, tab: "tools" },
     });
   });
 

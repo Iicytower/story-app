@@ -1,6 +1,6 @@
 "use client";
 
-import { TagIcon, XIcon } from "lucide-react";
+import { XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useId, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { WithTooltip } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
 import type { ActionResult } from "@/lib/action-result";
 import { inheritedOnly, splitTagInput } from "@/lib/tags/tags";
@@ -23,34 +23,21 @@ type TagsDialogProps = {
   tags?: string[];
   folderTags?: string[];
   suggestions: string[];
-  // The chapter row has room for an icon only.
-  compact?: boolean;
   action: (tags: string[]) => Promise<ActionResult>;
 };
 
-export function TagsDialog(props: TagsDialogProps) {
-  const [open, setOpen] = useState(false);
-  const t = useTranslations("tags");
+export function TagsDialog({
+  open,
+  onOpenChange,
+  ...props
+}: TagsDialogProps & {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {props.compact ? (
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={t("tagsFor", { name: props.name })}
-          >
-            <TagIcon />
-          </Button>
-        ) : (
-          <Button variant="outline">
-            <TagIcon />
-            {t("tags")}
-          </Button>
-        )}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <TagsForm {...props} onDone={() => setOpen(false)} />
+        <TagsForm {...props} onDone={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
   );
@@ -103,13 +90,17 @@ function TagsForm({
               className="bg-muted flex items-center gap-1 rounded-full py-0.5 pr-1 pl-2 text-xs"
             >
               {tag}
-              <button
-                type="button"
-                aria-label={t("remove", { tag })}
-                onClick={() => setTags(tags.filter((other) => other !== tag))}
-              >
-                <XIcon className="size-3" />
-              </button>
+              <WithTooltip label={t("remove", { tag })}>
+                <button
+                  type="button"
+                  aria-label={t("remove", { tag })}
+                  onClick={() =>
+                    setTags(tags.filter((other) => other !== tag))
+                  }
+                >
+                  <XIcon className="size-3" />
+                </button>
+              </WithTooltip>
             </li>
           ))}
           {inherited.map((tag) => (

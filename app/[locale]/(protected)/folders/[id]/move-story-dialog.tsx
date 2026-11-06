@@ -1,6 +1,5 @@
 "use client";
 
-import { FolderInputIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { moveStory } from "../../stories/actions";
@@ -19,33 +17,26 @@ import { moveStory } from "../../stories/actions";
 type FolderOption = { id: string; name: string };
 
 export function MoveStoryDialog({
+  open,
+  onOpenChange,
   id,
   title,
   folders,
 }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   id: string;
   title: string;
   folders: FolderOption[];
 }) {
-  const [open, setOpen] = useState(false);
-  const t = useTranslations("folders");
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={t("moveStory", { title })}
-        >
-          <FolderInputIcon />
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <MoveStoryForm
           id={id}
           title={title}
           folders={folders}
-          onDone={() => setOpen(false)}
+          onDone={() => onOpenChange(false)}
         />
       </DialogContent>
     </Dialog>

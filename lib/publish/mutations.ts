@@ -18,12 +18,27 @@ export async function publicationFor(
 }
 
 // Update parts for a chapter arriving in a folder; old addresses belonged to the old folder.
+// publishedAt stays: a chapter keeps its first publication date for good.
 export async function arrivalUpdate(folderId: Id) {
   const publication = await publicationFor(folderId);
   return {
     set: publication ? { publication } : {},
-    unset: { formerSlugs: 1, ...(!publication && { publication: 1 }) },
+    unset: {
+      formerSlugs: 1,
+      ...(!publication && { publication: 1 }),
+    },
   };
+}
+
+// Call after chapters become public: only those never published before get a date.
+export async function stampPublishedAt(
+  filter: Record<string, unknown>,
+): Promise<void> {
+  await Story.updateMany(
+    { ...filter, publication: "public", publishedAt: { $exists: false } },
+    { $set: { publishedAt: new Date() } },
+    { timestamps: false },
+  );
 }
 
 // Call after a title change: siblings are read with the old title to get the old address back.

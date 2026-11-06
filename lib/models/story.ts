@@ -16,6 +16,8 @@ export interface StoryFields {
   publication?: Publication;
   // Addresses from before a title change; they redirect to the current one.
   formerSlugs?: string[];
+  // When the chapter last became publicly visible; missing while it is not.
+  publishedAt?: Date;
   deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -32,6 +34,7 @@ const storySchema = new Schema<StoryFields>(
     tags: { type: [String] },
     publication: { type: String, enum: ["public", "hidden"] },
     formerSlugs: { type: [String], default: undefined },
+    publishedAt: { type: Date },
     // Always stored: a partial index filter cannot express "field does not exist".
     deletedAt: { type: Date, default: null },
   },
@@ -43,6 +46,7 @@ storySchema.index(
   { unique: true, partialFilterExpression: { deletedAt: { $type: "null" } } },
 );
 storySchema.index({ userId: 1, updatedAt: -1 });
+storySchema.index({ publication: 1, publishedAt: -1 });
 
 export const Story: Model<StoryFields> =
   (mongoose.models.Story as Model<StoryFields> | undefined) ??

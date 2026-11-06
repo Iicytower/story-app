@@ -1,13 +1,9 @@
 "use client";
 
-import { ExportDialog } from "@/components/export-dialog";
 import {
   ArrowLeftIcon,
-  ArrowRightIcon,
   CheckIcon,
-  Columns3Icon,
   CopyIcon,
-  GlobeIcon,
   LinkIcon,
   PanelRightCloseIcon,
   PanelRightOpenIcon,
@@ -16,7 +12,6 @@ import { cn } from "cn";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import {
-  Fragment,
   useCallback,
   useEffect,
   useRef,
@@ -25,6 +20,7 @@ import {
 } from "react";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { Button } from "@/components/ui/button";
+import { WithTooltip } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import {
   ResizableHandle,
@@ -33,14 +29,7 @@ import {
 } from "@/components/ui/resizable";
 import { AUTOSAVE_DELAY_MS, onTabHidden } from "@/lib/autosave";
 import { flushScrollSave } from "@/lib/editor/scroll-memory";
-import {
-  collapsedColumns,
-  moveColumn,
-  SIDE_PANELS,
-  type SidePanel,
-  visibleColumns,
-  widthsKey,
-} from "@/lib/editor-layout";
+import { SIDE_PANELS, type SidePanel } from "@/lib/editor-layout";
 import type { EditorFolder } from "@/lib/folders/queries";
 import {
   countCharacters,
@@ -54,8 +43,8 @@ import {
   useFolderNotes,
 } from "../../folders/[id]/folder-notes";
 import { saveStory, setChapterPublished } from "../actions";
-import { DeleteStoryButton } from "../delete-story-button";
 import { ChaptersPanel } from "./chapters-panel";
+import { EditorMenu } from "./editor-menu";
 import {
   flushLayoutSave,
   setMobileView,
@@ -109,7 +98,6 @@ export function Editor({
   );
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
   const [publicPath, setPublicPath] = useState(story.publicPath);
-  const [publishPending, setPublishPending] = useState(false);
   const [copied, setCopied] = useState(false);
   // Here, not in ToolsPanel: the dialog must outlive the desktop and mobile trees.
   const [openTool, setOpenTool] = useState<Tool | null>(null);
@@ -190,19 +178,12 @@ export function Editor({
   }
 
   async function togglePublished() {
-    setPublishPending(true);
-    try {
-      const result = await setChapterPublished(story.id, !publicPath);
-      if (result.ok) {
-        setPublicPath(result.publicPath);
-        setCopied(false);
-      } else {
-        setSaveState({ status: "error", message: result.message });
-      }
-    } catch {
-      setSaveState({ status: "error", message: tErrors("offline") });
+    const result = await setChapterPublished(story.id, !publicPath);
+    if (result.ok) {
+      setPublicPath(result.publicPath);
+      setCopied(false);
     }
-    setPublishPending(false);
+    return result;
   }
 
   async function copyPublicUrl() {
@@ -244,10 +225,8 @@ export function Editor({
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
-  const columns = visibleColumns(layout);
-  const hiddenColumns = collapsedColumns(layout);
-  const columnKey = widthsKey(layout);
-  const sideSize = columns.length === 3 ? 20 : columns.length === 2 ? 25 : 30;
+  const sideOpen = !layout.collapsed[layout.tab];
+  const sideName = t(`panelNames.${layout.tab}`);
 
   function setCollapsed(panel: SidePanel, collapsed: boolean) {
     updateEditorLayout((current) => ({
@@ -333,90 +312,6 @@ export function Editor({
     tools: <ToolsPanel onOpen={setOpenTool} />,
   };
 
-  function sideHeader(panel: SidePanel, index: number) {
-    const label = t(`views.${panel}`);
-    const name = t(`panelNames.${panel}`);
-    return (
-      <div className="flex items-center gap-1 border-b px-2 py-1">
-        {layout.split ? (
-          <>
-            <h2 className="mr-auto px-2 text-sm font-medium">{label}</h2>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t("moveLeft", { panel: name })}
-              title={t("moveLeftShort")}
-              disabled={index === 0}
-              onClick={() =>
-                updateEditorLayout((current) => ({
-                  ...current,
-                  order: moveColumn(
-                    current.order,
-                    panel,
-                    "left",
-                    current.collapsed,
-                  ),
-                }))
-              }
-            >
-              <ArrowLeftIcon />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t("moveRight", { panel: name })}
-              title={t("moveRightShort")}
-              disabled={index === columns.length - 1}
-              onClick={() =>
-                updateEditorLayout((current) => ({
-                  ...current,
-                  order: moveColumn(
-                    current.order,
-                    panel,
-                    "right",
-                    current.collapsed,
-                  ),
-                }))
-              }
-            >
-              <ArrowRightIcon />
-            </Button>
-          </>
-        ) : (
-          <div
-            role="tablist"
-            aria-label={t("sidePanel")}
-            className="bg-muted text-muted-foreground mr-auto grid min-w-0 grid-cols-3 gap-1 rounded-lg p-1"
-          >
-            {SIDE_PANELS.map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                role="tab"
-                aria-selected={layout.tab === tab}
-                onClick={() =>
-                  updateEditorLayout((current) => ({ ...current, tab }))
-                }
-                className="aria-selected:bg-background aria-selected:text-foreground truncate rounded-md px-2 py-1 text-sm font-medium aria-selected:shadow-sm"
-              >
-                {t(`views.${tab}`)}
-              </button>
-            ))}
-          </div>
-        )}
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={t("hide", { panel: name })}
-          title={t("hide", { panel: name })}
-          onClick={() => setCollapsed(panel, true)}
-        >
-          <PanelRightCloseIcon />
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-dvh flex-col">
       <div className="flex flex-wrap items-center gap-2 border-b px-9 py-3 md:flex-nowrap md:gap-3">
@@ -453,24 +348,12 @@ export function Editor({
           {saveState.status === "saved" && tSave("saved")}
           {saveState.status === "error" && saveState.message}
         </span>
-        <ExportDialog
-          dataUrl={`/stories/${story.id}/export/data`}
-          fallbackName="story"
-          beforeExport={saveForExport}
-        />
-        <Button
-          variant="outline"
-          onClick={togglePublished}
-          disabled={publishPending}
-        >
-          <GlobeIcon />
-          <span className="sr-only md:not-sr-only">
-            {publicPath ? tFolders("unpublish") : tFolders("publish")}
-          </span>
-        </Button>
-        <DeleteStoryButton
+        <EditorMenu
           id={story.id}
           title={title}
+          isPublic={Boolean(publicPath)}
+          beforeExport={saveForExport}
+          togglePublished={togglePublished}
           onDeleted={() =>
             router.push(
               story.folderName === null
@@ -479,20 +362,6 @@ export function Editor({
             )
           }
         />
-        <Button
-          variant="outline"
-          aria-pressed={layout.split}
-          className="hidden md:inline-flex"
-          onClick={() =>
-            updateEditorLayout((current) => ({
-              ...current,
-              split: !current.split,
-            }))
-          }
-        >
-          <Columns3Icon />
-          {t("split")}
-        </Button>
       </div>
       {publicUrl && (
         <div className="flex items-center gap-2 border-b px-4 py-2 text-sm md:px-6">
@@ -507,86 +376,113 @@ export function Editor({
             onFocus={(event) => event.target.select()}
             className="h-8 max-w-xl min-w-0"
           />
-          <Button variant="outline" size="sm" onClick={copyPublicUrl}>
-            {copied ? <CheckIcon /> : <CopyIcon />}
-            <span className="sr-only md:not-sr-only">
-              {copied ? tFolders("copied") : tFolders("copyLink")}
-            </span>
-          </Button>
+          <WithTooltip
+            label={copied ? tFolders("copied") : tFolders("copyLink")}
+            className="md:hidden"
+          >
+            <Button variant="outline" size="sm" onClick={copyPublicUrl}>
+              {copied ? <CheckIcon /> : <CopyIcon />}
+              <span className="sr-only md:not-sr-only">
+                {copied ? tFolders("copied") : tFolders("copyLink")}
+              </span>
+            </Button>
+          </WithTooltip>
         </div>
       )}
       {isDesktop ? (
         <div className="flex min-h-0 flex-1">
           <ResizablePanelGroup
-            // defaultLayout is read on mount only: remount whenever the set of columns changes.
+            // defaultLayout is read on mount only: remount when the side panel is shown or hidden.
             // Not for another tab, though: that would remount the story editor and lose its scroll.
-            // Tabs share one panel id and one width.
-            key={layout.split ? columnKey : columns.length}
+            key={sideOpen ? "side" : "story"}
             id="editor-columns"
-            defaultLayout={layout.widths[columnKey]}
+            defaultLayout={sideOpen ? (layout.widths ?? undefined) : undefined}
             onLayoutChanged={(_, meta) => {
               const sizes = meta.requestedLayout;
               if (!meta.isUserInteraction || !sizes) return;
-              updateEditorLayout((current) => ({
-                ...current,
-                widths: { ...current.widths, [columnKey]: sizes },
-              }));
+              updateEditorLayout((current) => ({ ...current, widths: sizes }));
             }}
             className="min-w-0 flex-1"
           >
             <ResizablePanel
               id="story-column"
               minSize="30%"
-              defaultSize={`${100 - columns.length * sideSize}%`}
+              defaultSize={sideOpen ? "70%" : "100%"}
             >
               <div className="flex h-full">{storyEditor}</div>
             </ResizablePanel>
-            {columns.map((panel, index) => (
-              <Fragment key={layout.split ? panel : "side"}>
+            {sideOpen && (
+              <>
                 <ResizableHandle
                   withHandle
-                  aria-label={t("resizeColumn", {
-                    panel: t(`panelNames.${panel}`),
-                  })}
+                  aria-label={t("resizeColumn", { panel: sideName })}
                 />
                 <ResizablePanel
-                  // Not the bare panel name: the library also sets it as the DOM id, which labels point to.
-                  id={layout.split ? `${panel}-column` : "side-column"}
+                  // Not a bare name: the library also sets it as the DOM id, which labels point to.
+                  id="side-column"
                   minSize="15%"
-                  defaultSize={`${sideSize}%`}
+                  defaultSize="30%"
                 >
                   <div className="flex h-full flex-col">
-                    {sideHeader(panel, index)}
-                    {layout.split ? (
-                      sidePanels[panel]
-                    ) : (
-                      <div className="relative min-h-0 flex-1">
-                        {SIDE_PANELS.map((side) => (
-                          <KeptView key={side} active={panel === side}>
-                            {sidePanels[side]}
-                          </KeptView>
+                    <div className="flex items-center gap-1 border-b px-2 py-1">
+                      <div
+                        role="tablist"
+                        aria-label={t("sidePanel")}
+                        className="bg-muted text-muted-foreground mr-auto grid min-w-0 grid-cols-3 gap-1 rounded-lg p-1"
+                      >
+                        {SIDE_PANELS.map((tab) => (
+                          <button
+                            key={tab}
+                            type="button"
+                            role="tab"
+                            aria-selected={layout.tab === tab}
+                            onClick={() =>
+                              updateEditorLayout((current) => ({
+                                ...current,
+                                tab,
+                              }))
+                            }
+                            className="aria-selected:bg-background aria-selected:text-foreground truncate rounded-md px-2 py-1 text-sm font-medium aria-selected:shadow-sm"
+                          >
+                            {t(`views.${tab}`)}
+                          </button>
                         ))}
                       </div>
-                    )}
+                      <WithTooltip label={t("hide", { panel: sideName })}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={t("hide", { panel: sideName })}
+                          onClick={() => setCollapsed(layout.tab, true)}
+                        >
+                          <PanelRightCloseIcon />
+                        </Button>
+                      </WithTooltip>
+                    </div>
+                    <div className="relative min-h-0 flex-1">
+                      {SIDE_PANELS.map((side) => (
+                        <KeptView key={side} active={layout.tab === side}>
+                          {sidePanels[side]}
+                        </KeptView>
+                      ))}
+                    </div>
                   </div>
                 </ResizablePanel>
-              </Fragment>
-            ))}
+              </>
+            )}
           </ResizablePanelGroup>
-          {hiddenColumns.length > 0 && (
+          {!sideOpen && (
             <div className="flex flex-col gap-1 border-l p-1">
-              {hiddenColumns.map((panel) => (
+              <WithTooltip label={t("show", { panel: sideName })} side="left">
                 <Button
-                  key={panel}
                   variant="ghost"
                   size="icon"
-                  aria-label={t("show", { panel: t(`panelNames.${panel}`) })}
-                  title={t("show", { panel: t(`panelNames.${panel}`) })}
-                  onClick={() => setCollapsed(panel, false)}
+                  aria-label={t("show", { panel: sideName })}
+                  onClick={() => setCollapsed(layout.tab, false)}
                 >
                   <PanelRightOpenIcon />
                 </Button>
-              ))}
+              </WithTooltip>
             </div>
           )}
         </div>

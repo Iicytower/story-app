@@ -3,7 +3,7 @@ import type { Page } from "@playwright/test";
 import { EXPORT_FORMATS } from "@/lib/export/formats";
 import { findFolder, seedStory } from "./db";
 import { storageStatePath } from "./env";
-import { expect, markdownEditor, test } from "./helpers";
+import { editorAction, expect, markdownEditor, test } from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
@@ -16,7 +16,11 @@ const pick = (page: Page, name: string, data: Buffer | string) =>
 
 async function openImport(page: Page, url: string) {
   await page.goto(url);
-  await page.getByRole("button", { name: "Import…" }).click();
+  await page
+    .getByRole("button", { name: /^Actions/ })
+    .first()
+    .click();
+  await page.getByRole("menuitem", { name: "Import…" }).click();
 }
 
 const submit = (page: Page) =>
@@ -29,7 +33,7 @@ for (const { id, extension } of EXPORT_FORMATS) {
       content: "Tekst do importu",
     });
     await page.goto(`/stories/${storyId}`);
-    await page.getByRole("button", { name: "Export as…" }).click();
+    await editorAction(page, "Export as…");
     await page.getByLabel("Format").selectOption(id);
     const downloadPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Export", exact: true }).click();
@@ -124,7 +128,7 @@ test("refuses text over the limit", async ({ page }) => {
 test("warns that a PDF loses its formatting", async ({ page }) => {
   const id = await seedStory("alice", { title: "P", content: "Tekst" });
   await page.goto(`/stories/${id}`);
-  await page.getByRole("button", { name: "Export as…" }).click();
+  await editorAction(page, "Export as…");
   await page.getByLabel("Format").selectOption("pdf");
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export", exact: true }).click();
