@@ -385,7 +385,6 @@
   "tools": {
     "list": "Narzędzia",
     "loading": "Wczytywanie…",
-    "comingSoon": "Wkrótce.",
     "items": {
       "proofread": {
         "label": "Korekta",
@@ -412,7 +411,9 @@
       "title": "Źródła",
       "changedDefinitions": "Zmiany: etykiety są pokazane poza tekstem, a znaczenia gwarowe i regionalne na końcu.",
       "changedSynonyms": "Zmiany: etykiety i regiony są pokazane poza słowami, odsyłacze do innych haseł pominięte, a przy każdym znaczeniu jest jego definicja.",
-      "changedThesaurus": "Zmiany: kwalifikatory są pokazane jako etykiety, a samo hasło i powtórzone znaczenia pominięte."
+      "changedThesaurus": "Zmiany: kwalifikatory są pokazane jako etykiety, a samo hasło i powtórzone znaczenia pominięte.",
+      "changedRhymeForms": "Użyte: każda forma dostaje klucz rymu z wymowy.",
+      "changedRhymes": "Użyte: częstości porządkują rymy. Dane z Wikipedii, OpenSubtitles 2018 (opensubtitles.org), wiadomości, stron WWW, Twittera i Reddita. Zbudowana z nimi baza rymów jest na licencji CC BY-SA 4.0."
     },
     "labels": {
       "colloquial": "potocznie",
@@ -714,5 +715,17 @@
     "shownFor": "Pokazane dla: {headword}",
     "senseNumber": "{number}.",
     "entry": "Hasło w Wikisłowniku"
+  },
+  "rhymes": {
+    "notFound": "Nie znaleziono rymów do słowa „{word}”.",
+    "results": "Rymy do słowa „{word}”",
+    "levels": {
+      "exact": "Dokładne",
+      "near": "Przybliżone",
+      "last": "Ostatnia sylaba"
+    },
+    "showMore": "Pokaż więcej ({count})",
+    "showLess": "Pokaż mniej",
+    "onlyMore": "Tylko słowa rzadkie lub mniej przydatne."
   }
 }

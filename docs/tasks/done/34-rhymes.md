@@ -27,6 +27,21 @@ Do decyzji przy implementacji, lista częstości:
 
 Kolumna z listy CC BY-SA czyni tabelę bazą share-alike, więc opisać ją jako osobny artefakt. Decyzja po próbie na tych samych słowach.
 
+## Ustalone przy starcie (2026-11-06)
+
+Decyzje użytkownika i wynik próby, szczegóły w D64:
+
+- Lista częstości: wordfreq `large_pl` 3.2 (próba na woda, kot, kota, krew, serce, kochanie, dobremu: częstość dla 306 tys. form tabeli wobec 43 tys. w FrequencyWords).
+- Nazwy własne z PoliMorfu wchodzą do bazy; wszystkie formy, bez przycinania (baza 657 MB).
+- Poprawki reguł z przeglądu: `ł[aoy]by` z obowiązkową samogłoską (`zrobiłbym` → `iwbym`), `-eusz` jako dwie sylaby.
+
+| Pomiar | Wynik |
+| --- | --- |
+| Pan Tadeusz, księgi 1–5, 1687 par: dokładny / + bliski / + ostatnia sylaba | 86,5% / 94,3% / 97,0% |
+| Partnerzy rymów w bazie | 93,1% |
+| Baza `rhymes.sqlite` | 5 341 500 form, 657 MB, budowa ok. 2 min |
+| `/dict/rhymes` na lokalnym serwerze narzędzi | 5–8 ms, ok. 35 kB odpowiedzi, 22 MB pamięci serwisu |
+
 ## Dane z researchu
 
 Stan z 2026-10-31. **[pomiar]** to wynik policzony na pobranym pliku, **[wniosek]** to interpretacja, **[do weryfikacji]** nie potwierdzono u źródła. Uwagi o licencjach to odczyt tekstów, nie porada prawna.

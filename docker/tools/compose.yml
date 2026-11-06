@@ -58,10 +58,11 @@ services:
       start_interval: 5s
 
   # Lemmas from the form table (task 25, D61), definitions from the Polish Wiktionary (task 32,
-  # D62) and synonyms from Wiktionary and the Dobry słownik thesaurus (task 33, D63). The SQLite
-  # files come from `npm run dict:upload` onto the dict-data volume; without the form table every
-  # request gets 503, without the definitions or synonyms only their route does. No `$` in the
-  # code: Compose would interpolate it.
+  # D62), synonyms from Wiktionary and the Dobry słownik thesaurus (task 33, D63) and rhymes from
+  # the rhyme keys of the form table (task 34, D64). The SQLite files come from
+  # `npm run dict:upload` onto the dict-data volume; without the form table every request gets
+  # 503, without another file only its route does. No `$` in the code: Compose would interpolate
+  # it.
   dictionary:
     image: node:24.22.2-alpine
     restart: unless-stopped
@@ -108,6 +109,12 @@ services:
           const formsDb = opener("/data/forms.sqlite");
           const definitionsDb = opener("/data/definitions.sqlite");
           const synonymsDb = opener("/data/synonyms.sqlite");
+          const rhymesDb = opener("/data/rhymes.sqlite");
+          // Rows of each rhyme level, the most frequent first.
+          const RHYME_LIMIT = 150;
+          // Phones and classes of the keys (lib/tools/rhyme-key.ts).
+          const NOT_KEY = /[^a-ząęćńśźšžčʣʥʤxvwjPFCNLJ]/u;
+          const isKey = (key) => typeof key === "string" && key.length > 0 && key.length <= MAX_LENGTH && !NOT_KEY.test(key);
 
           function send(response, status, body) {
             response.writeHead(status, { "Content-Type": "application/json" });
@@ -167,6 +174,33 @@ services:
             };
           }
 
+          // POST /rhymes {"forms": [...], "keys": {"exact", "near", "last"}}: the rows of the
+          // spellings and the rhymes of each level. A spelling in the table brings its own keys
+          // (stress by its tags), the keys the app sends are for a word not in it.
+          function rhymes(db, forms, keys) {
+            const columns = "form, phones, freq, lemmas, flags";
+            const self = db.prepare("SELECT " + columns + ", exact, near, last FROM words WHERE form IN (" + marks(forms) + ")").all(...forms);
+            const own = forms.map((form) => self.find((row) => row.form === form)).find(Boolean) ?? keys;
+            const level = (column, key) =>
+              key === null
+                ? []
+                : db.prepare("SELECT " + columns + " FROM words WHERE " + column + " = ? ORDER BY freq DESC LIMIT " + RHYME_LIMIT).all(key);
+            return {
+              source: meta(db).source,
+              self,
+              exact: level("exact", own.exact),
+              near: level("near", own.near),
+              last: level("last", own.last),
+            };
+          }
+
+          const validKeys = (keys) =>
+            keys !== null &&
+            typeof keys === "object" &&
+            isKey(keys.exact) &&
+            isKey(keys.near) &&
+            (keys.last === null || isKey(keys.last));
+
           // POST /synonyms {"forms": [...]}: the lemma rows and the synonyms of the headwords from
           // each source's table.
           function synonyms(formTable, synonymTable, forms) {
@@ -191,6 +225,11 @@ services:
               const synonymTable = synonymsDb();
               return synonymTable && synonyms(formTable, synonymTable, forms);
             },
+            "/rhymes": (formTable, forms, input) => {
+              if (!validKeys(input.keys)) return { invalid: true };
+              const rhymeTable = rhymesDb();
+              return rhymeTable && rhymes(rhymeTable, forms, input.keys);
+            },
           };
 
           createServer((request, response) => {
@@ -210,6 +249,7 @@ services:
                   forms: meta(forms),
                   definitions: optional(definitionsDb),
                   synonyms: optional(synonymsDb),
+                  rhymes: optional(rhymesDb),
                 });
               } catch {
                 return send(response, 500, { error: "QUERY_FAILED" });
@@ -229,11 +269,12 @@ services:
               if (tooLarge) return send(response, 413, { error: "TOO_LARGE" });
               let input;
               try {
-                input = JSON.parse(body).forms;
+                input = JSON.parse(body);
               } catch {}
-              if (!validForms(input)) return send(response, 400, { error: "BAD_REQUEST" });
+              if (!validForms(input?.forms)) return send(response, 400, { error: "BAD_REQUEST" });
               try {
-                const result = route(forms, input);
+                const result = route(forms, input.forms, input);
+                if (result?.invalid) return send(response, 400, { error: "BAD_REQUEST" });
                 if (!result) return send(response, 503, { error: "NO_DATA" });
                 send(response, 200, result);
               } catch {

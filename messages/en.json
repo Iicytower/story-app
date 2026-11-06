@@ -385,7 +385,6 @@
   "tools": {
     "list": "Tools",
     "loading": "Loading…",
-    "comingSoon": "Coming soon.",
     "items": {
       "proofread": {
         "label": "Proofread",
@@ -412,7 +411,9 @@
       "title": "Sources",
       "changedDefinitions": "Changed: labels are shown apart from the text, and dialect and regional senses come last.",
       "changedSynonyms": "Changed: labels and regions are shown apart from the words, pointers to other entries are left out, and each sense shows its definition.",
-      "changedThesaurus": "Changed: registers are shown as labels, and the headword itself and repeated senses are left out."
+      "changedThesaurus": "Changed: registers are shown as labels, and the headword itself and repeated senses are left out.",
+      "changedRhymeForms": "Used: each form gets a rhyme key from its pronunciation.",
+      "changedRhymes": "Used: frequencies rank the rhymes. Data from Wikipedia, OpenSubtitles 2018 (opensubtitles.org), news, web pages, Twitter and Reddit. The rhyme database built with them is under CC BY-SA 4.0."
     },
     "labels": {
       "colloquial": "colloquial",
@@ -714,5 +715,17 @@
     "shownFor": "Shown for: {headword}",
     "senseNumber": "{number}.",
     "entry": "Entry in Wikisłownik"
+  },
+  "rhymes": {
+    "notFound": "No rhymes found for “{word}”.",
+    "results": "Rhymes for “{word}”",
+    "levels": {
+      "exact": "Exact",
+      "near": "Near",
+      "last": "Last syllable"
+    },
+    "showMore": "Show more ({count})",
+    "showLess": "Show less",
+    "onlyMore": "Only rare or less useful words."
   }
 }

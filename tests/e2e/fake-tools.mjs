@@ -1,8 +1,8 @@
 // Stands in for the tools server (D56) in E2E: answers LanguageTool's /v2/check from a
 // fixed list of words, so results do not depend on a running LT, and the dictionary service's
-// /dict/lemmas, /dict/definitions and /dict/synonyms from a small form table (task 25), a few
-// entries (task 32) and synonyms (task 33). Markers in the text or the looked-up word: AWARIA answers 503, POWOLI answers after a
-// delay.
+// /dict/lemmas, /dict/definitions, /dict/synonyms and /dict/rhymes from a small form table
+// (task 25), a few entries (task 32), synonyms (task 33) and rhymes (task 34). Markers in the
+// text or the looked-up word: AWARIA answers 503, POWOLI answers after a delay.
 import { createServer } from "node:http";
 
 const [port, secret] = process.argv.slice(2);
@@ -156,6 +156,29 @@ function matches(annotation) {
   return found.sort((a, b) => a.offset - b.offset);
 }
 
+// Spelling → rows of each rhyme level, as built (task 34). Frequencies are Zipf × 100: "wrota"
+// is rare and "nie" a function word, so both wait behind "Show more".
+const rhyme = (form, phones, freq = 400, flags = 0) => ({
+  form,
+  phones,
+  freq,
+  lemmas: form,
+  flags,
+});
+const RHYMES = {
+  kota: {
+    self: [{ ...rhyme("kota", "kota"), exact: "ota", near: "oPa", last: "ta" }],
+    exact: [
+      rhyme("kota", "kota"),
+      rhyme("złota", "zwota", 450),
+      rhyme("robota", "robota", 430),
+      rhyme("wrota", "vrota", 200),
+    ],
+    near: [rhyme("woda", "voda")],
+    last: [rhyme("lata", "lata"), rhyme("nie", "ńe", 800, 1)],
+  },
+};
+
 createServer(async (request, response) => {
   if (request.url === "/") return response.end("ok");
   if (request.headers["x-tools-secret"] !== secret) {
@@ -186,6 +209,14 @@ createServer(async (request, response) => {
       "/dict/definitions": {
         lemmas,
         definitions: { source: "wiktionary", rows: rows(ENTRIES, "entries") },
+      },
+      "/dict/rhymes": {
+        source: "rhymes",
+        self: [],
+        exact: [],
+        near: [],
+        last: [],
+        ...RHYMES[forms.find((form) => RHYMES[form])],
       },
       "/dict/synonyms": {
         lemmas,

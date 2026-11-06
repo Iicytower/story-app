@@ -1,7 +1,7 @@
-// Sources of the dictionary tools and their attribution (tasks 32–34, D62, D63). The tile names
+// Sources of the dictionary tools and their attribution (tasks 32–34, D62–D64). The tile names
 // the sources its results came from, by the `source` label the dictionary service gives each one.
 
-export type SourceId = "wiktionary" | "dobryslownik" | "polimorf";
+export type SourceId = "wiktionary" | "dobryslownik" | "polimorf" | "wordfreq";
 
 export interface SourceInfo {
   name: string;
@@ -36,6 +36,15 @@ export const SOURCES: Record<SourceId, SourceInfo> = {
     licence: "BSD 2-Clause",
     licenceUrl: "https://opensource.org/license/bsd-2-clause",
     short: "PM",
+  },
+  // Its data must keep its attribution and licence (D64).
+  wordfreq: {
+    name: "wordfreq",
+    url: "https://github.com/rspeer/wordfreq",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+    copyright: ["2022 Robyn Speer"],
+    short: "WF",
   },
 };
 
