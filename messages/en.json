@@ -450,7 +450,7 @@
   },
   "proofread": {
     "question": "Do you want to use the proofreading tool?",
-    "details": "LanguageTool checks the spelling, grammar, punctuation and style of this chapter; unsaved changes are saved first. The issues are marked in the chapter's text: pick a suggestion and apply it with ✓, or dismiss it with ✗. Meanwhile you can keep writing and use the other tools. The proofreading is saved with the chapter, so you can come back to it later, on any computer.",
+    "details": "LanguageTool checks the spelling, grammar, punctuation and style of this chapter; unsaved changes are saved first. The issues are marked in the chapter's text: pick a suggestion and apply it with ✓, or dismiss it with ✗. Meanwhile you can keep writing and use the other tools. The proofreading is saved with the chapter, so you can come back to it later.",
     "againQuestion": "This chapter is being proofread. Do you want to check it again?",
     "againDetails": "A new check replaces the issues left with new ones. Unsaved changes are saved first.",
     "check": "Check",

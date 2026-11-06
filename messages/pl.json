@@ -450,7 +450,7 @@
   },
   "proofread": {
     "question": "Czy chcesz użyć narzędzia do korekty?",
-    "details": "LanguageTool sprawdzi pisownię, gramatykę, interpunkcję i styl tego rozdziału; niezapisane zmiany zostaną najpierw zapisane. Błędy zostaną zaznaczone w tekście rozdziału: wybierz podpowiedź i zastosuj ją przyciskiem ✓ albo odrzuć przyciskiem ✗. W tym czasie możesz dalej pisać i używać innych narzędzi. Korekta zapisuje się razem z rozdziałem, więc możesz do niej wrócić później, na dowolnym komputerze.",
+    "details": "LanguageTool sprawdzi pisownię, gramatykę, interpunkcję i styl tego rozdziału; niezapisane zmiany zostaną najpierw zapisane. Błędy zostaną zaznaczone w tekście rozdziału: wybierz podpowiedź i zastosuj ją przyciskiem ✓ albo odrzuć przyciskiem ✗. W tym czasie możesz dalej pisać i używać innych narzędzi. Korekta zapisuje się razem z rozdziałem, więc możesz do niej wrócić później.",
     "againQuestion": "Ten rozdział jest w trakcie korekty. Czy chcesz sprawdzić go od nowa?",
     "againDetails": "Nowe sprawdzenie zastąpi pozostałe błędy nowymi. Niezapisane zmiany zostaną najpierw zapisane.",
     "check": "Sprawdź",
