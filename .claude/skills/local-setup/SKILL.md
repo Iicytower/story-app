@@ -22,6 +22,8 @@ Run from the repo root. Stop and report at the first failing step; do not work a
 
 4. **Database.** `npm run db:up` (starts the `mongo:8` container and waits for its healthcheck), then `npm run migrate` (applies `migrations/` and builds indexes; the app runs with `autoIndex: false`, so this step is required).
 
+   **Tools server (optional).** Ask the user whether to start it (needs about 0.6 GB RAM and 1.4 GB of images). If yes, run `npm run up` instead of `npm run db:up` (it starts MongoDB too): it starts Coolify and the target server in Docker, deploys the tools gateway and writes `TOOLS_API_URL` and `TOOLS_API_SECRET` to `.env.local`. Report the Coolify panel URL (`http://localhost:8000`) and that the admin password is in `.tools/tools.env`; never print it. `npm run down` stops everything. Details: `docs/deploy.md`, section "Lokalny serwer narzędzi".
+
 5. **Dev server.** Start `npm run dev` in the background, wait until it answers on `http://localhost:3000`, and report the URL. An account is created through "Log in / Create account" on the home page; `npm run create-account` is interactive and is run by the user, not by Claude.
 
 6. **Tests (only if the user asks).** E2E needs Chromium: ask the user, then run `npx playwright install chromium`. After that `npm run verify` runs lint, typecheck, Vitest and Playwright; tests start the Docker container themselves and use only `story_app_test_*` / `story_app_e2e` databases.

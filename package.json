@@ -13,7 +13,8 @@
     "test:e2e": "playwright test",
     "verify": "npm run lint && npm run typecheck && npm test && npm run test:e2e",
     "db:up": "docker compose up -d --wait mongo",
-    "db:down": "docker compose down",
+    "up": "tsx scripts/tools.ts up",
+    "down": "tsx scripts/tools.ts down",
     "create-account": "tsx --env-file=.env.local scripts/create-account.ts",
     "migrate": "tsx --env-file=.env.local scripts/migrate.ts",
     "backup": "bash scripts/backup.sh"

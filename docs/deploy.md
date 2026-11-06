@@ -6,7 +6,7 @@
 | --- | --- | --- | --- |
 | Produkcja | `main` | Production | `story-app` |
 | Staging | `staging` | Preview, zmienne przypięte do brancha `staging` | `story-app-staging` |
-| Lokalnie | dowolny | – | Docker, `story_app` (`npm run db:up`) |
+| Lokalnie | dowolny | – | Docker, `story_app` (`npm run db:up` albo `npm run up`) |
 
 - Vercel: Settings → Environment Variables → `MONGODB_URI` i `AUTH_SECRET` dla **Preview** z wybranym branchem `staging`. Inny `AUTH_SECRET` niż na produkcji. URI różni się od produkcyjnego tylko nazwą bazy (`.../story-app-staging?...`).
 - Preview innych branchy (`feature/*`) nie dostaje zmiennych, więc nie łączy się z żadną bazą.
@@ -52,6 +52,53 @@ Mechanizm: `docs/decisions.md` D14. Migracje uruchamiają się w buildzie produk
 - Atlas M0 nie ma automatycznych backupów (dopiero Flex i wyżej). Backup: `scripts/backup.sh` (sekcja „Backup bazy”, D26).
 - Function Region w Vercelu (Settings → Functions) ustawić na region klastra Atlasa (np. `fra1` dla Frankfurtu). Domyślnie funkcje szły do `iad1` (Waszyngton).
 - Konto produkcyjne: `MONGODB_URI='mongodb+srv://...' npm run create-account` (pojedyncze cudzysłowy, bo zsh interpretuje `&` i `?`; plik `.env.local` musi istnieć).
+
+## Lokalny serwer narzędzi (task 54, D56, D57)
+
+Odpowiednik prawdziwego serwera narzędzi (task 28), w całości w Dockerze. Usługi z profilu `tools` w `docker-compose.yml`:
+
+- `coolify`, `coolify-db`, `coolify-redis` – Coolify 4.6.0 (pliki bazowe Coolify przerobione na wolumeny projektu, bez `/data/coolify` na hoście);
+- `tools-server` – serwer docelowy: DinD z `sshd` (`docker/tools-server/`), dodany w Coolify jako serwer `story-app-tools`, bez proxy (`proxy_type: none`).
+
+Coolify wdraża na `tools-server` usługę Compose `story-app-tools` z `docker/tools/compose.yml` (bramka Caddy z nagłówkiem `X-Tools-Secret` i ścieżką `/health`; LanguageTool i serwis słownikowy dochodzą w taskach 29 i 25).
+
+| Co | Adres |
+| --- | --- |
+| Panel Coolify | `http://localhost:8000` (realtime: 6001, 6002), login `admin@story-app.localhost`, hasło w `.tools/tools.env` |
+| Bramka narzędzi | `http://127.0.0.1:8110` (`TOOLS_API_URL`) |
+
+Wszystkie porty tylko na `127.0.0.1`. Projekt Compose ma stałą nazwę `story_app` (`name:` w `docker-compose.yml`), więc wolumeny i kontenery mają prefiks `story_app` niezależnie od nazwy katalogu.
+
+Polecenia:
+
+- `npm run up` – startuje wszystko (MongoDB, Coolify, serwer docelowy), zakłada konto admina, włącza API Coolify i tworzy token, dodaje klucz SSH, serwer, projekt i usługę, ustawia sekret, czeka na `/health` i dopisuje `TOOLS_API_URL` i `TOOLS_API_SECRET` do `.env.local`. Ponowne uruchomienie niczego nie duplikuje i nie zmienia sekretów (tworzy tylko nowy token API w miejsce starego).
+- `npm run down` – `docker compose --profile tools down`: zatrzymuje i usuwa kontenery (także `mongo`), wolumeny zostają.
+- `npm run db:up`, `npm test`, `npm run test:e2e` startują tylko `mongo`.
+
+Pliki z `.gitignore` w `.tools/` (prawa 600, katalog 700): `coolify.env` (`APP_KEY`, hasła Postgresa i Redisa, `PUSHER_*`; nie zmieniać po pierwszym starcie), `tools.env` (login i hasło admina, `TOOLS_API_SECRET`), `ssh/id_ed25519` (klucz Coolify do serwera docelowego). Skrypt (`scripts/tools.ts`) nie wypisuje sekretów ani treści odpowiedzi API.
+
+Konto admina, przełącznik API i token zakłada skrypt przez `php artisan tinker` w kontenerze, bo seeder Coolify (`ROOT_USER_*`) wymaga e-maila z rekordem DNS i sprawdza hasło w HaveIBeenPwned, a przy błędzie tylko loguje.
+
+Uwagi:
+
+- Wbudowany serwer `localhost` (`host.docker.internal`) jest nieosiągalny: Coolify nie ma do niego klucza (brak `PrivateKey` 0), a my nie dajemy SSH do hosta. Nic na nim nie wdrażamy. Skutek w logach: przy starcie `StartProxy … FAIL`, a co minutę `CheckAndStartSentinelJob … FAIL` i w `storage/logs/laravel.log` ostrzeżenia `ServerConnectionCheck: Server not reachable` dla `localhost` – do zignorowania.
+- Zmiana `docker/tools/compose.yml`: `npm run up` wysyła nowy `docker_compose_raw` i restartuje usługę, gdy plik różni się od ostatnio wdrożonego (hash w `.tools/deployed-compose.sha256`). Wyjątek: Coolify zapisuje plik z `content:` (Caddyfile) tylko raz, więc zmiana Caddyfile wymaga `PATCH /services/{uuid}/storages` i restartu usługi albo resetu środowiska.
+- Błąd walidacji serwera (np. brak `git`, `curl`, `jq` w obrazie) zostaje w Coolify; po poprawce trzeba kliknąć Validate przy serwerze w panelu albo zresetować środowisko.
+- Zasoby (pomiar 2026-11-06, bez obciążenia): Coolify ok. 410 MB, Postgres 39 MB, Redis 12 MB, serwer docelowy 97 MB (w tym bramka 14 MB), razem ok. 560 MB bez MongoDB. Obrazy ok. 1,4 GB na hoście i 92 MB w DinD.
+
+Wymiana `TOOLS_API_SECRET`: wpisz nową wartość w `.tools/tools.env` (`openssl rand -hex 32`), potem `npm run up` – ustawi zmienną w Coolify, zrestartuje usługę i zaktualizuje `.env.local`.
+
+Reset środowiska narzędzi (bez ruszania danych MongoDB):
+
+```sh
+npm run down
+docker volume rm story_app_coolify-db story_app_coolify-redis story_app_coolify-storage \
+  story_app_tools-server-data story_app_tools-server-docker
+rm -rf .tools
+npm run up
+```
+
+Reset generuje nowe sekrety i nowe hasło admina. Usuwać zawsze razem wolumeny i `.tools/`: same `.tools/` przy starych wolumenach daje Coolify nowe `APP_KEY` i hasła niezgodne z bazą, a same `.tools/ssh` – klucz niezgodny z zapisanym w Coolify. Nie używać `docker compose down -v`: usunęłoby też wolumen `mongo-data` z lokalną bazą.
 
 ## Backup bazy
 
