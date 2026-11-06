@@ -46,6 +46,17 @@ export function exhaustSearchLimit(): Promise<void> {
   });
 }
 
+// Checks sent to LanguageTool: each takes an attempt of the proofreading limit first.
+export function proofreadAttempts(): Promise<number> {
+  return withE2EDb(async (connection) => {
+    const slots = await connection
+      .collection<{ _id: string; count: number }>("rateLimits")
+      .find({ _id: /^proofread:/ })
+      .toArray();
+    return slots.reduce((sum, { count }) => sum + count, 0);
+  });
+}
+
 export function restorePassword(user: UserName): Promise<void> {
   return withE2EDb(async (connection) => {
     await connection
@@ -148,6 +159,18 @@ type StoryDoc = {
   notes: string;
   updatedAt: Date;
   deletedAt: Date | null;
+  proofreading?: {
+    proposals: {
+      at?: number;
+      original: string;
+      kind?: string;
+      message?: string;
+      replacements?: string[];
+      ruleId?: string;
+      choice: number;
+    }[];
+    selected: number;
+  };
 };
 
 export function findStory(title: string): Promise<StoryDoc | null> {

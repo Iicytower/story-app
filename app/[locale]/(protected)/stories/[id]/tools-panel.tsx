@@ -51,9 +51,11 @@ export function ToolDialog({
         >
           <DialogHeader>
             <DialogTitle>{t(`items.${tool.id}.label`)}</DialogTitle>
-            <DialogDescription>
-              {t(`items.${tool.id}.description`)}
-            </DialogDescription>
+            {!tool.ownDescription && (
+              <DialogDescription>
+                {t(`items.${tool.id}.description`)}
+              </DialogDescription>
+            )}
           </DialogHeader>
           <Suspense
             fallback={

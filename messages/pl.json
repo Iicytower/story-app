@@ -111,6 +111,7 @@
     "dictionaryFull": "Słownik jest pełny (1000 słów). Najpierw usuń jakieś słowo w Ustawieniach.",
     "lookupWordInvalid": "Wpisz jedno słowo, maks. 50 znaków.",
     "rhymeFiltersInvalid": "Wybierz część mowy i liczbę sylab z listy.",
+    "proofreadingInvalid": "Nie udało się zapisać stanu korekty. Odśwież stronę i spróbuj ponownie.",
     "dictionaryTimeout": "Słownik nie odpowiedział na czas. Spróbuj ponownie."
   },
   "password": {
@@ -389,7 +390,7 @@
     "items": {
       "proofread": {
         "label": "Korekta",
-        "description": "Pisownia, gramatyka, interpunkcja i styl tego rozdziału. Zdecyduj o każdej zmianie, a potem zatwierdź."
+        "description": "Pisownia, gramatyka, interpunkcja i styl tego rozdziału, zaznaczone w jego tekście."
       },
       "name-generator": {
         "label": "Generator nazw",
@@ -448,13 +449,18 @@
     }
   },
   "proofread": {
+    "question": "Czy chcesz użyć narzędzia do korekty?",
+    "details": "LanguageTool sprawdzi pisownię, gramatykę, interpunkcję i styl tego rozdziału; niezapisane zmiany zostaną najpierw zapisane. Błędy zostaną zaznaczone w tekście rozdziału: wybierz podpowiedź i zastosuj ją przyciskiem ✓ albo odrzuć przyciskiem ✗. W tym czasie możesz dalej pisać i używać innych narzędzi. Korekta zapisuje się razem z rozdziałem, więc możesz do niej wrócić później, na dowolnym komputerze.",
+    "againQuestion": "Ten rozdział jest w trakcie korekty. Czy chcesz sprawdzić go od nowa?",
+    "againDetails": "Nowe sprawdzenie zastąpi pozostałe błędy nowymi. Niezapisane zmiany zostaną najpierw zapisane.",
+    "check": "Sprawdź",
+    "checkAgain": "Sprawdź ponownie",
     "checking": "Sprawdzanie rozdziału… Przy długim rozdziale może to chwilę potrwać.",
     "failed": "Nie udało się uruchomić sprawdzania. Odśwież stronę i spróbuj ponownie.",
-    "changed": "Rozdział zmienił się w trakcie sprawdzania. Zamknij to okno i sprawdź ponownie.",
+    "changed": "Rozdział zmienił się w trakcie sprawdzania. Sprawdź ponownie.",
     "noIssues": "Nie znaleziono błędów.",
     "notShown": "Znaleziono błędy, ale żadnego nie da się pokazać w tekście (np. przechodzą przez formatowanie). Sprawdź rozdział ręcznie.",
-    "text": "Sprawdzany tekst",
-    "panel": "Zmiana",
+    "panel": "Błąd",
     "position": "{index} z {count}",
     "previous": "Poprzednia zmiana",
     "next": "Następna zmiana",
@@ -470,11 +476,12 @@
     "noSuggestion": "Brak podpowiedzi. Popraw tekst samodzielnie albo odrzuć zmianę.",
     "apply": "Zastosuj zmianę",
     "reject": "Odrzuć zmianę",
-    "allDecided": "Nie zostały żadne zmiany. Zatwierdź, aby zaktualizować rozdział.",
-    "cancel": "Anuluj",
-    "accept": "Zatwierdź",
     "addToDictionary": "Dodaj do słownika",
-    "dictionaryFailed": "Nie udało się dodać słowa. Odśwież stronę i spróbuj ponownie."
+    "dictionaryFailed": "Nie udało się dodać słowa. Odśwież stronę i spróbuj ponownie.",
+    "bar": "Korekta",
+    "finish": "Zakończ korektę",
+    "closeBubble": "Zamknij szczegóły",
+    "sourceBlocked": "Zakończ korektę, aby przełączyć na Source."
   },
   "nameGenerator": {
     "typeGroups": {

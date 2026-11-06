@@ -13,7 +13,6 @@ import {
   currentProposal,
   dismissWord,
   loadProposals,
-  patchSource,
   proposalsPlugin,
   proposalsState,
   rejectProposal,
@@ -154,30 +153,5 @@ describe("proofread proposals", () => {
     view.dispatch(view.state.tr.insertText("Wtedy ", 1));
     undo(view.state, view.dispatch);
     expect(left()).toEqual(["Napewno", "Wogóle", "tą"]);
-  });
-
-  it("records applied suggestions at LT offsets, until the user edits the text", () => {
-    const { view } = setup(MD, ISSUES);
-    applyProposal(view, 1);
-    chooseSuggestion(view, 0, 1);
-    applyProposal(view, 0);
-    const state = proposalsState(view.state);
-    expect(state.edited).toBe(false);
-    expect(patchSource(MD, state.applied)).toBe(
-      "Napewnie **W ogóle** i tą książkę.",
-    );
-    view.dispatch(view.state.tr.insertText("!", 2));
-    expect(proposalsState(view.state).edited).toBe(true);
-  });
-});
-
-describe("patchSource", () => {
-  it("keeps the rest of the source as written and escapes markdown in suggestions", () => {
-    expect(
-      patchSource("* Napewno _tak_\r\nKot", [
-        { offset: 11, length: 3, text: "nie" },
-        { offset: 2, length: 7, text: "Na *pewno*" },
-      ]),
-    ).toBe("* Na \\*pewno\\* _nie_\r\nKot");
   });
 });

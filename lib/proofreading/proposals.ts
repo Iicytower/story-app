@@ -3,39 +3,33 @@ import type { EditorState, Transaction } from "@tiptap/pm/state";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
 import { dictionaryMatcher } from "./dictionary";
+import type { ProofreadIssue } from "./languagetool";
 import type { DocIssue } from "./map";
 
-// A placed issue waiting for a decision; `choice` is the suggestion shown as the insertion.
-export interface Proposal extends DocIssue {
-  choice: number;
-}
+// LT's offsets are left out: they stop fitting after the first edit.
+export type IssueInfo = Omit<ProofreadIssue, "offset" | "length">;
 
-// An applied suggestion in the markdown source's terms (LT offsets).
-export interface SourceEdit {
-  offset: number;
-  length: number;
-  text: string;
+// A placed issue waiting for a decision; `choice` is the suggestion shown as the insertion.
+export interface Proposal {
+  id: number;
+  from: number;
+  to: number;
+  original: string;
+  issue: IssueInfo;
+  choice: number;
 }
 
 export interface ProposalsState {
   proposals: Proposal[];
   selected: number | null;
-  applied: SourceEdit[];
-  // Any change other than ✓ (typing, Undo): the source then can't be patched by offsets.
-  edited: boolean;
 }
 
-const EMPTY: ProposalsState = {
-  proposals: [],
-  selected: null,
-  applied: [],
-  edited: false,
-};
+const EMPTY: ProposalsState = { proposals: [], selected: null };
 
 type Action =
-  | { type: "load"; issues: DocIssue[] }
+  | { type: "load"; proposals: Proposal[]; selected: number | null }
   | { type: "remove"; ids: number[] }
-  | { type: "apply"; id: number; text: string }
+  | { type: "apply"; id: number }
   | { type: "choose"; id: number; choice: number }
   | { type: "select"; id: number };
 
@@ -64,23 +58,9 @@ function mapProposals(proposals: Proposal[], tr: Transaction): Proposal[] {
 function reduce(state: ProposalsState, action: Action): ProposalsState {
   switch (action.type) {
     case "load":
-      return {
-        ...EMPTY,
-        proposals: action.issues.map((issue) => ({ ...issue, choice: 0 })),
-        selected: action.issues[0]?.id ?? null,
-      };
-    case "apply": {
-      const proposal = state.proposals.find(({ id }) => id === action.id);
-      if (!proposal) return state;
-      const { issue } = proposal;
-      return {
-        ...reduce(state, { type: "remove", ids: [action.id] }),
-        applied: [
-          ...state.applied,
-          { offset: issue.offset, length: issue.length, text: action.text },
-        ],
-      };
-    }
+      return { proposals: action.proposals, selected: action.selected };
+    case "apply":
+      return reduce(state, { type: "remove", ids: [action.id] });
     case "remove":
       return action.ids.reduce((current, removed) => {
         const index = current.proposals.findIndex(({ id }) => id === removed);
@@ -124,13 +104,51 @@ export function currentProposal(state: ProposalsState): Proposal | undefined {
 const act = (view: EditorView, action: Action, tr = view.state.tr) =>
   view.dispatch(tr.setMeta(proposalsKey, action));
 
-export function loadProposals(view: EditorView, issues: DocIssue[]) {
-  // Not an edit: Undo must not take the proposals away.
+// Not an edit: Undo must not take the proposals away.
+function load(
+  view: EditorView,
+  proposals: Proposal[],
+  selected: number | null,
+) {
   act(
     view,
-    { type: "load", issues },
+    { type: "load", proposals, selected },
     view.state.tr.setMeta("addToHistory", false),
   );
+}
+
+export function loadProposals(view: EditorView, issues: DocIssue[]) {
+  load(
+    view,
+    issues.map(({ id, from, to, original, issue }) => ({
+      id,
+      from,
+      to,
+      original,
+      issue: {
+        kind: issue.kind,
+        message: issue.message,
+        replacements: issue.replacements,
+        ruleId: issue.ruleId,
+      },
+      choice: 0,
+    })),
+    issues[0]?.id ?? null,
+  );
+}
+
+// Proposals kept with the chapter, placed again (task 55).
+export function restoreProposals(
+  view: EditorView,
+  proposals: Proposal[],
+  selected: number | null,
+) {
+  load(view, proposals, selected);
+}
+
+// "Finish proofreading": the proposals left go, the text stays.
+export function clearProposals(view: EditorView) {
+  load(view, [], null);
 }
 
 export function selectProposal(view: EditorView, id: number) {
@@ -171,24 +189,7 @@ export function applyProposal(view: EditorView, id: number) {
       tr.doc.type.schema.text(text, tr.doc.nodeAt(proposal.from)?.marks),
     );
   else tr.delete(proposal.from, proposal.to);
-  act(view, { type: "apply", id, text }, tr);
-}
-
-// Markdown characters in a suggestion stay literal text.
-const escapeMarkdown = (text: string) => text.replace(/[\\`*_[\]<~]/g, "\\$&");
-
-// The source with the applied suggestions spliced in at LT's offsets, so the rest of the
-// markdown stays byte for byte as it was (the editor's serializer would rewrite all of it).
-export function patchSource(markdown: string, applied: SourceEdit[]): string {
-  return applied
-    .toSorted((a, b) => b.offset - a.offset)
-    .reduce(
-      (text, { offset, length, text: replacement }) =>
-        text.slice(0, offset) +
-        escapeMarkdown(replacement) +
-        text.slice(offset + length),
-      markdown,
-    );
+  act(view, { type: "apply", id }, tr);
 }
 
 export interface ProposalLabels {
@@ -271,7 +272,11 @@ function decorations(editorState: EditorState, labels: ProposalLabels) {
   );
 }
 
-export function proposalsPlugin(labels: ProposalLabels) {
+// `onPick` runs when a click lands on a proposal's text (the editor shows its details).
+export function proposalsPlugin(
+  labels: ProposalLabels,
+  onPick?: (id: number) => void,
+) {
   return new Plugin<ProposalsState>({
     key: proposalsKey,
     state: {
@@ -282,14 +287,7 @@ export function proposalsPlugin(labels: ProposalLabels) {
         const applied = action?.type === "apply";
         const before = applied ? reduce(value, action) : value;
         const mapped = tr.docChanged
-          ? {
-              ...before,
-              proposals: mapProposals(before.proposals, tr),
-              // Appended by plugins (e.g. the trailing paragraph after a list), not typed.
-              edited:
-                before.edited ||
-                (!applied && !tr.getMeta("appendedTransaction")),
-            }
+          ? { ...before, proposals: mapProposals(before.proposals, tr) }
           : before;
         return action && !applied ? reduce(mapped, action) : mapped;
       },
@@ -301,17 +299,23 @@ export function proposalsPlugin(labels: ProposalLabels) {
         const proposal = proposalsState(view.state).proposals.find(
           ({ from, to }) => pos >= from && pos <= to,
         );
-        if (proposal) selectProposal(view, proposal.id);
+        if (proposal) {
+          selectProposal(view, proposal.id);
+          onPick?.(proposal.id);
+        }
         return false;
       },
     },
   });
 }
 
-export const Proposals = Extension.create<{ labels: ProposalLabels }>({
+export const Proposals = Extension.create<{
+  labels: ProposalLabels;
+  onPick?: (id: number) => void;
+}>({
   name: "proofreadProposals",
   addOptions: () => ({ labels: { apply: "Apply", reject: "Reject" } }),
   addProseMirrorPlugins() {
-    return [proposalsPlugin(this.options.labels)];
+    return [proposalsPlugin(this.options.labels, this.options.onPick)];
   },
 });

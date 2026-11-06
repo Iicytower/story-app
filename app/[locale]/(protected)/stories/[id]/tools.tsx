@@ -15,6 +15,8 @@ export interface Tool {
   // Shown in the dialog the tile opens.
   View: ComponentType;
   dialogClassName?: string;
+  // The view renders the dialog's description itself.
+  ownDescription?: boolean;
 }
 
 // Loaded on opening the tile: the generator and its word lists stay out of the editor bundle.
@@ -46,7 +48,8 @@ export const TOOLS: Tool[] = [
     id: "proofread",
     icon: SpellCheckIcon,
     View: Proofread,
-    dialogClassName: "flex h-[calc(100dvh-2rem)] flex-col sm:max-w-6xl",
+    dialogClassName: "sm:max-w-md",
+    ownDescription: true,
   },
   {
     id: "name-generator",

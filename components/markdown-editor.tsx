@@ -70,15 +70,43 @@ import {
   recallScroll,
   rememberScroll,
 } from "@/lib/editor/scroll-memory";
-import { replaceDoc, textChange } from "@/lib/editor/replace-content";
 import { blockStarts } from "@/lib/editor/source-blocks";
+import type { ProofreadIssue } from "@/lib/proofreading/languagetool";
+import { placeIssues } from "@/lib/proofreading/map";
+import {
+  loadProposals,
+  Proposals,
+  type ProposalsState,
+  proposalsState,
+  restoreProposals,
+} from "@/lib/proofreading/proposals";
+import {
+  restoreProofreading,
+  storableIssues,
+  type StoredProofreading,
+  storeProofreading,
+} from "@/lib/proofreading/stored";
+import {
+  type Bubble,
+  ProofreadingBar,
+  ProofreadingBubble,
+  useProposals,
+} from "@/components/proofreading";
 
 type Mode = "preview" | "source";
 
-// For a change made outside the field (proofreading, task 23).
+// Proofreading in the field (task 55).
 export interface MarkdownEditorApi {
-  // One Undo step in either mode; the change goes through onChange like typing.
-  replaceContent: (markdown: string) => void;
+  // Marks the issues LT found in `markdown`, the field's content; resolves to how many fit.
+  startProofreading: (markdown: string, issues: ProofreadIssue[]) => number;
+  // Opens the current proposal's details, which take the focus.
+  showProofreading: () => void;
+}
+
+export interface ProofreadingOptions {
+  // As saved with the chapter.
+  initial: StoredProofreading | null;
+  onChange: (proofreading: StoredProofreading | null) => void;
 }
 
 // Measuring Source copies the whole text, so the position is read once scrolling pauses.
@@ -101,6 +129,7 @@ export function MarkdownEditor({
   compact = false,
   scrollMemory,
   apiRef,
+  proofreading,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -115,8 +144,11 @@ export function MarkdownEditor({
   // Remembers the scroll position under this chapter and field (see scroll-memory).
   scrollMemory?: { storyId: string; field: string };
   apiRef?: React.RefObject<MarkdownEditorApi | null>;
+  // Only the chapter's content field takes proofreading.
+  proofreading?: ProofreadingOptions;
 }) {
   const t = useTranslations("markdownEditor");
+  const tProofread = useTranslations("proofread");
   // Always Preview on open; the choice is not remembered.
   const [mode, setMode] = useState<Mode>("preview");
   const [linkOpen, setLinkOpen] = useState(false);
@@ -143,10 +175,16 @@ export function MarkdownEditor({
   const anchor = useRef<Anchor | null>(null);
   const scrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rememberRef = useRef(() => {});
+  const [bubble, setBubble] = useState<Bubble>("closed");
+  const lastProposals = useRef<ProposalsState | null>(null);
+  const proofreadingRef = useRef(proofreading);
+  // Read once: the field keeps its own proofreading from then on.
+  const [withProofreading] = useState(Boolean(proofreading));
 
   useEffect(() => {
     onChangeRef.current = onChange;
-  }, [onChange]);
+    proofreadingRef.current = proofreading;
+  });
 
   const editor = useEditor({
     // Rendered after hydration only, so the server HTML never disagrees with ProseMirror's.
@@ -159,6 +197,17 @@ export function MarkdownEditor({
       ),
       Markdown.configure({ markedOptions: MARKED_OPTIONS }),
       FindHighlight,
+      ...(withProofreading
+        ? [
+            Proposals.configure({
+              labels: {
+                apply: tProofread("apply"),
+                reject: tProofread("reject"),
+              },
+              onPick: () => setBubble("pointer"),
+            }),
+          ]
+        : []),
       Extension.create({
         name: "linkShortcut",
         addKeyboardShortcuts: () => ({
@@ -192,7 +241,36 @@ export function MarkdownEditor({
       synced.current = markdown;
       onChangeRef.current(markdown);
     },
+    // Decisions change the proposals only, without an update; both go to the chapter's save.
+    onTransaction: ({ editor }) => {
+      const options = proofreadingRef.current;
+      if (!options) return;
+      const before = lastProposals.current;
+      const after = proposalsState(editor.state);
+      lastProposals.current = after;
+      if (
+        before === after ||
+        (!before?.proposals.length && !after.proposals.length)
+      )
+        return;
+      options.onChange(
+        storeProofreading(editor.state.doc, after.proposals, after.selected),
+      );
+    },
   });
+  const proposals = useProposals(withProofreading ? editor : null);
+  const proofreadingActive = Boolean(proposals?.proposals.length);
+
+  // The proofreading saved with the chapter comes back once the editor exists.
+  useEffect(() => {
+    const initial = proofreadingRef.current?.initial;
+    if (!editor || !initial) return;
+    const restored = restoreProofreading(editor.state.doc, initial);
+    // Nothing fits the text any more: the saved state goes with the next save.
+    if (restored.proposals.length === 0)
+      proofreadingRef.current?.onChange(null);
+    else restoreProposals(editor.view, restored.proposals, restored.selected);
+  }, [editor]);
 
   // Compares by identity: the default deep comparison would walk the document on every transaction.
   const doc = useEditorState({
@@ -371,17 +449,25 @@ export function MarkdownEditor({
   useEffect(() => {
     if (!apiRef) return;
     apiRef.current = {
-      replaceContent(markdown) {
-        if (mode === "source") {
-          const change = textChange(value, markdown);
-          if (change) replaceInTextarea(change.from, change.to, change.text);
-        } else if (editor) {
-          const next = editor.schema.nodeFromJSON(
-            editor.markdown!.parse(markdown),
-          );
-          const tr = replaceDoc(editor.state.tr, next);
-          if (tr) editor.view.dispatch(tr);
-        }
+      startProofreading(markdown, issues) {
+        if (!editor) return 0;
+        // Proposals live in Preview; Source's text goes in first.
+        switchMode("preview");
+        const placed = storableIssues(
+          placeIssues(markdown, editor.state.doc, issues),
+        );
+        loadProposals(editor.view, placed);
+        return placed.length;
+      },
+      showProofreading() {
+        // The bubble takes the focus: focusing the text too (Tiptap does it a frame later)
+        // would count as a click outside and close it.
+        setBubble("keyboard");
+        requestAnimationFrame(() =>
+          editor?.view.dom
+            .querySelector("[data-proposal-current]")
+            ?.scrollIntoView({ block: "center" }),
+        );
       },
     };
   });
@@ -493,17 +579,29 @@ export function MarkdownEditor({
           aria-label={t("mode")}
           className="bg-muted text-muted-foreground mr-1 flex gap-0.5 rounded-md p-0.5"
         >
-          {(["preview", "source"] as const).map((option) => (
-            <button
-              key={option}
-              type="button"
-              aria-pressed={mode === option}
-              onClick={() => switchMode(option)}
-              className="aria-pressed:bg-background aria-pressed:text-foreground rounded px-2 py-0.5 text-xs font-medium aria-pressed:shadow-sm"
-            >
-              {t(option)}
-            </button>
-          ))}
+          {(["preview", "source"] as const).map((option) => {
+            // Proposals live in Preview only (task 55).
+            const blocked = option === "source" && proofreadingActive;
+            const button = (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={mode === option}
+                aria-disabled={blocked || undefined}
+                onClick={() => !blocked && switchMode(option)}
+                className="aria-pressed:bg-background aria-pressed:text-foreground rounded px-2 py-0.5 text-xs font-medium aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-pressed:shadow-sm"
+              >
+                {t(option)}
+              </button>
+            );
+            return blocked ? (
+              <WithTooltip key={option} label={tProofread("sourceBlocked")}>
+                {button}
+              </WithTooltip>
+            ) : (
+              button
+            );
+          })}
         </div>
         {mode === "preview" && editor && (
           <Toolbar editor={editor} onLink={() => setLinkOpen(true)} />
@@ -538,6 +636,17 @@ export function MarkdownEditor({
           onReplaceAll={replaceAll}
           onClose={closeFind}
         />
+      )}
+      {withProofreading && editor && mode === "preview" && (
+        <>
+          <ProofreadingBar editor={editor} onBubble={setBubble} />
+          <ProofreadingBubble
+            editor={editor}
+            bubble={bubble}
+            onBubble={setBubble}
+            lang={lang}
+          />
+        </>
       )}
       {mode === "source" ? (
         // A box cannot be shorter than its padding, so the textarea grows with the text

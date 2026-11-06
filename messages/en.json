@@ -111,6 +111,7 @@
     "dictionaryFull": "The dictionary is full (1000 words). Remove a word in Settings first.",
     "lookupWordInvalid": "Type one word of up to 50 characters.",
     "rhymeFiltersInvalid": "Choose a part of speech and syllables from the list.",
+    "proofreadingInvalid": "The proofreading state could not be saved. Reload the page and try again.",
     "dictionaryTimeout": "The dictionary did not answer in time. Try again."
   },
   "password": {
@@ -389,7 +390,7 @@
     "items": {
       "proofread": {
         "label": "Proofread",
-        "description": "Spelling, grammar, punctuation and style of this chapter. Decide on each change, then accept."
+        "description": "Spelling, grammar, punctuation and style of this chapter, marked in its text."
       },
       "name-generator": {
         "label": "Name generator",
@@ -448,13 +449,18 @@
     }
   },
   "proofread": {
+    "question": "Do you want to use the proofreading tool?",
+    "details": "LanguageTool checks the spelling, grammar, punctuation and style of this chapter; unsaved changes are saved first. The issues are marked in the chapter's text: pick a suggestion and apply it with ✓, or dismiss it with ✗. Meanwhile you can keep writing and use the other tools. The proofreading is saved with the chapter, so you can come back to it later, on any computer.",
+    "againQuestion": "This chapter is being proofread. Do you want to check it again?",
+    "againDetails": "A new check replaces the issues left with new ones. Unsaved changes are saved first.",
+    "check": "Check",
+    "checkAgain": "Check again",
     "checking": "Checking the chapter… This can take a while for a long chapter.",
     "failed": "The check could not run. Reload the page and try again.",
-    "changed": "The chapter changed while it was being checked. Close this window and check again.",
+    "changed": "The chapter changed while it was being checked. Check again.",
     "noIssues": "No issues found.",
     "notShown": "Issues were found, but none of them can be shown in the text (for example, they cross formatting). Check the chapter by hand.",
-    "text": "Checked text",
-    "panel": "Change",
+    "panel": "Issue",
     "position": "{index} of {count}",
     "previous": "Previous change",
     "next": "Next change",
@@ -470,11 +476,12 @@
     "noSuggestion": "No suggestion. Edit the text yourself or reject the change.",
     "apply": "Apply change",
     "reject": "Reject change",
-    "allDecided": "No changes left. Accept to update the chapter.",
-    "cancel": "Cancel",
-    "accept": "Accept",
     "addToDictionary": "Add to dictionary",
-    "dictionaryFailed": "The word could not be added. Reload the page and try again."
+    "dictionaryFailed": "The word could not be added. Reload the page and try again.",
+    "bar": "Proofreading",
+    "finish": "Finish proofreading",
+    "closeBubble": "Close details",
+    "sourceBlocked": "Finish proofreading to switch to Source."
   },
   "nameGenerator": {
     "typeGroups": {

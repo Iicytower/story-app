@@ -236,4 +236,65 @@ describe("saveStory", () => {
     );
     expect(await load(id)).toEqual(doc);
   });
+
+  describe("proofreading (task 55)", () => {
+    const proofreading = {
+      proposals: [
+        {
+          at: 0,
+          original: "Original",
+          kind: "spelling",
+          message: "Typo",
+          replacements: ["Origin"],
+          ruleId: "X",
+          choice: 0,
+        },
+      ],
+      selected: 0,
+    };
+
+    it("saves it with the content, keeps it when not sent and clears it with null", async () => {
+      const { id, updatedAt } = await seed();
+      const first = await saveStory(
+        id,
+        "Story",
+        "Original text",
+        "",
+        updatedAt,
+        // A field the app does not know is not stored.
+        { ...proofreading, extra: 1 },
+      );
+      expect((await load(id))?.proofreading).toEqual(proofreading);
+
+      const second = await saveStory(
+        id,
+        "Story",
+        "Original text!",
+        "",
+        first.ok ? first.updatedAt : "",
+      );
+      expect((await load(id))?.proofreading).toEqual(proofreading);
+
+      await saveStory(
+        id,
+        "Story",
+        "Original text!",
+        "",
+        second.ok ? second.updatedAt : "",
+        null,
+      );
+      expect((await load(id))?.proofreading).toBeUndefined();
+    });
+
+    it("refuses an invalid state and saves nothing", async () => {
+      const { id, updatedAt, doc } = await seed();
+      expect(
+        await saveStory(id, "Story", "New", "", updatedAt, {
+          ...proofreading,
+          selected: 5,
+        }),
+      ).toMatchObject({ ok: false, error: "INVALID_INPUT" });
+      expect(await load(id)).toEqual(doc);
+    });
+  });
 });

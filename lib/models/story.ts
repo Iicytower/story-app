@@ -1,4 +1,5 @@
 import mongoose, { Schema, type Model, type Types } from "mongoose";
+import type { StoredProofreading } from "@/lib/proofreading/stored";
 
 export type Publication = "public" | "hidden";
 
@@ -18,6 +19,8 @@ export interface StoryFields {
   formerSlugs?: string[];
   // When the chapter last became publicly visible; missing while it is not.
   publishedAt?: Date;
+  // The open proofreading of the chapter (task 55); missing when there is none.
+  proofreading?: StoredProofreading;
   deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -35,6 +38,8 @@ const storySchema = new Schema<StoryFields>(
     publication: { type: String, enum: ["public", "hidden"] },
     formerSlugs: { type: [String], default: undefined },
     publishedAt: { type: Date },
+    // Checked by parseStoredProofreading in saveStory.
+    proofreading: { type: Schema.Types.Mixed },
     // Always stored: a partial index filter cannot express "field does not exist".
     deletedAt: { type: Date, default: null },
   },

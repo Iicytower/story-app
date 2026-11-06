@@ -47,6 +47,7 @@ export async function getStory(userId: string, id: string) {
       publication: 1,
       folderId: 1,
       updatedAt: 1,
+      proofreading: 1,
     })
     .lean();
   if (!story) return null;
