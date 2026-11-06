@@ -157,7 +157,7 @@ function matches(annotation) {
 }
 
 // Spelling → rows of each rhyme level, as built (task 34). Frequencies are Zipf × 100: "wrota"
-// is rare and "nie" a function word, so both wait behind "Show more".
+// is rare and "ta" a function word, so both wait behind "Show more".
 const rhyme = (form, phones, freq = 400, flags = 0) => ({
   form,
   phones,
@@ -175,7 +175,7 @@ const RHYMES = {
       rhyme("wrota", "vrota", 200),
     ],
     near: [rhyme("woda", "voda")],
-    last: [rhyme("lata", "lata"), rhyme("nie", "ńe", 800, 1)],
+    last: [rhyme("lata", "lata"), rhyme("ta", "ta", 800, 1)],
   },
 };
 

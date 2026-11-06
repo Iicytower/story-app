@@ -3,7 +3,7 @@ import { seedStory } from "./db";
 import { storageStatePath } from "./env";
 import { expect, test } from "./helpers";
 
-// Answers come from fake-tools.mjs: "kota" has rhymes on every level, "wrota" is rare and "nie"
+// Answers come from fake-tools.mjs: "kota" has rhymes on every level, "wrota" is rare and "ta"
 // a function word; AWARIA fails.
 
 test.use({
@@ -51,9 +51,9 @@ test("rhymes show by level, with rare and function words behind Show more", asyn
   const last = results.getByRole("region", { name: "Last syllable" });
   await expect(last.getByRole("listitem")).toHaveText(["lata"]);
 
-  // Criterion 4: "nie" waits behind Show more.
+  // Criterion 4: the function word "ta" waits behind Show more.
   await last.getByRole("button", { name: "Show more (1)" }).click();
-  await expect(last.getByRole("listitem")).toHaveText(["lata", "nie"]);
+  await expect(last.getByRole("listitem")).toHaveText(["lata", "ta"]);
   await last.getByRole("button", { name: "Show less" }).click();
   await expect(last.getByRole("listitem")).toHaveText(["lata"]);
 

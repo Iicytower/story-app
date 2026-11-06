@@ -425,13 +425,25 @@ async function readWordfreq(): Promise<Map<string, number>> {
   return wordFrequencies(gunzipSync(data));
 }
 
-const LOWER_CASE = /^[a-ząćęłńóśźż]+$/;
-const CAPITALISED = /^[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+$/;
+const LOWER_CASE = /^[a-ząćęłńóśźżqvx]+$/;
+const CAPITALISED = /^[A-ZĄĆĘŁŃÓŚŹŻQVX][a-ząćęłńóśźżqvx]+$/;
 
 // The rhyme keys of every form of the form table (task 34, D64). Names count too, unless the
 // same word is also written in lower case ("Kot" next to "kot"); their frequency is that of the
 // lower-case word, as wordfreq has only those. Lemma ids are those of the form table the rhymes
 // were built from, which meta names.
+// Spellings without diacritics wordfreq counts often, though PoliMorf has them only as rare
+// words: they would show as common rhymes ("sie" for "nie").
+const MISSPELLINGS = new Set([
+  "sie",
+  "cie",
+  "sa",
+  "tez",
+  "juz",
+  "moze",
+  "wiec",
+]);
+
 async function buildRhymes() {
   if (!fs.existsSync(DATABASE)) {
     throw new Error("No form table: run `npm run dict:build forms` first.");
@@ -495,7 +507,7 @@ async function buildRhymes() {
       keys.exact,
       keys.near,
       keys.last,
-      frequencies.get(form.toLowerCase()) ?? 0,
+      MISSPELLINGS.has(form) ? 0 : (frequencies.get(form.toLowerCase()) ?? 0),
       [...lemmas].join(","),
       formFlags(form.toLowerCase(), formTags),
     );
