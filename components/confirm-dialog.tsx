@@ -1,7 +1,5 @@
 "use client";
 
-import { Trash2Icon } from "lucide-react";
-import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import {
@@ -13,56 +11,66 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { deleteFolder } from "../actions";
+import type { ActionResult } from "@/lib/action-result";
 
-export function DeleteFolderButton({
-  id,
-  name,
-  chapterCount,
+export function ConfirmDialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  confirmLabel,
+  pendingLabel,
+  destructive = false,
+  action,
+  onDone,
 }: {
-  id: string;
-  name: string;
-  chapterCount: number;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description: string;
+  confirmLabel: string;
+  pendingLabel?: string;
+  destructive?: boolean;
+  action: () => Promise<ActionResult>;
+  onDone?: () => void;
 }) {
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const t = useTranslations("folders");
   const tCommon = useTranslations("common");
+  const tErrors = useTranslations("errors");
 
   function handleOpenChange(next: boolean) {
-    setOpen(next);
+    onOpenChange(next);
     if (!next) setError(null);
   }
 
-  function handleDelete(event: React.MouseEvent) {
+  function handleConfirm(event: React.MouseEvent) {
     // Keep the dialog open until the action finishes so errors can be shown.
     event.preventDefault();
     startTransition(async () => {
-      const result = await deleteFolder(id);
-      if (result.ok) router.push("/stories");
-      else setError(result.message);
+      let result: ActionResult;
+      try {
+        result = await action();
+      } catch {
+        setError(tErrors("offline"));
+        return;
+      }
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      onOpenChange(false);
+      onDone?.();
     });
   }
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
-      <AlertDialogTrigger asChild>
-        <Button variant="outline">
-          <Trash2Icon />
-          {tCommon("delete")}
-        </Button>
-      </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {t("deleteDescription", { name, count: chapterCount })}
-          </AlertDialogDescription>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         {error && (
           <p role="alert" className="text-destructive text-sm">
@@ -72,11 +80,11 @@ export function DeleteFolderButton({
         <AlertDialogFooter>
           <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
           <AlertDialogAction
-            variant="destructive"
+            variant={destructive ? "destructive" : "default"}
             disabled={pending}
-            onClick={handleDelete}
+            onClick={handleConfirm}
           >
-            {pending ? tCommon("deleting") : tCommon("delete")}
+            {pending && pendingLabel ? pendingLabel : confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

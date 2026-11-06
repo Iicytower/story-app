@@ -2,7 +2,6 @@ import Form from "next/form";
 import { headers } from "next/headers";
 import { getLocale, getTranslations } from "next-intl/server";
 import { getPathname, Link } from "@/i18n/navigation";
-import { TagChips } from "@/components/tag-chips";
 import { Input } from "@/components/ui/input";
 import { connectDB } from "@/lib/db";
 import {
@@ -13,13 +12,17 @@ import {
 import { MAX_QUERY_LENGTH } from "@/lib/publish/search";
 import { clientIp, SEARCH_LIMIT, takeAttempt } from "@/lib/rate-limit";
 import { MAX_TAGS, parseTagFilter, tagFilterHref } from "@/lib/tags/tags";
+import { ChapterItem } from "./chapter-item";
 
 export async function PublicSearch({
   q,
   tag,
+  heading: Heading,
 }: {
   q: string | string[] | undefined;
   tag: string | string[] | undefined;
+  // h2 under the guest's hero, h1 otherwise.
+  heading: "h1" | "h2";
 }) {
   const query =
     typeof q === "string" ? q.trim().slice(0, MAX_QUERY_LENGTH) : "";
@@ -37,8 +40,8 @@ export async function PublicSearch({
   const searchPath = getPathname({ href: "/", locale: await getLocale() });
   const t = await getTranslations("search");
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-8">
-      <h1 className="text-2xl font-semibold">{t("title")}</h1>
+    <section className="flex flex-col gap-6">
+      <Heading className="text-2xl font-semibold">{t("title")}</Heading>
       <Form action={searchPath} role="search">
         <Input
           key={query}
@@ -87,7 +90,7 @@ export async function PublicSearch({
           />
         )
       )}
-    </div>
+    </section>
   );
 }
 
@@ -101,33 +104,13 @@ async function Results({ results }: { results: PublicSearchResult[] }) {
       aria-label={t("results")}
       className="flex flex-col divide-y rounded-lg border"
     >
-      {results.map(
-        ({ path, title, folderName, nickname, tags, folderTags, snippet }) => (
-          <li key={path}>
-            <Link
-              href={path}
-              className="hover:bg-muted/50 flex min-w-0 flex-col gap-1 px-4 py-3"
-            >
-              <span className="flex flex-wrap items-baseline gap-2">
-                <span className="font-medium">{title}</span>
-                <span className="text-muted-foreground text-xs">
-                  {t("inFolderBy", { folder: folderName, nickname })}
-                </span>
-              </span>
-              <span className="text-muted-foreground line-clamp-2 text-sm">
-                {snippet.before}
-                {snippet.match && (
-                  <mark className="text-foreground rounded-sm bg-yellow-200 dark:bg-yellow-500/40">
-                    {snippet.match}
-                  </mark>
-                )}
-                {snippet.after}
-              </span>
-              <TagChips tags={tags} folderTags={folderTags} />
-            </Link>
-          </li>
-        ),
-      )}
+      {results.map(({ folderName, nickname, ...result }) => (
+        <ChapterItem
+          key={result.path}
+          {...result}
+          byline={t("inFolderBy", { folder: folderName, nickname })}
+        />
+      ))}
     </ul>
   );
 }

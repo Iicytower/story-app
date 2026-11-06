@@ -66,7 +66,8 @@ Nie bez zgody **[wniosek]**. Ustawa o ochronie baz danych (Dz.U. 2024 poz. 1769)
 3. Każda definicja ma link do hasła i informację „Wikisłownik, CC BY-SA 4.0”.
 4. Odsyłacze form nie pojawiają się jako samodzielne definicje, o ile hasło ma lepsze znaczenia.
 5. Wynik zostaje po przełączeniu zakładki.
+6. Bez zmiennych serwera narzędzi (D56) kafelek jest widoczny, a szukanie daje komunikat o niedostępności narzędzia.
 
 ## Testy
 
-Unit: filtr i czyszczenie importu na próbkach, budowa linków. Integracyjne: akcja z atrapą serwisu. E2E: szukanie, brak wyniku, linki. `manual`: kompletność na prawdziwych danych.
+Unit: filtr i czyszczenie importu na próbkach, budowa linków. Integracyjne: akcja z atrapą serwisu i bez zmiennych serwera narzędzi. E2E: szukanie, brak wyniku, linki. `manual`: kompletność na prawdziwych danych.

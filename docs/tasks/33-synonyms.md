@@ -70,7 +70,8 @@ Odpadło przez „tylko wyszukiwanie”. Jeśli wróci: `domu` → budynku, `ła
 4. Brak wyniku daje komunikat.
 5. Blok „Sources” podaje źródła i licencje, ze wszystkimi wymaganymi notkami.
 6. Wynik zostaje po przełączeniu zakładki.
+7. Bez zmiennych serwera narzędzi (D56) kafelek jest widoczny, a szukanie daje komunikat o niedostępności narzędzia.
 
 ## Testy
 
-Unit: parsery źródeł, czyszczenie etykiet, scalanie duplikatów. Integracyjne: akcja z atrapą serwisu. E2E: szukanie, etykiety, brak wyniku. `manual`: jakość na próbce słów z researchu.
+Unit: parsery źródeł, czyszczenie etykiet, scalanie duplikatów. Integracyjne: akcja z atrapą serwisu i bez zmiennych serwera narzędzi. E2E: szukanie, etykiety, brak wyniku. `manual`: jakość na próbce słów z researchu.

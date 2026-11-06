@@ -29,6 +29,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FindPanel } from "@/components/find-panel";
 import { Button } from "@/components/ui/button";
+import { WithTooltip } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogClose,
@@ -477,18 +478,19 @@ export function MarkdownEditor({
         {mode === "preview" && editor && (
           <Toolbar editor={editor} onLink={() => setLinkOpen(true)} />
         )}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          aria-label={t("findReplace")}
-          title={t("findReplace")}
-          aria-pressed={find !== null}
-          onClick={() => (find ? closeFind() : openFind("replace"))}
-          className="aria-pressed:bg-muted"
-        >
-          <SearchIcon />
-        </Button>
+        <WithTooltip label={t("findReplace")}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t("findReplace")}
+            aria-pressed={find !== null}
+            onClick={() => (find ? closeFind() : openFind("replace"))}
+            className="aria-pressed:bg-muted"
+          >
+            <SearchIcon />
+          </Button>
+        </WithTooltip>
       </div>
       {find && (
         <FindPanel
@@ -847,20 +849,20 @@ function Toolbar({ editor, onLink }: { editor: Editor; onLink: () => void }) {
   return (
     <>
       {buttons.map(({ label, icon: Icon, active, disabled, run }) => (
-        <Button
-          key={label}
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          aria-label={label}
-          title={label}
-          aria-pressed={active}
-          disabled={disabled}
-          onClick={run}
-          className="aria-pressed:bg-muted"
-        >
-          <Icon />
-        </Button>
+        <WithTooltip key={label} label={label}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={label}
+            aria-pressed={active}
+            disabled={disabled}
+            onClick={run}
+            className="aria-pressed:bg-muted"
+          >
+            <Icon />
+          </Button>
+        </WithTooltip>
       ))}
     </>
   );

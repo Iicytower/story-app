@@ -42,7 +42,7 @@ test("registering signs in and shows an empty account", async ({ page }) => {
 
   await expect(page.getByRole("navigation", { name: "Main" })).toBeVisible();
   await page.goto("/stories");
-  await expect(page.getByRole("button", { name: "New story" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Actions" })).toBeVisible();
   await expect(page.getByRole("list", { name: "Folders" })).toHaveCount(0);
 });
 

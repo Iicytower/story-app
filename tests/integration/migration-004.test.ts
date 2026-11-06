@@ -66,7 +66,7 @@ describe("004-settings", () => {
   });
 
   it("moves the settings of unreleased task 09 builds into groups", async () => {
-    const layout = { ...DEFAULT_LAYOUT, split: true };
+    const layout = { ...DEFAULT_LAYOUT, tab: "tools" as const };
     const user = await insertUser({
       folderSort: "alpha",
       settings: { editorLayout: layout, mobileView: "notes", theme: "dark" },
@@ -76,7 +76,12 @@ describe("004-settings", () => {
 
     expect(await getUserSettings(user.toString())).toEqual({
       editor: { layout, mobileView: "notes" },
-      appearance: { sidebarCollapsed: false, theme: "dark", locale: null },
+      appearance: {
+        sidebarCollapsed: false,
+        theme: "dark",
+        accent: "sepia",
+        locale: null,
+      },
       folders: { sort: "alpha", manualOrder: false },
     });
   });

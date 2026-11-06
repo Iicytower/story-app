@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { getPathname, Link, redirect } from "@/i18n/navigation";
 import { getLocale } from "next-intl/server";
 import { LocalDate } from "@/components/local-date";
+import { SortableList } from "@/components/sortable-list";
 import { TagChips } from "@/components/tag-chips";
 import { Input } from "@/components/ui/input";
 import { requireUser } from "@/lib/auth/session";
@@ -12,13 +13,9 @@ import { listStories } from "@/lib/stories/queries";
 import { buildSnippet } from "@/lib/stories/search";
 import { listUserTags } from "@/lib/tags/queries";
 import { parseTagFilter, tagFilterHref } from "@/lib/tags/tags";
-import { reorderFolder, setFolderSort } from "../folders/actions";
-import { CreateFolderDialog } from "../folders/create-folder-dialog";
-import { ReorderButtons } from "../folders/reorder-buttons";
-import { SortSelect } from "../folders/sort-select";
-import { CreateStoryDialog } from "./create-story-dialog";
-import { DeleteStoryButton } from "./delete-story-button";
-import { ImportDialog } from "./import-dialog";
+import { moveFolder } from "../folders/actions";
+import { FolderRowMenu } from "../folders/folder-row-menu";
+import { StoriesMenu } from "./stories-menu";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -54,27 +51,12 @@ export default async function StoriesPage({
     locale: await getLocale(),
   });
   const t = await getTranslations("folders");
-  const sortOptions = [
-    { value: "updated", label: t("sortUpdated") },
-    { value: "manual", label: t("sortManual") },
-    { value: "alpha", label: t("sortAlpha") },
-  ];
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
       <div className="flex items-center gap-2">
         <h1 className="mr-auto text-2xl font-semibold">{t("title")}</h1>
-        <SortSelect
-          label={t("sortFolders")}
-          value={sort}
-          options={sortOptions}
-          action={setFolderSort}
-        />
-        <CreateFolderDialog />
-        <ImportDialog
-          folderNames={folders.map((folder) => folder.name)}
-          defaultFolder={defaultFolder?.name ?? ""}
-        />
-        <CreateStoryDialog
+        <StoriesMenu
+          sort={sort}
           folderNames={folders.map((folder) => folder.name)}
           defaultFolder={defaultFolder?.name ?? ""}
         />
@@ -118,38 +100,44 @@ export default async function StoriesPage({
       ) : folders.length === 0 ? (
         <p className="text-muted-foreground">{t("empty")}</p>
       ) : (
-        <ul
-          aria-label={t("listLabel")}
+        <SortableList
+          label={t("listLabel")}
+          sortable={sort === "manual"}
+          action={moveFolder}
           className="flex flex-col divide-y rounded-lg border"
-        >
-          {folders.map((folder, index) => (
-            <li key={folder.id} className="flex items-center gap-1 pr-3">
-              <Link
-                href={`/folders/${folder.id}`}
-                className="hover:bg-muted/50 flex min-w-0 flex-1 items-baseline gap-4 px-4 py-3"
-              >
-                <span className="mr-auto flex min-w-0 flex-wrap items-center gap-2">
-                  <span className="font-medium">{folder.name}</span>
-                  <TagChips tags={folder.tags} />
-                </span>
-                <span className="text-muted-foreground text-sm">
-                  {t("chapterCount", { count: folder.chapterCount })}
-                </span>
-                <span className="text-muted-foreground w-28 text-right text-sm">
-                  <LocalDate iso={folder.lastActivityAt} />
-                </span>
-              </Link>
-              {sort === "manual" && (
-                <ReorderButtons
+          itemClassName="flex items-center gap-1 pr-3"
+          items={folders.map((folder) => ({
+            id: folder.id,
+            name: folder.name,
+            content: (
+              <>
+                <Link
+                  href={`/folders/${folder.id}`}
+                  className="hover:bg-muted/50 flex min-w-0 flex-1 items-baseline gap-4 px-4 py-3"
+                >
+                  <span className="mr-auto flex min-w-0 flex-wrap items-center gap-2">
+                    <span className="font-medium">{folder.name}</span>
+                    <TagChips tags={folder.tags} />
+                  </span>
+                  <span className="text-muted-foreground text-sm">
+                    {t("chapterCount", { count: folder.chapterCount })}
+                  </span>
+                  <span className="text-muted-foreground w-28 text-right text-sm">
+                    <LocalDate iso={folder.lastActivityAt} />
+                  </span>
+                </Link>
+                <FolderRowMenu
+                  id={folder.id}
                   name={folder.name}
-                  isFirst={index === 0}
-                  isLast={index === folders.length - 1}
-                  action={reorderFolder.bind(null, folder.id)}
+                  tags={folder.tags ?? []}
+                  userTags={userTags}
+                  isPublic={Boolean(folder.published)}
+                  chapterCount={folder.chapterCount}
                 />
-              )}
-            </li>
-          ))}
-        </ul>
+              </>
+            ),
+          }))}
+        />
       )}
     </div>
   );
@@ -185,10 +173,10 @@ async function SearchResults({
       {stories.map((story) => {
         const snippet = buildSnippet(story.content, query);
         return (
-          <li key={story.id} className="flex items-center gap-2 pr-3">
+          <li key={story.id}>
             <Link
               href={`/stories/${story.id}`}
-              className="hover:bg-muted/50 flex min-w-0 flex-1 flex-col gap-1 px-4 py-3"
+              className="hover:bg-muted/50 flex flex-col gap-1 px-4 py-3"
             >
               <span className="flex items-baseline gap-2">
                 <span className="font-medium">{story.title}</span>
@@ -199,7 +187,7 @@ async function SearchResults({
               <span className="text-muted-foreground line-clamp-2 text-sm">
                 {snippet.before}
                 {snippet.match && (
-                  <mark className="text-foreground rounded-sm bg-yellow-200 dark:bg-yellow-500/40">
+                  <mark className="text-foreground bg-highlight rounded-sm">
                     {snippet.match}
                   </mark>
                 )}
@@ -207,7 +195,6 @@ async function SearchResults({
               </span>
               <TagChips tags={story.tags} folderTags={story.folderTags} />
             </Link>
-            <DeleteStoryButton id={story.id} title={story.title} />
           </li>
         );
       })}

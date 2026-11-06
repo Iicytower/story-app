@@ -1,6 +1,5 @@
 import type { Types } from "mongoose";
 import { isDuplicateKeyError } from "@/lib/db";
-import type { Direction } from "@/lib/folders/sort";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
 
@@ -56,18 +55,17 @@ export async function nextChapterPosition(
 
 type Positioned = { _id: Types.ObjectId; position?: number };
 
-// Returns null when the id is not in the list, and the list unchanged at either end.
-export function moveInList<T extends Positioned>(
+// Returns null when the id is not in the list; an index past the end moves the item last.
+export function moveToIndex<T extends Positioned>(
   items: T[],
   id: string,
-  direction: Direction,
+  index: number,
 ): T[] | null {
-  const index = items.findIndex((item) => item._id.toString() === id);
-  if (index === -1) return null;
-  const target = direction === "up" ? index - 1 : index + 1;
-  if (target < 0 || target >= items.length) return items;
+  const from = items.findIndex((item) => item._id.toString() === id);
+  if (from === -1) return null;
   const result = [...items];
-  [result[index], result[target]] = [result[target], result[index]];
+  const [item] = result.splice(from, 1);
+  result.splice(Math.min(index, result.length), 0, item);
   return result;
 }
 

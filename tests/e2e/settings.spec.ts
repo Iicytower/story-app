@@ -1,7 +1,13 @@
 import type { Browser, Page } from "@playwright/test";
 import { findSettings, seedStory } from "./db";
 import { storageStatePath, type UserName } from "./env";
-import { sidebarAction, countActionRequests, expect, test } from "./helpers";
+import {
+  countActionRequests,
+  expect,
+  openSettings,
+  saveTheme,
+  test,
+} from "./helpers";
 
 test.use({
   storageState: storageStatePath("alice"),
@@ -11,7 +17,8 @@ test.use({
 const seedChapter = () =>
   seedStory("alice", { title: "Chapter", folder: "Book" });
 
-const split = (page: Page) => page.getByRole("button", { name: "Split" });
+const sideTab = (page: Page, name: string) =>
+  page.getByRole("tablist", { name: "Side panel" }).getByRole("tab", { name });
 const html = (page: Page) => page.locator("html");
 
 // A fresh browser profile: no localStorage, only the session cookie.
@@ -34,18 +41,17 @@ test("the desktop layout is restored in another browser and rendered by the serv
 }) => {
   const id = await seedChapter();
   await page.goto(`/stories/${id}`);
-  await split(page).click();
-  await page.getByRole("button", { name: "Move notes right" }).click();
+  await sideTab(page, "Chapters").click();
   await expect
     .poll(async () => (await findSettings("alice"))?.editor?.layout)
-    .toMatchObject({ split: true, order: ["chapters", "notes", "tools"] });
+    .toMatchObject({ tab: "chapters" });
 
   const other = await newBrowser(browser, "alice");
   await other.page.goto(`/stories/${id}`);
-  await expect(split(other.page)).toHaveAttribute("aria-pressed", "true");
-  await expect(
-    other.page.getByRole("button", { name: "Move chapters left" }),
-  ).toBeDisabled();
+  await expect(sideTab(other.page, "Chapters")).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
   await other.context.close();
 
   // Without JavaScript only the server HTML is shown: no default layout first.
@@ -53,7 +59,10 @@ test("the desktop layout is restored in another browser and rendered by the serv
     javaScriptEnabled: false,
   });
   await noScript.page.goto(`/stories/${id}`);
-  await expect(split(noScript.page)).toHaveAttribute("aria-pressed", "true");
+  await expect(sideTab(noScript.page, "Chapters")).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
   await expect(
     noScript.page.getByRole("list", { name: "Chapters" }),
   ).toBeVisible();
@@ -66,19 +75,22 @@ test("another user keeps the default layout and theme", async ({
 }) => {
   const id = await seedChapter();
   await page.goto(`/stories/${id}`);
-  await split(page).click();
-  await sidebarAction(page, "Toggle theme");
+  await sideTab(page, "Chapters").click();
+  await saveTheme(page, "Dark");
   await expect
     .poll(() => findSettings("alice"))
     .toMatchObject({
       appearance: { theme: "dark" },
-      editor: { layout: { split: true } },
+      editor: { layout: { tab: "chapters" } },
     });
 
   const bobId = await seedStory("bob", { title: "Bob's", folder: "Bob" });
   const bob = await newBrowser(browser, "bob");
   await bob.page.goto(`/stories/${bobId}`);
-  await expect(split(bob.page)).toHaveAttribute("aria-pressed", "false");
+  await expect(sideTab(bob.page, "Notes")).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
   await expect(html(bob.page)).not.toHaveClass(/\bdark\b/);
   await bob.context.close();
 });
@@ -88,7 +100,7 @@ test("the theme follows the settings in another browser, from the first paint", 
   browser,
 }) => {
   await page.goto("/stories");
-  await sidebarAction(page, "Toggle theme");
+  await saveTheme(page, "Dark");
   await expect
     .poll(async () => (await findSettings("alice"))?.appearance?.theme)
     .toBe("dark");
@@ -137,6 +149,62 @@ test("the sign-in page uses the browser's saved theme, otherwise the system one"
   await visitor.close();
 });
 
+test("the accent color is picked from swatches and kept for the user", async ({
+  page,
+  browser,
+}) => {
+  await page.goto("/stories");
+  const primary = () =>
+    page.evaluate(() =>
+      getComputedStyle(document.body).getPropertyValue("--primary"),
+    );
+  const sepia = await primary();
+  const dialog = await openSettings(page);
+  const accents = dialog.getByRole("radiogroup", { name: "Accent color" });
+  await expect(accents.getByRole("radio")).toHaveCount(5);
+  await expect(accents.getByRole("radio", { name: "Sepia" })).toBeChecked();
+
+  await accents.getByRole("radio", { name: "Navy" }).check();
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await expect(dialog.getByRole("button", { name: "Save" })).toBeDisabled();
+  await expect(html(page)).toHaveAttribute("data-accent", "navy");
+  expect(await primary()).not.toBe(sepia);
+  await expect
+    .poll(async () => (await findSettings("alice"))?.appearance?.accent)
+    .toBe("navy");
+
+  // Server HTML of another browser, and the public pages of the signed-in user.
+  const other = await newBrowser(browser, "alice");
+  await other.page.goto("/");
+  await expect(html(other.page)).toHaveAttribute("data-accent", "navy");
+  await other.context.close();
+
+  const visitor = await browser.newContext({
+    storageState: { cookies: [], origins: [] },
+  });
+  const visitorPage = await visitor.newPage();
+  await visitorPage.goto("/");
+  await expect(html(visitorPage)).not.toHaveAttribute("data-accent");
+  await visitor.close();
+});
+
+test("the dark theme sets a dark color-scheme for native controls", async ({
+  browser,
+}) => {
+  for (const colorScheme of ["dark", "light"] as const) {
+    const user = await newBrowser(browser, "alice", { colorScheme });
+    await user.page.goto("/stories");
+    await expect
+      .poll(() =>
+        user.page.evaluate(
+          () => getComputedStyle(document.documentElement).colorScheme,
+        ),
+      )
+      .toBe(colorScheme);
+    await user.context.close();
+  }
+});
+
 test("dragging a separator sends only a few saves", async ({ page }) => {
   const id = await seedChapter();
   await page.goto(`/stories/${id}`);
@@ -155,7 +223,7 @@ test("dragging a separator sends only a few saves", async ({ page }) => {
 
   await expect
     .poll(async () => (await findSettings("alice"))?.editor?.layout)
-    .toMatchObject({ widths: { "story,side": expect.any(Object) } });
+    .toMatchObject({ widths: { "story-column": expect.any(Number) } });
   await page.waitForTimeout(1000);
   expect(requests.length).toBeGreaterThanOrEqual(1);
   expect(requests.length).toBeLessThanOrEqual(2);

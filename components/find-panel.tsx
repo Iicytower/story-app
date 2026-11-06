@@ -11,6 +11,7 @@ import {
 import { useTranslations } from "next-intl";
 import type { ReactNode, RefObject } from "react";
 import { Button } from "@/components/ui/button";
+import { WithTooltip } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import type { FindOptions } from "@/lib/editor/find";
 
@@ -28,19 +29,20 @@ function PanelButton({
   children: ReactNode;
 }) {
   return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon-sm"
-      aria-label={label}
-      title={label}
-      aria-pressed={pressed}
-      disabled={disabled}
-      onClick={onClick}
-      className="aria-pressed:bg-muted"
-    >
-      {children}
-    </Button>
+    <WithTooltip label={label}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        aria-label={label}
+        aria-pressed={pressed}
+        disabled={disabled}
+        onClick={onClick}
+        className="aria-pressed:bg-muted"
+      >
+        {children}
+      </Button>
+    </WithTooltip>
   );
 }
 

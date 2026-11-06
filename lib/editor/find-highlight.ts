@@ -5,9 +5,8 @@ import { Plugin, PluginKey, type Transaction } from "@tiptap/pm/state";
 import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
 import { expandMatch, findMatches, type Match } from "./find";
 
-export const MATCH_CLASS = "rounded-xs bg-yellow-300/60 dark:bg-yellow-500/35";
-export const CURRENT_MATCH_CLASS =
-  "rounded-xs bg-orange-400/80 dark:bg-orange-500/70";
+export const MATCH_CLASS = "rounded-xs bg-highlight";
+export const CURRENT_MATCH_CLASS = "rounded-xs bg-highlight-current";
 
 type DocMatch = Match & { block: string; start: number };
 

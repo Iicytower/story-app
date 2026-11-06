@@ -6,6 +6,8 @@ import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import { routing } from "@/i18n/routing";
 import { getUserSettings } from "@/lib/settings/queries";
+import { InlineScript } from "@/components/inline-script";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { type ThemeAttribute, themeScript } from "@/lib/theme";
 import "../globals.css";
 
@@ -31,8 +33,11 @@ export default async function LocaleLayout({
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   const userId = (await auth())?.user?.id;
-  const theme: ThemeAttribute | undefined = userId
-    ? ((await getUserSettings(userId)).appearance.theme ?? "system")
+  const appearance = userId
+    ? (await getUserSettings(userId)).appearance
+    : undefined;
+  const theme: ThemeAttribute | undefined = appearance
+    ? (appearance.theme ?? "system")
     : undefined;
 
   return (
@@ -41,14 +46,18 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       data-theme={theme}
+      // Without a session the default palette from :root.
+      data-accent={appearance?.accent}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <InlineScript html={themeScript} />
       </head>
       <body className="flex min-h-full flex-col">
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          <TooltipProvider>{children}</TooltipProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

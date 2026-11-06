@@ -1,7 +1,13 @@
 import type { Page } from "@playwright/test";
 import { findStoryById, seedStory } from "./db";
 import { storageStatePath } from "./env";
-import { expect, markdownEditor, test } from "./helpers";
+import {
+  expect,
+  markdownEditor,
+  publishFromEditor,
+  selectToLineStart,
+  test,
+} from "./helpers";
 
 test.use({
   storageState: storageStatePath("alice"),
@@ -19,7 +25,7 @@ async function formatLine(
   await content.field.click();
   await page.keyboard.type(text);
   await expect(content.field).toHaveText(text);
-  await page.keyboard.press("Shift+Home");
+  await selectToLineStart(page);
   await expect
     .poll(() => page.evaluate(() => window.getSelection()?.toString()))
     .toBe(text);
@@ -168,7 +174,7 @@ test("typed dialogue stays paragraphs in the editor, Source and on the public pa
   await expect(content.field.locator("p")).toHaveText(["– Hello.", "– Hi!"]);
   await expect(content.field.locator("ul, li")).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Publish", exact: true }).click();
+  await publishFromEditor(page);
   const url = await page
     .getByRole("textbox", { name: "Public link" })
     .inputValue();
@@ -241,7 +247,7 @@ test("a comment written in the editor is not on the public page", async ({
   await page.keyboard.press("Control+s");
   await expect(page.getByRole("status")).toHaveText("Saved");
 
-  await page.getByRole("button", { name: "Publish", exact: true }).click();
+  await publishFromEditor(page);
   const url = await page
     .getByRole("textbox", { name: "Public link" })
     .inputValue();
@@ -265,7 +271,7 @@ test("chapter and folder notes use the same editor with Preview and Source", asy
     const notes = markdownEditor(page, label);
     await notes.field.click();
     await page.keyboard.type("idea");
-    await page.keyboard.press("Shift+Home");
+    await selectToLineStart(page);
     await notes.button("Bold").click();
     expect(await notes.source(), label).toBe("**idea**");
   }

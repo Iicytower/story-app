@@ -10,6 +10,7 @@ Aplikacja webowa do pisania opowiadań (docelowo publiczna, D46) w markdown (Nex
 - `docs/decisions.md` – decyzje i odstępstwa od spec; **ma pierwszeństwo nad spec**. Nową decyzję dopisz tutaj.
 - `docs/testing.md` – strategia testów (unit / integracyjne z MongoDB w Dockerze / E2E Playwright). **Obowiązkowa przy każdym tasku.**
 - `docs/tasks/README.md` – lista tasków ze statusami, branche i definicja „zrobione”; szczegóły otwartych tasków w `docs/tasks/NN-*.md` (sekcje Zakres, Kryteria akceptacji, Testy), zakończonych w `docs/tasks/done/`. Otwarte taski są w tabeli w kolejności realizacji.
+- `README.md` (po angielsku) – krótki, marketingowy opis aplikacji, stack, proces pracy z Claude Code i uruchamianie lokalne (ręcznie i skillem `/local-setup`). Aktualizuj go w ramach taska, który zmienia coś z tych sekcji (np. stack, komendy, wymagania, kroki uruchomienia, skille, hooki); przy zmianie kroków uruchomienia popraw też `.claude/skills/local-setup/SKILL.md`. Opis domenowy zostaje ogólny (kilka zdań), bez listy funkcji.
 - `docs/deploy.md` – środowiska (produkcja, staging), wydania, ustalenia z Vercela i Atlasa.
 
 ## Praca z taskami
@@ -20,7 +21,7 @@ Aplikacja webowa do pisania opowiadań (docelowo publiczna, D46) w markdown (Nex
 4. Napisz testy z sekcji „Testy” taska razem z kodem (nie na końcu). Każde kryterium akceptacji musi mieć test albo oznaczenie `manual`.
 5. `npm run verify` musi przechodzić. Nie zamykaj taska z czerwonymi lub pominiętymi testami.
 6. W odpowiedzi do użytkownika podaj mapowanie: kryterium akceptacji → test (lub wynik weryfikacji `manual`).
-7. Status `[x]`, plik taska przenieś do `docs/tasks/done/` (`git mv`) i popraw link w tabeli, potem jeden commit na task na branchu taska (wiadomość: `NN: <krótki opis>`). Merge do `develop` po zakończeniu taska; push `develop` tylko na prośbę użytkownika. **Nigdy nie merguj do `staging` ani `main` i nie pushuj na `staging`, `main` ani `master`** – robi to wyłącznie użytkownik, także przy prośbie o testy na stagingu (D45).
+7. Status `[x]`, plik taska przenieś do `docs/tasks/done/` (`git mv`) i popraw link w tabeli, potem jeden commit na task na branchu taska (wiadomość: `NN: <krótki opis>`). Merge do `develop` po zakończeniu taska; push `develop` tylko na prośbę użytkownika. Wiadomości commitów oraz tytuły i opisy PR-ów pisz po angielsku. **Nigdy nie merguj do `staging` ani `main` i nie pushuj na `staging`, `main` ani `master`** – robi to wyłącznie użytkownik, także przy prośbie o testy na stagingu (D45).
 
 ## Komendy
 
@@ -34,7 +35,7 @@ Aplikacja webowa do pisania opowiadań (docelowo publiczna, D46) w markdown (Nex
 
 ## Zasady projektu
 
-- UI wielojęzyczne (D46): angielski i polski, wybór w sidebarze; tylko desktop, dark mode.
+- UI wielojęzyczne (D46): angielski i polski, wybór w sidebarze; dark mode. Projektowane pod desktop; strona główna (D54) i edytor (D12) działają też na wąskim ekranie.
 - Wielu użytkowników (D1): każde zapytanie o `stories` filtruje po `userId` z sesji; cudze = `NOT_FOUND`/404. `userId` nigdy z wejścia klienta.
 - Odczyt: Server Components bezpośrednio z bazy. Zapis: Server Actions. Route Handlers tylko dla eksportu i Auth.js.
 - Każda Server Action sprawdza sesję i zwraca `{ ok: true, ... } | { ok: false, error, message }` – nie rzuca wyjątków.

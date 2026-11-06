@@ -1,6 +1,6 @@
 import { seedFolder, seedStory } from "./db";
 import { storageStatePath } from "./env";
-import { expect, test } from "./helpers";
+import { expect, menuAction, test } from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
@@ -25,7 +25,7 @@ test("tags a folder and a chapter, then filters /stories with search", async ({
   });
 
   await page.goto(`/folders/${folderId}`);
-  await page.getByRole("button", { name: "Tags", exact: true }).click();
+  await menuAction(page, "Actions for Saga", "Tags");
   const folderDialog = page.getByRole("dialog", { name: "Tags for Saga" });
   await folderDialog.getByLabel("Add tag").fill("Fantasy");
   await folderDialog.getByLabel("Add tag").press("Enter");
@@ -33,7 +33,7 @@ test("tags a folder and a chapter, then filters /stories with search", async ({
   await folderDialog.getByRole("button", { name: "Save" }).click();
   await expect(folderDialog).toBeHidden();
 
-  await page.getByRole("button", { name: "Tags for Dragon tale" }).click();
+  await menuAction(page, "Actions for Dragon tale", "Tags");
   const chapterDialog = page.getByRole("dialog", {
     name: "Tags for Dragon tale",
   });

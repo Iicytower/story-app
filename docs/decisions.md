@@ -306,7 +306,7 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Nick: 3–30 znaków, `A-Za-z0-9_-`. Hasło: 17–256 znaków (punktów kodowych), mała i wielka litera (także Unicode), cyfra, znak specjalny ASCII. Walidacja w `lib/credentials.ts`, egzekwowana też w `createOrUpdateUser`. Istniejące hasła nie są sprawdzane.
 - bcrypt uwzględnia tylko 72 bajty, więc nowe hasła idą przez SHA-256 (hex), a hash ma prefiks `sha256$`. Hash bez prefiksu to bcrypt surowego hasła sprzed D37 i działa dalej. Bez nowych pakietów.
 
-## D38 – Publikacja zamiast udostępniania linkiem (2026-11-01)
+## D38 – Publikacja zamiast udostępniania linkiem (2026-11-01, zmienione 2026-11-04 w D54)
 
 - Zmienia D1, D11, D18, D25 i spec („Udostępnianie przez link”). Decyzja użytkownika: „Share” znika całkowicie. Usunięte trasy `/s/...`, akcje `setSharing` i `setFolderSharing`, nagłówki `X-Robots-Tag`, przyciski. Wysłane linki przestają działać i nie są przenoszone do publikacji. `shareToken` zostaje w dokumentach (D14, expand-only), usuwamy go ze schematu, a `syncIndexes()` w buildzie usuwa indeksy.
 - Bez pliku migracji: brak `published` to nieopublikowany folder, brak `publication` to brak decyzji, więc po wdrożeniu nic nie jest publiczne.
@@ -351,7 +351,7 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - `normalizeLayout` uzupełnia `order` o brakujące panele zamiast go odrzucać. Zapisany układ ze Split bez `tools` dostaje `collapsed.tools = true`, bo trzecia widoczna kolumna zmieniłaby klucz szerokości i wyzerowała układ. Przycisk „Show tools” stoi przy prawej krawędzi.
 - Przy trzech kolumnach bocznych domyślna szerokość to 20%, żeby Story nie spadło poniżej `minSize` 30%. `moveColumn` przeskakuje schowane kolumny, inaczej Move left/right bywałby bez widocznego efektu.
 
-## D42 – Publiczna wyszukiwarka, strona główna i sidebar (2026-11-01)
+## D42 – Publiczna wyszukiwarka, strona główna i sidebar (2026-11-01, zmienione 2026-11-04 w D54)
 
 - Zmienia D1, D4, D29, D36, D38 i D40. Strona `/` to publiczna wyszukiwarka i widok domyślny po zalogowaniu (logowanie, rejestracja i Home prowadzą na `/`). Zalogowany widzi tę samą stronę z sidebarem.
 - Treść: regex bez rozróżniania wielkości liter, jak na `/stories`. `$text` nie zna polskiego, Atlas Search wymagałby innego obrazu Dockera i indeksu poza `syncIndexes()`, a embeddingi wysyłają tekst do dostawcy i kosztują. Regex nie zna odmiany („ręka” nie znajdzie „ręce”), nie widzi tekstu rozdzielonego znacznikami (`**a** b` dla „a b”) i przegląda wszystkie publiczne rozdziały. Przy dużej liczbie tekstów trzeba wrócić do Atlas Search.
@@ -387,7 +387,7 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Egzekwuje to hook PreToolUse `.claude/hooks/protect-branches.sh`: blokuje `git merge` na tych branchach, `git push` na nie i wszystkie `gh pr merge` (każdy PR w tym repo celuje w `staging` albo `main`).
 - `resolve-pr-conflicts` pomija PR-y z headem `staging` lub `main` i podaje komendy użytkownikowi.
 
-## D46 – Wielojęzyczny interfejs z prefiksem w adresie (2026-11-03)
+## D46 – Wielojęzyczny interfejs z prefiksem w adresie (2026-11-03, zmienione 2026-11-04 w D54)
 
 - Zmienia zasadę „UI w całości po angielsku” i założenie prywatnej aplikacji: aplikacja docelowo jest publiczna, interfejs ma wybór języka. Na start angielski i polski; kolejny język to tylko nowy plik tłumaczeń i wpis na liście języków (decyzja użytkownika).
 - Biblioteka `next-intl` (decyzja użytkownika, instalacja w tasku 43).
@@ -420,3 +420,56 @@ Zmienia przepływ z D13: `feature/NN-<slug>` (z `develop`) → `develop` → `st
 - Logowanie woła `signIn` z `redirect: false` i przekierowuje samo: na `callbackUrl` w języku z ustawienia (i ustawia cookie), a bez ustawienia w języku bieżącej strony. Auth.js nie sprawdza już `callbackUrl`, więc przed otwartym przekierowaniem chroni `withLocale`, które zostawia tylko ścieżkę i query.
 - Ograniczenie: proxy nie czyta bazy. Na urządzeniu, które już jest zalogowane, zmiana języka zrobiona na innym urządzeniu działa dla adresów bez prefiksu dopiero po kolejnym zalogowaniu albo przełączeniu na tym urządzeniu.
 - Strony publiczne mają `hreflang` dla każdego języka i `x-default` na adres bez prefiksu (zgodnie z D47; decyzja użytkownika). Adres bezwzględny z nagłówków żądania, więc produkcja i staging linkują do siebie.
+
+## D50 – Dialog ustawień (2026-11-03)
+
+- Motyw, język, zmiana hasła i wylogowanie przechodzą z sidebaru do jednego dialogu „Settings”, otwieranego z sidebaru; osobnej strony ustawień nie ma (decyzja użytkownika, task 46).
+- Motyw w dialogu ma trzy opcje: jasny, ciemny i systemowy.
+- Motyw i język wybiera się z list rozwijanych i zatwierdza wspólnym „Save” w prawym dolnym rogu, aktywnym tylko po zmianie; bez podglądu przed zapisem. „Cancel”, krzyżyk i kliknięcie poza dialogiem zamykają go i odrzucają niezapisane zmiany. Po zapisie dialog zostaje otwarty, także po zmianie języka (decyzja użytkownika).
+- Sekcja Konto: „Change password” zamienia treść dialogu na formularz z własnym „Save”; „Cancel” i „Close” wracają do ustawień. „Log out” działa od razu.
+
+## D51 – Bez trybu kolumn w edytorze (2026-11-03)
+
+- Tryb „Split” (prawy panel jako osobne kolumny) znika razem z kodem; edytor ma tylko panel boczny z zakładkami (decyzja użytkownika, task 47).
+- Zapisane `split`, `order` i szerokości kolumn są ignorowane przy odczycie, bez migracji.
+- `widths` to teraz jedna para rozmiarów `story-column` / `side-column`. Przy odczycie starego zapisu (rekord per zestaw kolumn) `normalizeLayout` bierze szerokość zakładek spod klucza `story,side`, więc użytkownik nie traci ustawionej szerokości. Zmienia D27 i odpowiednie punkty o Split w D12, D19 i przy panelu Tools.
+
+## D52 – Łagodniejszy kontrast i jeden motyw kolorystyczny (2026-11-03)
+
+- Oba tryby dostają mniejszy kontrast: w ciemnym tło nie czarne i tekst nie czysto biały, w jasnym tło złamana biel i tekst nie czysto czarny, przy zachowaniu WCAG AA (decyzja użytkownika, task 48).
+- ~~Kolor akcentu aplikacji wybiera użytkownik spośród 2–3 propozycji przygotowanych w tasku; jeden motyw dla wszystkich, bez wyboru w ustawieniach.~~ Zmiana przy wyborze propozycji (decyzja użytkownika, 2026-11-04): pięć palet akcentu (sepia, granat, szałwia, śliwka, morski) do wyboru w dialogu ustawień jako próbki kolorów (`appearance.accent`); domyślna sepia. Paleta podbarwia też tła, tekst, ramki, podświetlenie wyszukiwania i komentarze.
+- Paleta jest atrybutem `data-accent` na `<html>`, ustawianym przez layout z ustawień zalogowanego użytkownika. Strony publiczne mają paletę oglądającego; bez sesji obowiązuje domyślna (bez kopii w `localStorage`, inaczej niż motyw).
+- Kolory w komponentach tylko przez zmienne z `app/globals.css`, także podświetlenia wyszukiwania (`highlight`, `highlight-current`), komentarze (`comment`, `comment-border`) i diff wersji (`diff-added`, `diff-removed`). Wyjątek: przyciemnienie tła pod dialogiem (`bg-black/10`), bo to cień, nie kolor tekstu ani tła treści.
+- `color-scheme: dark` w trybie ciemnym, więc natywne kontrolki (listy `<select>`) są ciemne. Kolory `prose` (podgląd markdown, edytor) też idą ze zmiennych.
+
+## D53 – Tooltipy przy przyciskach z samą ikoną (2026-11-03)
+
+- Przyciski bez widocznej etykiety mają stylizowany tooltip (shadcn Tooltip na Radix) z tekstem jak `aria-label`, zamiast natywnego `title` (decyzja użytkownika, task 50).
+- `WithTooltip` w `components/ui/tooltip.tsx`, jeden `TooltipProvider` w `app/[locale]/layout.tsx` (opóźnienie 300 ms). Fokus otwiera tooltip tylko przy `:focus-visible`; treść nie przyjmuje kursora. Przyciski chowające etykietę na wąskim ekranie mają tooltip tylko poniżej `md`, zwinięty sidebar po prawej stronie ikon.
+
+## D54 – Strona główna z hero i ostatnio opublikowanymi (2026-11-04)
+
+- Zmienia D38, D42 i D46 (task 49). `/` zostaje jedną stroną dla gościa i zalogowanego, wyszukiwarka zostaje na `/`. Gość widzi hero (nagłówek, opis, „Create account” i „Log in”), potem wyszukiwarkę i „Recently published”; zalogowany to samo bez hero, z sidebarem. Sidebar traci pozycję Search, zostaje Home (decyzje użytkownika).
+- Dialog logowania z D42 bez zmian; przycisk w prawym górnym rogu i CTA hero otwierają ten sam dialog, CTA w trybie rejestracji albo logowania.
+- „Recently published”: rozdziały widoczne publicznie (warunki jak w wyszukiwarce), sortowane po `publishedAt` malejąco, remis `_id` malejąco. Serwer pobiera 15, klient pokazuje 5 i dokłada po 5. Lista nie zużywa `SEARCH_LIMIT`. Data względna do 7 dni, starsza jako data w języku interfejsu, liczona na serwerze w UTC.
+- Nowe pole `stories.publishedAt`: moment pierwszej publikacji rozdziału, ustawiany raz i nigdy nie zmieniany ani nie usuwany (decyzja użytkownika 2026-11-04, zastępuje wcześniejsze „każda publikacja od nowa, ukrycie robi `$unset`”). Dostaje go rozdział, który staje się publiczny i jeszcze go nie ma (Publish folderu, Publish all, Publish rozdziału; `stampPublishedAt` w `lib/publish/mutations.ts`). Unpublish, przeniesienie i przywrócenie z wersji go nie ruszają; o obecności na liście decydują warunki widoczności. Zapisy z `timestamps: false`: edytor wysyła `updatedAt` jako wersję oczekiwaną, więc zmiana publikacji nie może go zmieniać (decyzja użytkownika).
+- Rozdział bez `publishedAt` nie trafia na listę. Powtarzalna migracja `006-published-at` daje widocznym rozdziałom bez pola datę uruchomienia (także tym opublikowanym przez starą wersję w trakcie builda). Indeks `{ publication: 1, publishedAt: -1 }`.
+- Link Home w sidebarze ma `prefetch={false}`: render `/` czyta listy publiczne, a prefetch z każdej strony (także edytora) robiłby to przy każdym wejściu; jego spóźniona odpowiedź psuła też zaznaczenie w testach E2E edytora.
+- Tytuł strony głównej „Story App – write and publish stories” z opisem z hero. U gościa `h1` to nagłówek hero, u zalogowanego „Search stories”.
+- Odstępstwo od „tylko desktop” (D46): strona główna jest dopracowana pod wąski ekran (od 375 px); reszta aplikacji w tasku 51 (decyzja użytkownika).
+
+## D55 – Menu akcji (⋮) i przeciąganie zamiast strzałek (2026-11-04)
+
+- Zmienia D17 i D53 (task 52). Akcje stojące obok siebie jako ikony lub przyciski trafiają do menu otwieranego przyciskiem z pionowymi kropkami (shadcn DropdownMenu na Radix z `radix-ui`, `components/ui/dropdown-menu.tsx`). Pozycje mają ikonę i opis, więc nie dostają tooltipów; sam przycisk ⋮ ma `aria-label` i tooltip (D53). Usuwanie zawsze na końcu, czerwone, za separatorem (decyzje użytkownika).
+- Menu: wiersz rozdziału na stronie folderu (Tagi, Przenieś, Opublikuj / Cofnij publikację, Usuń), nagłówek folderu (Nowy rozdział | Sortuj › | Tagi, Zmień nazwę | Eksport, Import | publikacja, Opublikuj wszystkie | Usuń), nagłówek `/stories` (Nowe opowiadanie, Nowy folder | Sortuj › | Import), wiersz folderu na `/stories` (Tagi, Zmień nazwę, publikacja, Usuń), górny pasek edytora (Eksport, publikacja, Usuń), wiersz wersji (Przywróć, Usuń). Sortowanie to podmenu z opcjami do wyboru (`SortSelect` znika). Paski z publicznym linkiem i przycisk panelu bocznego edytora zostają poza menu.
+- Wiersze rozdziału i folderu pokazują przed ⋮ nieklikalną ikonę stanu publikacji (globus albo globus z kłódką, z tooltipem). Rozdział publiczny w nieopublikowanym folderze ma stan prywatny. Każda zmiana publikacji z menu wymaga potwierdzenia w dialogu.
+- Wyniki wyszukiwania na `/stories` i panel rozdziałów w edytorze są tylko nawigacją: bez usuwania i bez zmiany kolejności.
+- Dialogi otwierane z menu są sterowane (`open` / `onOpenChange`) i renderowane obok menu, nie w nim, bo zamknięcie menu odmontowuje jego zawartość.
+- Przyciski Move up / down (D17) znikają. W trybie manual lista folderów i lista rozdziałów na stronie folderu mają po lewej zawsze widoczny uchwyt do przeciągania (`@dnd-kit/core` + `@dnd-kit/sortable`; `@dnd-kit/react` jest jeszcze 0.x). Mysz od razu po ruchu o kilka pikseli, dotyk po przytrzymaniu uchwytu 250 ms (decyzja użytkownika), klawiatura: spacja, strzałki, spacja. Kolejność zmienia się od razu na kliencie, bez czekania na serwer.
+- Akcje `moveFolder(id, index)` i `moveChapter(id, index)` przenoszą element na pozycję w kolejności manual i przenumerowują listę jak dawniej `savePositions`. Indeks musi być nieujemną liczbą całkowitą (inaczej `INVALID_INPUT`), większy niż lista ląduje na końcu.
+
+## D56 – Serwer narzędzi lokalnie w Dockerze, flaga po zmiennych (2026-11-06)
+
+- Decyzje użytkownika. Wszystko, co miało działać na Mikrusie, na czas developmentu działa lokalnie (task 54). W `docker-compose.yml` są Coolify i serwer docelowy w kontenerze (DinD z SSH), a Coolify wdraża na niego usługi jak na Mikrusie: bramkę z sekretem (54), LanguageTool (29), serwis słownikowy (25). Jedno polecenie stawia całość i dopisuje `TOOLS_API_URL` i `TOOLS_API_SECRET` do `.env.local`.
+- Prawdziwy serwer (task 28) powstaje na końcu kolejki, po narzędziach z niego korzystających. Pomiary limitów czasu i RAM robimy lokalnie z limitami CPU i pamięci, a w tasku 28 je powtarzamy.
+- Flaga: narzędzia korzystające z serwera (korekta, kafelki słownikowe) działają tylko, gdy ustawione są obie zmienne. Bez nich kafelek jest widoczny, a kliknięcie lub szukanie daje komunikat o niedostępności, bez wywołania sieci. Na stagingu i produkcji narzędzia włączają się po ustawieniu zmiennych na Vercelu, bez zmian w kodzie. Klient serwera narzędzi i flagę buduje task 29, pozostałe z nich korzystają.

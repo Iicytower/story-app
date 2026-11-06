@@ -180,6 +180,7 @@ type FolderDoc = {
   name: string;
   notes: string;
   deletedAt: Date | null;
+  published?: boolean;
 };
 
 export function findFolder(name: string): Promise<FolderDoc | null> {
