@@ -1,36 +1,31 @@
 import type { Page } from "@playwright/test";
-import { findSettings, findStoryById, seedStory } from "./db";
+import {
+  findSettings,
+  findStoryById,
+  proofreadAttempts,
+  seedStory,
+  updateStoryById,
+} from "./db";
 import { storageStatePath } from "./env";
 import { expect, markdownEditor, openSettings, test } from "./helpers";
 
 // Answers come from fake-tools.mjs: Napewno, NAPEWNO, Wogóle and tą have suggestions, dobry
-// has none.
-// Each test runs one check; PROOFREAD_LIMIT allows 10 per user in 10 minutes.
+// has none; AWARIA fails and POWOLI answers after 4 s.
+// PROOFREAD_LIMIT allows 10 checks per user in 10 minutes.
 
 test.use({
   storageState: storageStatePath("alice"),
   viewport: { width: 1280, height: 800 },
 });
 
-async function openProofread(page: Page) {
-  await page
-    .getByRole("tablist", { name: "Side panel" })
-    .getByRole("tab", { name: "Tools" })
-    .click();
-  await page
-    .getByRole("list", { name: "Tools" })
-    .getByRole("button", { name: "Proofread" })
-    .click();
-  return proofreadDialog(page);
-}
-
-function proofreadDialog(page: Page) {
-  const dialog = page.getByRole("dialog", { name: "Proofread" });
-  const text = dialog.getByRole("textbox", { name: "Checked text" });
+// The proofreading in the chapter's editor (task 55).
+function proofreading(page: Page) {
+  const text = markdownEditor(page, "Content").field;
+  const bubble = page.getByRole("dialog", { name: "Issue" });
   return {
-    dialog,
     text,
-    panel: dialog.getByRole("region", { name: "Change" }),
+    bar: page.getByRole("toolbar", { name: "Proofreading" }),
+    bubble,
     proposal: (original: string) =>
       text.locator("[data-proposal]", { hasText: original }),
     // The ✓/✗ next to the n-th proposal in the text.
@@ -39,81 +34,248 @@ function proofreadDialog(page: Page) {
   };
 }
 
+async function openTile(page: Page) {
+  await page
+    .getByRole("tablist", { name: "Side panel" })
+    .getByRole("tab", { name: "Tools" })
+    .click();
+  await page
+    .getByRole("list", { name: "Tools" })
+    .getByRole("button", { name: "Proofread" })
+    .click();
+  return page.getByRole("dialog", { name: "Proofread" });
+}
+
+// Opens the tile and runs the check; the dialog stays open on a message.
+async function check(page: Page) {
+  const dialog = await openTile(page);
+  await dialog.getByRole("button", { name: "Check" }).click();
+  return { dialog, ...proofreading(page) };
+}
+
 const MD = "Napewno **Wogóle** i tą książkę.\n\n– Dobry, dobry.";
 
-test("marks every issue, takes decisions and Accept saves one Undo step", async ({
+test("asks first and sends nothing to LanguageTool until Check", async ({
   page,
 }) => {
-  // No timers: the chapter must be saved by Accept itself, not by autosave.
-  await page.clock.install();
+  const id = await seedStory("alice", { title: "Ask", content: MD });
+  await page.goto(`/stories/${id}`);
+  const dialog = await openTile(page);
+  await expect(
+    dialog.getByText("Do you want to use the proofreading tool?"),
+  ).toBeVisible();
+  await expect(
+    dialog.getByText(/^LanguageTool checks the spelling/),
+  ).toHaveClass(/text-xs/);
+  const button = dialog.getByRole("button", { name: "Check" });
+  await expect(button).toBeFocused();
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toBeHidden();
+  expect(await proofreadAttempts()).toBe(0);
+
+  const { bar, bubble } = await check(page);
+  await expect(bar).toBeVisible();
+  expect(await proofreadAttempts()).toBe(1);
+  // The dialog closes and the first issue's details take the focus.
+  await expect(page.getByRole("dialog", { name: "Proofread" })).toBeHidden();
+  await expect(bubble.getByText("Spelling")).toBeVisible();
+  await expect(
+    bubble.getByRole("button", { name: "Close details" }),
+  ).toBeFocused();
+});
+
+test("marks the issues in the chapter's editor, where decisions and typing change the text", async ({
+  page,
+}) => {
   const id = await seedStory("alice", { title: "Proof", content: MD });
   await page.goto(`/stories/${id}`);
-  const { dialog, text, panel, proposal, inline } = await openProofread(page);
+  const { text, bar, bubble, proposal, inline } = await check(page);
 
   await expect(text.locator("[data-proposal]")).toHaveCount(4);
   await expect(proposal("Napewno")).toHaveClass(/bg-diff-removed/);
   await expect(proposal("dobry")).toHaveClass(/bg-proofread-note/);
   await expect(text.locator("ins").first()).toHaveText("Na pewno");
-  await expect(panel.getByText("1 of 4")).toBeVisible();
-  await expect(panel.getByText("Spelling")).toBeVisible();
+  await expect(bar.getByText("1 of 4")).toBeVisible();
 
-  // Another suggestion from the list, then ✓ in the text.
-  await panel
+  // Another suggestion from the list, then ✓ in the bubble.
+  await bubble
     .getByRole("group", { name: "Suggestions" })
     .getByRole("button", { name: "Napewnie" })
     .click();
   await expect(text.locator("ins").first()).toHaveText("Napewnie");
-  await inline("Apply change", 0).click();
+  await bubble.getByRole("button", { name: "Apply change" }).click();
   await expect(text.locator("p").first()).toHaveText(/^Napewnie Wogóle/);
+  await expect(bar.getByText("1 of 3")).toBeVisible();
 
-  // ✗ in the text on Wogóle, ✓ in the panel on tą.
-  await expect(panel.getByText("1 of 3")).toBeVisible();
+  // ✗ in the text, then a click on an issue opens its details.
   await inline("Reject change", 0).click();
   await expect(proposal("Wogóle")).toHaveCount(0);
-  await expect(panel.getByText("Grammar")).toBeVisible();
-  await panel.getByRole("button", { name: "Apply change" }).click();
+  await proposal("tą").click();
+  await expect(bubble.getByText("Grammar")).toBeVisible();
+  await bubble.getByRole("button", { name: "Apply change" }).click();
   await expect(text.locator("p").first()).toContainText("i tę książkę");
 
   // An issue without suggestions: description and reject only.
-  await expect(panel.getByText("Powtórzony wyraz w zdaniu")).toBeVisible();
-  await expect(panel.getByText(/No suggestion/)).toBeVisible();
-  await expect(panel.getByRole("button", { name: "Apply change" })).toHaveCount(
-    0,
-  );
+  await expect(bubble.getByText("Powtórzony wyraz w zdaniu")).toBeVisible();
+  await expect(bubble.getByText(/No suggestion/)).toBeVisible();
+  await expect(
+    bubble.getByRole("button", { name: "Apply change" }),
+  ).toHaveCount(0);
 
-  // Own text typed in the dialog.
+  // Own text, typed in the chapter itself.
   await text.locator("p").first().click();
   await page.keyboard.press("End");
   await page.keyboard.type(" Koniec");
-
-  await dialog.getByRole("button", { name: "Accept" }).click();
-  await expect(dialog).toBeHidden();
-  const accepted =
-    "Napewnie **Wogóle** i tę książkę. Koniec\n\n– Dobry, dobry.";
+  await page.keyboard.press("Control+s");
   await expect
     .poll(async () => (await findStoryById(id))?.content)
-    .toBe(accepted);
+    .toBe("Napewnie **Wogóle** i tę książkę. Koniec\n\n– Dobry, dobry.");
+  expect(
+    (await findStoryById(id))?.proofreading?.proposals.map(
+      ({ original }) => original,
+    ),
+  ).toEqual(["dobry"]);
 
-  const content = markdownEditor(page, "Content");
-  await content.button("Undo").click();
-  expect(await content.source()).toBe(MD);
-  await content.button("Redo").click();
-  expect(await content.source()).toBe(accepted);
+  // The last decision ends the proofreading: the bar goes and the state is cleared.
+  await proposal("dobry").click();
+  await bubble.getByRole("button", { name: "Reject change" }).click();
+  await expect(bar).toBeHidden();
+  await expect(text.locator("[data-proposal]")).toHaveCount(0);
+  await expect(text).toBeFocused();
+  await page.keyboard.press("Control+s");
+  await expect
+    .poll(async () => (await findStoryById(id))?.proofreading)
+    .toBeUndefined();
 });
 
-test("closing the dialog without Accept leaves the chapter as it was", async ({
+test("comes back after a reload with the same issues and the same current one", async ({
   page,
 }) => {
-  const id = await seedStory("alice", { title: "Proof", content: MD });
+  const id = await seedStory("alice", { title: "Again", content: MD });
   await page.goto(`/stories/${id}`);
-  const { dialog, inline } = await openProofread(page);
-  await inline("Apply change", 0).click();
-  await dialog.getByRole("button", { name: "Cancel" }).click();
-  await expect(dialog).toBeHidden();
+  const { text, bar, bubble } = await check(page);
+  await bubble.getByRole("button", { name: "Reject change" }).click();
+  await bubble
+    .getByRole("group", { name: "Suggestions" })
+    .getByRole("button", { name: "W ogóle" })
+    .click();
+  await bar.getByRole("button", { name: "Next change" }).click();
+  await expect(bar.getByText("2 of 3")).toBeVisible();
+  await expect(bubble.getByText("Grammar")).toBeVisible();
+  await page.keyboard.press("Control+s");
+  await expect
+    .poll(async () => (await findStoryById(id))?.proofreading?.selected)
+    .toBe(1);
+
+  await page.reload();
+  await expect(bar.getByText("2 of 3")).toBeVisible();
+  await expect(text.locator("[data-proposal]")).toHaveText([
+    "Wogóle",
+    "tą",
+    "dobry",
+  ]);
+  await expect(text.locator("[data-proposal-current]")).toHaveText("tą");
+  // Opening the chapter does not save it.
+  const before = (await findStoryById(id))?.updatedAt;
+  await page.keyboard.press("Control+s");
+  await page.waitForTimeout(500);
+  expect((await findStoryById(id))?.updatedAt).toEqual(before);
+});
+
+test("a saved proofreading that no longer fits the text is dropped on opening", async ({
+  page,
+}) => {
+  const id = await seedStory("alice", { title: "Stale", content: MD });
+  await updateStoryById(id, {
+    proofreading: {
+      proposals: [
+        {
+          at: 3,
+          original: "Zniknęło",
+          kind: "spelling",
+          message: "",
+          replacements: [],
+          ruleId: "X",
+          choice: 0,
+        },
+      ],
+      selected: 0,
+    },
+  });
+  await page.goto(`/stories/${id}`);
+  const { bar, text } = proofreading(page);
+  await expect(text).toBeVisible();
+  await expect(bar).toBeHidden();
+  await page.keyboard.press("Control+s");
+  await expect
+    .poll(async () => (await findStoryById(id))?.proofreading)
+    .toBeUndefined();
+  const dialog = await openTile(page);
+  await expect(
+    dialog.getByText("Do you want to use the proofreading tool?"),
+  ).toBeVisible();
+});
+
+test("other tools work during proofreading, and Source is blocked until it ends", async ({
+  page,
+}) => {
+  const id = await seedStory("alice", { title: "Tools", content: MD });
+  await page.goto(`/stories/${id}`);
+  const { bar, text, bubble } = await check(page);
+  await expect(bubble).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(bubble).toBeHidden();
+  await expect(text).toBeFocused();
+
+  await page
+    .getByRole("list", { name: "Tools" })
+    .getByRole("button", { name: "Definitions" })
+    .click();
+  const definitions = page.getByRole("dialog", { name: "Definitions" });
+  await expect(definitions).toBeVisible();
+  await definitions.getByRole("button", { name: "Close" }).first().click();
+  await expect(bar).toBeVisible();
 
   const content = markdownEditor(page, "Content");
-  expect(await content.source()).toBe(MD);
+  const source = content.button("Source");
+  await expect(source).toHaveAttribute("aria-disabled", "true");
+  await source.click({ force: true });
+  await expect(content.button("Preview")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+
+  // Finish proofreading: the issues go, the text stays.
+  await bar.getByRole("button", { name: "Finish proofreading" }).click();
+  await expect(bar).toBeHidden();
+  await expect(text.locator("[data-proposal]")).toHaveCount(0);
+  await page.keyboard.press("Control+s");
+  await expect
+    .poll(async () => (await findStoryById(id))?.proofreading)
+    .toBeUndefined();
   expect((await findStoryById(id))?.content).toBe(MD);
+  await source.click();
+  await expect(content.group.getByRole("textbox")).toHaveValue(MD);
+});
+
+test("a check during proofreading asks and replaces the issues left", async ({
+  page,
+}) => {
+  const id = await seedStory("alice", { title: "Twice", content: MD });
+  await page.goto(`/stories/${id}`);
+  const { text, bubble } = await check(page);
+  await bubble.getByRole("button", { name: "Reject change" }).click();
+  await expect(text.locator("[data-proposal]")).toHaveCount(3);
+
+  const dialog = await openTile(page);
+  await expect(
+    dialog.getByText(
+      "This chapter is being proofread. Do you want to check it again?",
+    ),
+  ).toBeVisible();
+  await dialog.getByRole("button", { name: "Check" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(text.locator("[data-proposal]")).toHaveCount(4);
 });
 
 test("saves unsaved edits before the check and drops an answer that comes after closing", async ({
@@ -129,7 +291,7 @@ test("saves unsaved edits before the check and drops an answer that comes after 
   await page.keyboard.press("End");
   await page.keyboard.type(" Dalej");
 
-  const { dialog } = await openProofread(page);
+  const { dialog, bar } = await check(page);
   await expect(dialog.getByRole("status")).toHaveText(/Checking the chapter/);
   await expect
     .poll(async () => (await findStoryById(id))?.content)
@@ -140,13 +302,14 @@ test("saves unsaved edits before the check and drops an answer that comes after 
   await content.field.click();
   await page.keyboard.press("End");
   await page.keyboard.type("!");
-  // The fake answers after 4 s; the dialog must not come back with it.
+  // The fake answers after 4 s; nothing may come of it.
   await page.waitForTimeout(4500);
   await expect(dialog).toBeHidden();
+  await expect(bar).toBeHidden();
   expect(await content.source()).toBe("POWOLI Napewno. Dalej!");
 });
 
-test("an unavailable tools server gives a message and changes nothing", async ({
+test("an unavailable tools server gives a message, can be tried again and changes nothing", async ({
   page,
 }) => {
   const id = await seedStory("alice", {
@@ -154,11 +317,14 @@ test("an unavailable tools server gives a message and changes nothing", async ({
     content: "AWARIA Napewno.",
   });
   await page.goto(`/stories/${id}`);
-  const { dialog } = await openProofread(page);
-  await expect(dialog.getByRole("alert")).toHaveText(
-    "This tool is not available right now. Try again later.",
-  );
+  const { dialog, bar } = await check(page);
+  const message = "This tool is not available right now. Try again later.";
+  await expect(dialog.getByRole("alert")).toHaveText(message);
+  await dialog.getByRole("button", { name: "Check again" }).click();
+  await expect.poll(proofreadAttempts).toBe(2);
+  await expect(dialog.getByRole("alert")).toHaveText(message);
   await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(bar).toBeHidden();
   const content = markdownEditor(page, "Content");
   await content.field.click();
   await page.keyboard.press("End");
@@ -172,39 +338,30 @@ test("a chapter without issues gives a message", async ({ page }) => {
     content: "Ala ma kota.",
   });
   await page.goto(`/stories/${id}`);
-  const { dialog } = await openProofread(page);
+  const { dialog, bar } = await check(page);
   await expect(dialog.getByRole("status")).toHaveText("No issues found.");
+  await expect(bar).toBeHidden();
+  await dialog.getByRole("button", { name: "Close" }).last().click();
+  await expect(dialog).toBeHidden();
 });
 
-test("Accept in Source mode is one native Undo step and keeps the markup as written", async ({
-  page,
-}) => {
-  // Underscores and a list marker the editor would write differently.
-  // A chapter ending in a list would be rewritten by the editor on opening (trailing paragraph).
-  const MD = "* Napewno _tak_\n* i tą książkę\n\nKoniec.";
+test("a check from Source goes to Preview", async ({ page }) => {
   const id = await seedStory("alice", { title: "Source", content: MD });
   await page.goto(`/stories/${id}`);
   const content = markdownEditor(page, "Content");
   await content.button("Source").click();
-  const { dialog, inline } = await openProofread(page);
-  await inline("Apply change", 0).click();
-  await dialog.getByRole("button", { name: "Accept" }).click();
-
-  const textarea = content.group.getByRole("textbox", { name: "Content" });
-  const accepted = MD.replace("Napewno", "Na pewno");
-  await expect(textarea).toHaveValue(accepted);
-  await expect
-    .poll(async () => (await findStoryById(id))?.content)
-    .toBe(accepted);
-  await textarea.focus();
-  await page.keyboard.press("Control+z");
-  await expect(textarea).toHaveValue(MD);
+  const { text } = await check(page);
+  await expect(text.locator("[data-proposal]")).toHaveCount(4);
+  await expect(content.button("Preview")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
 });
 
 test.describe("on a narrow screen", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("Accept from the tools view shows the changed story", async ({
+  test("a check from the tools view shows the story with the issues", async ({
     page,
   }) => {
     const id = await seedStory("alice", { title: "Mobile", content: MD });
@@ -217,16 +374,18 @@ test.describe("on a narrow screen", () => {
       .getByRole("list", { name: "Tools" })
       .getByRole("button", { name: "Proofread" })
       .click();
-    const { dialog, panel } = proofreadDialog(page);
-    await panel.getByRole("button", { name: "Apply change" }).click();
-    await dialog.getByRole("button", { name: "Accept" }).click();
+    await page
+      .getByRole("dialog", { name: "Proofread" })
+      .getByRole("button", { name: "Check" })
+      .click();
+    const { bubble, text } = proofreading(page);
 
     await expect(
       page.getByRole("tab", { name: "Story", selected: true }),
     ).toBeVisible();
-    await expect(
-      page.getByRole("textbox", { name: "Content", exact: true }),
-    ).toContainText("Na pewno");
+    await bubble.getByRole("button", { name: "Apply change" }).click();
+    await expect(text).toContainText("Na pewno");
+    await page.keyboard.press("Control+s");
     await expect
       .poll(async () => (await findStoryById(id))?.content)
       .toBe(MD.replace("Napewno", "Na pewno"));
@@ -239,37 +398,31 @@ test("a word added to the dictionary stays out of later checks until removed in 
   const content = "Napewno tą drogą, NAPEWNO.\n\nWogóle nie.";
   const id = await seedStory("alice", { title: "Dict", content });
   await page.goto(`/stories/${id}`);
-  const first = await openProofread(page);
-  const { panel, proposal } = first;
-  let { dialog, text } = first;
+  const { text, bubble, proposal } = await check(page);
   await expect(text.locator("[data-proposal]")).toHaveCount(4);
 
   // Grammar (tą) gets no dictionary button.
   await proposal("tą").click();
-  await expect(panel.getByText("Grammar")).toBeVisible();
+  await expect(bubble.getByText("Grammar")).toBeVisible();
   await expect(
-    panel.getByRole("button", { name: "Add to dictionary" }),
+    bubble.getByRole("button", { name: "Add to dictionary" }),
   ).toHaveCount(0);
 
   // Both forms of the word go at once; the other spelling issue stays.
   await proposal("Napewno").first().click();
-  await panel.getByRole("button", { name: "Add to dictionary" }).click();
+  await bubble.getByRole("button", { name: "Add to dictionary" }).click();
   await expect(text.locator("[data-proposal]")).toHaveCount(2);
   await expect(proposal("Napewno")).toHaveCount(0);
   await expect(proposal("NAPEWNO")).toHaveCount(0);
-  await expect(panel.getByText("Grammar")).toBeVisible();
   expect((await findSettings("alice"))?.proofreading).toEqual({
     dictionary: ["Napewno"],
   });
-  await dialog.getByRole("button", { name: "Cancel" }).click();
-  await expect(dialog).toBeHidden();
 
   // A later check does not show it.
-  ({ dialog, text } = await openProofread(page));
+  await check(page);
   await expect(text.locator("[data-proposal]")).toHaveCount(2);
-  await expect(text.locator("[data-proposal]", { hasText: "Napewno" })).toHaveCount(0);
-  await dialog.getByRole("button", { name: "Cancel" }).click();
-  await expect(dialog).toBeHidden();
+  await expect(proposal("Napewno")).toHaveCount(0);
+  await page.keyboard.press("Escape");
 
   const settings = await openSettings(page);
   await expect(settings.getByText("1 word")).toBeVisible();
@@ -284,6 +437,6 @@ test("a word added to the dictionary stays out of later checks until removed in 
   await page.keyboard.press("Escape");
   await expect(settings).toBeHidden();
 
-  ({ text } = await openProofread(page));
+  await check(page);
   await expect(text.locator("[data-proposal]")).toHaveCount(4);
 });

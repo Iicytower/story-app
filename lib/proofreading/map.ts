@@ -33,7 +33,7 @@ function sourceText(markdown: string) {
 }
 
 // Characters of the document's text nodes with their positions. Comments are not checked.
-function docText(doc: Node) {
+export function docText(doc: Node) {
   let text = "";
   const positions: number[] = [];
   doc.descendants((node, pos) => {

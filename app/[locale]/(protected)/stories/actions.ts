@@ -26,6 +26,7 @@ import {
 } from "@/lib/import/limits";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
+import { parseStoredProofreading } from "@/lib/proofreading/stored";
 import {
   arrivalUpdate,
   publicationFor,
@@ -412,6 +413,8 @@ export async function saveStory(
   content: string,
   notes: string,
   expectedUpdatedAt: string,
+  // The chapter's proofreading (task 55): null clears it, undefined leaves it as it is.
+  proofreading?: unknown,
 ): Promise<ActionResult<{ updatedAt: string }>> {
   const user = await requireUser();
   if (!user.ok) return user;
@@ -420,6 +423,11 @@ export async function saveStory(
   const trimmed = title.trim();
   if (!trimmed) {
     return actionError("EMPTY_TITLE", "titleRequired");
+  }
+  const parsed =
+    proofreading === undefined ? undefined : parseStoredProofreading(proofreading);
+  if (parsed === "invalid") {
+    return actionError("INVALID_INPUT", "proofreadingInvalid");
   }
 
   await connectDB();
@@ -435,7 +443,16 @@ export async function saveStory(
         updatedAt: expected,
         ...(!content.trim() && { content: /^\s*$/ }),
       },
-      { $set: { title: trimmed, content, notes, updatedAt } },
+      {
+        $set: {
+          title: trimmed,
+          content,
+          notes,
+          updatedAt,
+          ...(parsed && { proofreading: parsed }),
+        },
+        ...(parsed === null && { $unset: { proofreading: 1 } }),
+      },
       {
         timestamps: false,
         projection: { folderId: 1, title: 1, publication: 1 },
