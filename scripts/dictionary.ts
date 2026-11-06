@@ -1,8 +1,10 @@
-// Dictionary databases: `npm run dict:build [forms|definitions]` builds the form table from
-// PoliMorf into .tools/dict/forms.sqlite (task 25, D61) and the definitions from the Polish
-// Wiktionary into .tools/dict/definitions.sqlite (task 32, D62); without an argument both.
-// `npm run dict:upload [forms|definitions]` sends the built files (without an argument all) to the dictionary service on the local tools
-// server. Source data and the built files stay out of the repo (licences: D61, D62).
+// Dictionary databases: `npm run dict:build [forms|definitions|synonyms]` builds the form table
+// from PoliMorf into .tools/dict/forms.sqlite (task 25, D61), the definitions from the Polish
+// Wiktionary into .tools/dict/definitions.sqlite (task 32, D62) and the synonyms of Wiktionary
+// and the Dobry słownik thesaurus into .tools/dict/synonyms.sqlite (task 33, D63); without an
+// argument all. `npm run dict:upload [forms|definitions|synonyms]` sends the built files
+// (without an argument all) to the dictionary service on the local tools server. Source data
+// and the built files stay out of the repo (licences: D61–D63).
 import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
@@ -13,6 +15,16 @@ import { pipeline } from "node:stream/promises";
 import type { ReadableStream } from "node:stream/web";
 import { DatabaseSync } from "node:sqlite";
 import { createGunzip } from "node:zlib";
+import { strFromU8, unzipSync } from "fflate";
+import { SOURCES } from "../lib/tools/sources";
+import {
+  decodeThesaurus,
+  parseSynonymEntry,
+  parseThesaurus,
+  thesaurusLicence,
+  type SynonymEntry,
+  type ThesaurusSense,
+} from "../lib/tools/synonyms-import";
 import {
   finishWord,
   parseEntry,
@@ -24,6 +36,7 @@ const DICT_DIR = path.join(ROOT, ".tools/dict");
 const SOURCE_FILE = path.join(DICT_DIR, "src/polimorf-20261018.tab.gz");
 const DATABASE = path.join(DICT_DIR, "forms.sqlite");
 const DEFINITIONS = path.join(DICT_DIR, "definitions.sqlite");
+const SYNONYMS = path.join(DICT_DIR, "synonyms.sqlite");
 const TOOLS_ENV = path.join(ROOT, ".tools/tools.env");
 const TOOLS_API_URL = "http://127.0.0.1:8110";
 
@@ -144,38 +157,62 @@ async function buildForms() {
   );
 }
 
-// Kaikki serves only the latest dump (updated weekly), so a downloaded file is kept under the
-// date of its Last-Modified header and builds use the newest kept file; `--refresh` fetches the
-// current one. Wiktionary's text is CC BY-SA 4.0 (D62).
+// Kaikki and Dobry słownik serve only the latest file (updated weekly and quarterly), so a
+// downloaded file is kept under the date of its Last-Modified header and builds use the newest
+// kept file; `--refresh` fetches the current one. Wiktionary's text is CC BY-SA 4.0 (D62), the
+// thesaurus LGPL 2.1 (D63).
 const WIKTIONARY = {
   id: "wiktionary",
   url: "https://kaikki.org/plwiktionary/raw-wiktextract-data.jsonl.gz",
+  file: /^plwiktionary-(\d{8})\.jsonl\.gz$/,
+  name: (date: string) => `plwiktionary-${date}.jsonl.gz`,
   licence: "CC BY-SA 4.0",
 };
+const THESAURUS = {
+  id: "dobryslownik",
+  url: "https://pobierz.dobryslownik.pl/pl-dict-latest.oxt",
+  file: /^dobryslownik-(\d{8})\.oxt$/,
+  name: (date: string) => `dobryslownik-${date}.oxt`,
+  licence: "LGPL 2.1",
+};
 const SRC_DIR = path.join(DICT_DIR, "src");
-const WIKTIONARY_FILE = /^plwiktionary-(\d{8})\.jsonl\.gz$/;
 
-async function wiktionaryDump(refresh: boolean): Promise<string> {
+async function latestFile(
+  source: {
+    id: string;
+    url: string;
+    file: RegExp;
+    name: (date: string) => string;
+  },
+  refresh: boolean,
+): Promise<{ file: string; version: string }> {
   fs.mkdirSync(SRC_DIR, { recursive: true });
+  const version = (file: string) =>
+    source.file
+      .exec(path.basename(file))![1]
+      .replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
   const kept = fs
     .readdirSync(SRC_DIR)
-    .filter((name) => WIKTIONARY_FILE.test(name))
+    .filter((name) => source.file.test(name))
     .sort();
-  if (kept.length > 0 && !refresh) return path.join(SRC_DIR, kept.at(-1)!);
-  console.log("Fetching the Polish Wiktionary dump…");
-  const response = await fetch(WIKTIONARY.url);
+  if (kept.length > 0 && !refresh) {
+    const file = path.join(SRC_DIR, kept.at(-1)!);
+    return { file, version: version(file) };
+  }
+  console.log(`Fetching ${source.url}…`);
+  const response = await fetch(source.url);
   const modified = response.headers.get("last-modified");
   if (!response.ok || !response.body || !modified) {
-    throw new Error(`Wiktionary: HTTP ${response.status}`);
+    throw new Error(`${source.id}: HTTP ${response.status}`);
   }
   const date = new Date(modified)
     .toISOString()
     .slice(0, 10)
     .replaceAll("-", "");
-  const file = path.join(SRC_DIR, `plwiktionary-${date}.jsonl.gz`);
+  const file = path.join(SRC_DIR, source.name(date));
   if (fs.existsSync(file)) {
     await response.body.cancel();
-    return file;
+    return { file, version: version(file) };
   }
   const temporary = `${file}.tmp`;
   await pipeline(
@@ -184,84 +221,211 @@ async function wiktionaryDump(refresh: boolean): Promise<string> {
     fs.createWriteStream(temporary),
   );
   fs.renameSync(temporary, file);
-  return file;
+  return { file, version: version(file) };
 }
 
-async function buildDefinitions(refresh: boolean) {
-  const source = await wiktionaryDump(refresh);
-  const version = WIKTIONARY_FILE.exec(path.basename(source))![1].replace(
-    /(\d{4})(\d{2})(\d{2})/,
-    "$1-$2-$3",
-  );
-  console.log(`Reading ${path.relative(ROOT, source)}…`);
-  const hash = createHash("sha256");
-  const input = fs.createReadStream(source);
+const sha256 = (data: Uint8Array) =>
+  createHash("sha256").update(data).digest("hex");
+
+// Lines of the Polish entries of the Wiktionary dump.
+// The hash of the file is taken while it is read.
+async function* wiktionaryLines(
+  file: string,
+  hash: ReturnType<typeof createHash>,
+): AsyncGenerator<string> {
+  console.log(`Reading ${path.relative(ROOT, file)}…`);
+  const input = fs.createReadStream(file);
   input.on("data", (chunk) => hash.update(chunk));
   const lines = readline.createInterface({
     input: input.pipe(createGunzip()),
     crlfDelay: Infinity,
   });
-  // Entries of one headword can be far apart in the dump; Map keeps the dump's order.
-  const words = new Map<string, Entry[]>();
   for await (const line of lines) {
     // Cheap check first: most of the million lines are other languages.
-    if (!line.includes('"lang_code": "pl"')) continue;
-    const parsed = parseEntry(line);
-    if (!parsed) continue;
-    const entries = words.get(parsed.word);
-    if (entries) entries.push(parsed.entry);
-    else words.set(parsed.word, [parsed.entry]);
+    if (line.includes('"lang_code": "pl"')) yield line;
   }
+}
 
-  const temporary = `${DEFINITIONS}.tmp`;
+// A new SQLite file next to the target, renamed over it when complete.
+function newDatabase(target: string, schema: string) {
+  const temporary = `${target}.tmp`;
   fs.rmSync(temporary, { force: true });
   const db = new DatabaseSync(temporary);
   db.exec(`
     PRAGMA journal_mode = OFF;
     PRAGMA synchronous = OFF;
     CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-    -- All entries of a headword as JSON, in the dump's order.
-    CREATE TABLE entries (word TEXT PRIMARY KEY, data TEXT NOT NULL) WITHOUT ROWID;
+    ${schema}
   `);
-  const insert = db.prepare("INSERT INTO entries VALUES (?, ?)");
-  let count = 0;
   db.exec("BEGIN");
-  for (const [word, entries] of words) {
-    const finished = finishWord(entries);
-    if (finished.length === 0) continue;
-    insert.run(word, JSON.stringify(finished));
-    count++;
-  }
-  const insertMeta = db.prepare("INSERT INTO meta VALUES (?, ?)");
-  for (const [key, value] of Object.entries({
-    source: WIKTIONARY.id,
-    version,
-    sha256: hash.digest("hex"),
-    licence: WIKTIONARY.licence,
-    builtAt: new Date().toISOString(),
-    words: String(count),
-  })) {
-    insertMeta.run(key, value);
-  }
-  db.exec("COMMIT");
-  db.exec("VACUUM");
-  db.close();
-  fs.renameSync(temporary, DEFINITIONS);
-  console.log(
-    `Done: ${count} headwords, ${Math.round(fs.statSync(DEFINITIONS).size / 1e6)} MB.`,
-  );
+  return {
+    db,
+    finish(meta: Record<string, string>) {
+      const insertMeta = db.prepare("INSERT INTO meta VALUES (?, ?)");
+      for (const [key, value] of Object.entries({
+        ...meta,
+        builtAt: new Date().toISOString(),
+      })) {
+        insertMeta.run(key, value);
+      }
+      db.exec("COMMIT");
+      db.exec("VACUUM");
+      db.close();
+      fs.renameSync(temporary, target);
+    },
+  };
 }
+
+interface Thesaurus {
+  senses: Map<string, ThesaurusSense[]>;
+  version: string;
+  sha256: string;
+  dataSha256: string;
+  licence: string;
+}
+
+// The thesaurus and its licence from the Dobry słownik package for LibreOffice, whose README
+// gives the thesaurus LGPL 2.1 (D63). The notice shown in the app must match its copyright lines.
+async function readThesaurus(refresh: boolean): Promise<Thesaurus> {
+  const { file, version } = await latestFile(THESAURUS, refresh);
+  const files = unzipSync(fs.readFileSync(file), {
+    filter: ({ name }) =>
+      name === "th_pl_PL_v2.dat" || name === "README_en.txt",
+  });
+  const data = files["th_pl_PL_v2.dat"];
+  const readme = files["README_en.txt"];
+  if (!data?.length || !readme?.length) {
+    throw new Error("Dobry słownik: no thesaurus in the package.");
+  }
+  const licence = thesaurusLicence(
+    strFromU8(readme),
+    SOURCES.dobryslownik.copyright!,
+  );
+  return {
+    senses: parseThesaurus(decodeThesaurus(data)),
+    version,
+    sha256: sha256(fs.readFileSync(file)),
+    dataSha256: sha256(data),
+    licence,
+  };
+}
+
+// Definitions (task 32, D62) and synonyms (task 33, D63) come from one pass over the dump, so
+// both are of the same version; `--refresh` therefore always rebuilds both.
+async function buildWiktionary(
+  targets: { definitions: boolean; synonyms: boolean },
+  refresh: boolean,
+) {
+  const wiktionary = await latestFile(WIKTIONARY, refresh);
+  // Before the long read, so a changed package stops the build at once.
+  const thesaurus = targets.synonyms ? await readThesaurus(refresh) : null;
+  // Entries of one headword can be far apart in the dump; Map keeps the dump's order.
+  const definitions = new Map<string, Entry[]>();
+  const synonyms = new Map<string, SynonymEntry[]>();
+  const add = <T>(words: Map<string, T[]>, word: string, entry: T) => {
+    const entries = words.get(word);
+    if (entries) entries.push(entry);
+    else words.set(word, [entry]);
+  };
+  const hash = createHash("sha256");
+  for await (const line of wiktionaryLines(wiktionary.file, hash)) {
+    const definition = targets.definitions && parseEntry(line);
+    if (definition) add(definitions, definition.word, definition.entry);
+    const synonym = targets.synonyms && parseSynonymEntry(line);
+    if (synonym) add(synonyms, synonym.word, synonym.entry);
+  }
+  const wiktionaryHash = hash.digest("hex");
+
+  if (targets.definitions) {
+    const { db, finish } = newDatabase(
+      DEFINITIONS,
+      `-- All entries of a headword as JSON, in the dump's order.
+      CREATE TABLE entries (word TEXT PRIMARY KEY, data TEXT NOT NULL) WITHOUT ROWID;`,
+    );
+    const insert = db.prepare("INSERT INTO entries VALUES (?, ?)");
+    let count = 0;
+    for (const [word, entries] of definitions) {
+      const finished = finishWord(entries);
+      if (finished.length === 0) continue;
+      insert.run(word, JSON.stringify(finished));
+      count++;
+    }
+    finish({
+      source: WIKTIONARY.id,
+      version: wiktionary.version,
+      sha256: wiktionaryHash,
+      licence: WIKTIONARY.licence,
+      words: String(count),
+    });
+    console.log(
+      `Done: ${count} headwords with definitions, ${Math.round(fs.statSync(DEFINITIONS).size / 1e6)} MB.`,
+    );
+  }
+
+  if (thesaurus) {
+    const { db, finish } = newDatabase(
+      SYNONYMS,
+      `-- The synonyms of a headword as JSON, a table per source.
+      CREATE TABLE wiktionary (word TEXT PRIMARY KEY, data TEXT NOT NULL) WITHOUT ROWID;
+      CREATE TABLE thesaurus (word TEXT PRIMARY KEY, data TEXT NOT NULL) WITHOUT ROWID;`,
+    );
+    const insertWiktionary = db.prepare("INSERT INTO wiktionary VALUES (?, ?)");
+    for (const [word, entries] of synonyms) {
+      insertWiktionary.run(word, JSON.stringify(entries));
+    }
+    const insertThesaurus = db.prepare("INSERT INTO thesaurus VALUES (?, ?)");
+    for (const [word, senses] of thesaurus.senses) {
+      insertThesaurus.run(word, JSON.stringify(senses));
+    }
+    finish({
+      source: "synonyms",
+      version: `${WIKTIONARY.id} ${wiktionary.version}, ${THESAURUS.id} ${thesaurus.version}`,
+      "wiktionary.sha256": wiktionaryHash,
+      "wiktionary.licence": WIKTIONARY.licence,
+      "thesaurus.sha256": thesaurus.sha256,
+      "thesaurus.dataSha256": thesaurus.dataSha256,
+      "thesaurus.licence": thesaurus.licence,
+      words: String(
+        new Set([...synonyms.keys(), ...thesaurus.senses.keys()]).size,
+      ),
+      "wiktionary.words": String(synonyms.size),
+      "thesaurus.words": String(thesaurus.senses.size),
+    });
+    console.log(
+      `Done: ${synonyms.size} Wiktionary and ${thesaurus.senses.size} thesaurus headwords with synonyms, ${Math.round(fs.statSync(SYNONYMS).size / 1e6)} MB.`,
+    );
+  }
+}
+
+const DATABASES = {
+  forms: DATABASE,
+  definitions: DEFINITIONS,
+  synonyms: SYNONYMS,
+};
+type DatabaseName = keyof typeof DATABASES;
+const isDatabase = (value: string): value is DatabaseName =>
+  Object.hasOwn(DATABASES, value);
 
 async function build() {
   const args = process.argv.slice(3);
   const what = args.find((arg) => !arg.startsWith("--"));
-  if (what && what !== "forms" && what !== "definitions") {
+  if (what !== undefined && !isDatabase(what)) {
     throw new Error(
-      "Usage: npm run dict:build [forms|definitions] [--refresh]",
+      "Usage: npm run dict:build [forms|definitions|synonyms] [--refresh]",
     );
   }
-  if (what !== "definitions") await buildForms();
-  if (what !== "forms") await buildDefinitions(args.includes("--refresh"));
+  const wanted = (name: DatabaseName) => what === undefined || what === name;
+  if (wanted("forms")) await buildForms();
+  if (wanted("definitions") || wanted("synonyms")) {
+    const refresh = args.includes("--refresh");
+    await buildWiktionary(
+      {
+        definitions: refresh || wanted("definitions"),
+        synonyms: refresh || wanted("synonyms"),
+      },
+      refresh,
+    );
+  }
 }
 
 function builtAt(file: string): string {
@@ -374,11 +538,10 @@ function uploadFile(
 
 async function upload() {
   const what = process.argv[3];
-  if (what && what !== "forms" && what !== "definitions") {
-    throw new Error("Usage: npm run dict:upload [forms|definitions]");
+  if (what !== undefined && !isDatabase(what)) {
+    throw new Error("Usage: npm run dict:upload [forms|definitions|synonyms]");
   }
-  const files = { forms: DATABASE, definitions: DEFINITIONS };
-  const built = Object.entries(files).filter(
+  const built = Object.entries(DATABASES).filter(
     ([key, file]) => (!what || key === what) && fs.existsSync(file),
   );
   if (built.length === 0) {

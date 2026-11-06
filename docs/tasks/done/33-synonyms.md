@@ -8,6 +8,23 @@ Wynik researchu. Kafelek „Synonyms” w Tools.
 - Import wybranych źródeł do osobnych tabel.
 - Widok: wyniki pogrupowane według znaczeń, z etykietą rejestru i źródłem, duplikaty scalone przy odpowiedzi.
 
+## Ustalone przy starcie (2026-11-06)
+
+Decyzje użytkownika: Wikisłownik i Dobry słownik (bez tezaurusa LibreOffice i bez Słowosieci), osobne sekcje źródeł, słowo z obu źródeł w obu sekcjach z oznaczeniami obu. Szczegóły w D63.
+
+Research dodatkowy **[pomiar]**:
+
+| | Wynik |
+| --- | --- |
+| Dobry słownik 2026.10.01 (`pl-dict-latest.oxt`, SHA-256 `b456df80c522…`) | 30 941 haseł, 41 217 znaczeń; README w paczce: tezaurus na LGPL 2.1 |
+| Tezaurus LibreOffice 2017 wobec Dobrego słownika | +94 hasła (głównie marki: audi, bmw, colt), 2223 z 192 693 par (1,2%) |
+| Słowosieć 4.2 (CLARIN, 427 MB zip, zrzut MySQL 2,3 GB, bez pliku LICENSE) | 293 992 polskich jednostek, 44 802 synsetów z ≥ 2 lematami, 86 456 lematów z synonimami |
+| Losowe 1000 tokenów z „Pana Tadeusza” (z lematami z PoliMorfu) | Dobry słownik 72,5%, Wikisłownik 68,2%, oba 79,1%, z Słowosiecią 81,5% |
+| Baza `synonyms.sqlite` | 37 180 haseł z Wikisłownika i 30 940 z tezaurusa, 23 MB, ok. 16 s |
+| Odpowiedź `/dict/synonyms` (lokalnie, przez bramkę) | 3–5 ms |
+
+Próbka jakości (Wikisłownik / Dobry słownik, liczba synonimów): kot 8/4, szept 8/4, smutny 80/36, zamek 10/10, piękny 9/16, westchnąć 0/0. Słowosieć: kot → kot domowy, gach, drapak; smutny → nic.
+
 ## Ustalenia
 
 - Słownik otwiera się dla języka folderu otwartego rozdziału (D58). Dziś lista języków folderu to tylko polski; nowy język dochodzi do listy, gdy obsługują go korekta i słowniki.

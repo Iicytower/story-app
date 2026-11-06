@@ -57,10 +57,11 @@ services:
       start_period: 120s
       start_interval: 5s
 
-  # Lemmas from the form table (task 25, D61) and definitions from the Polish Wiktionary (task 32,
-  # D62). The SQLite files come from `npm run dict:upload` onto the dict-data volume; without the
-  # form table every request gets 503, without the definitions only /definitions does. No `$` in
-  # the code: Compose would interpolate it.
+  # Lemmas from the form table (task 25, D61), definitions from the Polish Wiktionary (task 32,
+  # D62) and synonyms from Wiktionary and the Dobry słownik thesaurus (task 33, D63). The SQLite
+  # files come from `npm run dict:upload` onto the dict-data volume; without the form table every
+  # request gets 503, without the definitions or synonyms only their route does. No `$` in the
+  # code: Compose would interpolate it.
   dictionary:
     image: node:24.22.2-alpine
     restart: unless-stopped
@@ -79,7 +80,7 @@ services:
           const MAX_BODY = 1024;
           const MAX_FORMS = 4;
           const MAX_LENGTH = 50;
-          // Headwords looked up for definitions besides the forms themselves.
+          // Headwords looked up for definitions and synonyms besides the forms themselves.
           const MAX_LEMMAS = 8;
 
           // The upload replaces a file by rename, so a new inode means new data.
@@ -106,6 +107,7 @@ services:
           }
           const formsDb = opener("/data/forms.sqlite");
           const definitionsDb = opener("/data/definitions.sqlite");
+          const synonymsDb = opener("/data/synonyms.sqlite");
 
           function send(response, status, body) {
             response.writeHead(status, { "Content-Type": "application/json" });
@@ -136,23 +138,45 @@ services:
             return { source: meta(db).source, rows };
           }
 
-          // POST /definitions {"forms": [...]}: the lemma rows as from /lemmas and the entries of
-          // the forms and their lemmas (those of the form as typed first), for the app to order.
-          function definitions(formTable, definitionTable, forms) {
-            const found = lemmas(formTable, forms);
+          // The forms and their lemmas (those of the form as typed first), for the app to order.
+          function headwords(found, forms) {
             const ranked = [
               ...found.rows.filter((row) => row.form === forms[0]),
               ...found.rows.filter((row) => row.form !== forms[0]),
             ].map((row) => row.lemma);
-            const words = [...new Set([...forms, ...ranked])].slice(0, forms.length + MAX_LEMMAS);
-            const rows = definitionTable
-              .prepare("SELECT word, data FROM entries WHERE word IN (" + marks(words) + ")")
-              .all(...words);
+            return [...new Set([...forms, ...ranked])].slice(0, forms.length + MAX_LEMMAS);
+          }
+
+          function rows(db, table, words, field) {
+            return db
+              .prepare("SELECT word, data FROM " + table + " WHERE word IN (" + marks(words) + ")")
+              .all(...words)
+              .map((row) => ({ word: row.word, [field]: JSON.parse(row.data) }));
+          }
+
+          // POST /definitions {"forms": [...]}: the lemma rows as from /lemmas and the entries of
+          // the headwords.
+          function definitions(formTable, definitionTable, forms) {
+            const found = lemmas(formTable, forms);
             return {
               lemmas: found,
               definitions: {
                 source: meta(definitionTable).source,
-                rows: rows.map((row) => ({ word: row.word, entries: JSON.parse(row.data) })),
+                rows: rows(definitionTable, "entries", headwords(found, forms), "entries"),
+              },
+            };
+          }
+
+          // POST /synonyms {"forms": [...]}: the lemma rows and the synonyms of the headwords from
+          // each source's table.
+          function synonyms(formTable, synonymTable, forms) {
+            const found = lemmas(formTable, forms);
+            const words = headwords(found, forms);
+            return {
+              lemmas: found,
+              synonyms: {
+                wiktionary: rows(synonymTable, "wiktionary", words, "entries"),
+                thesaurus: rows(synonymTable, "thesaurus", words, "senses"),
               },
             };
           }
@@ -163,19 +187,30 @@ services:
               const definitionTable = definitionsDb();
               return definitionTable && definitions(formTable, definitionTable, forms);
             },
+            "/synonyms": (formTable, forms) => {
+              const synonymTable = synonymsDb();
+              return synonymTable && synonyms(formTable, synonymTable, forms);
+            },
           };
 
           createServer((request, response) => {
             const forms = formsDb();
             if (!forms) return send(response, 503, { error: "NO_DATA" });
             if (request.method === "GET" && request.url === "/health") {
-              let definitions = null;
+              const optional = (open) => {
+                try {
+                  const db = open();
+                  return db && meta(db);
+                } catch {
+                  return null;
+                }
+              };
               try {
-                const db = definitionsDb();
-                definitions = db && meta(db);
-              } catch {}
-              try {
-                return send(response, 200, { forms: meta(forms), definitions });
+                return send(response, 200, {
+                  forms: meta(forms),
+                  definitions: optional(definitionsDb),
+                  synonyms: optional(synonymsDb),
+                });
               } catch {
                 return send(response, 500, { error: "QUERY_FAILED" });
               }
