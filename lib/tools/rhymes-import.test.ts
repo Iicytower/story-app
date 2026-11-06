@@ -4,6 +4,8 @@ import {
   formFlags,
   FUNCTION_WORD,
   GRAMMATICAL,
+  PARTS_OF_SPEECH,
+  partsOfSpeech,
   VERBAL,
   wordFrequencies,
 } from "./rhymes-import";
@@ -123,5 +125,72 @@ describe("formFlags", () => {
     ["kot", ["subst:sg:nom:m2"], 0],
   ])("%s → %i", (form, tags, flags) => {
     expect(formFlags(form, tags)).toBe(flags);
+  });
+});
+
+describe("partsOfSpeech", () => {
+  const { noun, adjective, verb, adverb, other } = PARTS_OF_SPEECH;
+  it.each([
+    ["kot", ["subst:sg:nom:m2"], noun],
+    ["czytanie", ["ger:sg:nom.acc:n:imperf:aff"], noun],
+    ["zielony", ["adj:sg:nom:m1:pos"], adjective],
+    ["czytany", ["ppas:sg:nom:m1:imperf:aff"], adjective],
+    ["czytający", ["pact:sg:nom:m1:imperf:aff"], adjective],
+    ["czytam", ["fin:sg:pri:imperf"], verb],
+    ["czytając", ["pcon:imperf"], verb],
+    ["czytano", ["imps:imperf"], verb],
+    ["pięknie", ["adv:pos"], adverb],
+    ["abonująco", ["pacta"], adverb],
+    ["pięć", ["num:pl:nom:m2:rec"], other],
+    ["polsku", ["adjp"], other],
+    ["trzeba", ["pred"], other],
+    // Every reading counts.
+    ["koło", ["part", "prep:gen", "subst:sg:nom:n:ncol"], noun | other],
+    ["mnie", ["ppron12:sg:gen:m1:pri:akc", "fin:sg:ter:perf"], verb | other],
+  ])("%s → %i", (_, tags, bits) => {
+    expect(partsOfSpeech(tags)).toBe(bits);
+  });
+
+  it("maps every class of the PoliMorf tags", () => {
+    // SELECT DISTINCT first segment FROM tags of the form table.
+    const classes: Record<string, number> = {
+      subst: noun,
+      depr: noun,
+      ger: noun,
+      adj: adjective,
+      adjc: adjective,
+      pact: adjective,
+      ppas: adjective,
+      fin: verb,
+      bedzie: verb,
+      praet: verb,
+      impt: verb,
+      inf: verb,
+      imps: verb,
+      cond: verb,
+      winien: verb,
+      pcon: verb,
+      pant: verb,
+      adv: adverb,
+      pacta: adverb,
+      adja: other,
+      adjp: other,
+      num: other,
+      numcomp: other,
+      ppron12: other,
+      ppron3: other,
+      prep: other,
+      conj: other,
+      comp: other,
+      part: other,
+      interj: other,
+      brev: other,
+      frag: other,
+      pred: other,
+      aglt: other,
+    };
+    for (const [name, bits] of Object.entries(classes)) {
+      expect(partsOfSpeech([`${name}:x`]), name).toBe(bits);
+    }
   });
 });

@@ -17,8 +17,12 @@ import type { ReadableStream } from "node:stream/web";
 import { DatabaseSync } from "node:sqlite";
 import { createGunzip, gunzipSync } from "node:zlib";
 import { strFromU8, unzipSync } from "fflate";
-import { isVerbTag, rhymeKeys } from "../lib/tools/rhyme-key";
-import { formFlags, wordFrequencies } from "../lib/tools/rhymes-import";
+import { isVerbTag, rhymeKeys, syllableCount } from "../lib/tools/rhyme-key";
+import {
+  formFlags,
+  partsOfSpeech,
+  wordFrequencies,
+} from "../lib/tools/rhymes-import";
 import { SOURCES } from "../lib/tools/sources";
 import {
   decodeThesaurus,
@@ -476,18 +480,20 @@ async function buildRhymes() {
     CREATE TEMP TABLE staging (
       rev TEXT NOT NULL, form TEXT NOT NULL, phones TEXT NOT NULL, exact TEXT NOT NULL,
       near TEXT NOT NULL, last TEXT, freq INTEGER NOT NULL, lemmas TEXT NOT NULL,
-      flags INTEGER NOT NULL
+      flags INTEGER NOT NULL, pos INTEGER NOT NULL, syllables INTEGER NOT NULL
     );
     -- A form with its keys (lib/tools/rhyme-key.ts), Zipf frequency × 100 (0 when unlisted),
-    -- comma-separated lemma ids and flags (lib/tools/rhymes-import.ts).
+    -- comma-separated lemma ids, flags and parts of speech (lib/tools/rhymes-import.ts) and the
+    -- number of syllables (task 35).
     CREATE TABLE words (
       form TEXT NOT NULL, phones TEXT NOT NULL, exact TEXT NOT NULL, near TEXT NOT NULL,
-      last TEXT, freq INTEGER NOT NULL, lemmas TEXT NOT NULL, flags INTEGER NOT NULL
+      last TEXT, freq INTEGER NOT NULL, lemmas TEXT NOT NULL, flags INTEGER NOT NULL,
+      pos INTEGER NOT NULL, syllables INTEGER NOT NULL
     );`,
   );
   db.exec("PRAGMA cache_size = -1000000");
   const insert = db.prepare(
-    "INSERT INTO staging VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO staging VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
   );
   console.log(`Building ${path.relative(ROOT, RHYMES)}…`);
   let form = "";
@@ -510,6 +516,8 @@ async function buildRhymes() {
       MISSPELLINGS.has(form) ? 0 : (frequencies.get(form.toLowerCase()) ?? 0),
       [...lemmas].join(","),
       formFlags(form.toLowerCase(), formTags),
+      partsOfSpeech(formTags),
+      syllableCount(keys.phones),
     );
   };
   // Grouped by form; ORDER BY keeps SQLite off the lemma index.
@@ -533,12 +541,12 @@ async function buildRhymes() {
   forms.close();
   db.exec(`
     INSERT INTO words
-      SELECT form, phones, exact, near, last, freq, lemmas, flags FROM staging ORDER BY rev;
+      SELECT form, phones, exact, near, last, freq, lemmas, flags, pos, syllables FROM staging ORDER BY rev;
     DROP TABLE staging;
     CREATE INDEX words_form ON words (form);
-    CREATE INDEX words_exact ON words (exact, freq DESC);
-    CREATE INDEX words_near ON words (near, freq DESC);
-    CREATE INDEX words_last ON words (last, freq DESC);
+    CREATE INDEX words_exact ON words (exact, freq DESC, pos, syllables);
+    CREATE INDEX words_near ON words (near, freq DESC, pos, syllables);
+    CREATE INDEX words_last ON words (last, freq DESC, pos, syllables);
   `);
   const { count } = db.prepare("SELECT count(*) AS count FROM words").get() as {
     count: number;

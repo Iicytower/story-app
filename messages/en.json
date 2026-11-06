@@ -110,6 +110,7 @@
     "dictionaryWordInvalid": "This word cannot be added to the dictionary. Use one word of up to 50 characters.",
     "dictionaryFull": "The dictionary is full (1000 words). Remove a word in Settings first.",
     "lookupWordInvalid": "Type one word of up to 50 characters.",
+    "rhymeFiltersInvalid": "Choose a part of speech and syllables from the list.",
     "dictionaryTimeout": "The dictionary did not answer in time. Try again."
   },
   "password": {
@@ -718,6 +719,7 @@
   },
   "rhymes": {
     "notFound": "No rhymes found for “{word}”.",
+    "notFoundFiltered": "No rhymes for “{word}” match the filters.",
     "results": "Rhymes for “{word}”",
     "levels": {
       "exact": "Exact",
@@ -726,6 +728,22 @@
     },
     "showMore": "Show more ({count})",
     "showLess": "Show less",
-    "onlyMore": "Only rare or less useful words."
+    "onlyMore": "Only rare or less useful words.",
+    "filters": {
+      "partOfSpeech": "Part of speech",
+      "any": "Any",
+      "parts": {
+        "noun": "Noun",
+        "adjective": "Adjective",
+        "verb": "Verb",
+        "adverb": "Adverb",
+        "other": "Other"
+      },
+      "syllables": "Syllables",
+      "syllablesFrom": "Syllables from",
+      "syllablesTo": "to",
+      "orMore": "{count} or more",
+      "clear": "Clear filters"
+    }
   }
 }

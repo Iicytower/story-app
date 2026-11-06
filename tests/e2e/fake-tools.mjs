@@ -156,28 +156,48 @@ function matches(annotation) {
   return found.sort((a, b) => a.offset - b.offset);
 }
 
-// Spelling → rows of each rhyme level, as built (task 34). Frequencies are Zipf × 100: "wrota"
-// is rare and "ta" a function word, so both wait behind "Show more".
-const rhyme = (form, phones, freq = 400, flags = 0) => ({
+// Spelling → rows of each rhyme level, as built (task 34), with parts of speech (1 noun,
+// 2 adjective, 4 verb, 16 other) and syllables the filters of task 35 narrow by. Frequencies are
+// Zipf × 100: "wrota" is rare and "ta" a function word, so both wait behind "Show more".
+const rhyme = (form, phones, pos, syllables, freq = 400, flags = 0) => ({
   form,
   phones,
   freq,
   lemmas: form,
   flags,
+  pos,
+  syllables,
 });
 const RHYMES = {
   kota: {
-    self: [{ ...rhyme("kota", "kota"), exact: "ota", near: "oPa", last: "ta" }],
-    exact: [
-      rhyme("kota", "kota"),
-      rhyme("złota", "zwota", 450),
-      rhyme("robota", "robota", 430),
-      rhyme("wrota", "vrota", 200),
+    self: [
+      { ...rhyme("kota", "kota", 1, 2), exact: "ota", near: "oPa", last: "ta" },
     ],
-    near: [rhyme("woda", "voda")],
-    last: [rhyme("lata", "lata"), rhyme("ta", "ta", 800, 1)],
+    exact: [
+      rhyme("kota", "kota", 1, 2),
+      rhyme("złota", "zwota", 3, 2, 450),
+      rhyme("robota", "robota", 1, 3, 430),
+      rhyme("wrota", "vrota", 1, 2, 200),
+    ],
+    near: [rhyme("woda", "voda", 1, 2)],
+    last: [rhyme("lata", "lata", 5, 2), rhyme("ta", "ta", 16, 1, 800, 1)],
   },
 };
+
+// The filters as the service applies them in SQL; self rows stay.
+function filterRhymes(answer, { pos, min, max } = {}) {
+  const fits = (row) =>
+    (pos === undefined || (row.pos & pos) !== 0) &&
+    (min === undefined || row.syllables >= min) &&
+    (max === undefined || row.syllables <= max);
+  const level = (rows) => rows.filter(fits);
+  return {
+    ...answer,
+    exact: level(answer.exact),
+    near: level(answer.near),
+    last: level(answer.last),
+  };
+}
 
 createServer(async (request, response) => {
   if (request.url === "/") return response.end("ok");
@@ -188,7 +208,7 @@ createServer(async (request, response) => {
   let body = "";
   for await (const chunk of request) body += chunk;
   if (request.url.startsWith("/dict/")) {
-    const { forms } = JSON.parse(body);
+    const { forms, filters } = JSON.parse(body);
     if (forms.some((form) => form.includes("AWARIA"))) {
       response.statusCode = 503;
       return response.end();
@@ -210,14 +230,17 @@ createServer(async (request, response) => {
         lemmas,
         definitions: { source: "wiktionary", rows: rows(ENTRIES, "entries") },
       },
-      "/dict/rhymes": {
-        source: "rhymes",
-        self: [],
-        exact: [],
-        near: [],
-        last: [],
-        ...RHYMES[forms.find((form) => RHYMES[form])],
-      },
+      "/dict/rhymes": filterRhymes(
+        {
+          source: "rhymes",
+          self: [],
+          exact: [],
+          near: [],
+          last: [],
+          ...RHYMES[forms.find((form) => RHYMES[form])],
+        },
+        filters,
+      ),
       "/dict/synonyms": {
         lemmas,
         synonyms: {

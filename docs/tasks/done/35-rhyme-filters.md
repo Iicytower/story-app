@@ -13,6 +13,13 @@ Decyzja użytkownika (2026-11-01). Uzupełnia task 34.
 
 Do decyzji przy starcie taska: lista części mowy w filtrze i czy liczba sylab to zakres, czy jedna wartość.
 
+### Ustalone przy starcie (2026-11-06)
+
+- Części mowy: pięć grup jak w Rymerze (rzeczownik, przymiotnik, czasownik, przysłówek, inna); gerundia przy rzeczownikach, imiesłowy odmienne przy przymiotnikach (D65).
+- Sylaby: zakres od–do, 1–6+.
+- Filtrowanie w serwisie (SQL), zmiana filtra od razu szuka ponownie.
+- Pomiar: kolumny i rozszerzone indeksy dodały ok. 77 MB (734 MB). Najgorszy przypadek z filtrem trwa 48 ms.
+
 ## Dane z researchu
 
 Stan z 2026-10-31. **[pomiar]** to wynik policzony na pobranym pliku, **[wniosek]** to interpretacja, **[do weryfikacji]** nie potwierdzono u źródła. Uwagi o licencjach to odczyt tekstów, nie porada prawna.

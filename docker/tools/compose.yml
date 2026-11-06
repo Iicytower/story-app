@@ -174,17 +174,26 @@ services:
             };
           }
 
-          // POST /rhymes {"forms": [...], "keys": {"exact", "near", "last"}}: the rows of the
-          // spellings and the rhymes of each level. A spelling in the table brings its own keys
-          // (stress by its tags), the keys the app sends are for a word not in it.
-          function rhymes(db, forms, keys) {
+          // POST /rhymes {"forms": [...], "keys": {"exact", "near", "last"}, "filters"?: {"pos"?,
+          // "min"?, "max"?}}: the rows of the spellings and the rhymes of each level. A spelling in
+          // the table brings its own keys (stress by its tags), the keys the app sends are for a
+          // word not in it. Filters (task 35) narrow the rhymes: parts of speech as bits
+          // (lib/tools/rhymes-import.ts), syllables from min to max.
+          function rhymes(db, forms, keys, filters = {}) {
             const columns = "form, phones, freq, lemmas, flags";
             const self = db.prepare("SELECT " + columns + ", exact, near, last FROM words WHERE form IN (" + marks(forms) + ")").all(...forms);
             const own = forms.map((form) => self.find((row) => row.form === form)).find(Boolean) ?? keys;
+            const conditions = [
+              ["(pos & ?) != 0", filters.pos],
+              ["syllables >= ?", filters.min],
+              ["syllables <= ?", filters.max],
+            ].filter(([, value]) => value !== undefined);
+            const where = conditions.map(([condition]) => " AND " + condition).join("");
+            const values = conditions.map(([, value]) => value);
             const level = (column, key) =>
               key === null
                 ? []
-                : db.prepare("SELECT " + columns + " FROM words WHERE " + column + " = ? ORDER BY freq DESC LIMIT " + RHYME_LIMIT).all(key);
+                : db.prepare("SELECT " + columns + " FROM words WHERE " + column + " = ?" + where + " ORDER BY freq DESC LIMIT " + RHYME_LIMIT).all(key, ...values);
             return {
               source: meta(db).source,
               self,
@@ -200,6 +209,19 @@ services:
             isKey(keys.exact) &&
             isKey(keys.near) &&
             (keys.last === null || isKey(keys.last));
+
+          // The checks of parseRhymeFilters in lib/tools/rhymes.ts.
+          const MAX_SYLLABLES = 6;
+          // MAX_SYLLABLES means "that many or more", so it is no upper bound.
+          const isCount = (value, highest) => value === undefined || (Number.isInteger(value) && value >= 1 && value <= highest);
+          const validFilters = (filters) =>
+            filters === undefined ||
+            (filters !== null &&
+              typeof filters === "object" &&
+              (filters.pos === undefined || (Number.isInteger(filters.pos) && filters.pos >= 1 && filters.pos <= 31)) &&
+              isCount(filters.min, MAX_SYLLABLES) &&
+              isCount(filters.max, MAX_SYLLABLES - 1) &&
+              (filters.min === undefined || filters.max === undefined || filters.min <= filters.max));
 
           // POST /synonyms {"forms": [...]}: the lemma rows and the synonyms of the headwords from
           // each source's table.
@@ -226,9 +248,9 @@ services:
               return synonymTable && synonyms(formTable, synonymTable, forms);
             },
             "/rhymes": (formTable, forms, input) => {
-              if (!validKeys(input.keys)) return { invalid: true };
+              if (!validKeys(input.keys) || !validFilters(input.filters)) return { invalid: true };
               const rhymeTable = rhymesDb();
-              return rhymeTable && rhymes(rhymeTable, forms, input.keys);
+              return rhymeTable && rhymes(rhymeTable, forms, input.keys, input.filters);
             },
           };
 

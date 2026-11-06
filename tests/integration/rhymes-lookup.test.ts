@@ -3,6 +3,7 @@ import { lookUpRhymes } from "@/app/[locale]/(protected)/stories/[id]/dictionary
 import type { ActionError } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import { DICTIONARY_TIMEOUT_MS } from "@/lib/tools/dictionary";
+import { NO_FILTERS } from "@/lib/tools/rhymes";
 
 vi.mock("@/lib/auth/session", () => ({ requireUser: vi.fn() }));
 
@@ -75,6 +76,7 @@ describe("lookUpRhymes", () => {
         { level: "last", words: [], more: ["lata"] },
       ],
       sources: ["polimorf", "wordfreq"],
+      filters: NO_FILTERS,
     });
   });
 
@@ -92,6 +94,47 @@ describe("lookUpRhymes", () => {
     });
   });
 
+  it("sends the filters to the service and gives them back (criteria 1–3)", async () => {
+    const filters = { pos: "adjective", min: 2, max: 3 };
+    const result = await lookUpRhymes("kota", filters);
+    expect(result).toMatchObject({ ok: true, filters });
+    expect(JSON.parse(fetchMock.mock.calls[0][1]?.body as string)).toEqual({
+      forms: ["kota", "Kota", "KOTA"],
+      keys: { exact: "ota", near: "oPa", last: "ta" },
+      filters: { pos: 2, min: 2, max: 3 },
+    });
+  });
+
+  it("sends only the filters that narrow, and none when all are off", async () => {
+    await lookUpRhymes("kota", { pos: null, min: 1, max: 6 });
+    await lookUpRhymes("kota", { pos: "other", min: 1, max: 6 });
+    await lookUpRhymes("kota", { pos: null, min: 6, max: 6 });
+    const sent = fetchMock.mock.calls.map(
+      ([, init]) => JSON.parse(init?.body as string).filters,
+    );
+    expect(sent).toEqual([undefined, { pos: 16 }, { min: 6 }]);
+  });
+
+  it.each([
+    { pos: "pronoun", min: 1, max: 6 },
+    { pos: null, min: 3, max: 2 },
+    { pos: null, min: 0, max: 6 },
+    { pos: null, min: 1, max: 7 },
+    { pos: null, min: 1.5, max: 6 },
+    { min: 1, max: 6 },
+    null,
+  ])(
+    "rejects the filters %j with INVALID_INPUT, with no network call",
+    async (filters) => {
+      expect(await lookUpRhymes("kota", filters)).toEqual({
+        ok: false,
+        error: "INVALID_INPUT",
+        message: "Choose a part of speech and syllables from the list.",
+      });
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
+
   it("gives no groups for a word without rhymes (criterion 7)", async () => {
     fetchMock.mockImplementation(async () =>
       Response.json({
@@ -107,6 +150,7 @@ describe("lookUpRhymes", () => {
       word: "xyzq",
       groups: [],
       sources: [],
+      filters: NO_FILTERS,
     });
   });
 
@@ -116,6 +160,7 @@ describe("lookUpRhymes", () => {
       word: "pkt",
       groups: [],
       sources: [],
+      filters: NO_FILTERS,
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });
