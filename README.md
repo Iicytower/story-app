@@ -74,9 +74,11 @@ Create an account with "Log in / Create account" on the home page, or from the t
 ```sh
 npm run up         # MongoDB, Coolify (panel on http://localhost:8000) and the tools server
 npm run down       # stops all of it; the data stays in Docker volumes
+npm run dict:build # builds the dictionary database from PoliMorf (downloads 47 MB once)
+npm run dict:upload # sends it to the dictionary service on the tools server
 ```
 
-`npm run up` starts Coolify and a Docker-in-Docker container that plays the remote tools server, deploys the tools gateway and LanguageTool (used for proofreading) to it through the Coolify API and writes `TOOLS_API_URL` and `TOOLS_API_SECRET` to `.env.local`. Running it again changes nothing unless `docker/tools/compose.yml` changed (then it redeploys the service). Generated secrets stay in `.tools/` (gitignored); the Coolify admin password is in `.tools/tools.env`. The stack needs about 1.2 GB of RAM and 2.8 GB of images (half of them pulled inside the tools server container). Details: `docs/deploy.md`.
+`npm run up` starts Coolify and a Docker-in-Docker container that plays the remote tools server, deploys the tools gateway, LanguageTool (used for proofreading) and the dictionary service to it through the Coolify API and writes `TOOLS_API_URL` and `TOOLS_API_SECRET` to `.env.local`. Running it again changes nothing unless `docker/tools/compose.yml` changed (then it redeploys the service). Generated secrets stay in `.tools/` (gitignored); the Coolify admin password is in `.tools/tools.env`. The stack needs about 1.2 GB of RAM and 2.8 GB of images (half of them pulled inside the tools server container). Details: `docs/deploy.md`.
 
 ### Tests
 

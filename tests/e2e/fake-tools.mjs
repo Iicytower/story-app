@@ -1,5 +1,6 @@
 // Stands in for the tools server (D56) in E2E: answers LanguageTool's /v2/check from a
-// fixed list of words, so results do not depend on a running LT. Markers in the text:
+// fixed list of words, so results do not depend on a running LT, and the dictionary service's
+// /dict/lemmas from a small form table (task 25). Markers in the text or the looked-up word:
 // AWARIA answers 503, POWOLI answers after a delay.
 import { createServer } from "node:http";
 
@@ -35,6 +36,14 @@ const ISSUES = {
   },
 };
 
+// Form → lemma rows, as the dictionary service answers them (task 25).
+const FORMS = [
+  { form: "kota", lemma: "kot" },
+  { form: "kota", lemma: "kota" },
+  { form: "Kota", lemma: "Kot" },
+  { form: "psa", lemma: "pies" },
+];
+
 function matches(annotation) {
   const found = [];
   let offset = 0;
@@ -68,6 +77,22 @@ createServer(async (request, response) => {
   }
   let body = "";
   for await (const chunk of request) body += chunk;
+  if (request.url === "/dict/lemmas") {
+    const { forms } = JSON.parse(body);
+    if (forms.some((form) => form.includes("AWARIA"))) {
+      response.statusCode = 503;
+      return response.end();
+    }
+    if (forms.some((form) => form.includes("POWOLI")))
+      await new Promise((resolve) => setTimeout(resolve, 4000));
+    response.setHeader("Content-Type", "application/json");
+    return response.end(
+      JSON.stringify({
+        source: "polimorf",
+        rows: FORMS.filter(({ form }) => forms.includes(form)),
+      }),
+    );
+  }
   const { annotation } = JSON.parse(new URLSearchParams(body).get("data"));
   const text = annotation.map((part) => part.text ?? "").join("");
   if (text.includes("AWARIA")) {
