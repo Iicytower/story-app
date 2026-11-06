@@ -1,14 +1,14 @@
 # 25 – Serwis słownikowy i tabela form
 
-Zgłoszenie użytkownika (2026-10-30), przebudowane po researchu z 2026-10-31. Baza SQLite i mały serwis na Mikrusie oraz lematyzacja, z których korzystają kafelki z tasków 32–34. Widoczne narzędzia powstają w tych taskach.
+Zgłoszenie użytkownika (2026-10-30), przebudowane po researchu z 2026-10-31. Baza SQLite i mały serwis na serwerze narzędzi (lokalnie task 54, docelowo Mikrus z taska 28) oraz lematyzacja, z których korzystają kafelki z tasków 32–34. Widoczne narzędzia powstają w tych taskach.
 
 ## Zakres
 
-- Serwis HTTP na serwerze z taska 28, czytający SQLite, dostępny tylko z sekretem.
+- Serwis HTTP na lokalnym serwerze z taska 54, wdrażany przez Coolify za bramką (ścieżka `/dict`), czytający SQLite, dostępny tylko z sekretem.
 - Tabela form (forma, lemat, tag) z indeksami po formie i lemacie.
 - Lematyzacja: „kota” → kot, kota, z listą lematów przy wieloznaczności.
-- Skrypt budujący bazę lokalnie i wgrywający plik na serwer.
-- Klient po stronie aplikacji: Server Action z sesją, `AbortSignal.timeout(2000)` i wynikiem `{ ok, ... }`.
+- Skrypt budujący bazę lokalnie i wgrywający plik na serwer (lokalny z taska 54; na Mikrusie w tasku 28).
+- Klient po stronie aplikacji: Server Action z sesją, `AbortSignal.timeout(2000)` i wynikiem `{ ok, ... }`, na wspólnym kliencie i fladze z taska 29 (D56).
 - Wspólny blok „Sources” do atrybucji w narzędziach.
 
 ## Ustalenia
@@ -49,8 +49,8 @@ Wieloznaczność **[pomiar]**: 2,9% form ma więcej niż jeden lemat. Przykłady
 
 ### Miejsce i rozmiar danych
 
-- Mikrus 3.5: 4 GB RAM, 40 GB dysku, dzielone z Coolify i LT. W teście na Coolify (task 28) stos z LT zajmował ok. 1,2–1,4 GB RAM, a LT do 666 MB.
-- Test infrastruktury na Coolify (2026-11-01, kod atrapy w tasku 28) **[pomiar]**: atrapa z SQLite na wolumenie `/data` za bramką z sekretem zajmuje ok. 12 MB RAM przy limicie 128 MB, zwraca wiele lematów (`kota` → kot, kota), a dopisany wiersz przetrwał restart usługi i serwera. To nie jest pomiar prawdziwej bazy ani docelowego serwisu.
+- Mikrus 3.5: 4 GB RAM, 40 GB dysku, dzielone z Coolify i LT. W teście na Coolify (task 54) stos z LT zajmował ok. 1,2–1,4 GB RAM, a LT do 666 MB.
+- Test infrastruktury na Coolify (2026-11-01, kod atrapy w tasku 54) **[pomiar]**: atrapa z SQLite na wolumenie `/data` za bramką z sekretem zajmuje ok. 12 MB RAM przy limicie 128 MB, zwraca wiele lematów (`kota` → kot, kota), a dopisany wiersz przetrwał restart usługi i serwera. To nie jest pomiar prawdziwej bazy ani docelowego serwisu.
 - Rozmiar SQLite niezmierzony; baza nie musi siedzieć w pamięci. Budowa lokalnie, bo przetwarza gigabajtowy JSONL obok działającego LT.
 - Odrzucone miejsca: Atlas M0 (0,5 GB z indeksami, dzielone przez produkcję i staging, 100 ops/s; form→lemat to ok. 254 MB BSON przed indeksami), plik w paczce funkcji Vercela, Vercel Blob (po przekroczeniu blokada na 30 dni), Edge Config (1 MB), dane w przeglądarce (pobieranie i kopia danych u każdego użytkownika), żywe API Wikimedia.
 
@@ -80,7 +80,8 @@ Share-alike dotyczy danych, nie kodu aplikacji. Aplikacja ma wiele kont, więc n
 5. Do serwisu trafia tylko szukane słowo, a adres i sekret nie trafiają do klienta.
 6. Działanie wymaga zalogowania.
 7. Skrypt odtwarza bazę z danych źródłowych, a wgranie jej nie wymaga zmian w kodzie.
+8. Bez `TOOLS_API_URL` albo `TOOLS_API_SECRET` akcja zwraca błąd „narzędzie niedostępne” bez wywołania sieci (D56).
 
 ## Testy
 
-Unit: normalizacja zapytania, mapowanie odpowiedzi serwisu. Integracyjne: sesja, atrapa serwisu, timeout, błędy (bez wywołań sieciowych). Test autozapisu przy zawieszonym serwisie. `manual`: sekret na prawdziwym serwisie (1), odtworzenie i wgranie bazy (7), połączenie ze stagingu, pomiary źródeł.
+Unit: normalizacja zapytania, mapowanie odpowiedzi serwisu. Integracyjne: sesja, atrapa serwisu, timeout, błędy (bez wywołań sieciowych). Test autozapisu przy zawieszonym serwisie. `manual`: sekret na serwisie na lokalnym serwerze z taska 54 (1), odtworzenie i wgranie bazy (7), pomiary źródeł i RAM. Połączenie ze stagingu: task 28.

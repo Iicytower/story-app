@@ -99,7 +99,8 @@ Rymy wielowyrazowe (`na stół`–`chwastu`). LLM do wyboru z listy kandydatów 
 5. Gerundia nie wypełniają listy dla słowa `kochanie`.
 6. Forma odmieniona rymuje się jako wpisana, bez zamiany na lemat.
 7. Brak wyników daje komunikat, a blok „Sources” podaje dane i licencje.
+8. Bez zmiennych serwera narzędzi (D56) kafelek jest widoczny, a szukanie daje komunikat o niedostępności narzędzia.
 
 ## Testy
 
-Unit: transkrypcja, klucze, poziomy, ranking, końcówki otwarte. Integracyjne: akcja z atrapą serwisu. E2E: szukanie i „Show more”. `manual`: pomiar na Panu Tadeuszu i ocena jakości na współczesnym tekście.
+Unit: transkrypcja, klucze, poziomy, ranking, końcówki otwarte. Integracyjne: akcja z atrapą serwisu i bez zmiennych serwera narzędzi. E2E: szukanie i „Show more”. `manual`: pomiar na Panu Tadeuszu i ocena jakości na współczesnym tekście.

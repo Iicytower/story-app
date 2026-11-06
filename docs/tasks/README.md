@@ -4,7 +4,7 @@
 
 Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `develop`).
 
-Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-01): najpierw proste i krótkie, potem system Tools i narzędzia bez serwera, na końcu integracje zewnętrzne (R2) i wszystko, co wymaga Mikrusa.
+Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56): najpierw lokalny serwer narzędzi w Dockerze (54) i taski od niego zależne, potem wygląd i okładki (R2), na końcu prawdziwy serwer na Mikrusie (28).
 
 | # | Task | Zależy od | Status |
 | --- | --- | --- | --- |
@@ -36,18 +36,19 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-01): najp
 | 48 | [Łagodniejszy kontrast i motyw kolorystyczny](done/48-softer-colors.md) | – | [x] |
 | 49 | [Przebudowa strony głównej](done/49-home-page.md) | – | [x] |
 | 52 | [Menu akcji (⋮) i przeciąganie zamiast strzałek](done/52-action-menus.md) | – | [x] |
-| 51 | [Poprawa wyglądu (mobile i web)](51-ui-polish.md) | – | [ ] |
-| 26 | [Upload okładek](26-cover-upload.md) | – | [ ] |
-| 40 | [Wyświetlanie okładek](40-cover-display.md) | 26 | [ ] |
-| 28 | [Serwer na Mikrusie](28-mikrus-server.md) | – | [ ] |
-| 25 | [Serwis słownikowy i tabela form](25-dictionary-service.md) | 28 | [ ] |
+| 54 | [Lokalny serwer narzędzi (Coolify w Dockerze)](54-local-tools-server.md) | – | [ ] |
+| 29 | [LanguageTool na serwerze, akcja sprawdzania i język folderu](29-languagetool.md) | 54 | [ ] |
+| 23 | [Korekta tekstu w dialogu](23-proofreading.md) | 27, 29 | [ ] |
+| 30 | [Słownik użytkownika w korekcie](30-user-dictionary.md) | 23 | [ ] |
+| 25 | [Serwis słownikowy i tabela form](25-dictionary-service.md) | 54, 29 | [ ] |
 | 32 | [Definicje](32-definitions.md) | 25, 27 | [ ] |
 | 33 | [Synonimy](33-synonyms.md) | 25, 27 | [ ] |
 | 34 | [Rymy](34-rhymes.md) | 25, 27 | [ ] |
 | 35 | [Filtry rymów](35-rhyme-filters.md) | 34 | [ ] |
-| 29 | [LanguageTool na serwerze, akcja sprawdzania i język folderu](29-languagetool.md) | 28 | [ ] |
-| 23 | [Korekta tekstu w dialogu](23-proofreading.md) | 27, 29 | [ ] |
-| 30 | [Słownik użytkownika w korekcie](30-user-dictionary.md) | 23 | [ ] |
+| 51 | [Poprawa wyglądu (mobile i web)](51-ui-polish.md) | – | [ ] |
+| 26 | [Upload okładek](26-cover-upload.md) | – | [ ] |
+| 40 | [Wyświetlanie okładek](40-cover-display.md) | 26 | [ ] |
+| 28 | [Serwer na Mikrusie](28-mikrus-server.md) | 54, 25, 29 | [ ] |
 | 53 | [Projekt systemu społecznościowego i plan tasków](53-social-system-plan.md) (zawieszony) | – | [ ] |
 
 ## Backlog

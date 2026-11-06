@@ -4,7 +4,8 @@ Wynik researchu. Silnik dla dialogu z taska 23. Zawiera dawny task 31 (D44).
 
 ## Zakres
 
-- Kontener LanguageTool 6.8 na serwerze z taska 28.
+- Kontener LanguageTool 6.8 jako usługa za bramką na lokalnym serwerze z taska 54 (ścieżka `/lt` w bramce), wdrażana przez Coolify tak jak bramka.
+- Wspólny klient serwera narzędzi po stronie serwera (`TOOLS_API_URL`, `TOOLS_API_SECRET`, nagłówek `X-Tools-Secret`) i flaga z D56: bez obu zmiennych akcja zwraca `{ ok: false, ... }` z kodem „narzędzie niedostępne”, bez wywołania sieci. Z klienta i flagi korzystają taski 23, 25 i 32–34.
 - Server Action sprawdzająca rozdział: sesja, własność, wynik `{ ok, ... }`.
 - Tekst wysyłany w parametrze `data` z adnotacją tekst/markup, z podziałem na akapity.
 - Parametry `language=pl-PL`, `enabledRules=PL_WORD_REPEAT` oraz wyłączone reguły z taska 23.
@@ -22,7 +23,7 @@ Wynik researchu. Silnik dla dialogu z taska 23. Zawiera dawny task 31 (D44).
 
 Do decyzji przy starcie taska:
 
-- Limit czasu wywołania. Propozycja: 30 s, po sprawdzeniu limitu funkcji na Vercelu i pomiarze na Mikrusie, bo test na 1 CPU go przekroczył (sekcja „Test na Coolify”).
+- Limit czasu wywołania. Propozycja: 30 s, po sprawdzeniu limitu funkcji na Vercelu i pomiarze lokalnie z limitem CPU jak na Mikrusie (ponowny pomiar w tasku 28), bo test na 1 CPU go przekroczył (sekcja „Test na Coolify”).
 - Limit rozmiaru treści akcji (`bodySizeLimit`) dla najdłuższych rozdziałów.
 - Obraz Dockera (`erikvl87/languagetool` albo `meyay/languagetool`). `-Xmx` co najmniej 512 MB po teście na Coolify.
 - Lista języków. Na 2026-11-02 tylko polski, bez angielskiego (decyzja użytkownika); przy jednym języku ustalić, czy powstaje selektor, czy samo pole. Inne języki wymagają reguł LT dobranych pod język (dziś `PL_WORD_REPEAT` i wyłączenia z taska 23) i pomiaru pamięci.
@@ -51,7 +52,7 @@ Stan z 2026-10-31. **[pomiar]** to wynik policzony na pobranym pliku, **[wniosek
 
 ### Test na Coolify (2026-11-01)
 
-Serwer HTTP w kontenerze `erikvl87/languagetool:latest`, wersja 6.8 z 2026-06-15, `mem_limit: 800m`, `-Xms128m`. Konfiguracja usługi i bramki: task 28.
+Serwer HTTP w kontenerze `erikvl87/languagetool:latest`, wersja 6.8 z 2026-06-15, `mem_limit: 800m`, `-Xms128m`. Konfiguracja usługi i bramki: task 54.
 
 Tekst: fragmenty *Pana Tadeusza*, 6001 słów (41 397 bajtów, 653 uwagi) i 19 995 słów (140 105 bajtów, 2309 uwag), w blokach po 4 wiersze rozdzielonych `\n\n`. Parametry: `text`, `language=pl-PL`, `enabledRules=PL_WORD_REPEAT`. Liczba uwag była taka sama w każdej konfiguracji. Każdy czas to jedna próba, a seria szła od pierwszego żądania po starcie.
 
@@ -65,7 +66,7 @@ Tekst: fragmenty *Pana Tadeusza*, 6001 słów (41 397 bajtów, 653 uwagi) i 19 9
 **[wniosek]**
 
 - `-Xmx256m` nie wystarcza do pracy serwera, bo tekst sprawdza się kilka razy wolniej. Potrzeba co najmniej 512 MB, a limit kontenera 800 MB zostawia niewielki zapas.
-- Limit 30 s jest ryzykowny. Na 1 CPU przekracza go pierwsze żądanie po starcie i rozdział 20 000 słów, a na 0,5 CPU także 6000 słów na ciepło. Mikrus nie gwarantuje mocy CPU, a limity 1 i 0,5 to założenia testu. Limit trzeba zmierzyć na Mikrusie.
+- Limit 30 s jest ryzykowny. Na 1 CPU przekracza go pierwsze żądanie po starcie i rozdział 20 000 słów, a na 0,5 CPU także 6000 słów na ciepło. Mikrus nie gwarantuje mocy CPU, a limity 1 i 0,5 to założenia testu. Limit trzeba zmierzyć lokalnie z limitem CPU i potwierdzić na Mikrusie (task 28).
 - Po starcie kontenera trzeba rozgrzać LT, bo pierwsze żądanie jest kilka razy wolniejsze.
 - Obraz przypiąć do wersji zamiast `:latest`.
 
@@ -122,7 +123,8 @@ Inne języki w narzędziach:
 8. Folder bez ustawionego języka działa jak polski, także po migracji.
 9. Język folderu obowiązuje we wszystkich jego rozdziałach i notatkach: w atrybucie `lang` pól i w parametrze `language` żądania do LT.
 10. Zmiana języka cudzego folderu daje `NOT_FOUND` (o ile powstanie zapis języka).
+11. Bez `TOOLS_API_URL` albo `TOOLS_API_SECRET` akcja zwraca błąd „narzędzie niedostępne” bez wywołania sieci (D56).
 
 ## Testy
 
-Unit: budowa `data` z markdownu, mapowanie odpowiedzi LT, normalizacja języka. Integracyjne: sesja, własność, błędy, timeout (silnik zastąpiony atrapą, bez sieci), zapis języka, migracja. E2E: atrybut `lang` pól. `manual`: rozdział ok. 6000 słów na serwerze, czas i RAM; zaznaczanie literówek w przeglądarce.
+Unit: budowa `data` z markdownu, mapowanie odpowiedzi LT, normalizacja języka. Integracyjne: sesja, własność, błędy, timeout (silnik zastąpiony atrapą, bez sieci), brak zmiennych (flaga), zapis języka, migracja. E2E: atrybut `lang` pól. `manual`: rozdział ok. 6000 słów na lokalnym serwerze z taska 54, czas i RAM; zaznaczanie literówek w przeglądarce.
