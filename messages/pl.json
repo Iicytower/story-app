@@ -395,6 +395,10 @@
         "label": "Generator nazw",
         "description": "Znajdź imiona i nazwy dla postaci i miejsc."
       },
+      "definitions": {
+        "label": "Definicje",
+        "description": "Sprawdź znaczenia słowa."
+      },
       "synonyms": {
         "label": "Synonimy",
         "description": "Znajdź inne słowa o tym samym znaczeniu."
@@ -403,6 +407,10 @@
         "label": "Rymy",
         "description": "Znajdź słowa, które się rymują."
       }
+    },
+    "sources": {
+      "title": "Źródła",
+      "changed": "Zmiany: etykiety są pokazane poza tekstem, a znaczenia gwarowe i regionalne na końcu."
     }
   },
   "proofread": {
@@ -625,5 +633,72 @@
   },
   "languages": {
     "pl": "Polski"
+  },
+  "definitions": {
+    "word": "Słowo",
+    "search": "Szukaj",
+    "searching": "Szukam…",
+    "failed": "Nie udało się wyszukać. Odśwież stronę i spróbuj ponownie.",
+    "notFound": "Nie znaleziono definicji słowa „{word}”.",
+    "results": "Definicje słowa „{word}”",
+    "shownFor": "Pokazane dla: {headword}",
+    "entry": "{source}, {licence}",
+    "lookElsewhere": "Sprawdź „{word}” w:",
+    "external": {
+      "wiktionary": "Wikisłownik",
+      "sjp": "sjp.pl",
+      "pwn": "PWN"
+    },
+    "newTab": "(otwiera się w nowej karcie)",
+    "label": "{label} ({region})",
+    "pos": {
+      "noun": "rzeczownik",
+      "adj": "przymiotnik",
+      "verb": "czasownik",
+      "adv": "przysłówek",
+      "name": "nazwa własna",
+      "pron": "zaimek",
+      "num": "liczebnik",
+      "prep": "przyimek",
+      "conj": "spójnik",
+      "intj": "wykrzyknik",
+      "particle": "partykuła",
+      "phrase": "fraza",
+      "proverb": "przysłowie",
+      "abbrev": "skrót",
+      "adv_phrase": "fraza przysłówkowa",
+      "adj_phrase": "fraza przymiotnikowa",
+      "prep_phrase": "fraza przyimkowa",
+      "prefix": "przedrostek",
+      "suffix": "przyrostek",
+      "symbol": "symbol",
+      "contraction": "forma ściągnięta"
+    },
+    "labels": {
+      "colloquial": "potocznie",
+      "obsolete": "przestarzale",
+      "dated": "dawniej",
+      "literary": "książkowo",
+      "rare": "rzadko",
+      "dialectal": "gwarowo",
+      "regional": "regionalnie",
+      "vulgar": "wulgarnie",
+      "humorous": "żartobliwie",
+      "pejorative": "pejoratywnie",
+      "offensive": "obraźliwie",
+      "slang": "slangowo",
+      "diminutive": "zdrobniale",
+      "augmentative": "zgrubiale",
+      "endearing": "pieszczotliwie",
+      "ironic": "ironicznie",
+      "euphemistic": "eufemistycznie",
+      "metaphoric": "przenośnie",
+      "formal": "oficjalnie",
+      "neologism": "neologizm",
+      "elevatedly": "podniośle",
+      "poetic": "poetycko",
+      "scornfully": "pogardliwie",
+      "youth": "młodzieżowo"
+    }
   }
 }

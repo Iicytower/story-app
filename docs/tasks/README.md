@@ -41,7 +41,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 23 | [Korekta tekstu w dialogu](done/23-proofreading.md) | 27, 29 | [x] |
 | 30 | [Słownik użytkownika w korekcie](done/30-user-dictionary.md) | 23 | [x] |
 | 25 | [Serwis słownikowy i tabela form](done/25-dictionary-service.md) | 54, 29 | [x] |
-| 32 | [Definicje](32-definitions.md) | 25, 27 | [ ] |
+| 32 | [Definicje](done/32-definitions.md) | 25, 27 | [x] |
 | 33 | [Synonimy](33-synonyms.md) | 25, 27 | [ ] |
 | 34 | [Rymy](34-rhymes.md) | 25, 27 | [ ] |
 | 35 | [Filtry rymów](35-rhyme-filters.md) | 34 | [ ] |

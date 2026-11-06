@@ -1,7 +1,8 @@
 // Stands in for the tools server (D56) in E2E: answers LanguageTool's /v2/check from a
 // fixed list of words, so results do not depend on a running LT, and the dictionary service's
-// /dict/lemmas from a small form table (task 25). Markers in the text or the looked-up word:
-// AWARIA answers 503, POWOLI answers after a delay.
+// /dict/lemmas and /dict/definitions from a small form table (task 25) and a few entries (task
+// 32). Markers in the text or the looked-up word: AWARIA answers 503, POWOLI answers after a
+// delay.
 import { createServer } from "node:http";
 
 const [port, secret] = process.argv.slice(2);
@@ -42,7 +43,52 @@ const FORMS = [
   { form: "kota", lemma: "kota" },
   { form: "Kota", lemma: "Kot" },
   { form: "psa", lemma: "pies" },
+  { form: "tego", lemma: "ten" },
 ];
+
+const sense = (index, gloss, extra = {}) => ({
+  index,
+  gloss,
+  labels: [],
+  examples: [],
+  ...extra,
+});
+
+// Headword → entries, as built from Wikisłownik (task 32).
+const ENTRIES = {
+  kot: [
+    {
+      pos: "noun",
+      posTitle: "rzeczownik",
+      senses: [
+        sense("1.1", "zwierzę domowe", { examples: ["Kot goni za myszą."] }),
+        sense("1.4", "kłąb kurzu", { labels: ["colloquial"] }),
+        sense("1.6", "kotwica", { labels: ["dialectal"], region: "Kaszuby" }),
+      ],
+    },
+  ],
+  Kot: [
+    {
+      pos: "name",
+      posTitle: "nazwa własna",
+      senses: [sense("1.1", "nazwisko")],
+    },
+  ],
+  ten: [
+    {
+      pos: "pron",
+      posTitle: "zaimek",
+      senses: [sense("1.1", "wskazuje na osobę lub rzecz")],
+    },
+  ],
+  tego: [
+    {
+      pos: "pron",
+      posTitle: "zaimek",
+      senses: [sense("1.1", "od: ten", { reference: true })],
+    },
+  ],
+};
 
 function matches(annotation) {
   const found = [];
@@ -77,7 +123,7 @@ createServer(async (request, response) => {
   }
   let body = "";
   for await (const chunk of request) body += chunk;
-  if (request.url === "/dict/lemmas") {
+  if (request.url === "/dict/lemmas" || request.url === "/dict/definitions") {
     const { forms } = JSON.parse(body);
     if (forms.some((form) => form.includes("AWARIA"))) {
       response.statusCode = 503;
@@ -85,12 +131,26 @@ createServer(async (request, response) => {
     }
     if (forms.some((form) => form.includes("POWOLI")))
       await new Promise((resolve) => setTimeout(resolve, 4000));
+    const lemmas = {
+      source: "polimorf",
+      rows: FORMS.filter(({ form }) => forms.includes(form)),
+    };
+    const words = [...forms, ...lemmas.rows.map(({ lemma }) => lemma)];
     response.setHeader("Content-Type", "application/json");
     return response.end(
-      JSON.stringify({
-        source: "polimorf",
-        rows: FORMS.filter(({ form }) => forms.includes(form)),
-      }),
+      JSON.stringify(
+        request.url === "/dict/lemmas"
+          ? lemmas
+          : {
+              lemmas,
+              definitions: {
+                source: "wiktionary",
+                rows: Object.entries(ENTRIES)
+                  .filter(([word]) => words.includes(word))
+                  .map(([word, entries]) => ({ word, entries })),
+              },
+            },
+      ),
     );
   }
   const { annotation } = JSON.parse(new URLSearchParams(body).get("data"));

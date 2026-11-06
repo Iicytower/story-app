@@ -17,6 +17,23 @@ Wynik researchu. Kafelek „Definitions” w Tools.
 - Bez WSJP, bo wzorzec adresu nie jest zweryfikowany. Serwer niczego nie pobiera z linkowanych stron.
 - Scrapowanie sjp.pl, PWN i WSJP odrzucone.
 
+## Ustalone przy starcie (2026-11-06)
+
+Decyzje użytkownika: wynik w pamięci modułu do przeładowania strony (kryterium 5), etykiety tłumaczone jako znaczniki, znaczenia gwarowe na końcu hasła, osobny plik `definitions.sqlite` w serwisie słownikowym. Szczegóły w D62.
+
+Pomiary na zrzucie z 2026-11-02 (`plwiktionary-20261102.jsonl.gz`, SHA-256 `30fda85e…f906`):
+
+| | Wynik |
+| --- | --- |
+| Hasła po imporcie | 116 157 (126 183 wpisów) |
+| Rozmiar bazy, czas budowy | 39 MB, ok. 16 s |
+| Odsyłacze „… od: …” | 5726 znaczeń, 4789 haseł tylko z odsyłaczami |
+| Prefiksy „gw./reg. (Region)” | 5208 + 252 |
+| Odpowiedź serwisu (lokalnie, przez bramkę) | 3–4 ms; RAM serwisu 18 MB |
+| Losowe 1000 słów z „Pana Tadeusza” | 83,3% w PoliMorfie, 69,6% z definicją (bez samych odsyłaczy) |
+
+Braki w próbce to głównie dawne formy („spuszczonemi”, „żadnéj”) i nazwy własne.
+
 ## Dane z researchu
 
 Stan z 2026-10-31. **[pomiar]** to wynik policzony na pobranym pliku, **[wniosek]** to interpretacja, **[do weryfikacji]** nie potwierdzono u źródła. Uwagi o licencjach to odczyt tekstów, nie porada prawna.

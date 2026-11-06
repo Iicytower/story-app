@@ -57,9 +57,10 @@ services:
       start_period: 120s
       start_interval: 5s
 
-  # Lemmas from the form table (task 25, D61). The SQLite file comes from `npm run dict:upload`
-  # onto the dict-data volume; until then every request gets 503. No `$` in the code: Compose
-  # would interpolate it.
+  # Lemmas from the form table (task 25, D61) and definitions from the Polish Wiktionary (task 32,
+  # D62). The SQLite files come from `npm run dict:upload` onto the dict-data volume; without the
+  # form table every request gets 503, without the definitions only /definitions does. No `$` in
+  # the code: Compose would interpolate it.
   dictionary:
     image: node:24.22.2-alpine
     restart: unless-stopped
@@ -75,27 +76,36 @@ services:
           import { createServer } from "node:http";
           import { DatabaseSync } from "node:sqlite";
 
-          const FILE = "/data/forms.sqlite";
           const MAX_BODY = 1024;
           const MAX_FORMS = 4;
           const MAX_LENGTH = 50;
+          // Headwords looked up for definitions besides the forms themselves.
+          const MAX_LEMMAS = 8;
 
-          // The upload replaces the file by rename, so a new inode means new data.
-          let db = null;
-          let inode = null;
-          function database() {
-            let stat;
-            try {
-              stat = fs.statSync(FILE);
-            } catch {
-              return null;
-            }
-            if (db && stat.ino === inode) return db;
-            // The old connection is left to the GC: a request may still be reading from it.
-            db = new DatabaseSync(FILE, { readOnly: true });
-            inode = stat.ino;
-            return db;
+          // The upload replaces a file by rename, so a new inode means new data.
+          function opener(file) {
+            let db = null;
+            let inode = null;
+            return () => {
+              let stat;
+              try {
+                stat = fs.statSync(file);
+              } catch {
+                return null;
+              }
+              if (db && stat.ino === inode) return db;
+              // The old connection is left to the GC: a request may still be reading from it.
+              try {
+                db = new DatabaseSync(file, { readOnly: true });
+              } catch {
+                return null;
+              }
+              inode = stat.ino;
+              return db;
+            };
           }
+          const formsDb = opener("/data/forms.sqlite");
+          const definitionsDb = opener("/data/definitions.sqlite");
 
           function send(response, status, body) {
             response.writeHead(status, { "Content-Type": "application/json" });
@@ -109,38 +119,69 @@ services:
             forms.every((form) => typeof form === "string" && form.length > 0 && form.length <= MAX_LENGTH);
 
           function meta(db) {
-            const rows = db.prepare("SELECT key, value FROM meta WHERE key IN ('source', 'version', 'builtAt', 'forms')").all();
+            const rows = db.prepare("SELECT key, value FROM meta WHERE key IN ('source', 'version', 'builtAt', 'forms', 'words')").all();
             return Object.fromEntries(rows.map((row) => [row.key, row.value]));
           }
+
+          const marks = (values) => values.map(() => "?").join(", ");
 
           // POST /lemmas {"forms": [...]}: the forms are spellings of one word (as typed, lower
           // case, capitalised), so the app ranks the rows itself.
           function lemmas(db, forms) {
-            const marks = forms.map(() => "?").join(", ");
             const rows = db
               .prepare(
-                "SELECT DISTINCT f.form AS form, l.lemma AS lemma FROM forms f JOIN lemmas l ON l.id = f.lemma_id WHERE f.form IN (" + marks + ") ORDER BY l.lemma",
+                "SELECT DISTINCT f.form AS form, l.lemma AS lemma FROM forms f JOIN lemmas l ON l.id = f.lemma_id WHERE f.form IN (" + marks(forms) + ") ORDER BY l.lemma",
               )
               .all(...forms);
             return { source: meta(db).source, rows };
           }
 
+          // POST /definitions {"forms": [...]}: the lemma rows as from /lemmas and the entries of
+          // the forms and their lemmas (those of the form as typed first), for the app to order.
+          function definitions(formTable, definitionTable, forms) {
+            const found = lemmas(formTable, forms);
+            const ranked = [
+              ...found.rows.filter((row) => row.form === forms[0]),
+              ...found.rows.filter((row) => row.form !== forms[0]),
+            ].map((row) => row.lemma);
+            const words = [...new Set([...forms, ...ranked])].slice(0, forms.length + MAX_LEMMAS);
+            const rows = definitionTable
+              .prepare("SELECT word, data FROM entries WHERE word IN (" + marks(words) + ")")
+              .all(...words);
+            return {
+              lemmas: found,
+              definitions: {
+                source: meta(definitionTable).source,
+                rows: rows.map((row) => ({ word: row.word, entries: JSON.parse(row.data) })),
+              },
+            };
+          }
+
+          const ROUTES = {
+            "/lemmas": lemmas,
+            "/definitions": (formTable, forms) => {
+              const definitionTable = definitionsDb();
+              return definitionTable && definitions(formTable, definitionTable, forms);
+            },
+          };
+
           createServer((request, response) => {
-            let db;
-            try {
-              db = database();
-            } catch {
-              db = null;
-            }
-            if (!db) return send(response, 503, { error: "NO_DATA" });
+            const forms = formsDb();
+            if (!forms) return send(response, 503, { error: "NO_DATA" });
             if (request.method === "GET" && request.url === "/health") {
+              let definitions = null;
               try {
-                return send(response, 200, meta(db));
+                const db = definitionsDb();
+                definitions = db && meta(db);
+              } catch {}
+              try {
+                return send(response, 200, { forms: meta(forms), definitions });
               } catch {
                 return send(response, 500, { error: "QUERY_FAILED" });
               }
             }
-            if (request.method !== "POST" || request.url !== "/lemmas") return send(response, 404, { error: "NOT_FOUND" });
+            if (request.method !== "POST" || !Object.hasOwn(ROUTES, request.url)) return send(response, 404, { error: "NOT_FOUND" });
+            const route = ROUTES[request.url];
             let body = "";
             let tooLarge = false;
             request.setEncoding("utf8");
@@ -151,13 +192,15 @@ services:
             });
             request.on("end", () => {
               if (tooLarge) return send(response, 413, { error: "TOO_LARGE" });
-              let forms;
+              let input;
               try {
-                forms = JSON.parse(body).forms;
+                input = JSON.parse(body).forms;
               } catch {}
-              if (!validForms(forms)) return send(response, 400, { error: "BAD_REQUEST" });
+              if (!validForms(input)) return send(response, 400, { error: "BAD_REQUEST" });
               try {
-                send(response, 200, lemmas(db, forms));
+                const result = route(forms, input);
+                if (!result) return send(response, 503, { error: "NO_DATA" });
+                send(response, 200, result);
               } catch {
                 send(response, 500, { error: "QUERY_FAILED" });
               }

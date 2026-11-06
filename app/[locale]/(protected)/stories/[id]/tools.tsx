@@ -1,5 +1,6 @@
 import {
   AudioLinesIcon,
+  BookOpenIcon,
   type LucideIcon,
   ReplaceIcon,
   SparklesIcon,
@@ -10,7 +11,7 @@ import { type ComponentType, lazy } from "react";
 
 export interface Tool {
   // Key of tools.items, with the label and description.
-  id: "proofread" | "name-generator" | "synonyms" | "rhymes";
+  id: "proofread" | "name-generator" | "definitions" | "synonyms" | "rhymes";
   icon: LucideIcon;
   // Shown in the dialog the tile opens.
   View: ComponentType;
@@ -26,6 +27,10 @@ const NameGenerator = lazy(() =>
 
 const Proofread = lazy(() =>
   import("./proofread").then((module) => ({ default: module.Proofread })),
+);
+
+const Definitions = lazy(() =>
+  import("./definitions").then((module) => ({ default: module.Definitions })),
 );
 
 function ComingSoon() {
@@ -46,6 +51,12 @@ export const TOOLS: Tool[] = [
     icon: SparklesIcon,
     View: NameGenerator,
     dialogClassName: "max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-4xl",
+  },
+  {
+    id: "definitions",
+    icon: BookOpenIcon,
+    View: Definitions,
+    dialogClassName: "max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl",
   },
   {
     id: "synonyms",
