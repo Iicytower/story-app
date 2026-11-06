@@ -1,0 +1,30 @@
+# Tools service deployed by Coolify to the tools server (task 54, D56). scripts/tools.ts sends it to Coolify.
+# Coolify writes a `content:` file only once: after changing the Caddyfile, update it through
+# PATCH /services/{uuid}/storages and restart the service (task 54, "Uwagi do Coolify").
+services:
+  gateway:
+    image: caddy:2.11.9-alpine
+    restart: unless-stopped
+    ports:
+      - "8110:8080"
+    environment:
+      - TOOLS_API_SECRET=${TOOLS_API_SECRET:?}
+    volumes:
+      - type: bind
+        source: ./Caddyfile
+        target: /etc/caddy/Caddyfile
+        content: |
+          {
+            admin off
+            auto_https off
+          }
+          :8080 {
+            @authorized header X-Tools-Secret {$TOOLS_API_SECRET}
+            handle @authorized {
+              handle /health {
+                respond "ok" 200
+              }
+              respond 404
+            }
+            respond 401
+          }

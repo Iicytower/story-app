@@ -12,6 +12,7 @@ Your stories, from the first line to the first reader. Story App gives writers a
 | UI        | Tailwind CSS 4, shadcn/ui (Radix), Tiptap v3, `react-resizable-panels`, `dnd-kit`, `next-intl` |
 | Tests     | Vitest (unit and integration against a real MongoDB), Playwright (E2E)                         |
 | Hosting   | Vercel (production and staging), MongoDB Atlas                                                 |
+| Tools     | Self-hosted tools server managed by Coolify; locally Coolify and the server run in Docker      |
 
 The main architectural rules:
 
@@ -66,7 +67,16 @@ npm run migrate    # collections and indexes (the app does not create indexes it
 npm run dev        # http://localhost:3000
 ```
 
-Create an account with "Log in / Create account" on the home page, or from the terminal with `npm run create-account`. Run `npm run migrate` again after pulling changes that touch schemas or `migrations/`. Stop the database with `npm run db:down`; the data stays in the Docker volume.
+Create an account with "Log in / Create account" on the home page, or from the terminal with `npm run create-account`. Run `npm run migrate` again after pulling changes that touch schemas or `migrations/`.
+
+### Everything at once, with the tools server
+
+```sh
+npm run up         # MongoDB, Coolify (panel on http://localhost:8000) and the tools server
+npm run down       # stops all of it; the data stays in Docker volumes
+```
+
+`npm run up` starts Coolify and a Docker-in-Docker container that plays the remote tools server, deploys the tools gateway to it through the Coolify API and writes `TOOLS_API_URL` and `TOOLS_API_SECRET` to `.env.local`. Running it again changes nothing unless `docker/tools/compose.yml` changed (then it redeploys the service). Generated secrets stay in `.tools/` (gitignored); the Coolify admin password is in `.tools/tools.env`. The stack needs about 0.6 GB of RAM and 1.4 GB of images. Details: `docs/deploy.md`.
 
 ### Tests
 

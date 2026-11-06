@@ -36,7 +36,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 48 | [Łagodniejszy kontrast i motyw kolorystyczny](done/48-softer-colors.md) | – | [x] |
 | 49 | [Przebudowa strony głównej](done/49-home-page.md) | – | [x] |
 | 52 | [Menu akcji (⋮) i przeciąganie zamiast strzałek](done/52-action-menus.md) | – | [x] |
-| 54 | [Lokalny serwer narzędzi (Coolify w Dockerze)](54-local-tools-server.md) | – | [ ] |
+| 54 | [Lokalny serwer narzędzi (Coolify w Dockerze)](done/54-local-tools-server.md) | – | [x] |
 | 29 | [LanguageTool na serwerze, akcja sprawdzania i język folderu](29-languagetool.md) | 54 | [ ] |
 | 23 | [Korekta tekstu w dialogu](23-proofreading.md) | 27, 29 | [ ] |
 | 30 | [Słownik użytkownika w korekcie](30-user-dictionary.md) | 23 | [ ] |
