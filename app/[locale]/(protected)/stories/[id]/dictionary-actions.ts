@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth/session";
 import { actionError } from "@/lib/i18n/action-error";
 import { toolsConfig, type ToolsConfig, ToolsError } from "@/lib/tools/client";
 import { type Definitions, findDefinitions } from "@/lib/tools/definitions";
+import { findRhymes, type Rhymes } from "@/lib/tools/rhymes";
 import { findSynonyms, type Synonyms } from "@/lib/tools/synonyms";
 import {
   findLemmas,
@@ -55,4 +56,11 @@ export async function lookUpSynonyms(
   value: unknown,
 ): Promise<ActionResult<{ word: string } & Synonyms>> {
   return lookUp(value, findSynonyms);
+}
+
+// The Rhymes tile (task 34): rhymes of the word as typed, by level.
+export async function lookUpRhymes(
+  value: unknown,
+): Promise<ActionResult<{ word: string } & Rhymes>> {
+  return lookUp(value, findRhymes);
 }

@@ -6,7 +6,6 @@ import {
   SparklesIcon,
   SpellCheckIcon,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
 import { type ComponentType, lazy } from "react";
 
 export interface Tool {
@@ -37,12 +36,11 @@ const Synonyms = lazy(() =>
   import("./synonyms").then((module) => ({ default: module.Synonyms })),
 );
 
-function ComingSoon() {
-  const t = useTranslations("tools");
-  return <p className="text-muted-foreground text-sm">{t("comingSoon")}</p>;
-}
+const Rhymes = lazy(() =>
+  import("./rhymes").then((module) => ({ default: module.Rhymes })),
+);
 
-// A new tool adds its tile and view here. Placeholder until task 34.
+// A new tool adds its tile and view here.
 export const TOOLS: Tool[] = [
   {
     id: "proofread",
@@ -71,6 +69,7 @@ export const TOOLS: Tool[] = [
   {
     id: "rhymes",
     icon: AudioLinesIcon,
-    View: ComingSoon,
+    View: Rhymes,
+    dialogClassName: "max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl",
   },
 ];

@@ -43,7 +43,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 25 | [Serwis słownikowy i tabela form](done/25-dictionary-service.md) | 54, 29 | [x] |
 | 32 | [Definicje](done/32-definitions.md) | 25, 27 | [x] |
 | 33 | [Synonimy](done/33-synonyms.md) | 25, 27 | [x] |
-| 34 | [Rymy](34-rhymes.md) | 25, 27 | [ ] |
+| 34 | [Rymy](done/34-rhymes.md) | 25, 27 | [x] |
 | 35 | [Filtry rymów](35-rhyme-filters.md) | 34 | [ ] |
 | 51 | [Poprawa wyglądu (mobile i web)](51-ui-polish.md) | – | [ ] |
 | 26 | [Upload okładek](26-cover-upload.md) | – | [ ] |

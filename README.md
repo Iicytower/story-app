@@ -74,7 +74,7 @@ Create an account with "Log in / Create account" on the home page, or from the t
 ```sh
 npm run up         # MongoDB, Coolify (panel on http://localhost:8000) and the tools server
 npm run down       # stops all of it; the data stays in Docker volumes
-npm run dict:build # builds the dictionary databases from PoliMorf, the Polish Wiktionary and the Dobry słownik thesaurus (downloads 188 MB once)
+npm run dict:build # builds the dictionary databases from PoliMorf, the Polish Wiktionary, the Dobry słownik thesaurus and wordfreq (downloads 190 MB once)
 npm run dict:upload # sends them to the dictionary service on the tools server
 ```
 

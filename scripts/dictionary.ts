@@ -1,10 +1,11 @@
-// Dictionary databases: `npm run dict:build [forms|definitions|synonyms]` builds the form table
-// from PoliMorf into .tools/dict/forms.sqlite (task 25, D61), the definitions from the Polish
-// Wiktionary into .tools/dict/definitions.sqlite (task 32, D62) and the synonyms of Wiktionary
-// and the Dobry słownik thesaurus into .tools/dict/synonyms.sqlite (task 33, D63); without an
-// argument all. `npm run dict:upload [forms|definitions|synonyms]` sends the built files
-// (without an argument all) to the dictionary service on the local tools server. Source data
-// and the built files stay out of the repo (licences: D61–D63).
+// Dictionary databases: `npm run dict:build [forms|definitions|synonyms|rhymes]` builds the form
+// table from PoliMorf into .tools/dict/forms.sqlite (task 25, D61), the definitions from the
+// Polish Wiktionary into .tools/dict/definitions.sqlite (task 32, D62), the synonyms of
+// Wiktionary and the Dobry słownik thesaurus into .tools/dict/synonyms.sqlite (task 33, D63) and
+// the rhyme keys of the form table with wordfreq's frequencies into .tools/dict/rhymes.sqlite
+// (task 34, D64); without an argument all. `npm run dict:upload [forms|definitions|synonyms|rhymes]`
+// sends the built files (without an argument all) to the dictionary service on the local tools
+// server. Source data and the built files stay out of the repo (licences: D61–D64).
 import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
@@ -14,8 +15,10 @@ import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { ReadableStream } from "node:stream/web";
 import { DatabaseSync } from "node:sqlite";
-import { createGunzip } from "node:zlib";
+import { createGunzip, gunzipSync } from "node:zlib";
 import { strFromU8, unzipSync } from "fflate";
+import { isVerbTag, rhymeKeys } from "../lib/tools/rhyme-key";
+import { formFlags, wordFrequencies } from "../lib/tools/rhymes-import";
 import { SOURCES } from "../lib/tools/sources";
 import {
   decodeThesaurus,
@@ -37,6 +40,7 @@ const SOURCE_FILE = path.join(DICT_DIR, "src/polimorf-20261018.tab.gz");
 const DATABASE = path.join(DICT_DIR, "forms.sqlite");
 const DEFINITIONS = path.join(DICT_DIR, "definitions.sqlite");
 const SYNONYMS = path.join(DICT_DIR, "synonyms.sqlite");
+const RHYMES = path.join(DICT_DIR, "rhymes.sqlite");
 const TOOLS_ENV = path.join(ROOT, ".tools/tools.env");
 const TOOLS_API_URL = "http://127.0.0.1:8110";
 
@@ -397,10 +401,154 @@ async function buildWiktionary(
   }
 }
 
+// wordfreq's Polish list, CC BY-SA 4.0 (D64), pinned to a release like PoliMorf.
+const WORDFREQ = {
+  id: "wordfreq",
+  version: "3.2",
+  url: "https://raw.githubusercontent.com/rspeer/wordfreq/v3.2/wordfreq/data/large_pl.msgpack.gz",
+  file: path.join(DICT_DIR, "src/wordfreq-3.2-large_pl.msgpack.gz"),
+  sha256: "fac63e49c49ea2e39dd8a48152d7e54cec0920abbc59993088063ed5d9b528c2",
+  licence: "CC BY-SA 4.0",
+};
+
+async function readWordfreq(): Promise<Map<string, number>> {
+  if (!fs.existsSync(WORDFREQ.file)) {
+    console.log("Fetching wordfreq…");
+    const response = await fetch(WORDFREQ.url);
+    if (!response.ok) throw new Error(`wordfreq: HTTP ${response.status}`);
+    fs.writeFileSync(WORDFREQ.file, Buffer.from(await response.arrayBuffer()));
+  }
+  const data = fs.readFileSync(WORDFREQ.file);
+  if (sha256(data) !== WORDFREQ.sha256) {
+    throw new Error("wordfreq: wrong checksum.");
+  }
+  return wordFrequencies(gunzipSync(data));
+}
+
+const LOWER_CASE = /^[a-ząćęłńóśźż]+$/;
+const CAPITALISED = /^[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+$/;
+
+// The rhyme keys of every form of the form table (task 34, D64). Names count too, unless the
+// same word is also written in lower case ("Kot" next to "kot"); their frequency is that of the
+// lower-case word, as wordfreq has only those. Lemma ids are those of the form table the rhymes
+// were built from, which meta names.
+async function buildRhymes() {
+  if (!fs.existsSync(DATABASE)) {
+    throw new Error("No form table: run `npm run dict:build forms` first.");
+  }
+  const frequencies = await readWordfreq();
+  const forms = new DatabaseSync(DATABASE, { readOnly: true });
+  const formsMeta = Object.fromEntries(
+    (
+      forms.prepare("SELECT key, value FROM meta").all() as {
+        key: string;
+        value: string;
+      }[]
+    ).map(({ key, value }) => [key, value]),
+  );
+  const tags = new Map(
+    (
+      forms.prepare("SELECT id, tag FROM tags").all() as {
+        id: number;
+        tag: string;
+      }[]
+    ).map(({ id, tag }) => [id, tag]),
+  );
+  const lowerCaseExists = forms.prepare(
+    "SELECT 1 FROM forms WHERE form = ? LIMIT 1",
+  );
+
+  const { db, finish } = newDatabase(
+    RHYMES,
+    `-- Rows go in by reversed phones, so the rows of one key sit on nearby pages.
+    CREATE TEMP TABLE staging (
+      rev TEXT NOT NULL, form TEXT NOT NULL, phones TEXT NOT NULL, exact TEXT NOT NULL,
+      near TEXT NOT NULL, last TEXT, freq INTEGER NOT NULL, lemmas TEXT NOT NULL,
+      flags INTEGER NOT NULL
+    );
+    -- A form with its keys (lib/tools/rhyme-key.ts), Zipf frequency × 100 (0 when unlisted),
+    -- comma-separated lemma ids and flags (lib/tools/rhymes-import.ts).
+    CREATE TABLE words (
+      form TEXT NOT NULL, phones TEXT NOT NULL, exact TEXT NOT NULL, near TEXT NOT NULL,
+      last TEXT, freq INTEGER NOT NULL, lemmas TEXT NOT NULL, flags INTEGER NOT NULL
+    );`,
+  );
+  db.exec("PRAGMA cache_size = -1000000");
+  const insert = db.prepare(
+    "INSERT INTO staging VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+  );
+  console.log(`Building ${path.relative(ROOT, RHYMES)}…`);
+  let form = "";
+  let lemmas = new Set<number>();
+  let formTags: string[] = [];
+  const flush = () => {
+    if (!LOWER_CASE.test(form)) {
+      if (!CAPITALISED.test(form)) return;
+      if (lowerCaseExists.get(form.toLowerCase())) return;
+    }
+    const keys = rhymeKeys(form, formTags.some(isVerbTag));
+    if (!keys) return;
+    insert.run(
+      [...keys.phones].reverse().join(""),
+      form,
+      keys.phones,
+      keys.exact,
+      keys.near,
+      keys.last,
+      frequencies.get(form.toLowerCase()) ?? 0,
+      [...lemmas].join(","),
+      formFlags(form.toLowerCase(), formTags),
+    );
+  };
+  // Grouped by form; ORDER BY keeps SQLite off the lemma index.
+  for (const row of forms
+    .prepare("SELECT form, lemma_id, tag_id FROM forms ORDER BY form")
+    .iterate() as Iterable<{
+    form: string;
+    lemma_id: number;
+    tag_id: number;
+  }>) {
+    if (row.form !== form) {
+      if (form) flush();
+      form = row.form;
+      lemmas = new Set();
+      formTags = [];
+    }
+    lemmas.add(row.lemma_id);
+    formTags.push(tags.get(row.tag_id)!);
+  }
+  if (form) flush();
+  forms.close();
+  db.exec(`
+    INSERT INTO words
+      SELECT form, phones, exact, near, last, freq, lemmas, flags FROM staging ORDER BY rev;
+    DROP TABLE staging;
+    CREATE INDEX words_form ON words (form);
+    CREATE INDEX words_exact ON words (exact, freq DESC);
+    CREATE INDEX words_near ON words (near, freq DESC);
+    CREATE INDEX words_last ON words (last, freq DESC);
+  `);
+  const { count } = db.prepare("SELECT count(*) AS count FROM words").get() as {
+    count: number;
+  };
+  finish({
+    source: "rhymes",
+    version: `${SOURCE.id} ${formsMeta.version}, ${WORDFREQ.id} ${WORDFREQ.version}`,
+    "forms.builtAt": formsMeta.builtAt,
+    "wordfreq.sha256": WORDFREQ.sha256,
+    licence: WORDFREQ.licence,
+    words: String(count),
+  });
+  console.log(
+    `Done: ${count} forms, ${Math.round(fs.statSync(RHYMES).size / 1e6)} MB.`,
+  );
+}
+
 const DATABASES = {
   forms: DATABASE,
   definitions: DEFINITIONS,
   synonyms: SYNONYMS,
+  rhymes: RHYMES,
 };
 type DatabaseName = keyof typeof DATABASES;
 const isDatabase = (value: string): value is DatabaseName =>
@@ -411,7 +559,7 @@ async function build() {
   const what = args.find((arg) => !arg.startsWith("--"));
   if (what !== undefined && !isDatabase(what)) {
     throw new Error(
-      "Usage: npm run dict:build [forms|definitions|synonyms] [--refresh]",
+      "Usage: npm run dict:build [forms|definitions|synonyms|rhymes] [--refresh]",
     );
   }
   const wanted = (name: DatabaseName) => what === undefined || what === name;
@@ -426,6 +574,7 @@ async function build() {
       refresh,
     );
   }
+  if (wanted("rhymes")) await buildRhymes();
 }
 
 function builtAt(file: string): string {
@@ -539,7 +688,9 @@ function uploadFile(
 async function upload() {
   const what = process.argv[3];
   if (what !== undefined && !isDatabase(what)) {
-    throw new Error("Usage: npm run dict:upload [forms|definitions|synonyms]");
+    throw new Error(
+      "Usage: npm run dict:upload [forms|definitions|synonyms|rhymes]",
+    );
   }
   const built = Object.entries(DATABASES).filter(
     ([key, file]) => (!what || key === what) && fs.existsSync(file),
