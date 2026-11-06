@@ -27,6 +27,13 @@ export const SEARCH_LIMIT: RateLimitRule = {
   windowMs: 60 * 1000,
 };
 
+// Per user, not per IP: one check keeps the tools server's CPU busy for seconds (D58).
+export const PROOFREAD_LIMIT: RateLimitRule = {
+  name: "proofread",
+  max: 10,
+  windowMs: 10 * 60 * 1000,
+};
+
 // One subscriber usually owns a whole IPv6 /64, so single addresses would not limit anyone.
 function ipv6Network(ip: string): string {
   const [head, tail] = ip.split("::");

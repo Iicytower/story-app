@@ -53,25 +53,26 @@ Mechanizm: `docs/decisions.md` D14. Migracje uruchamiają się w buildzie produk
 - Function Region w Vercelu (Settings → Functions) ustawić na region klastra Atlasa (np. `fra1` dla Frankfurtu). Domyślnie funkcje szły do `iad1` (Waszyngton).
 - Konto produkcyjne: `MONGODB_URI='mongodb+srv://...' npm run create-account` (pojedyncze cudzysłowy, bo zsh interpretuje `&` i `?`; plik `.env.local` musi istnieć).
 
-## Lokalny serwer narzędzi (task 54, D56, D57)
+## Lokalny serwer narzędzi (task 54, D56, D57, D58)
 
 Odpowiednik prawdziwego serwera narzędzi (task 28), w całości w Dockerze. Usługi z profilu `tools` w `docker-compose.yml`:
 
 - `coolify`, `coolify-db`, `coolify-redis` – Coolify 4.6.0 (pliki bazowe Coolify przerobione na wolumeny projektu, bez `/data/coolify` na hoście);
 - `tools-server` – serwer docelowy: DinD z `sshd` (`docker/tools-server/`), dodany w Coolify jako serwer `story-app-tools`, bez proxy (`proxy_type: none`).
 
-Coolify wdraża na `tools-server` usługę Compose `story-app-tools` z `docker/tools/compose.yml` (bramka Caddy z nagłówkiem `X-Tools-Secret` i ścieżką `/health`; LanguageTool i serwis słownikowy dochodzą w taskach 29 i 25).
+Coolify wdraża na `tools-server` usługę Compose `story-app-tools` z `docker/tools/compose.yml`: bramka Caddy z nagłówkiem `X-Tools-Secret`, ścieżką `/health` i `/lt/*` do LanguageTool 6.8 (task 29, D58, bez portu na zewnątrz); serwis słownikowy dochodzi w tasku 25.
 
 | Co | Adres |
 | --- | --- |
 | Panel Coolify | `http://localhost:8000` (realtime: 6001, 6002), login `admin@story-app.localhost`, hasło w `.tools/tools.env` |
 | Bramka narzędzi | `http://127.0.0.1:8110` (`TOOLS_API_URL`) |
+| LanguageTool | `http://127.0.0.1:8110/lt/v2/check` (z nagłówkiem `X-Tools-Secret`) |
 
 Wszystkie porty tylko na `127.0.0.1`. Projekt Compose ma stałą nazwę `story_app` (`name:` w `docker-compose.yml`), więc wolumeny i kontenery mają prefiks `story_app` niezależnie od nazwy katalogu.
 
 Polecenia:
 
-- `npm run up` – startuje wszystko (MongoDB, Coolify, serwer docelowy), zakłada konto admina, włącza API Coolify i tworzy token, dodaje klucz SSH, serwer, projekt i usługę, ustawia sekret, czeka na `/health` i dopisuje `TOOLS_API_URL` i `TOOLS_API_SECRET` do `.env.local`. Ponowne uruchomienie niczego nie duplikuje i nie zmienia sekretów (tworzy tylko nowy token API w miejsce starego).
+- `npm run up` – startuje wszystko (MongoDB, Coolify, serwer docelowy), zakłada konto admina, włącza API Coolify i tworzy token, dodaje klucz SSH, serwer, projekt i usługę, ustawia sekret, czeka na `/health`, rozgrzewa LanguageTool pierwszym polskim sprawdzeniem i dopisuje `TOOLS_API_URL` i `TOOLS_API_SECRET` do `.env.local`. Ponowne uruchomienie niczego nie duplikuje i nie zmienia sekretów (tworzy tylko nowy token API w miejsce starego).
 - `npm run down` – `docker compose --profile tools down`: zatrzymuje i usuwa kontenery (także `mongo`), wolumeny zostają.
 - `npm run db:up`, `npm test`, `npm run test:e2e` startują tylko `mongo`.
 
@@ -82,9 +83,9 @@ Konto admina, przełącznik API i token zakłada skrypt przez `php artisan tinke
 Uwagi:
 
 - Wbudowany serwer `localhost` (`host.docker.internal`) jest nieosiągalny: Coolify nie ma do niego klucza (brak `PrivateKey` 0), a my nie dajemy SSH do hosta. Nic na nim nie wdrażamy. Skutek w logach: przy starcie `StartProxy … FAIL`, a co minutę `CheckAndStartSentinelJob … FAIL` i w `storage/logs/laravel.log` ostrzeżenia `ServerConnectionCheck: Server not reachable` dla `localhost` – do zignorowania.
-- Zmiana `docker/tools/compose.yml`: `npm run up` wysyła nowy `docker_compose_raw` i restartuje usługę, gdy plik różni się od ostatnio wdrożonego (hash w `.tools/deployed-compose.sha256`). Wyjątek: Coolify zapisuje plik z `content:` (Caddyfile) tylko raz, więc zmiana Caddyfile wymaga `PATCH /services/{uuid}/storages` i restartu usługi albo resetu środowiska.
+- Zmiana `docker/tools/compose.yml`: `npm run up` wysyła nowy `docker_compose_raw` i restartuje usługę, gdy plik różni się od ostatnio wdrożonego (hash w `.tools/deployed-compose.sha256`). Coolify zapisuje plik z `content:` (Caddyfile) tylko wtedy, gdy go nie ma na serwerze, więc przy zmianie Caddyfile trzeba podbić numer w nazwie źródła (`./Caddyfile-vN`); restart po zmianie compose zapisze nowy plik. Stare pliki zostają w katalogu usługi na serwerze i niczemu nie przeszkadzają.
 - Błąd walidacji serwera (np. brak `git`, `curl`, `jq` w obrazie) zostaje w Coolify; po poprawce trzeba kliknąć Validate przy serwerze w panelu albo zresetować środowisko.
-- Zasoby (pomiar 2026-11-06, bez obciążenia): Coolify ok. 410 MB, Postgres 39 MB, Redis 12 MB, serwer docelowy 97 MB (w tym bramka 14 MB), razem ok. 560 MB bez MongoDB. Obrazy ok. 1,4 GB na hoście i 92 MB w DinD.
+- Zasoby (pomiar 2026-11-06, po sprawdzeniu rozdziału): Coolify ok. 430 MB, Postgres 43 MB, Redis 13 MB, serwer docelowy 740 MB (w tym LanguageTool ok. 490 MB z limitem 800 MB, bramka 14 MB), razem ok. 1,2 GB bez MongoDB. Obrazy ok. 1,4 GB na hoście i 1,35 GB w DinD (LanguageTool 0,75 GB).
 
 Wymiana `TOOLS_API_SECRET`: wpisz nową wartość w `.tools/tools.env` (`openssl rand -hex 32`), potem `npm run up` – ustawi zmienną w Coolify, zrestartuje usługę i zaktualizuje `.env.local`.
 

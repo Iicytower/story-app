@@ -11,6 +11,7 @@ Wynik researchu. Kafelek „Definitions” w Tools.
 
 ## Ustalenia
 
+- Słownik otwiera się dla języka folderu otwartego rozdziału (D58). Dziś lista języków folderu to tylko polski; nowy język dochodzi do listy, gdy obsługują go korekta i słowniki.
 - Źródło: edycja polska na kaikki, nie domyślny „Polish” z angielskimi definicjami.
 - Bez WSJP, bo wzorzec adresu nie jest zweryfikowany. Serwer niczego nie pobiera z linkowanych stron.
 - Scrapowanie sjp.pl, PWN i WSJP odrzucone.

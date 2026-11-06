@@ -13,6 +13,7 @@ Wynik researchu. Kafelek „Rhymes” w Tools. Filtry: task 35.
 
 ## Ustalenia
 
+- Słownik otwiera się dla języka folderu otwartego rozdziału (D58). Dziś lista języków folderu to tylko polski; nowy język dochodzi do listy, gdy obsługują go korekta i słowniki.
 - Klucz uwzględnia akcent: czwarta sylaba od końca w `(li|ły)by(śmy|ście)$`, trzecia w trybie przypuszczającym i `-liśmy`, reszta przedostatnia. Tag czasownika sprawdza dopasowanie, a mała tabela obsługuje wyjątki.
 - Near: i=y, końcowe ą=o oraz spółgłoski według klasy artykulacyjnej.
 - Last syllable przy końcówce zamkniętej. Przy otwartej wymaga poprzedzającej spółgłoski (`-ki`); tego wariantu nie zbudowano w prototypie.

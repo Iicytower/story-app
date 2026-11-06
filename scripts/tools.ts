@@ -5,6 +5,7 @@ import { execFileSync } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { parse as parseYaml } from "yaml";
 
 const ROOT = process.cwd();
 const TOOLS_DIR = path.join(ROOT, ".tools");
@@ -217,6 +218,84 @@ async function healthStatus(secret: string) {
   return response.status;
 }
 
+// The first Polish check after a start takes about a minute on one CPU; this one makes it
+// before the app does (the container healthcheck does the same after unplanned restarts).
+async function languageToolStatus(secret: string) {
+  const response = await fetch(`${TOOLS_API_URL}/lt/v2/check`, {
+    method: "POST",
+    headers: { "X-Tools-Secret": secret },
+    body: new URLSearchParams({ language: "pl-PL", text: "Ala ma kota." }),
+    // poll checks its deadline only between attempts.
+    signal: AbortSignal.timeout(90_000),
+  });
+  return response.status;
+}
+
+type Request = ReturnType<typeof api>;
+
+// `content:` files of the compose file, by mount target.
+function contentFiles(composeContent: string): Map<string, string> {
+  const compose = parseYaml(composeContent) as {
+    services: Record<string, { volumes?: (string | { target?: string; content?: string })[] }>;
+  };
+  const files = new Map<string, string>();
+  for (const { volumes = [] } of Object.values(compose.services)) {
+    for (const volume of volumes) {
+      if (typeof volume === "object" && volume.target && volume.content) {
+        files.set(volume.target, volume.content);
+      }
+    }
+  }
+  return files;
+}
+
+// Coolify writes a `content:` file only when it is missing on the server and keeps the old
+// content when the compose file changes, so changed content goes through the storages API.
+// Coolify then writes the file in a queued job; the restart must wait for it.
+async function syncContentFiles(
+  request: Request,
+  serviceUuid: string,
+  composeContent: string,
+): Promise<boolean> {
+  const wanted = contentFiles(composeContent);
+  const { file_storages: storages } = await request<{
+    file_storages: {
+      uuid: string;
+      mount_path: string;
+      fs_path: string;
+      content: string | null;
+    }[];
+  }>("GET", `/services/${serviceUuid}/storages`);
+  let changed = false;
+  for (const storage of storages) {
+    const content = wanted.get(storage.mount_path);
+    // Coolify stores the content without the final newline of a YAML `|` block.
+    const same = (written: string | null) =>
+      written?.trimEnd() === content?.trimEnd();
+    if (content === undefined || same(storage.content)) continue;
+    await request("PATCH", `/services/${serviceUuid}/storages`, {
+      uuid: storage.uuid,
+      type: "file",
+      content,
+    });
+    console.log(`Waiting for Coolify to write ${storage.mount_path}…`);
+    await poll(
+      `${storage.mount_path} on the tools server`,
+      async () =>
+        same(
+          compose(["exec", "-T", "tools-server", "cat", storage.fs_path], {
+            quiet: true,
+          }),
+        )
+          ? true
+          : undefined,
+      2 * 60_000,
+    );
+    changed = true;
+  }
+  return changed;
+}
+
 async function deploy(token: string, secret: string) {
   const request = api(token);
 
@@ -300,6 +379,12 @@ async function deploy(token: string, secret: string) {
     });
   }
 
+  const filesChanged = await syncContentFiles(
+    request,
+    service.uuid,
+    composeContent,
+  );
+
   const envs = await request<{ key: string; value: string }[]>(
     "GET",
     `/services/${service.uuid}/envs`,
@@ -317,7 +402,8 @@ async function deploy(token: string, secret: string) {
   if (
     (await healthStatus(secret).catch(() => 0)) !== 200 ||
     secretChanged ||
-    composeChanged
+    composeChanged ||
+    filesChanged
   ) {
     const requestedAt = Date.now();
     await request("POST", `/services/${service.uuid}/restart`);
@@ -345,7 +431,8 @@ async function deploy(token: string, secret: string) {
           ? true
           : undefined;
       },
-      5 * 60_000,
+      // The first deploy pulls LanguageTool (about 0.75 GB) before starting anything.
+      15 * 60_000,
     );
   }
   return composeHash;
@@ -381,6 +468,15 @@ async function up() {
       (await healthStatus(tools.TOOLS_API_SECRET)) === 200 ? true : undefined,
     5 * 60_000,
   );
+  console.log("Waiting for LanguageTool…");
+  await poll(
+    "LanguageTool",
+    async () =>
+      (await languageToolStatus(tools.TOOLS_API_SECRET)) === 200
+        ? true
+        : undefined,
+    10 * 60_000,
+  );
   fs.writeFileSync(DEPLOYED_HASH, composeHash);
   updateEnvLocal(tools.TOOLS_API_SECRET);
   console.log(
@@ -388,6 +484,7 @@ async function up() {
       "Ready.",
       `  Coolify panel: ${PANEL_URL} (login ${tools.ADMIN_EMAIL}, password in .tools/tools.env)`,
       `  Tools gateway: ${TOOLS_API_URL} (TOOLS_API_URL and TOOLS_API_SECRET written to .env.local)`,
+      `  LanguageTool: ${TOOLS_API_URL}/lt/v2/check`,
     ].join("\n"),
   );
 }

@@ -53,7 +53,11 @@ export function ChaptersPanel({
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center justify-between gap-2 border-b px-4 py-2">
         <span className="truncate text-sm font-medium">{folder.name}</span>
-        <NewChapterDialog folderName={folder.name} beforeLeave={beforeLeave} />
+        <NewChapterDialog
+          folderName={folder.name}
+          lang={folder.language}
+          beforeLeave={beforeLeave}
+        />
       </div>
       <ul
         ref={listRef}
@@ -93,9 +97,11 @@ export function ChaptersPanel({
 
 function NewChapterDialog({
   folderName,
+  lang,
   beforeLeave,
 }: {
   folderName: string;
+  lang: string;
   beforeLeave: () => Promise<string | null>;
 }) {
   const t = useTranslations("chapters");
@@ -107,7 +113,11 @@ function NewChapterDialog({
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <NewChapterForm folderName={folderName} beforeLeave={beforeLeave} />
+        <NewChapterForm
+          folderName={folderName}
+          lang={lang}
+          beforeLeave={beforeLeave}
+        />
       </DialogContent>
     </Dialog>
   );
@@ -116,9 +126,11 @@ function NewChapterDialog({
 // Separate component so its state resets each time the dialog content mounts.
 function NewChapterForm({
   folderName,
+  lang,
   beforeLeave,
 }: {
   folderName: string;
+  lang: string;
   beforeLeave: () => Promise<string | null>;
 }) {
   const router = useRouter();
@@ -152,7 +164,7 @@ function NewChapterForm({
         <Input
           id="new-chapter-title"
           value={title}
-          lang="pl"
+          lang={lang}
           spellCheck
           onChange={(event) => setTitle(event.target.value)}
           aria-invalid={error !== null}

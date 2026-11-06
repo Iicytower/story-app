@@ -82,10 +82,12 @@ export type FolderNotesState = ReturnType<typeof useFolderNotes>;
 
 export function FolderNotesField({
   state,
+  lang,
   className,
   scrollMemory,
 }: {
   state: FolderNotesState;
+  lang: string;
   className?: string;
   scrollMemory?: { storyId: string; field: string };
 }) {
@@ -116,6 +118,7 @@ export function FolderNotesField({
         onChange={setNotes}
         label={t("notes")}
         placeholder={t("notesPlaceholder")}
+        lang={lang}
         className="flex-1"
         compact
         scrollMemory={scrollMemory}
@@ -128,11 +131,19 @@ export function FolderNotes({
   folderId,
   initialNotes,
   initialNotesUpdatedAt,
+  lang,
 }: {
   folderId: string;
   initialNotes: string;
   initialNotesUpdatedAt: string;
+  lang: string;
 }) {
   const state = useFolderNotes(folderId, initialNotes, initialNotesUpdatedAt);
-  return <FolderNotesField state={state} className="h-96 rounded-lg border" />;
+  return (
+    <FolderNotesField
+      state={state}
+      lang={lang}
+      className="h-96 rounded-lg border"
+    />
+  );
 }

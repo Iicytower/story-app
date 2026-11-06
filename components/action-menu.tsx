@@ -43,21 +43,24 @@ export function ActionMenu({
   );
 }
 
-export function SortSubmenu({
-  value,
-  options,
-  onChange,
-}: {
+type RadioSubmenuProps = {
   value: string;
   options: { value: string; label: string }[];
   onChange: (value: string) => void;
-}) {
-  const t = useTranslations("menu");
+};
+
+export function RadioSubmenu({
+  icon,
+  label,
+  value,
+  options,
+  onChange,
+}: RadioSubmenuProps & { icon: React.ReactNode; label: string }) {
   return (
     <DropdownMenuSub>
       <DropdownMenuSubTrigger>
-        <ArrowDownUpIcon />
-        {t("sort")}
+        {icon}
+        {label}
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent>
         <DropdownMenuRadioGroup value={value} onValueChange={onChange}>
@@ -70,6 +73,11 @@ export function SortSubmenu({
       </DropdownMenuSubContent>
     </DropdownMenuSub>
   );
+}
+
+export function SortSubmenu(props: RadioSubmenuProps) {
+  const t = useTranslations("menu");
+  return <RadioSubmenu icon={<ArrowDownUpIcon />} label={t("sort")} {...props} />;
 }
 
 export function PublicationIcon({ isPublic }: { isPublic: boolean }) {

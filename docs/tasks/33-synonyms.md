@@ -8,6 +8,10 @@ Wynik researchu. Kafelek „Synonyms” w Tools.
 - Import wybranych źródeł do osobnych tabel.
 - Widok: wyniki pogrupowane według znaczeń, z etykietą rejestru i źródłem, duplikaty scalone przy odpowiedzi.
 
+## Ustalenia
+
+- Słownik otwiera się dla języka folderu otwartego rozdziału (D58). Dziś lista języków folderu to tylko polski; nowy język dochodzi do listy, gdy obsługują go korekta i słowniki.
+
 ## Do decyzji przy implementacji
 
 Tezaurus (zapisane oba źródła):

@@ -1,5 +1,6 @@
 import mongoose, { Schema, type Model, type Types } from "mongoose";
 import { CHAPTER_SORTS, type ChapterSort } from "@/lib/folders/sort";
+import { FOLDER_LANGUAGES, type FolderLanguage } from "@/lib/languages";
 
 export interface FolderFields {
   userId: Types.ObjectId;
@@ -21,6 +22,8 @@ export interface FolderFields {
   formerSlugs?: string[];
   // Last version number handed out; never decreases, so a deleted version's number is not reused.
   versionCounter?: number;
+  // Missing means Polish (folderLanguage); only a language the user picked is stored.
+  language?: FolderLanguage;
   deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -40,6 +43,7 @@ const folderSchema = new Schema<FolderFields>(
     published: { type: Boolean },
     formerSlugs: { type: [String], default: undefined },
     versionCounter: { type: Number },
+    language: { type: String, enum: FOLDER_LANGUAGES },
     deletedAt: { type: Date, default: null },
   },
   { timestamps: true },

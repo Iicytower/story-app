@@ -21,12 +21,16 @@ Wynik researchu. Silnik dla dialogu z taska 23. Zawiera dawny task 31 (D44).
 - Pisownia na bieżąco: przeglądarka z `lang`, bez nowych pakietów (decyzja użytkownika, D44). Zależy od słowników i ustawień przeglądarki.
 - Kafelki słownikowe i eksport bez zmian: język dotyczy tylko edytora i LT (D44).
 
-Do decyzji przy starcie taska:
+Ustalone przy starcie (D58):
 
-- Limit czasu wywołania. Propozycja: 30 s, po sprawdzeniu limitu funkcji na Vercelu i pomiarze lokalnie z limitem CPU jak na Mikrusie (ponowny pomiar w tasku 28), bo test na 1 CPU go przekroczył (sekcja „Test na Coolify”).
-- Limit rozmiaru treści akcji (`bodySizeLimit`) dla najdłuższych rozdziałów.
-- Obraz Dockera (`erikvl87/languagetool` albo `meyay/languagetool`). `-Xmx` co najmniej 512 MB po teście na Coolify.
-- Lista języków. Na 2026-11-02 tylko polski, bez angielskiego (decyzja użytkownika); przy jednym języku ustalić, czy powstaje selektor, czy samo pole. Inne języki wymagają reguł LT dobranych pod język (dziś `PL_WORD_REPEAT` i wyłączenia z taska 23) i pomiaru pamięci.
+- Limit czasu wywołania 120 s (decyzja użytkownika), `maxDuration = 130` na stronie edytora; LT przerywa sprawdzanie po 120 s (`langtool_maxCheckTimeMillis`).
+- `bodySizeLimit` bez zmian: akcja dostaje tylko `id`, treść bierze z bazy.
+- Obraz `erikvl87/languagetool:6.8`, `-Xmx512m`, `mem_limit: 800m`.
+- Lista języków folderu to języki obsługiwane przez korektę i słowniki, dziś tylko polski; selektor „Language” w menu folderu już teraz (decyzje użytkownika). Słowniki z tasków 25 i 32–34 działają dla języka folderu.
+- Bez wyłączonych reguł; listę dobiera task 23.
+- Bez migracji: brak pola `language` oznacza polski.
+
+Pomiar 2026-11-06 **[pomiar]** (lokalny serwer z taska 54, `data` z aplikacji, ok. 6000 słów w 5 powtarzanych akapitach prozy z dialogami, 257 uwag): bez limitu CPU 5,5 s (pierwsze po rozgrzaniu healthcheckiem) i 3,5 s, z `cpus: 1` 8,7 s i 8,0 s. RSS LanguageTool 473–487 MB. Na próbce z nagłówkiem, pogrubieniem, linkiem, komentarzem i dialogami pozycje uwag wskazują właściwe słowa w źródle, a znaczniki, komentarz i adres linku nie są zgłaszane; `PL_WORD_REPEAT` zgłasza „kot … kot” w jednym zdaniu.
 
 ## Dane z researchu
 
