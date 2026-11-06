@@ -108,7 +108,9 @@
     "toolTimeout": "Sprawdzanie trwało za długo. Spróbuj ponownie później albo z krótszym rozdziałem.",
     "tooManyChecks": "Za dużo sprawdzeń. Spróbuj ponownie za kilka minut.",
     "dictionaryWordInvalid": "Tego słowa nie można dodać do słownika. Wpisz jedno słowo, maks. 50 znaków.",
-    "dictionaryFull": "Słownik jest pełny (1000 słów). Najpierw usuń jakieś słowo w Ustawieniach."
+    "dictionaryFull": "Słownik jest pełny (1000 słów). Najpierw usuń jakieś słowo w Ustawieniach.",
+    "lookupWordInvalid": "Wpisz jedno słowo, maks. 50 znaków.",
+    "dictionaryTimeout": "Słownik nie odpowiedział na czas. Spróbuj ponownie."
   },
   "password": {
     "mustContain": "Hasło musi zawierać:",

@@ -108,7 +108,9 @@
     "toolTimeout": "The check took too long. Try again later or with a shorter chapter.",
     "tooManyChecks": "Too many checks. Try again in a few minutes.",
     "dictionaryWordInvalid": "This word cannot be added to the dictionary. Use one word of up to 50 characters.",
-    "dictionaryFull": "The dictionary is full (1000 words). Remove a word in Settings first."
+    "dictionaryFull": "The dictionary is full (1000 words). Remove a word in Settings first.",
+    "lookupWordInvalid": "Type one word of up to 50 characters.",
+    "dictionaryTimeout": "The dictionary did not answer in time. Try again."
   },
   "password": {
     "mustContain": "The password must contain:",

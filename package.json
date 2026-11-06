@@ -15,6 +15,8 @@
     "db:up": "docker compose up -d --wait mongo",
     "up": "tsx scripts/tools.ts up",
     "down": "tsx scripts/tools.ts down",
+    "dict:build": "tsx scripts/dictionary.ts build",
+    "dict:upload": "tsx scripts/dictionary.ts upload",
     "create-account": "tsx --env-file=.env.local scripts/create-account.ts",
     "migrate": "tsx --env-file=.env.local scripts/migrate.ts",
     "backup": "bash scripts/backup.sh"

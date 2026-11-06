@@ -28,6 +28,9 @@ services:
               handle_path /lt/* {
                 reverse_proxy languagetool:8010
               }
+              handle_path /dict/* {
+                reverse_proxy dictionary:8000
+              }
               respond 404
             }
             respond 401
@@ -53,3 +56,123 @@ services:
       timeout: 60s
       start_period: 120s
       start_interval: 5s
+
+  # Lemmas from the form table (task 25, D61). The SQLite file comes from `npm run dict:upload`
+  # onto the dict-data volume; until then every request gets 503. No `$` in the code: Compose
+  # would interpolate it.
+  dictionary:
+    image: node:24.22.2-alpine
+    restart: unless-stopped
+    command: ["node", "/app/server.mjs"]
+    mem_limit: 128m
+    volumes:
+      - dict-data:/data
+      - type: bind
+        source: ./server.mjs
+        target: /app/server.mjs
+        content: |
+          import fs from "node:fs";
+          import { createServer } from "node:http";
+          import { DatabaseSync } from "node:sqlite";
+
+          const FILE = "/data/forms.sqlite";
+          const MAX_BODY = 1024;
+          const MAX_FORMS = 4;
+          const MAX_LENGTH = 50;
+
+          // The upload replaces the file by rename, so a new inode means new data.
+          let db = null;
+          let inode = null;
+          function database() {
+            let stat;
+            try {
+              stat = fs.statSync(FILE);
+            } catch {
+              return null;
+            }
+            if (db && stat.ino === inode) return db;
+            // The old connection is left to the GC: a request may still be reading from it.
+            db = new DatabaseSync(FILE, { readOnly: true });
+            inode = stat.ino;
+            return db;
+          }
+
+          function send(response, status, body) {
+            response.writeHead(status, { "Content-Type": "application/json" });
+            response.end(JSON.stringify(body));
+          }
+
+          const validForms = (forms) =>
+            Array.isArray(forms) &&
+            forms.length > 0 &&
+            forms.length <= MAX_FORMS &&
+            forms.every((form) => typeof form === "string" && form.length > 0 && form.length <= MAX_LENGTH);
+
+          function meta(db) {
+            const rows = db.prepare("SELECT key, value FROM meta WHERE key IN ('source', 'version', 'builtAt', 'forms')").all();
+            return Object.fromEntries(rows.map((row) => [row.key, row.value]));
+          }
+
+          // POST /lemmas {"forms": [...]}: the forms are spellings of one word (as typed, lower
+          // case, capitalised), so the app ranks the rows itself.
+          function lemmas(db, forms) {
+            const marks = forms.map(() => "?").join(", ");
+            const rows = db
+              .prepare(
+                "SELECT DISTINCT f.form AS form, l.lemma AS lemma FROM forms f JOIN lemmas l ON l.id = f.lemma_id WHERE f.form IN (" + marks + ") ORDER BY l.lemma",
+              )
+              .all(...forms);
+            return { source: meta(db).source, rows };
+          }
+
+          createServer((request, response) => {
+            let db;
+            try {
+              db = database();
+            } catch {
+              db = null;
+            }
+            if (!db) return send(response, 503, { error: "NO_DATA" });
+            if (request.method === "GET" && request.url === "/health") {
+              try {
+                return send(response, 200, meta(db));
+              } catch {
+                return send(response, 500, { error: "QUERY_FAILED" });
+              }
+            }
+            if (request.method !== "POST" || request.url !== "/lemmas") return send(response, 404, { error: "NOT_FOUND" });
+            let body = "";
+            let tooLarge = false;
+            request.setEncoding("utf8");
+            request.on("data", (chunk) => {
+              if (tooLarge) return;
+              body += chunk;
+              tooLarge = body.length > MAX_BODY;
+            });
+            request.on("end", () => {
+              if (tooLarge) return send(response, 413, { error: "TOO_LARGE" });
+              let forms;
+              try {
+                forms = JSON.parse(body).forms;
+              } catch {}
+              if (!validForms(forms)) return send(response, 400, { error: "BAD_REQUEST" });
+              try {
+                send(response, 200, lemmas(db, forms));
+              } catch {
+                send(response, 500, { error: "QUERY_FAILED" });
+              }
+            });
+          }).listen(8000);
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8000/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 60s
+      timeout: 10s
+      start_period: 10s
+      start_interval: 2s
+
+volumes:
+  dict-data:

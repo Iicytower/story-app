@@ -8,6 +8,7 @@ Wynik researchu. Kafelek „Definitions” w Tools.
 - Czyszczenie: odsyłacze typu „od: zamek” i etykiety wyciekające do tekstu.
 - Widok: pole wyszukiwania, znaczenia z częścią mowy i przykładami.
 - Linki otwierane w nowej karcie: Wikisłownik, sjp.pl, PWN.
+- Wspólny blok „Sources” do atrybucji w narzędziach (przeniesiony z taska 25): źródło i licencja każdej pozycji, z etykiety `source` w wynikach serwisu (D61). Korzystają z niego też taski 33 i 34.
 
 ## Ustalenia
 
@@ -68,7 +69,10 @@ Nie bez zgody **[wniosek]**. Ustawa o ochronie baz danych (Dz.U. 2024 poz. 1769)
 4. Odsyłacze form nie pojawiają się jako samodzielne definicje, o ile hasło ma lepsze znaczenia.
 5. Wynik zostaje po przełączeniu zakładki.
 6. Bez zmiennych serwera narzędzi (D56) kafelek jest widoczny, a szukanie daje komunikat o niedostępności narzędzia.
+7. Przy zawieszonym serwisie szukanie kończy się po 2 s komunikatem, a autozapis rozdziału czeka najwyżej tyle (przeniesione z taska 25, kryterium 3).
+8. Niedostępny serwis, przekroczony czas i „Failed to find Server Action” dają komunikat, a edycja i zapis działają dalej (przeniesione z taska 25, kryterium 4).
+9. Formularz jest zablokowany, dopóki trwa poprzednie szukanie (task 25).
 
 ## Testy
 
-Unit: filtr i czyszczenie importu na próbkach, budowa linków. Integracyjne: akcja z atrapą serwisu i bez zmiennych serwera narzędzi. E2E: szukanie, brak wyniku, linki. `manual`: kompletność na prawdziwych danych.
+Unit: filtr i czyszczenie importu na próbkach, budowa linków. Integracyjne: akcja z atrapą serwisu i bez zmiennych serwera narzędzi. E2E: szukanie, brak wyniku, linki, blok „Sources”, autozapis przy zawieszonym serwisie (atrapa `tests/e2e/fake-tools.mjs`, znacznik `POWOLI` w szukanym słowie) i awaria (`AWARIA`). `manual`: kompletność na prawdziwych danych.
