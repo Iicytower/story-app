@@ -1,6 +1,7 @@
 import { isObjectIdOrHexString, Types } from "mongoose";
 import { connectDB } from "@/lib/db";
 import { chapterOrder, folderOrder, type Order } from "@/lib/folders/sort";
+import { folderLanguage } from "@/lib/languages";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
 import { serialize } from "@/lib/serialize";
@@ -27,7 +28,13 @@ export async function listFolders(userId: string) {
   const { sort } = (await getUserSettings(userId)).folders;
   const [folders, counts] = await Promise.all([
     findFoldersInOrder(userId, folderOrder(sort))
-      .select({ name: 1, tags: 1, lastActivityAt: 1, published: 1 })
+      .select({
+        name: 1,
+        tags: 1,
+        lastActivityAt: 1,
+        published: 1,
+        language: 1,
+      })
       .lean(),
     // aggregate() does not cast, so userId has to be an ObjectId here.
     Story.aggregate<{ _id: Types.ObjectId; count: number }>([
@@ -42,6 +49,7 @@ export async function listFolders(userId: string) {
     sort,
     folders: folders.map((folder) => ({
       ...serialize(folder),
+      language: folderLanguage(folder.language),
       chapterCount: countByFolder.get(folder._id.toString()) ?? 0,
     })),
   };
@@ -62,6 +70,7 @@ export async function getFolder(userId: string, id: string) {
       chapterSort: 1,
       tags: 1,
       published: 1,
+      language: 1,
     })
     .lean();
   if (!folder) return null;
@@ -75,6 +84,7 @@ export async function getFolder(userId: string, id: string) {
     .lean();
   return {
     ...serialize(folder),
+    language: folderLanguage(folder.language),
     chapterSort,
     chapters: chapters.map(serialize),
   };
@@ -109,7 +119,13 @@ export async function getFolderForExport(userId: string, id: string) {
 export async function getEditorFolder(userId: string, id: string) {
   await connectDB();
   const folder = await Folder.findOne({ _id: id, userId, deletedAt: null })
-    .select({ name: 1, notes: 1, notesUpdatedAt: 1, chapterSort: 1 })
+    .select({
+      name: 1,
+      notes: 1,
+      notesUpdatedAt: 1,
+      chapterSort: 1,
+      language: 1,
+    })
     .lean();
   if (!folder) return null;
   const chapterSort = folder.chapterSort ?? "created";
@@ -125,6 +141,7 @@ export async function getEditorFolder(userId: string, id: string) {
     name: folder.name,
     notes: folder.notes,
     notesUpdatedAt: folder.notesUpdatedAt.toISOString(),
+    language: folderLanguage(folder.language),
     chapterSort,
     chapters: chapters.map(({ _id, title }) => ({ id: _id.toString(), title })),
   };

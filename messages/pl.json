@@ -97,7 +97,10 @@
     "importEpubInvalid": "Nie udało się odczytać pliku EPUB.",
     "importFileTooLarge": "Ten plik jest większy niż 50 MB.",
     "importUnreadable": "Nie udało się odczytać tego pliku.",
-    "importFailed": "Nie udało się zaimportować tego tekstu. Może być za duży."
+    "importFailed": "Nie udało się zaimportować tego tekstu. Może być za duży.",
+    "toolUnavailable": "To narzędzie jest teraz niedostępne. Spróbuj ponownie później.",
+    "toolTimeout": "Sprawdzanie trwało za długo. Spróbuj ponownie później albo z krótszym rozdziałem.",
+    "tooManyChecks": "Za dużo sprawdzeń. Spróbuj ponownie za kilka minut."
   },
   "password": {
     "mustContain": "Hasło musi zawierać:",
@@ -317,7 +320,8 @@
     "pickedUp": "Chwycono {name}.",
     "movedOver": "{name} jest teraz na pozycji {position} z {total}.",
     "dropped": "Upuszczono {name} na pozycji {position} z {total}.",
-    "cancelled": "Anulowano przenoszenie {name}."
+    "cancelled": "Anulowano przenoszenie {name}.",
+    "language": "Język"
   },
   "stories": {
     "newStory": "Nowe opowiadanie",
@@ -574,5 +578,8 @@
   },
   "notFound": {
     "text": "404 | Nie znaleziono tej strony."
+  },
+  "languages": {
+    "pl": "Polski"
   }
 }

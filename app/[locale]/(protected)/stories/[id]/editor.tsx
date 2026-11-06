@@ -42,6 +42,7 @@ import {
   FolderNotesField,
   useFolderNotes,
 } from "../../folders/[id]/folder-notes";
+import { DEFAULT_FOLDER_LANGUAGE } from "@/lib/languages";
 import { saveStory, setChapterPublished } from "../actions";
 import { ChaptersPanel } from "./chapters-panel";
 import { EditorMenu } from "./editor-menu";
@@ -85,6 +86,7 @@ export function Editor({
   const tErrors = useTranslations("errors");
   const tSave = useTranslations("save");
   const tFolders = useTranslations("folders");
+  const lang = folder?.language ?? DEFAULT_FOLDER_LANGUAGE;
   const [title, setTitle] = useState(story.title);
   const [content, setContent] = useState(story.content);
   const [notes, setNotes] = useState(story.notes);
@@ -242,6 +244,7 @@ export function Editor({
         onChange={setContent}
         label={t("content")}
         placeholder={t("contentPlaceholder")}
+        lang={lang}
         className="flex-1"
         scrollMemory={{ storyId: story.id, field: "content" }}
       />
@@ -263,6 +266,7 @@ export function Editor({
         onChange={setNotes}
         label={t("notes")}
         placeholder={t("notesPlaceholder")}
+        lang={lang}
         className="flex-1"
         compact
         scrollMemory={{ storyId: story.id, field: "notes" }}
@@ -285,6 +289,7 @@ export function Editor({
       <ResizablePanel id="folder-notes-panel" minSize="15%" defaultSize="40%">
         <FolderNotesField
           state={folderNotes}
+          lang={lang}
           className="h-full"
           scrollMemory={{ storyId: story.id, field: "folderNotes" }}
         />
@@ -332,7 +337,7 @@ export function Editor({
           onChange={(event) => setTitle(event.target.value)}
           aria-label={t("title")}
           placeholder={t("title")}
-          lang="pl"
+          lang={lang}
           spellCheck
           className="h-9 w-full text-lg font-semibold md:w-auto md:flex-1 md:text-lg"
         />
@@ -515,6 +520,7 @@ export function Editor({
               {folder && (
                 <FolderNotesField
                   state={folderNotes}
+                  lang={lang}
                   className="min-h-64 border-b"
                   scrollMemory={{ storyId: story.id, field: "folderNotes" }}
                 />

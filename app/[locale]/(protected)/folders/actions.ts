@@ -19,6 +19,7 @@ import {
   isFolderSort,
   isPositionIndex,
 } from "@/lib/folders/sort";
+import { isFolderLanguage } from "@/lib/languages";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
 import { rememberFolderSlug, stampPublishedAt } from "@/lib/publish/mutations";
@@ -234,6 +235,27 @@ export async function setChapterSort(
     },
     { timestamps: false },
   );
+
+  refresh();
+  return { ok: true };
+}
+
+export async function setFolderLanguage(
+  id: string,
+  language: string,
+): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isFolderLanguage(language)) return INVALID_INPUT();
+
+  await connectDB();
+  const { matchedCount } = await Folder.updateOne(
+    { _id: id, userId: user.userId, deletedAt: null },
+    { $set: { language } },
+    { timestamps: false },
+  );
+  if (!matchedCount) return NOT_FOUND();
 
   refresh();
   return { ok: true };

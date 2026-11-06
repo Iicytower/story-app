@@ -97,7 +97,10 @@
     "importEpubInvalid": "This EPUB file could not be read.",
     "importFileTooLarge": "This file is larger than 50 MB.",
     "importUnreadable": "This file could not be read.",
-    "importFailed": "This text could not be imported. It may be too large."
+    "importFailed": "This text could not be imported. It may be too large.",
+    "toolUnavailable": "This tool is not available right now. Try again later.",
+    "toolTimeout": "The check took too long. Try again later or with a shorter chapter.",
+    "tooManyChecks": "Too many checks. Try again in a few minutes."
   },
   "password": {
     "mustContain": "The password must contain:",
@@ -317,7 +320,8 @@
     "pickedUp": "Picked up {name}.",
     "movedOver": "{name} is now at position {position} of {total}.",
     "dropped": "{name} dropped at position {position} of {total}.",
-    "cancelled": "Moving {name} was cancelled."
+    "cancelled": "Moving {name} was cancelled.",
+    "language": "Language"
   },
   "stories": {
     "newStory": "New story",
@@ -574,5 +578,8 @@
   },
   "notFound": {
     "text": "404 | This page could not be found."
+  },
+  "languages": {
+    "pl": "Polish"
   }
 }

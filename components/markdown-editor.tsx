@@ -89,6 +89,7 @@ export function MarkdownEditor({
   onChange,
   label,
   placeholder,
+  lang,
   className,
   compact = false,
   scrollMemory,
@@ -98,6 +99,8 @@ export function MarkdownEditor({
   // Accessible name of the text field in both modes, e.g. "Content".
   label: string;
   placeholder?: string;
+  // Language of the text (the folder's, D58): the browser spell checks in it.
+  lang: string;
   className?: string;
   // Smaller text for the notes panels.
   compact?: boolean;
@@ -164,8 +167,8 @@ export function MarkdownEditor({
         role: "textbox",
         "aria-multiline": "true",
         "aria-label": label,
-        // Stories are Polish; the rest of the UI stays English.
-        lang: "pl",
+        // The text is in the folder's language; the rest of the UI stays in the UI's.
+        lang,
         spellcheck: "true",
         ...(placeholder && { "aria-placeholder": placeholder }),
         class: cn(
@@ -535,7 +538,7 @@ export function MarkdownEditor({
               onChange={(event) => onChange(event.target.value)}
               aria-label={label}
               placeholder={placeholder}
-              lang="pl"
+              lang={lang}
               spellCheck
               className={cn(
                 "relative block field-sizing-content w-full resize-none overflow-hidden bg-transparent outline-none",

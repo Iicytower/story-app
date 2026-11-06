@@ -76,7 +76,7 @@ npm run up         # MongoDB, Coolify (panel on http://localhost:8000) and the t
 npm run down       # stops all of it; the data stays in Docker volumes
 ```
 
-`npm run up` starts Coolify and a Docker-in-Docker container that plays the remote tools server, deploys the tools gateway to it through the Coolify API and writes `TOOLS_API_URL` and `TOOLS_API_SECRET` to `.env.local`. Running it again changes nothing unless `docker/tools/compose.yml` changed (then it redeploys the service). Generated secrets stay in `.tools/` (gitignored); the Coolify admin password is in `.tools/tools.env`. The stack needs about 0.6 GB of RAM and 1.4 GB of images. Details: `docs/deploy.md`.
+`npm run up` starts Coolify and a Docker-in-Docker container that plays the remote tools server, deploys the tools gateway and LanguageTool (used for proofreading) to it through the Coolify API and writes `TOOLS_API_URL` and `TOOLS_API_SECRET` to `.env.local`. Running it again changes nothing unless `docker/tools/compose.yml` changed (then it redeploys the service). Generated secrets stay in `.tools/` (gitignored); the Coolify admin password is in `.tools/tools.env`. The stack needs about 1.2 GB of RAM and 2.8 GB of images (half of them pulled inside the tools server container). Details: `docs/deploy.md`.
 
 ### Tests
 

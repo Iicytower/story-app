@@ -8,6 +8,9 @@ import { getUserSettings } from "@/lib/settings/queries";
 import { getStory } from "@/lib/stories/queries";
 import { Editor } from "./editor";
 
+// Above PROOFREAD_TIMEOUT_MS, so a slow check ends with TIMEOUT instead of a killed function (D58).
+export const maxDuration = 130;
+
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
   return { title: t("editor") };

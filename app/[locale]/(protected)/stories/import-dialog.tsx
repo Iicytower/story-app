@@ -21,6 +21,7 @@ import {
   MAX_IMPORT_FILE_BYTES,
   MAX_IMPORT_TEXT_BYTES,
 } from "@/lib/import/limits";
+import { type FolderOption, languageOfFolder } from "@/lib/languages";
 import { importStories, type ImportTarget } from "./actions";
 
 const ACCEPT = ".md,.txt,.html,.docx,.odt,.pdf,.epub,.fb2,.zip";
@@ -28,13 +29,13 @@ const ACCEPT = ".md,.txt,.html,.docx,.odt,.pdf,.epub,.fb2,.zip";
 export function ImportDialog({
   open,
   onOpenChange,
-  folderNames = [],
+  folders = [],
   defaultFolder = "",
   folderId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  folderNames?: string[];
+  folders?: FolderOption[];
   defaultFolder?: string;
   // Set on a folder's page: everything goes into that folder.
   folderId?: string;
@@ -43,7 +44,7 @@ export function ImportDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <ImportForm
-          folderNames={folderNames}
+          folders={folders}
           defaultFolder={defaultFolder}
           folderId={folderId}
           onImported={() => onOpenChange(false)}
@@ -55,12 +56,12 @@ export function ImportDialog({
 
 // Separate component so its state resets each time the dialog content mounts.
 function ImportForm({
-  folderNames,
+  folders,
   defaultFolder,
   folderId,
   onImported,
 }: {
-  folderNames: string[];
+  folders: FolderOption[];
   defaultFolder: string;
   folderId?: string;
   onImported: () => void;
@@ -203,7 +204,7 @@ function ImportForm({
                 autoComplete="off"
               />
               <datalist id="import-folders">
-                {folderNames.map((name) => (
+                {folders.map(({ name }) => (
                   <option key={name} value={name} />
                 ))}
               </datalist>
@@ -215,7 +216,7 @@ function ImportForm({
               <Input
                 id="import-title"
                 value={title}
-                lang="pl"
+                lang={languageOfFolder(folders, folder)}
                 spellCheck
                 onChange={(event) => setTitle(event.target.value)}
               />

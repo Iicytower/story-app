@@ -37,7 +37,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 49 | [Przebudowa strony głównej](done/49-home-page.md) | – | [x] |
 | 52 | [Menu akcji (⋮) i przeciąganie zamiast strzałek](done/52-action-menus.md) | – | [x] |
 | 54 | [Lokalny serwer narzędzi (Coolify w Dockerze)](done/54-local-tools-server.md) | – | [x] |
-| 29 | [LanguageTool na serwerze, akcja sprawdzania i język folderu](29-languagetool.md) | 54 | [ ] |
+| 29 | [LanguageTool na serwerze, akcja sprawdzania i język folderu](done/29-languagetool.md) | 54 | [x] |
 | 23 | [Korekta tekstu w dialogu](23-proofreading.md) | 27, 29 | [ ] |
 | 30 | [Słownik użytkownika w korekcie](30-user-dictionary.md) | 23 | [ ] |
 | 25 | [Serwis słownikowy i tabela form](25-dictionary-service.md) | 54, 29 | [ ] |
@@ -60,6 +60,7 @@ Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 - Powtórzenia między zdaniami w korekcie (powtórzenia w zdaniu są w tasku 23).
 - Kafelek odmiany: paradygmat z tabeli form zapytaniem po lemacie, wymaga indeksu po lemacie i czytelnego układu tagów (Morfologik ma ich 1336) (po tasku 25).
 - Asonans w rymach, zwinięty pod wynikami; 271 kluczy na 4,2 mln form, wyniki bliskie losowym (po tasku 34).
+- oznaczenie folderu lub rozdziału jako 18+
 
 ## Branche
 
