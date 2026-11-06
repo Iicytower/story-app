@@ -11,6 +11,7 @@ import {
   applyProposal,
   chooseSuggestion,
   currentProposal,
+  dismissWord,
   loadProposals,
   patchSource,
   proposalsPlugin,
@@ -39,6 +40,9 @@ function issue(
     ruleId: "TEST",
   };
 }
+
+const markdownOf = (view: EditorView) =>
+  manager.serialize(view.state.doc.toJSON());
 
 // The plugin's state without a DOM: dispatch applies the transaction, as EditorView does.
 function setup(markdown: string, issues: ProofreadIssue[]) {
@@ -112,6 +116,28 @@ describe("proofread proposals", () => {
     expect(current()).toBe("tą");
     rejectProposal(view, 2);
     expect(current()).toBeUndefined();
+  });
+
+  it("dismisses every pending spelling proposal of a word added to the dictionary", () => {
+    const md = "Kwak i kwak, KWAK. Kwak tu.";
+    const [first, second, third, fourth] = [0, 7, 13, 19];
+    const at = (offset: number, kind = "spelling" as const) => ({
+      ...issue(md, "Kwak", []),
+      offset,
+      kind,
+    });
+    const { view, left, current } = setup(md, [
+      at(first),
+      at(second),
+      at(third),
+      { ...at(fourth), kind: "grammar" },
+    ]);
+    selectProposal(view, 0);
+    dismissWord(view, "Kwak");
+    // "kwak" is not "Kwak" in the dictionary's sense; grammar stays.
+    expect(left()).toEqual(["kwak", "Kwak"]);
+    expect(current()).toBe("kwak");
+    expect(markdownOf(view)).toBe(md);
   });
 
   it("follows edits elsewhere and drops a proposal whose text was edited", () => {

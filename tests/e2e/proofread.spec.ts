@@ -1,9 +1,10 @@
 import type { Page } from "@playwright/test";
-import { findStoryById, seedStory } from "./db";
+import { findSettings, findStoryById, seedStory } from "./db";
 import { storageStatePath } from "./env";
-import { expect, markdownEditor, test } from "./helpers";
+import { expect, markdownEditor, openSettings, test } from "./helpers";
 
-// Answers come from fake-tools.mjs: Napewno, Wogóle and tą have suggestions, dobry has none.
+// Answers come from fake-tools.mjs: Napewno, NAPEWNO, Wogóle and tą have suggestions, dobry
+// has none.
 // Each test runs one check; PROOFREAD_LIMIT allows 10 per user in 10 minutes.
 
 test.use({
@@ -230,4 +231,59 @@ test.describe("on a narrow screen", () => {
       .poll(async () => (await findStoryById(id))?.content)
       .toBe(MD.replace("Napewno", "Na pewno"));
   });
+});
+
+test("a word added to the dictionary stays out of later checks until removed in Settings", async ({
+  page,
+}) => {
+  const content = "Napewno tą drogą, NAPEWNO.\n\nWogóle nie.";
+  const id = await seedStory("alice", { title: "Dict", content });
+  await page.goto(`/stories/${id}`);
+  const first = await openProofread(page);
+  const { panel, proposal } = first;
+  let { dialog, text } = first;
+  await expect(text.locator("[data-proposal]")).toHaveCount(4);
+
+  // Grammar (tą) gets no dictionary button.
+  await proposal("tą").click();
+  await expect(panel.getByText("Grammar")).toBeVisible();
+  await expect(
+    panel.getByRole("button", { name: "Add to dictionary" }),
+  ).toHaveCount(0);
+
+  // Both forms of the word go at once; the other spelling issue stays.
+  await proposal("Napewno").first().click();
+  await panel.getByRole("button", { name: "Add to dictionary" }).click();
+  await expect(text.locator("[data-proposal]")).toHaveCount(2);
+  await expect(proposal("Napewno")).toHaveCount(0);
+  await expect(proposal("NAPEWNO")).toHaveCount(0);
+  await expect(panel.getByText("Grammar")).toBeVisible();
+  expect((await findSettings("alice"))?.proofreading).toEqual({
+    dictionary: ["Napewno"],
+  });
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toBeHidden();
+
+  // A later check does not show it.
+  ({ dialog, text } = await openProofread(page));
+  await expect(text.locator("[data-proposal]")).toHaveCount(2);
+  await expect(text.locator("[data-proposal]", { hasText: "Napewno" })).toHaveCount(0);
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toBeHidden();
+
+  const settings = await openSettings(page);
+  await expect(settings.getByText("1 word")).toBeVisible();
+  await settings.getByRole("button", { name: "Remove “Napewno”" }).click();
+  await expect(settings.getByText("No words yet.")).toBeVisible();
+  await expect(
+    settings.getByRole("heading", { name: "Proofreading dictionary" }),
+  ).toBeFocused();
+  expect((await findSettings("alice"))?.proofreading).toEqual({
+    dictionary: [],
+  });
+  await page.keyboard.press("Escape");
+  await expect(settings).toBeHidden();
+
+  ({ text } = await openProofread(page));
+  await expect(text.locator("[data-proposal]")).toHaveCount(4);
 });

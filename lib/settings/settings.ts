@@ -4,6 +4,7 @@ import {
   normalizeLayout,
 } from "@/lib/editor-layout";
 import { FOLDER_SORTS, type FolderSort } from "@/lib/folders/sort";
+import { normalizeDictionary } from "@/lib/proofreading/dictionary";
 import { type Locale, routing } from "@/i18n/routing";
 
 export const THEMES = ["light", "dark"] as const;
@@ -69,6 +70,10 @@ const SETTINGS = {
       (value) => (typeof value === "boolean" ? value : undefined),
       false,
     ),
+  },
+  proofreading: {
+    // Spelling the user accepts (task 30); changed only by its own actions, one word at a time.
+    dictionary: field<string[]>([], normalizeDictionary, false),
   },
 };
 

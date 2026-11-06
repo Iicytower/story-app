@@ -5,10 +5,16 @@ import { createServer } from "node:http";
 
 const [port, secret] = process.argv.slice(2);
 
-// Word → LT match fields. An empty list is an issue without suggestions.
+// Word → LT match fields (case-sensitive). An empty list is an issue without suggestions.
 const ISSUES = {
   Napewno: {
     replacements: ["Na pewno", "Napewnie"],
+    category: "TYPOS",
+    message: "Wykryto prawdopodobny błąd pisowni",
+  },
+  // The same typo in capitals, for the dictionary (task 30).
+  NAPEWNO: {
+    replacements: ["NA PEWNO"],
     category: "TYPOS",
     message: "Wykryto prawdopodobny błąd pisowni",
   },

@@ -13,11 +13,12 @@ Wynik researchu i decyzja użytkownika (2026-11-01). Imiona postaci i neologizmy
 - Słownik jest per konto, nie per folder.
 - Dotyczy tylko błędów pisowni. Zwykłe „Reject” działa tylko w bieżącym dialogu.
 
-Do decyzji przy starcie taska:
+## Ustalone przy starcie (2026-11-06)
 
-- Gdzie jest widok listy, skoro aplikacja nie ma strony ustawień.
-- Czy porównanie uwzględnia wielkość liter i odmianę (np. „Ania”, „Ani”).
-- Limit długości i liczby słów.
+- Lista: nowa sekcja w dialogu Settings, usuwanie od razu, bez „Save”.
+- Porównanie jak w Hunspellu: słowo małymi literami pasuje też z wielkiej i WERSALIKAMI, słowo z wielką literą tylko dokładnie i WERSALIKAMI. Odmiany dodaje się osobno.
+- Limity: 1–50 znaków po `trim()`, bez białych znaków, maks. 1000 słów.
+- Filtr po rodzaju błędu „pisownia”, nie po id reguły (D60).
 
 ## Dane z researchu
 
