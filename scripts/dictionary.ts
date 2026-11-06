@@ -1,18 +1,29 @@
-// Dictionary database (task 25, D61): `npm run dict:build` builds the form table from PoliMorf into
-// .tools/dict/forms.sqlite, `npm run dict:upload` sends the file to the dictionary service on the
-// local tools server. Source data and the built file stay out of the repo (licence: D61).
+// Dictionary databases: `npm run dict:build [forms|definitions]` builds the form table from
+// PoliMorf into .tools/dict/forms.sqlite (task 25, D61) and the definitions from the Polish
+// Wiktionary into .tools/dict/definitions.sqlite (task 32, D62); without an argument both.
+// `npm run dict:upload [forms|definitions]` sends the built files (without an argument all) to the dictionary service on the local tools
+// server. Source data and the built files stay out of the repo (licences: D61, D62).
 import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
+import type { ReadableStream } from "node:stream/web";
 import { DatabaseSync } from "node:sqlite";
 import { createGunzip } from "node:zlib";
+import {
+  finishWord,
+  parseEntry,
+  type Entry,
+} from "../lib/tools/wiktionary-import";
 
 const ROOT = process.cwd();
 const DICT_DIR = path.join(ROOT, ".tools/dict");
 const SOURCE_FILE = path.join(DICT_DIR, "src/polimorf-20261018.tab.gz");
 const DATABASE = path.join(DICT_DIR, "forms.sqlite");
+const DEFINITIONS = path.join(DICT_DIR, "definitions.sqlite");
 const TOOLS_ENV = path.join(ROOT, ".tools/tools.env");
 const TOOLS_API_URL = "http://127.0.0.1:8110";
 
@@ -56,7 +67,7 @@ async function* polimorf(): AsyncGenerator<Row> {
   }
 }
 
-async function build() {
+async function buildForms() {
   if (!fs.existsSync(SOURCE_FILE)) await fetchSource();
   const temporary = `${DATABASE}.tmp`;
   fs.rmSync(temporary, { force: true });
@@ -133,8 +144,128 @@ async function build() {
   );
 }
 
-function builtAt(): string {
-  const db = new DatabaseSync(DATABASE, { readOnly: true });
+// Kaikki serves only the latest dump (updated weekly), so a downloaded file is kept under the
+// date of its Last-Modified header and builds use the newest kept file; `--refresh` fetches the
+// current one. Wiktionary's text is CC BY-SA 4.0 (D62).
+const WIKTIONARY = {
+  id: "wiktionary",
+  url: "https://kaikki.org/plwiktionary/raw-wiktextract-data.jsonl.gz",
+  licence: "CC BY-SA 4.0",
+};
+const SRC_DIR = path.join(DICT_DIR, "src");
+const WIKTIONARY_FILE = /^plwiktionary-(\d{8})\.jsonl\.gz$/;
+
+async function wiktionaryDump(refresh: boolean): Promise<string> {
+  fs.mkdirSync(SRC_DIR, { recursive: true });
+  const kept = fs
+    .readdirSync(SRC_DIR)
+    .filter((name) => WIKTIONARY_FILE.test(name))
+    .sort();
+  if (kept.length > 0 && !refresh) return path.join(SRC_DIR, kept.at(-1)!);
+  console.log("Fetching the Polish Wiktionary dump…");
+  const response = await fetch(WIKTIONARY.url);
+  const modified = response.headers.get("last-modified");
+  if (!response.ok || !response.body || !modified) {
+    throw new Error(`Wiktionary: HTTP ${response.status}`);
+  }
+  const date = new Date(modified)
+    .toISOString()
+    .slice(0, 10)
+    .replaceAll("-", "");
+  const file = path.join(SRC_DIR, `plwiktionary-${date}.jsonl.gz`);
+  if (fs.existsSync(file)) {
+    await response.body.cancel();
+    return file;
+  }
+  const temporary = `${file}.tmp`;
+  await pipeline(
+    // DOM and Node typings of the same stream differ.
+    Readable.fromWeb(response.body as ReadableStream<Uint8Array>),
+    fs.createWriteStream(temporary),
+  );
+  fs.renameSync(temporary, file);
+  return file;
+}
+
+async function buildDefinitions(refresh: boolean) {
+  const source = await wiktionaryDump(refresh);
+  const version = WIKTIONARY_FILE.exec(path.basename(source))![1].replace(
+    /(\d{4})(\d{2})(\d{2})/,
+    "$1-$2-$3",
+  );
+  console.log(`Reading ${path.relative(ROOT, source)}…`);
+  const hash = createHash("sha256");
+  const input = fs.createReadStream(source);
+  input.on("data", (chunk) => hash.update(chunk));
+  const lines = readline.createInterface({
+    input: input.pipe(createGunzip()),
+    crlfDelay: Infinity,
+  });
+  // Entries of one headword can be far apart in the dump; Map keeps the dump's order.
+  const words = new Map<string, Entry[]>();
+  for await (const line of lines) {
+    // Cheap check first: most of the million lines are other languages.
+    if (!line.includes('"lang_code": "pl"')) continue;
+    const parsed = parseEntry(line);
+    if (!parsed) continue;
+    const entries = words.get(parsed.word);
+    if (entries) entries.push(parsed.entry);
+    else words.set(parsed.word, [parsed.entry]);
+  }
+
+  const temporary = `${DEFINITIONS}.tmp`;
+  fs.rmSync(temporary, { force: true });
+  const db = new DatabaseSync(temporary);
+  db.exec(`
+    PRAGMA journal_mode = OFF;
+    PRAGMA synchronous = OFF;
+    CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+    -- All entries of a headword as JSON, in the dump's order.
+    CREATE TABLE entries (word TEXT PRIMARY KEY, data TEXT NOT NULL) WITHOUT ROWID;
+  `);
+  const insert = db.prepare("INSERT INTO entries VALUES (?, ?)");
+  let count = 0;
+  db.exec("BEGIN");
+  for (const [word, entries] of words) {
+    const finished = finishWord(entries);
+    if (finished.length === 0) continue;
+    insert.run(word, JSON.stringify(finished));
+    count++;
+  }
+  const insertMeta = db.prepare("INSERT INTO meta VALUES (?, ?)");
+  for (const [key, value] of Object.entries({
+    source: WIKTIONARY.id,
+    version,
+    sha256: hash.digest("hex"),
+    licence: WIKTIONARY.licence,
+    builtAt: new Date().toISOString(),
+    words: String(count),
+  })) {
+    insertMeta.run(key, value);
+  }
+  db.exec("COMMIT");
+  db.exec("VACUUM");
+  db.close();
+  fs.renameSync(temporary, DEFINITIONS);
+  console.log(
+    `Done: ${count} headwords, ${Math.round(fs.statSync(DEFINITIONS).size / 1e6)} MB.`,
+  );
+}
+
+async function build() {
+  const args = process.argv.slice(3);
+  const what = args.find((arg) => !arg.startsWith("--"));
+  if (what && what !== "forms" && what !== "definitions") {
+    throw new Error(
+      "Usage: npm run dict:build [forms|definitions] [--refresh]",
+    );
+  }
+  if (what !== "definitions") await buildForms();
+  if (what !== "forms") await buildDefinitions(args.includes("--refresh"));
+}
+
+function builtAt(file: string): string {
+  const db = new DatabaseSync(file, { readOnly: true });
   const row = db
     .prepare("SELECT value FROM meta WHERE key = 'builtAt'")
     .get() as { value: string };
@@ -198,20 +329,18 @@ function dictionaryVolume(): { volume: string; image: string } {
   return { volume, image };
 }
 
-// The service reopens the file when it changes, so the new data needs no restart. The temporary
-// file sits on the same volume, so the rename is atomic; a cut-off stream ends `cat` without an
+// The service reopens a file when it changes, so new data needs no restart. The temporary file
+// sits on the same volume, so the rename is atomic; a cut-off stream ends `cat` without an
 // error, so the size is checked before the rename. The file is written by a separate container:
 // in the service's own (128 MB limit) the written pages count against it and the OOM killer
 // restarts the service.
-async function upload() {
-  if (!fs.existsSync(DATABASE)) {
-    throw new Error("No database: run `npm run dict:build` first.");
-  }
-  const expected = builtAt();
-  const size = fs.statSync(DATABASE).size;
-  const { volume, image } = dictionaryVolume();
-  console.log("Uploading the dictionary database…");
-  await new Promise<void>((resolve, reject) => {
+function uploadFile(
+  file: string,
+  { volume, image }: { volume: string; image: string },
+): Promise<void> {
+  const name = path.basename(file);
+  console.log(`Uploading ${name}…`);
+  return new Promise<void>((resolve, reject) => {
     const child = spawn(
       "docker",
       toolsServer([
@@ -225,13 +354,14 @@ async function upload() {
         "sh",
         image,
         "-c",
-        'cat > /data/forms.sqlite.tmp && [ "$(wc -c < /data/forms.sqlite.tmp)" -eq "$1" ] && mv -f /data/forms.sqlite.tmp /data/forms.sqlite || { rm -f /data/forms.sqlite.tmp; exit 1; }',
+        'cat > "/data/$2.tmp" && [ "$(wc -c < "/data/$2.tmp")" -eq "$1" ] && mv -f "/data/$2.tmp" "/data/$2" || { rm -f "/data/$2.tmp"; exit 1; }',
         "sh",
-        String(size),
+        String(fs.statSync(file).size),
+        name,
       ]),
       { cwd: ROOT, stdio: ["pipe", "inherit", "inherit"] },
     );
-    const input = fs.createReadStream(DATABASE);
+    const input = fs.createReadStream(file);
     input.on("error", reject);
     child.stdin.on("error", reject);
     input.pipe(child.stdin);
@@ -240,16 +370,43 @@ async function upload() {
       code === 0 ? resolve() : reject(new Error(`Upload failed (${code}).`)),
     );
   });
+}
+
+async function upload() {
+  const what = process.argv[3];
+  if (what && what !== "forms" && what !== "definitions") {
+    throw new Error("Usage: npm run dict:upload [forms|definitions]");
+  }
+  const files = { forms: DATABASE, definitions: DEFINITIONS };
+  const built = Object.entries(files).filter(
+    ([key, file]) => (!what || key === what) && fs.existsSync(file),
+  );
+  if (built.length === 0) {
+    throw new Error("No database: run `npm run dict:build` first.");
+  }
+  const target = dictionaryVolume();
+  for (const [, file] of built) await uploadFile(file, target);
   const response = await fetch(`${TOOLS_API_URL}/dict/health`, {
     headers: { "X-Tools-Secret": secret() },
   });
-  const health = response.ok
-    ? ((await response.json()) as { builtAt?: string })
-    : {};
-  if (health.builtAt !== expected) {
-    throw new Error(`The service does not serve the new database yet.`);
+  if (response.status === 503) {
+    throw new Error(
+      "The service has no form table and answers nothing yet: run `npm run dict:upload forms`.",
+    );
   }
-  console.log(`Done: the service serves the database built at ${expected}.`);
+  const health = (response.ok ? await response.json() : {}) as Record<
+    string,
+    { builtAt?: string } | null
+  >;
+  for (const [key, file] of built) {
+    const expected = builtAt(file);
+    if (health[key]?.builtAt !== expected) {
+      throw new Error(
+        `The service does not serve the new ${key} database yet.`,
+      );
+    }
+    console.log(`Done: the service serves ${key} built at ${expected}.`);
+  }
 }
 
 const commands: Record<string, () => Promise<void>> = { build, upload };

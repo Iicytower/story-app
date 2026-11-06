@@ -139,6 +139,7 @@ test("Tools shows tiles, and a tile opens its tool in a dialog", async ({
   await expect(e.tools.getByRole("button")).toHaveText([
     "Proofread",
     "Name generator",
+    "Definitions",
     "Synonyms",
     "Rhymes",
   ]);

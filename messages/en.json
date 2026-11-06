@@ -395,6 +395,10 @@
         "label": "Name generator",
         "description": "Find names for characters and places."
       },
+      "definitions": {
+        "label": "Definitions",
+        "description": "Look up the meanings of a word."
+      },
       "synonyms": {
         "label": "Synonyms",
         "description": "Look up other words for a word."
@@ -403,6 +407,10 @@
         "label": "Rhymes",
         "description": "Look up words that rhyme."
       }
+    },
+    "sources": {
+      "title": "Sources",
+      "changed": "Changed: labels are shown apart from the text, and dialect and regional senses come last."
     }
   },
   "proofread": {
@@ -625,5 +633,72 @@
   },
   "languages": {
     "pl": "Polish"
+  },
+  "definitions": {
+    "word": "Word",
+    "search": "Look up",
+    "searching": "Looking up…",
+    "failed": "The lookup could not run. Reload the page and try again.",
+    "notFound": "No definitions found for “{word}”.",
+    "results": "Definitions of “{word}”",
+    "shownFor": "Shown for: {headword}",
+    "entry": "{source}, {licence}",
+    "lookElsewhere": "Look up “{word}” in:",
+    "external": {
+      "wiktionary": "Wikisłownik",
+      "sjp": "sjp.pl",
+      "pwn": "PWN"
+    },
+    "newTab": "(opens in a new tab)",
+    "label": "{label} ({region})",
+    "pos": {
+      "noun": "noun",
+      "adj": "adjective",
+      "verb": "verb",
+      "adv": "adverb",
+      "name": "proper noun",
+      "pron": "pronoun",
+      "num": "numeral",
+      "prep": "preposition",
+      "conj": "conjunction",
+      "intj": "interjection",
+      "particle": "particle",
+      "phrase": "phrase",
+      "proverb": "proverb",
+      "abbrev": "abbreviation",
+      "adv_phrase": "adverbial phrase",
+      "adj_phrase": "adjectival phrase",
+      "prep_phrase": "prepositional phrase",
+      "prefix": "prefix",
+      "suffix": "suffix",
+      "symbol": "symbol",
+      "contraction": "contraction"
+    },
+    "labels": {
+      "colloquial": "colloquial",
+      "obsolete": "obsolete",
+      "dated": "dated",
+      "literary": "literary",
+      "rare": "rare",
+      "dialectal": "dialect",
+      "regional": "regional",
+      "vulgar": "vulgar",
+      "humorous": "humorous",
+      "pejorative": "pejorative",
+      "offensive": "offensive",
+      "slang": "slang",
+      "diminutive": "diminutive",
+      "augmentative": "augmentative",
+      "endearing": "endearing",
+      "ironic": "ironic",
+      "euphemistic": "euphemistic",
+      "metaphoric": "figurative",
+      "formal": "formal",
+      "neologism": "neologism",
+      "elevatedly": "elevated",
+      "poetic": "poetic",
+      "scornfully": "scornful",
+      "youth": "youth slang"
+    }
   }
 }
