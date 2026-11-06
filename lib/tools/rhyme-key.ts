@@ -181,6 +181,10 @@ export function transcribe(word: string): string[] {
   return voicing(nasals(letters(spelling(word))));
 }
 
+// Syllables of a transcription (task 35): its vowels, as a softening i is no phone of its own.
+export const syllableCount = (phones: string) =>
+  [...phones].filter((phone) => VOWELS.has(phone)).length;
+
 // Stress (rule 7): the vowel the tail starts from, counted from the end. Conditional and
 // past-tense endings move it back only in verbs; the tag says whether the form is one, and a
 // word not in the table is taken for a verb.

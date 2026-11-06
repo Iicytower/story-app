@@ -1,7 +1,13 @@
 import { toolsJson, ToolsError, type ToolsConfig } from "./client";
 import { DICTIONARY_TIMEOUT_MS, lookupForms } from "./dictionary";
 import { type RhymeKeys, rhymeKeys } from "./rhyme-key";
-import { FUNCTION_WORD, GRAMMATICAL, VERBAL } from "./rhymes-import";
+import {
+  FUNCTION_WORD,
+  GRAMMATICAL,
+  PARTS_OF_SPEECH,
+  type PartOfSpeech,
+  VERBAL,
+} from "./rhymes-import";
 import type { SourceId } from "./sources";
 
 export type RhymeLevel = "exact" | "near" | "last";
@@ -18,6 +24,54 @@ export interface RhymeGroup {
 export interface Rhymes {
   groups: RhymeGroup[];
   sources: SourceId[];
+  // The filters the rhymes were found with.
+  filters: RhymeFilters;
+}
+
+// Filters of the rhymes (task 35, D65): a part of speech or any (null), syllables from min to
+// max, MAX_SYLLABLES meaning that many or more.
+export const MAX_SYLLABLES = 6;
+export interface RhymeFilters {
+  pos: PartOfSpeech | null;
+  min: number;
+  max: number;
+}
+export const NO_FILTERS: RhymeFilters = {
+  pos: null,
+  min: 1,
+  max: MAX_SYLLABLES,
+};
+
+export const isFiltered = (filters: RhymeFilters) =>
+  filters.pos !== null || filters.min > 1 || filters.max < MAX_SYLLABLES;
+
+// The service checks the same (docker/tools/compose.yml, validFilters).
+export function parseRhymeFilters(value: unknown): RhymeFilters | null {
+  const { pos, min, max } = (value ?? {}) as Record<string, unknown>;
+  const isCount = (count: unknown): count is number =>
+    Number.isInteger(count) &&
+    (count as number) >= 1 &&
+    (count as number) <= MAX_SYLLABLES;
+  if (
+    (pos !== null &&
+      !(typeof pos === "string" && Object.hasOwn(PARTS_OF_SPEECH, pos))) ||
+    !isCount(min) ||
+    !isCount(max) ||
+    min > max
+  ) {
+    return null;
+  }
+  return { pos: pos as PartOfSpeech | null, min, max };
+}
+
+// The filters as the service takes them; none when they are off.
+function serviceFilters({ pos, min, max }: RhymeFilters) {
+  const filters = {
+    ...(pos && { pos: PARTS_OF_SPEECH[pos] }),
+    ...(min > 1 && { min }),
+    ...(max < MAX_SYLLABLES && { max }),
+  };
+  return Object.keys(filters).length > 0 ? filters : undefined;
 }
 
 // Zipf frequency × 100 of a common word: 2.5, about once in 3 million words.
@@ -106,6 +160,7 @@ export function rankRhymes(
   word: string,
   keys: RhymeKeys,
   response: unknown,
+  filters: RhymeFilters = NO_FILTERS,
 ): Rhymes {
   const answer = (response ?? {}) as Record<string, unknown>;
   if (answer.source !== "rhymes") throw new ToolsError("UNAVAILABLE");
@@ -175,24 +230,27 @@ export function rankRhymes(
   return {
     groups,
     sources: groups.length > 0 ? ["polimorf", "wordfreq"] : [],
+    filters,
   };
 }
 
 export async function findRhymes(
   config: ToolsConfig,
   word: string,
+  filters: RhymeFilters = NO_FILTERS,
 ): Promise<Rhymes> {
   // A word not in the table is taken for a verb by its ending (lib/tools/rhyme-key.ts).
   const keys = rhymeKeys(word);
   // Without a vowel ("w", "pkt") nothing rhymes.
-  if (!keys) return { groups: [], sources: [] };
+  if (!keys) return { groups: [], sources: [], filters };
   const response = await toolsJson(config, "/dict/rhymes", {
     method: "POST",
     body: JSON.stringify({
       forms: lookupForms(word),
       keys: { exact: keys.exact, near: keys.near, last: keys.last },
+      filters: serviceFilters(filters),
     }),
     timeoutMs: DICTIONARY_TIMEOUT_MS,
   });
-  return rankRhymes(word, keys, response);
+  return rankRhymes(word, keys, response, filters);
 }

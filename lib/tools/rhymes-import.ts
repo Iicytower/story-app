@@ -135,3 +135,43 @@ export function formFlags(form: string, tags: string[]): number {
     (classes.some((name) => VERBAL_CLASSES.has(name)) ? VERBAL : 0)
   );
 }
+
+// Parts of speech of the rhyme filter (task 35, D65), one bit each; a form has those of all its
+// readings. Gerunds and declinable participles go with the words they inflect like; the
+// compound and "po polsku" forms of adjectives (polsko-, polsku) are no adjectives to rhyme.
+export const PARTS_OF_SPEECH = {
+  noun: 1,
+  adjective: 2,
+  verb: 4,
+  adverb: 8,
+  other: 16,
+} as const;
+export type PartOfSpeech = keyof typeof PARTS_OF_SPEECH;
+
+const PART_OF_SPEECH: Record<string, PartOfSpeech> = Object.fromEntries(
+  Object.entries({
+    noun: ["subst", "depr", "ger"],
+    adjective: ["adj", "adjc", "pact", "ppas"],
+    verb: [
+      "fin",
+      "bedzie",
+      "praet",
+      "impt",
+      "inf",
+      "imps",
+      "cond",
+      "winien",
+      "pcon",
+      "pant",
+    ],
+    adverb: ["adv", "pacta"],
+  }).flatMap(([part, classes]) => classes.map((name) => [name, part])),
+) as Record<string, PartOfSpeech>;
+
+export function partsOfSpeech(tags: string[]): number {
+  return tags.reduce(
+    (bits, tag) =>
+      bits | PARTS_OF_SPEECH[PART_OF_SPEECH[tag.split(":")[0]] ?? "other"],
+    0,
+  );
+}

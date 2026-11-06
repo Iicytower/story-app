@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { ToolsError } from "./client";
 import { rhymeKeys } from "./rhyme-key";
-import { COMMON_FREQUENCY, MAX_MORE, MAX_SHOWN, rankRhymes } from "./rhymes";
+import {
+  COMMON_FREQUENCY,
+  isFiltered,
+  MAX_MORE,
+  MAX_SHOWN,
+  NO_FILTERS,
+  parseRhymeFilters,
+  rankRhymes,
+} from "./rhymes";
 import { FUNCTION_WORD, GRAMMATICAL, VERBAL } from "./rhymes-import";
 
 const COMMON = COMMON_FREQUENCY + 100;
@@ -52,6 +60,7 @@ describe("rankRhymes", () => {
         { level: "last", words: ["lata"], more: [] },
       ],
       sources: ["polimorf", "wordfreq"],
+      filters: NO_FILTERS,
     });
   });
 
@@ -226,7 +235,11 @@ describe("rankRhymes", () => {
   });
 
   it("gives no groups and no sources without rhymes", () => {
-    expect(rank("xyzq", answer({}))).toEqual({ groups: [], sources: [] });
+    expect(rank("xyzq", answer({}))).toEqual({
+      groups: [],
+      sources: [],
+      filters: NO_FILTERS,
+    });
   });
 
   it.each([
@@ -243,5 +256,34 @@ describe("rankRhymes", () => {
     ],
   ])("takes %s for a broken answer", (_, response) => {
     expect(() => rank("kot", response)).toThrow(ToolsError);
+  });
+});
+
+describe("parseRhymeFilters", () => {
+  it.each([
+    [NO_FILTERS, NO_FILTERS],
+    [
+      { pos: "verb", min: 2, max: 2 },
+      { pos: "verb", min: 2, max: 2 },
+    ],
+    // Extra fields are dropped.
+    [
+      { pos: null, min: 1, max: 6, sql: "x" },
+      { pos: null, min: 1, max: 6 },
+    ],
+    [{ pos: "toString", min: 1, max: 6 }, null],
+    [{ pos: null, min: 4, max: 3 }, null],
+    [{ pos: null, min: "1", max: 6 }, null],
+    [{ pos: null, min: 1 }, null],
+    [undefined, null],
+  ])("%j → %j", (value, filters) => {
+    expect(parseRhymeFilters(value)).toEqual(filters);
+  });
+
+  it("tells filters that narrow from none", () => {
+    expect(isFiltered(NO_FILTERS)).toBe(false);
+    expect(isFiltered({ ...NO_FILTERS, pos: "noun" })).toBe(true);
+    expect(isFiltered({ ...NO_FILTERS, min: 2 })).toBe(true);
+    expect(isFiltered({ ...NO_FILTERS, max: 5 })).toBe(true);
   });
 });

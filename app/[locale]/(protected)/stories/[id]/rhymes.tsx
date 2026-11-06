@@ -1,14 +1,137 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useId, useState } from "react";
+import { useId, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
-import type { RhymeGroup, Rhymes as Found } from "@/lib/tools/rhymes";
+import { Label } from "@/components/ui/label";
+import { PARTS_OF_SPEECH, type PartOfSpeech } from "@/lib/tools/rhymes-import";
+import {
+  isFiltered,
+  MAX_SYLLABLES,
+  NO_FILTERS,
+  type RhymeFilters,
+  type RhymeGroup,
+  type Rhymes as Found,
+} from "@/lib/tools/rhymes";
 import { lookUpRhymes } from "./dictionary-actions";
 import { createLookupStore, LookupTool } from "./lookup-tool";
 import { ToolSources } from "./tool-sources";
 
 const store = createLookupStore<Found>();
+
+// The filters outlive the dialog like the last lookup (D62).
+let filters = NO_FILTERS;
+const filterListeners = new Set<() => void>();
+const filterStore = {
+  get: () => filters,
+  subscribe(listener: () => void) {
+    filterListeners.add(listener);
+    return () => {
+      filterListeners.delete(listener);
+    };
+  },
+  set(next: RhymeFilters) {
+    filters = next;
+    for (const listener of filterListeners) listener();
+  },
+};
+
+const SELECT = "border-input bg-background h-9 rounded-md border px-2 text-sm";
+const COUNTS = Array.from({ length: MAX_SYLLABLES }, (_, index) => index + 1);
+const PARTS = Object.keys(PARTS_OF_SPEECH) as PartOfSpeech[];
+
+// Part of speech and syllables (task 35); a change looks the word up again.
+function Filters({ again }: { again: () => void }) {
+  const t = useTranslations("rhymes.filters");
+  const current = useSyncExternalStore(
+    filterStore.subscribe,
+    filterStore.get,
+    () => NO_FILTERS,
+  );
+  const id = useId();
+  const first = useRef<HTMLSelectElement>(null);
+  const change = (next: Partial<RhymeFilters>) => {
+    filterStore.set({ ...current, ...next });
+    again();
+  };
+  const count = (value: number) =>
+    value === MAX_SYLLABLES ? t("orMore", { count: value }) : String(value);
+  return (
+    <div className="flex flex-wrap items-end gap-2">
+      <div className="grid gap-1">
+        <Label htmlFor={`${id}-pos`}>{t("partOfSpeech")}</Label>
+        <select
+          ref={first}
+          id={`${id}-pos`}
+          className={SELECT}
+          value={current.pos ?? ""}
+          onChange={(event) =>
+            change({ pos: (event.target.value || null) as PartOfSpeech | null })
+          }
+        >
+          <option value="">{t("any")}</option>
+          {PARTS.map((part) => (
+            <option key={part} value={part}>
+              {t(`parts.${part}`)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div
+        role="group"
+        aria-label={t("syllables")}
+        className="flex items-end gap-2"
+      >
+        <div className="grid gap-1">
+          <Label htmlFor={`${id}-min`}>{t("syllablesFrom")}</Label>
+          <select
+            id={`${id}-min`}
+            className={SELECT}
+            value={current.min}
+            onChange={(event) => change({ min: Number(event.target.value) })}
+          >
+            {/* "From" above "to" cannot be chosen. */}
+            {COUNTS.map((value) => (
+              <option key={value} value={value} disabled={value > current.max}>
+                {count(value)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="grid gap-1">
+          <Label htmlFor={`${id}-max`}>{t("syllablesTo")}</Label>
+          <select
+            id={`${id}-max`}
+            className={SELECT}
+            value={current.max}
+            onChange={(event) => change({ max: Number(event.target.value) })}
+          >
+            {COUNTS.map((value) => (
+              <option key={value} value={value} disabled={value < current.min}>
+                {count(value)}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      {isFiltered(current) && (
+        <Button
+          type="button"
+          variant="link"
+          size="sm"
+          className="px-0"
+          onClick={() => {
+            // The button goes away with the filters.
+            first.current?.focus();
+            change(NO_FILTERS);
+          }}
+        >
+          {t("clear")}
+        </Button>
+      )}
+    </div>
+  );
+}
 
 function Words({ words, lang }: { words: string[]; lang: string }) {
   return (
@@ -67,9 +190,14 @@ export function Rhymes() {
   return (
     <LookupTool
       store={store}
-      lookUp={lookUpRhymes}
+      lookUp={(word) => lookUpRhymes(word, filterStore.get())}
       isEmpty={(found) => found.groups.length === 0}
-      notFound={(word) => t("notFound", { word })}
+      notFound={(word, found) =>
+        isFiltered(found.filters)
+          ? t("notFoundFiltered", { word })
+          : t("notFound", { word })
+      }
+      options={(again) => <Filters again={again} />}
       resultsLabel={(word) => t("results", { word })}
       renderFound={(found, word, lang) =>
         found.groups.map((group) => (

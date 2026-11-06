@@ -19,6 +19,8 @@ interface State<F> {
   query: string;
   result: LookupResult<F> | null;
   pending: boolean;
+  // An option changed during the lookup: one more follows.
+  queued: boolean;
 }
 
 export interface LookupStore<F> {
@@ -32,7 +34,12 @@ export interface LookupStore<F> {
 // (decision of the user, D62). Module state, one store per tile, so a dialog reopened during a
 // lookup is still locked and gets the answer.
 export function createLookupStore<F>(): LookupStore<F> {
-  const initial: State<F> = { query: "", result: null, pending: false };
+  const initial: State<F> = {
+    query: "",
+    result: null,
+    pending: false,
+    queued: false,
+  };
   let state = initial;
   const listeners = new Set<() => void>();
   return {
@@ -81,15 +88,20 @@ export function LookupTool<F>({
   resultsLabel,
   renderFound,
   footer,
+  options,
 }: {
   store: LookupStore<F>;
   lookUp: (word: string) => Promise<ActionResult<{ word: string } & F>>;
   isEmpty: (found: F) => boolean;
-  notFound: (word: string) => string;
+  notFound: (word: string, found: F) => string;
   resultsLabel: (word: string) => string;
   renderFound: (found: F, word: string, lang: string) => ReactNode;
   // Shown under any result, also a failed one.
   footer?: (result: LookupResult<F>) => ReactNode;
+  // Controls under the word; `again` looks up the word of the result again. They stay enabled
+  // during a lookup, so stepping through a select with the arrow keys keeps the focus, and
+  // changes made meanwhile end in one more lookup.
+  options?: (again: () => void) => ReactNode;
 }) {
   const t = useTranslations("lookup");
   const { lang } = useEditorTool();
@@ -103,7 +115,19 @@ export function LookupTool<F>({
 
   async function search(event: React.FormEvent) {
     event.preventDefault();
-    const word = query.trim();
+    await run(query.trim(), input.current);
+  }
+
+  function again() {
+    if (store.get().pending) {
+      store.update({ queued: true });
+      return;
+    }
+    const last = store.get().result;
+    if (last) void run(last.word, null);
+  }
+
+  async function run(word: string, focus: HTMLElement | null) {
     if (!word || store.get().pending) return;
     store.update({ pending: true });
     // A thrown action ("Failed to find Server Action" after a deploy) is a message too.
@@ -118,31 +142,41 @@ export function LookupTool<F>({
       next = { ok: true, word: answered, found: found as unknown as F };
     }
     store.update({ pending: false, result: next });
-    requestAnimationFrame(() => input.current?.focus());
+    if (store.get().queued) {
+      store.update({ queued: false });
+      again();
+      return;
+    }
+    requestAnimationFrame(() => focus?.focus());
   }
 
   return (
     <div className="grid gap-4">
-      <form onSubmit={search}>
+      <form onSubmit={search} className="grid gap-3">
         {/* Locked while a lookup runs (task 25, criterion 9). */}
-        <fieldset disabled={pending} className="flex items-end gap-2">
-          <div className="grid flex-1 gap-1">
-            <Label htmlFor={inputId}>{t("word")}</Label>
-            <Input
-              ref={input}
-              id={inputId}
-              lang={lang}
-              value={query}
-              maxLength={50}
-              autoComplete="off"
-              spellCheck={false}
-              onChange={(event) => store.update({ query: event.target.value })}
-            />
+        <fieldset disabled={pending}>
+          <div className="flex items-end gap-2">
+            <div className="grid flex-1 gap-1">
+              <Label htmlFor={inputId}>{t("word")}</Label>
+              <Input
+                ref={input}
+                id={inputId}
+                lang={lang}
+                value={query}
+                maxLength={50}
+                autoComplete="off"
+                spellCheck={false}
+                onChange={(event) =>
+                  store.update({ query: event.target.value })
+                }
+              />
+            </div>
+            <Button type="submit">
+              {pending ? t("searching") : t("search")}
+            </Button>
           </div>
-          <Button type="submit">
-            {pending ? t("searching") : t("search")}
-          </Button>
         </fieldset>
+        {options?.(again)}
       </form>
       {result && (
         <div className="grid gap-4">
@@ -152,7 +186,7 @@ export function LookupTool<F>({
             </p>
           ) : isEmpty(result.found) ? (
             <p role="status" className="text-sm">
-              {notFound(result.word)}
+              {notFound(result.word, result.found)}
             </p>
           ) : (
             <section

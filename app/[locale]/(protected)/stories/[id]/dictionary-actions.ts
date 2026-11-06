@@ -5,7 +5,12 @@ import { requireUser } from "@/lib/auth/session";
 import { actionError } from "@/lib/i18n/action-error";
 import { toolsConfig, type ToolsConfig, ToolsError } from "@/lib/tools/client";
 import { type Definitions, findDefinitions } from "@/lib/tools/definitions";
-import { findRhymes, type Rhymes } from "@/lib/tools/rhymes";
+import {
+  findRhymes,
+  NO_FILTERS,
+  parseRhymeFilters,
+  type Rhymes,
+} from "@/lib/tools/rhymes";
 import { findSynonyms, type Synonyms } from "@/lib/tools/synonyms";
 import {
   findLemmas,
@@ -18,6 +23,8 @@ import {
 async function lookUp<T>(
   value: unknown,
   find: (config: ToolsConfig, word: string) => Promise<T>,
+  // Other input of the tile is valid.
+  valid = true,
 ): Promise<ActionResult<{ word: string } & T>> {
   const user = await requireUser();
   if (!user.ok) return user;
@@ -25,6 +32,7 @@ async function lookUp<T>(
   if (!config) return actionError("TOOL_UNAVAILABLE", "toolUnavailable");
   const word = parseLookupWord(value);
   if (word === null) return actionError("INVALID_INPUT", "lookupWordInvalid");
+  if (!valid) return actionError("INVALID_INPUT", "rhymeFiltersInvalid");
 
   try {
     return { ok: true, word, ...(await find(config, word)) };
@@ -58,9 +66,15 @@ export async function lookUpSynonyms(
   return lookUp(value, findSynonyms);
 }
 
-// The Rhymes tile (task 34): rhymes of the word as typed, by level.
+// The Rhymes tile (task 34): rhymes of the word as typed, by level, with the filters of task 35.
 export async function lookUpRhymes(
   value: unknown,
+  filters: unknown = NO_FILTERS,
 ): Promise<ActionResult<{ word: string } & Rhymes>> {
-  return lookUp(value, findRhymes);
+  const parsed = parseRhymeFilters(filters);
+  return lookUp(
+    value,
+    (config, word) => findRhymes(config, word, parsed ?? NO_FILTERS),
+    parsed !== null,
+  );
 }

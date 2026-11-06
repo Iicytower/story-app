@@ -110,6 +110,7 @@
     "dictionaryWordInvalid": "Tego słowa nie można dodać do słownika. Wpisz jedno słowo, maks. 50 znaków.",
     "dictionaryFull": "Słownik jest pełny (1000 słów). Najpierw usuń jakieś słowo w Ustawieniach.",
     "lookupWordInvalid": "Wpisz jedno słowo, maks. 50 znaków.",
+    "rhymeFiltersInvalid": "Wybierz część mowy i liczbę sylab z listy.",
     "dictionaryTimeout": "Słownik nie odpowiedział na czas. Spróbuj ponownie."
   },
   "password": {
@@ -718,6 +719,7 @@
   },
   "rhymes": {
     "notFound": "Nie znaleziono rymów do słowa „{word}”.",
+    "notFoundFiltered": "Żadne rymy do słowa „{word}” nie pasują do filtrów.",
     "results": "Rymy do słowa „{word}”",
     "levels": {
       "exact": "Dokładne",
@@ -726,6 +728,22 @@
     },
     "showMore": "Pokaż więcej ({count})",
     "showLess": "Pokaż mniej",
-    "onlyMore": "Tylko słowa rzadkie lub mniej przydatne."
+    "onlyMore": "Tylko słowa rzadkie lub mniej przydatne.",
+    "filters": {
+      "partOfSpeech": "Część mowy",
+      "any": "Dowolna",
+      "parts": {
+        "noun": "Rzeczownik",
+        "adjective": "Przymiotnik",
+        "verb": "Czasownik",
+        "adverb": "Przysłówek",
+        "other": "Inna"
+      },
+      "syllables": "Sylaby",
+      "syllablesFrom": "Sylab od",
+      "syllablesTo": "do",
+      "orMore": "{count} i więcej",
+      "clear": "Wyczyść filtry"
+    }
   }
 }

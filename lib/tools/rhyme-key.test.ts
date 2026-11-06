@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isVerbTag, rhymeKeys, transcribe } from "./rhyme-key";
+import { isVerbTag, rhymeKeys, syllableCount, transcribe } from "./rhyme-key";
 
 const keys = (word: string, verb?: boolean) => rhymeKeys(word, verb)!;
 
@@ -132,6 +132,25 @@ describe("rhymeKeys", () => {
   it("reads a form as typed, whatever its case", () => {
     expect(keys("Kota")).toEqual(keys("kota"));
     expect(keys("KOTA")).toEqual(keys("kota"));
+  });
+});
+
+describe("syllableCount", () => {
+  it.each([
+    ["kot", 1],
+    ["nie", 1],
+    ["ziemia", 2],
+    ["historii", 3],
+    ["auto", 2],
+    ["nauka", 3],
+    ["muzeum", 3],
+    ["Tadeusz", 3],
+    ["chodzilibyśmy", 5],
+    ["zrobiłbym", 3],
+    ["pies", 1],
+    ["pkt", 0],
+  ])("%s has %i", (word, count) => {
+    expect(syllableCount(transcribe(word).join(""))).toBe(count);
   });
 });
 
