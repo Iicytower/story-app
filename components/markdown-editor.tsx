@@ -70,9 +70,16 @@ import {
   recallScroll,
   rememberScroll,
 } from "@/lib/editor/scroll-memory";
+import { replaceDoc, textChange } from "@/lib/editor/replace-content";
 import { blockStarts } from "@/lib/editor/source-blocks";
 
 type Mode = "preview" | "source";
+
+// For a change made outside the field (proofreading, task 23).
+export interface MarkdownEditorApi {
+  // One Undo step in either mode; the change goes through onChange like typing.
+  replaceContent: (markdown: string) => void;
+}
 
 // Measuring Source copies the whole text, so the position is read once scrolling pauses.
 const SCROLL_READ_DELAY_MS = 200;
@@ -93,6 +100,7 @@ export function MarkdownEditor({
   className,
   compact = false,
   scrollMemory,
+  apiRef,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -106,6 +114,7 @@ export function MarkdownEditor({
   compact?: boolean;
   // Remembers the scroll position under this chapter and field (see scroll-memory).
   scrollMemory?: { storyId: string; field: string };
+  apiRef?: React.RefObject<MarkdownEditorApi | null>;
 }) {
   const t = useTranslations("markdownEditor");
   // Always Preview on open; the choice is not remembered.
@@ -358,6 +367,24 @@ export function MarkdownEditor({
     // The button gets disabled with no matches left, which would drop the focus.
     findInputRef.current?.focus({ preventScroll: true });
   }
+
+  useEffect(() => {
+    if (!apiRef) return;
+    apiRef.current = {
+      replaceContent(markdown) {
+        if (mode === "source") {
+          const change = textChange(value, markdown);
+          if (change) replaceInTextarea(change.from, change.to, change.text);
+        } else if (editor) {
+          const next = editor.schema.nodeFromJSON(
+            editor.markdown!.parse(markdown),
+          );
+          const tr = replaceDoc(editor.state.tr, next);
+          if (tr) editor.view.dispatch(tr);
+        }
+      },
+    };
+  });
 
   const storyId = scrollMemory?.storyId;
   const field = scrollMemory?.field;

@@ -17,7 +17,7 @@ Obowiązuje dla każdego taska. Cel: kryteria akceptacji sprawdzane automatyczni
 - Testy integracyjne wywołują Server Actions bezpośrednio jako funkcje; sesja jest mockowana (`vi.mock` modułu z `requireUser()`), żeby testować różnych użytkowników i brak sesji.
 - Każdy plik testów integracyjnych dostaje czystą bazę (drop przed testem); indeksy budowane przez `syncIndexes()`, żeby testy wykrywały błędne definicje indeksów.
 - Baza testowa: kontener `mongo` z `docker-compose.yml`, uruchamiany automatycznie w `globalSetup` (`docker compose up -d --wait mongo`). Każdy worker Vitest ma osobną bazę `story_app_test_<worker>` (helper `tests/integration/test-db.ts`).
-- E2E: osobna baza `story_app_e2e` na tym samym kontenerze (uruchamiany w `globalSetup` Playwrighta), seed dwóch użytkowników testowych, aplikacja startowana przez `webServer` Playwrighta. Nigdy nie używa bazy z `.env.local`.
+- E2E: osobna baza `story_app_e2e` na tym samym kontenerze (uruchamiany w `globalSetup` Playwrighta), seed dwóch użytkowników testowych, aplikacja startowana przez `webServer` Playwrighta. Nigdy nie używa bazy z `.env.local`. Serwer narzędzi zastępuje atrapa `tests/e2e/fake-tools.mjs` (drugi `webServer`): odpowiada na `/lt/v2/check` stałą listą słów, znacznik `AWARIA` daje 503, a `POWOLI` opóźnienie. E2E nigdy nie woła serwera narzędzi z `.env.local` (task 23).
 - Izolacja użytkowników (decisions.md D1) testowana dla **każdej** akcji i strony operującej na opowiadaniu: cudze → `NOT_FOUND`/404.
 - Testy piszę w ramach taska, którego dotyczą, nie „na końcu”.
 

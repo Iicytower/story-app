@@ -7,7 +7,7 @@ Zgłoszenie użytkownika (2026-10-30), przebudowane po researchu z 2026-10-31. K
 - Kafelek „Proofread” w Tools, działający zawsze na treści otwartego rozdziału. Notatki rozdziału i folderu są poza zakresem.
 - Dialog modalny: po kliknięciu komunikat o przetwarzaniu, a po odpowiedzi widok całego rozdziału z zaznaczonymi błędami.
 - Widok jak Preview (tekst sformatowany). Pozycje z LanguageTool liczone na źródle, a zmiany trafiają do markdownu.
-- Przy każdym błędzie: rodzaj, opis, lista podpowiedzi, pole na własny tekst, „Reject”. Błąd bez podpowiedzi można poprawić własnym tekstem albo odrzucić.
+- Przy każdym błędzie: rodzaj, opis, lista podpowiedzi, pole na własny tekst, „Reject”. Błąd bez podpowiedzi można poprawić własnym tekstem albo odrzucić. Zmienione przy starcie: zamiast pola na własny tekst dialog jest edytowalny (D59).
 - Końcowe „Accept” nadpisuje treść rozdziału przez edytor. Zamknięcie dialogu bez „Accept” niczego nie zmienia.
 
 ## Ustalenia
@@ -27,6 +27,15 @@ Do decyzji przy starcie taska:
 - Reguły LT do wyłączenia (np. `ZDANIA_ZLOZONE`), po próbie na prawdziwych rozdziałach.
 
 Przy realizacji dopisać decyzję zmieniającą D21 oraz wyjątek od zasady „Server Actions do zapisu”.
+
+### Ustalone przy starcie (2026-11-06, D59)
+
+- Dialog jak propozycje zmian w GitHub Copilot: cały rozdział w edytowalnym widoku. Tekst do usunięcia ma czerwony zakreślacz, podpowiedź jest zielonym wstawionym tekstem, a obok są ✓ i ✗. Własny tekst wpisuje się wprost w dialogu. Kolor znaków bez zmian, odcienie dobrane dla jasnego i ciemnego motywu.
+- Panel szczegółów obok tekstu (na wąskim ekranie pod nim): rodzaj, opis, lista podpowiedzi, ✓/✗, poprzedni/następny.
+- Błąd bez podpowiedzi: żółty zakreślacz i tylko ✗.
+- Komentarze nie są sprawdzane.
+- Błędy, których zakres obejmuje składnię markdown, są odfiltrowane.
+- `DISABLED_RULES = ["BOWIEM_ZAS"]` po próbie na próbce prozy (fałszywe alarmy przy „Ale” na początku zdania).
 
 ## Dane z researchu
 
@@ -64,7 +73,7 @@ Test na prozie z dialogami, myślnikami, mową potoczną i celowymi błędami:
 
 1. Kliknięcie kafelka zapisuje niezapisane zmiany, otwiera dialog z komunikatem o przetwarzaniu i blokuje edycję.
 2. Po odpowiedzi dialog pokazuje cały rozdział sformatowany, z zaznaczonymi błędami każdego rodzaju (ortografia, gramatyka, interpunkcja, styl).
-3. Przy błędzie można wybrać podpowiedź, wpisać własny tekst albo odrzucić zmianę; decyzję można zmienić przed „Accept”.
+3. Przy błędzie można wybrać podpowiedź, wpisać własny tekst albo odrzucić zmianę; wybór podpowiedzi można zmienić przed ✓, a tekst poprawiać ręcznie do „Accept”.
 4. Błąd bez podpowiedzi pokazuje rodzaj i opis oraz daje własny tekst albo odrzucenie.
 5. „Accept” zmienia tylko zaakceptowane fragmenty, nie psuje markdownu, jest cofane jednym Undo i zapisuje się od razu.
 6. Zamknięcie dialogu bez „Accept” zostawia tekst bez zmian.

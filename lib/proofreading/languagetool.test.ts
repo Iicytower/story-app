@@ -82,7 +82,7 @@ describe("checkRequestBody", () => {
     expect(body.get("language")).toBe("pl-PL");
     expect(body.get("enabledRules")).toBe("PL_WORD_REPEAT");
     expect(body.has("text")).toBe(false);
-    expect(body.has("disabledRules")).toBe(false);
+    expect(body.get("disabledRules")).toBe("BOWIEM_ZAS");
     expect(JSON.parse(body.get("data")!)).toEqual({
       annotation: [
         { text: "Kot " },

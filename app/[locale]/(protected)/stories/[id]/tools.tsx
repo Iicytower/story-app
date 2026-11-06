@@ -3,13 +3,14 @@ import {
   type LucideIcon,
   ReplaceIcon,
   SparklesIcon,
+  SpellCheckIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { type ComponentType, lazy } from "react";
 
 export interface Tool {
   // Key of tools.items, with the label and description.
-  id: "name-generator" | "synonyms" | "rhymes";
+  id: "proofread" | "name-generator" | "synonyms" | "rhymes";
   icon: LucideIcon;
   // Shown in the dialog the tile opens.
   View: ComponentType;
@@ -23,6 +24,10 @@ const NameGenerator = lazy(() =>
   })),
 );
 
+const Proofread = lazy(() =>
+  import("./proofread").then((module) => ({ default: module.Proofread })),
+);
+
 function ComingSoon() {
   const t = useTranslations("tools");
   return <p className="text-muted-foreground text-sm">{t("comingSoon")}</p>;
@@ -30,6 +35,12 @@ function ComingSoon() {
 
 // A new tool adds its tile and view here. Placeholders until tasks 33 and 34.
 export const TOOLS: Tool[] = [
+  {
+    id: "proofread",
+    icon: SpellCheckIcon,
+    View: Proofread,
+    dialogClassName: "flex h-[calc(100dvh-2rem)] flex-col sm:max-w-6xl",
+  },
   {
     id: "name-generator",
     icon: SparklesIcon,

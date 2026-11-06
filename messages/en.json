@@ -363,7 +363,8 @@
     "backTo": "Back to {folder}",
     "title": "Title",
     "isPublic": "This chapter is public:",
-    "view": "View"
+    "view": "View",
+    "notSavedBeforeCheck": "The chapter could not be saved, so it was not checked. See the message above the editor."
   },
   "chapters": {
     "noFolder": "This story is not in a folder.",
@@ -376,6 +377,10 @@
     "loading": "Loading…",
     "comingSoon": "Coming soon.",
     "items": {
+      "proofread": {
+        "label": "Proofread",
+        "description": "Spelling, grammar, punctuation and style of this chapter. Decide on each change, then accept."
+      },
       "name-generator": {
         "label": "Name generator",
         "description": "Find names for characters and places."
@@ -389,6 +394,33 @@
         "description": "Look up words that rhyme."
       }
     }
+  },
+  "proofread": {
+    "checking": "Checking the chapter… This can take a while for a long chapter.",
+    "failed": "The check could not run. Reload the page and try again.",
+    "changed": "The chapter changed while it was being checked. Close this window and check again.",
+    "noIssues": "No issues found.",
+    "notShown": "Issues were found, but none of them can be shown in the text (for example, they cross formatting). Check the chapter by hand.",
+    "text": "Checked text",
+    "panel": "Change",
+    "position": "{index} of {count}",
+    "previous": "Previous change",
+    "next": "Next change",
+    "kinds": {
+      "spelling": "Spelling",
+      "grammar": "Grammar",
+      "punctuation": "Punctuation",
+      "style": "Style",
+      "other": "Other"
+    },
+    "suggestions": "Suggestions",
+    "remove": "(remove)",
+    "noSuggestion": "No suggestion. Edit the text yourself or reject the change.",
+    "apply": "Apply change",
+    "reject": "Reject change",
+    "allDecided": "No changes left. Accept to update the chapter.",
+    "cancel": "Cancel",
+    "accept": "Accept"
   },
   "nameGenerator": {
     "typeGroups": {

@@ -65,6 +65,10 @@ const TEXT_PAIRS = [
   ["foreground", "comment"],
   ["diff-added-foreground", "diff-added"],
   ["diff-removed-foreground", "diff-removed"],
+  // Proofreading marks keep the text's own colour (task 23).
+  ["foreground", "diff-added"],
+  ["foreground", "diff-removed"],
+  ["foreground", "proofread-note"],
 ];
 
 describe("color palettes in globals.css", () => {
