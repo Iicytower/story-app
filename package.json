@@ -13,7 +13,7 @@
     "test:e2e": "playwright test",
     "verify": "npm run lint && npm run typecheck && npm test && npm run test:e2e",
     "db:up": "docker compose up -d --wait mongo",
-    "up": "tsx scripts/tools.ts up",
+    "up": "tsx scripts/tools.ts up; npm run dev",
     "down": "tsx scripts/tools.ts down",
     "dict:build": "tsx scripts/dictionary.ts build",
     "dict:upload": "tsx scripts/dictionary.ts upload",

@@ -101,14 +101,7 @@ export function wordFrequencies(data: Uint8Array): Map<string, number> {
 // an interjection or a preposition) stay content words. Gerunds and participles ("czytanie",
 // "czytanego") have only verbal readings; "kochanie" or "pytanie" have a noun reading too, so for
 // them the app sees whether the query is verbal as well (VERBAL).
-const FUNCTION_ANY = new Set([
-  "conj",
-  "comp",
-  "ppron12",
-  "ppron3",
-  "siebie",
-  "aglt",
-]);
+const FUNCTION_ANY = new Set(["conj", "comp", "ppron12", "ppron3", "aglt"]);
 const FUNCTION_ALL = new Set(["prep", "part", "interj", "brev", "frag"]);
 // Pronominal adverbs, which the tags do not tell from "pięknie".
 const FUNCTION_FORMS = new Set([

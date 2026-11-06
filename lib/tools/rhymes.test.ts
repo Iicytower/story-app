@@ -68,20 +68,39 @@ describe("rankRhymes", () => {
           row("przepisanie", "4"),
           row("granie", "5"),
         ],
-        last: [row("nie", "6"), row("panie", "7")],
+        last: [row("nie", "6", COMMON, FUNCTION_WORD), row("panie", "7")],
       }),
     );
     expect(groups).toEqual([
       { level: "exact", words: ["granie"], more: [] },
-      { level: "last", words: ["panie"], more: [] },
+      { level: "last", words: ["panie"], more: ["nie"] },
     ]);
   });
 
-  it("drops a word shorter than the query it ends (criterion 3)", () => {
+  it("drops the word with a prefix either way, but not another word ending in it (criterion 3)", () => {
     expect(
-      rank("samolot", answer({ last: [row("lot", "1"), row("kot", "2")] }))
-        .groups,
-    ).toEqual([{ level: "last", words: ["kot"], more: [] }]);
+      rank(
+        "przelot",
+        answer({
+          last: [
+            row("lot", "1"),
+            row("nalot", "2"),
+            row("samolot", "3"),
+            row("kot", "4"),
+          ],
+        }),
+      ).groups,
+    ).toEqual([
+      { level: "last", words: ["nalot", "samolot", "kot"], more: [] },
+    ]);
+    expect(
+      rank(
+        "ma",
+        answer({
+          last: [row("mama", "1"), row("zima", "2"), row("nadma", "3")],
+        }),
+      ).groups,
+    ).toEqual([{ level: "last", words: ["mama", "zima"], more: [] }]);
   });
 
   it("shows function words only under Show more (criterion 4)", () => {
@@ -162,7 +181,7 @@ describe("rankRhymes", () => {
         rhymeKeys("kotabla")!,
         answer({ exact: [row("tabla", "1"), row("grabla", "2")] }),
       ).groups[0].words,
-    ).toEqual(["grabla"]);
+    ).toEqual(["tabla", "grabla"]);
   });
 
   it("puts rare words under Show more", () => {

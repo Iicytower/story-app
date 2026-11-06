@@ -89,6 +89,17 @@ function commonEnding(a: string, b: string): number {
 
 const lemmaIds = (row: Row) => row.lemmas.split(",").filter(Boolean);
 
+// A word-forming prefix, possibly after "nie": what tells napisanie from pisanie. Other
+// beginnings make another word (mama for ma, szkot for kot), decision of the user (D64).
+const PREFIX =
+  /^(nie)?(na|nad|nade|prze|przed|przy|po|pod|pode|za|wy|roz|roze|s|z|ze|u|do|od|ode|o|ob|obe|w|we|wz|ws)?$/;
+
+// Whether one word is the other with a prefix (criterion 3).
+function prefixed(a: string, b: string): boolean {
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+  return long.endsWith(short) && PREFIX.test(long.slice(0, -short.length));
+}
+
 // The service answers the rows of the word's spellings and up to 150 rows of each level, the most
 // frequent first. A spelling in the table brings its keys; `keys` are those of a word not in it.
 export function rankRhymes(
@@ -121,8 +132,7 @@ export function rankRhymes(
         const form = row.form.toLowerCase();
         // The word itself, its lemma and words of one stem (pisanie/napisanie): criterion 3.
         return (
-          !form.endsWith(typed) &&
-          !typed.endsWith(form) &&
+          !prefixed(form, typed) &&
           !lemmaIds(row).some((id) => ownLemmas.has(id))
         );
       })
