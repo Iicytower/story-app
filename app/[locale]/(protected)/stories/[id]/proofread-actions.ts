@@ -8,11 +8,13 @@ import { actionError } from "@/lib/i18n/action-error";
 import { folderLanguage, type FolderLanguage } from "@/lib/languages";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
+import { filterIssues } from "@/lib/proofreading/dictionary";
 import {
   proofread,
   type ProofreadIssue,
 } from "@/lib/proofreading/languagetool";
 import { PROOFREAD_LIMIT, takeAttempt } from "@/lib/rate-limit";
+import { getDictionary } from "@/lib/settings/queries";
 import { toolsConfig, ToolsError } from "@/lib/tools/client";
 
 // Checks the chapter's saved content (the caller saves first, task 23). The checked text is
@@ -53,8 +55,16 @@ export async function checkChapter(id: string): Promise<
   const language = folderLanguage(folder?.language);
 
   try {
-    const issues = await proofread(config, story.content, language);
-    return { ok: true, content: story.content, language, issues };
+    const [issues, words] = await Promise.all([
+      proofread(config, story.content, language),
+      getDictionary(user.userId),
+    ]);
+    return {
+      ok: true,
+      content: story.content,
+      language,
+      issues: filterIssues(story.content, issues, words),
+    };
   } catch (error) {
     if (!(error instanceof ToolsError)) throw error;
     return error.failure === "TIMEOUT"

@@ -2,6 +2,7 @@ import { Extension } from "@tiptap/core";
 import type { EditorState, Transaction } from "@tiptap/pm/state";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
+import { dictionaryMatcher } from "./dictionary";
 import type { DocIssue } from "./map";
 
 // A placed issue waiting for a decision; `choice` is the suggestion shown as the insertion.
@@ -33,7 +34,7 @@ const EMPTY: ProposalsState = {
 
 type Action =
   | { type: "load"; issues: DocIssue[] }
-  | { type: "remove"; id: number }
+  | { type: "remove"; ids: number[] }
   | { type: "apply"; id: number; text: string }
   | { type: "choose"; id: number; choice: number }
   | { type: "select"; id: number };
@@ -73,26 +74,27 @@ function reduce(state: ProposalsState, action: Action): ProposalsState {
       if (!proposal) return state;
       const { issue } = proposal;
       return {
-        ...reduce(state, { type: "remove", id: action.id }),
+        ...reduce(state, { type: "remove", ids: [action.id] }),
         applied: [
           ...state.applied,
           { offset: issue.offset, length: issue.length, text: action.text },
         ],
       };
     }
-    case "remove": {
-      const index = state.proposals.findIndex(({ id }) => id === action.id);
-      if (index === -1) return state;
-      const proposals = state.proposals.toSpliced(index, 1);
-      // The next one in the text becomes current, so decisions go top to bottom.
-      const next = proposals[Math.min(index, proposals.length - 1)];
-      return {
-        ...state,
-        proposals,
-        selected:
-          state.selected === action.id ? (next?.id ?? null) : state.selected,
-      };
-    }
+    case "remove":
+      return action.ids.reduce((current, removed) => {
+        const index = current.proposals.findIndex(({ id }) => id === removed);
+        if (index === -1) return current;
+        const proposals = current.proposals.toSpliced(index, 1);
+        // The next one in the text becomes current, so decisions go top to bottom.
+        const next = proposals[Math.min(index, proposals.length - 1)];
+        return {
+          ...current,
+          proposals,
+          selected:
+            current.selected === removed ? (next?.id ?? null) : current.selected,
+        };
+      }, state);
     case "choose":
       return {
         ...state,
@@ -140,7 +142,18 @@ export function chooseSuggestion(view: EditorView, id: number, choice: number) {
 }
 
 export function rejectProposal(view: EditorView, id: number) {
-  act(view, { type: "remove", id });
+  act(view, { type: "remove", ids: [id] });
+}
+
+// After "Add to dictionary": every pending spelling proposal of the word goes at once.
+export function dismissWord(view: EditorView, word: string) {
+  const accepts = dictionaryMatcher([word]);
+  const ids = proposalsState(view.state)
+    .proposals.filter(
+      ({ issue, original }) => issue.kind === "spelling" && accepts(original),
+    )
+    .map(({ id }) => id);
+  act(view, { type: "remove", ids });
 }
 
 // Replaces the text with the chosen suggestion, keeping the formatting of its first character.

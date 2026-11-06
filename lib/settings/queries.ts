@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { connectDB, isDuplicateKeyError } from "@/lib/db";
 import { Settings } from "@/lib/models/settings";
+import { MAX_DICTIONARY_WORDS } from "@/lib/proofreading/dictionary";
 import {
   normalizeSettings,
   type SettingsPatch,
@@ -35,4 +36,59 @@ export async function updateUserSettings(
     if (!isDuplicateKeyError(error)) throw error;
     await update();
   }
+}
+
+async function dictionaryOf(userId: string): Promise<string[]> {
+  return normalizeSettings(await Settings.findOne({ userId }).lean())
+    .proofreading.dictionary;
+}
+
+// Null when the dictionary is full. One conditional update, so parallel adds (two tabs)
+// cannot go past the limit or store a word twice.
+export async function addDictionaryWord(
+  userId: string,
+  word: string,
+): Promise<string[] | null> {
+  await connectDB();
+  const create = () =>
+    Settings.updateOne(
+      { userId },
+      { $setOnInsert: { userId } },
+      { upsert: true },
+    );
+  try {
+    await create();
+  } catch (error) {
+    if (!isDuplicateKeyError(error)) throw error;
+  }
+  const { modifiedCount } = await Settings.updateOne(
+    {
+      userId,
+      "proofreading.dictionary": { $ne: word },
+      [`proofreading.dictionary.${MAX_DICTIONARY_WORDS - 1}`]: {
+        $exists: false,
+      },
+    },
+    { $push: { "proofreading.dictionary": word } },
+    { runValidators: true },
+  );
+  const words = await dictionaryOf(userId);
+  return modifiedCount === 0 && !words.includes(word) ? null : words;
+}
+
+export async function removeDictionaryWord(
+  userId: string,
+  word: string,
+): Promise<string[]> {
+  await connectDB();
+  await Settings.updateOne(
+    { userId },
+    { $pull: { "proofreading.dictionary": word } },
+  );
+  return dictionaryOf(userId);
+}
+
+export async function getDictionary(userId: string): Promise<string[]> {
+  await connectDB();
+  return dictionaryOf(userId);
 }

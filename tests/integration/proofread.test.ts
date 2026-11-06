@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth/session";
 import { Folder } from "@/lib/models/folder";
 import { RateLimit } from "@/lib/models/rate-limit";
 import { Story } from "@/lib/models/story";
+import { Settings } from "@/lib/models/settings";
 import { PROOFREAD_LIMIT } from "@/lib/rate-limit";
 import { setupTestDb } from "./test-db";
 
@@ -134,6 +135,40 @@ describe("checkChapter", () => {
         .map((part) => ("text" in part ? part.text : part.markup))
         .join(""),
     ).toBe("# Tytuł\n\nKot **kot**.");
+  });
+
+  it("leaves out spelling issues of words in the user's dictionary only", async () => {
+    // "Ania" twice as a spelling issue, once as a grammar issue on "kwak".
+    const content = "Ania i ania, kwak.";
+    const match = (offset: number, length: number, category: string) => ({
+      message: "",
+      offset,
+      length,
+      replacements: [],
+      rule: { id: "MORFOLOGIK_RULE_PL_PL", category: { id: category } },
+    });
+    fetchMock.mockImplementation(async () =>
+      Response.json({
+        matches: [
+          match(0, 4, "TYPOS"),
+          match(7, 4, "TYPOS"),
+          match(13, 4, "GRAMMAR"),
+        ],
+      }),
+    );
+    await Settings.create([
+      { userId: alice, proofreading: { dictionary: ["Ania", "kwak"] } },
+      { userId: bob, proofreading: { dictionary: ["ania"] } },
+    ]);
+    const issues = async (userId: Types.ObjectId) => {
+      signInAs(userId);
+      const result = await checkChapter(await seedChapter(content, userId));
+      return result.ok ? result.issues.map(({ offset }) => offset) : result;
+    };
+
+    expect(await issues(alice)).toEqual([7, 13]);
+    expect(await issues(bob)).toEqual([13]);
+    await Settings.deleteMany({});
   });
 
   it("always enables word repetition within a sentence", async () => {

@@ -1,10 +1,13 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { useState, useTransition } from "react";
+import { XIcon } from "lucide-react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import {
   changeLocale,
+  listDictionary,
   logout,
+  removeFromDictionary,
   saveSettings,
 } from "@/app/[locale]/(protected)/actions";
 import { ChangePasswordForm } from "@/components/change-password-form";
@@ -213,6 +216,7 @@ function SettingsContent() {
           ))}
         </select>
       </section>
+      <DictionarySection />
       <section aria-labelledby="settings-account" className="grid gap-2">
         <h3 id="settings-account" className="font-medium">
           {t("account")}
@@ -240,5 +244,103 @@ function SettingsContent() {
         </Button>
       </DialogFooter>
     </div>
+  );
+}
+
+// Read when the dialog opens: words added in the proofreading since the page loaded are
+// shown, and no page has to be refreshed (task 30). A removal is saved at once.
+function DictionarySection() {
+  const t = useTranslations("settings");
+  const locale = useLocale();
+  const [words, setWords] = useState<string[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const list = useRef<HTMLUListElement>(null);
+  const focusAfter = useRef<number | null>(null);
+
+  useEffect(() => {
+    let open = true;
+    void listDictionary()
+      .catch(() => null)
+      .then((result) => {
+        if (!open) return;
+        if (result?.ok) setWords(result.words);
+        else setError(result?.message ?? t("dictionaryFailed"));
+      });
+    return () => {
+      open = false;
+    };
+  }, [t]);
+
+  // The removed row's button had the focus: it moves to the next one (or the heading).
+  useEffect(() => {
+    if (focusAfter.current === null) return;
+    const buttons = list.current?.querySelectorAll("button") ?? [];
+    const next = buttons[Math.min(focusAfter.current, buttons.length - 1)];
+    (next ?? heading.current)?.focus();
+    focusAfter.current = null;
+  }, [words]);
+
+  async function remove(word: string, index: number) {
+    setError(null);
+    setRemoving(word);
+    const result = await removeFromDictionary(word).catch(() => null);
+    setRemoving(null);
+    if (!result?.ok) return setError(result?.message ?? t("dictionaryFailed"));
+    focusAfter.current = index;
+    setWords(result.words);
+  }
+
+  const sorted = words?.toSorted((a, b) => a.localeCompare(b, locale));
+  return (
+    <section aria-labelledby="settings-dictionary" className="grid gap-2">
+      <h3
+        id="settings-dictionary"
+        ref={heading}
+        tabIndex={-1}
+        className="font-medium outline-none"
+      >
+        {t("dictionary")}
+      </h3>
+      <p className="text-muted-foreground text-sm">{t("dictionaryHelp")}</p>
+      <p role="status" className="text-sm">
+        {sorted
+          ? t("dictionaryCount", { count: sorted.length })
+          : !error && t("loadingDictionary")}
+      </p>
+      {sorted && sorted.length > 0 && (
+        <ul
+          ref={list}
+          aria-labelledby="settings-dictionary"
+          className="flex max-h-40 flex-wrap gap-1 overflow-y-auto"
+        >
+          {sorted.map((word, index) => (
+            <li
+              key={word}
+              className="bg-secondary flex items-center gap-1 rounded-md py-0.5 pr-0.5 pl-2 text-sm"
+            >
+              {word}
+              <WithTooltip label={t("removeWord", { word })}>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label={t("removeWord", { word })}
+                  disabled={removing === word}
+                  onClick={() => void remove(word, index)}
+                >
+                  <XIcon />
+                </Button>
+              </WithTooltip>
+            </li>
+          ))}
+        </ul>
+      )}
+      {error && (
+        <p role="alert" className="text-destructive text-sm">
+          {error}
+        </p>
+      )}
+    </section>
   );
 }

@@ -41,7 +41,13 @@
     "language": "Język interfejsu",
     "account": "Konto",
     "changePassword": "Zmień hasło",
-    "logOut": "Wyloguj"
+    "logOut": "Wyloguj",
+    "dictionary": "Słownik korekty",
+    "dictionaryHelp": "Słowa, których korekta nie oznacza jako błędy pisowni. Dodajesz je przyciskiem „Dodaj do słownika” w korekcie.",
+    "dictionaryCount": "{count, plural, =0 {Brak słów.} one {# słowo} few {# słowa} many {# słów} other {# słowa}}",
+    "removeWord": "Usuń „{word}”",
+    "dictionaryFailed": "Nie udało się wczytać ani zmienić listy. Odśwież stronę i spróbuj ponownie.",
+    "loadingDictionary": "Wczytywanie…"
   },
   "errors": {
     "nicknameRequirement": "Nick musi mieć 3–30 znaków: litery a-z, cyfry, _ i -.",
@@ -100,7 +106,9 @@
     "importFailed": "Nie udało się zaimportować tego tekstu. Może być za duży.",
     "toolUnavailable": "To narzędzie jest teraz niedostępne. Spróbuj ponownie później.",
     "toolTimeout": "Sprawdzanie trwało za długo. Spróbuj ponownie później albo z krótszym rozdziałem.",
-    "tooManyChecks": "Za dużo sprawdzeń. Spróbuj ponownie za kilka minut."
+    "tooManyChecks": "Za dużo sprawdzeń. Spróbuj ponownie za kilka minut.",
+    "dictionaryWordInvalid": "Tego słowa nie można dodać do słownika. Wpisz jedno słowo, maks. 50 znaków.",
+    "dictionaryFull": "Słownik jest pełny (1000 słów). Najpierw usuń jakieś słowo w Ustawieniach."
   },
   "password": {
     "mustContain": "Hasło musi zawierać:",
@@ -420,7 +428,9 @@
     "reject": "Odrzuć zmianę",
     "allDecided": "Nie zostały żadne zmiany. Zatwierdź, aby zaktualizować rozdział.",
     "cancel": "Anuluj",
-    "accept": "Zatwierdź"
+    "accept": "Zatwierdź",
+    "addToDictionary": "Dodaj do słownika",
+    "dictionaryFailed": "Nie udało się dodać słowa. Odśwież stronę i spróbuj ponownie."
   },
   "nameGenerator": {
     "typeGroups": {

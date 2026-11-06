@@ -18,6 +18,7 @@ describe("DEFAULT_SETTINGS", () => {
         locale: null,
       },
       folders: { sort: "updated", manualOrder: false },
+      proofreading: { dictionary: [] },
     });
   });
 });
@@ -39,6 +40,7 @@ describe("normalizeSettings", () => {
           layout: { tab: 3, collapsed: { tools: true } },
         },
         folders: { sort: "alpha", manualOrder: "yes" },
+        proofreading: { dictionary: [" Ania ", "Ania", 3, "dwa słowa", "Kwak"] },
         other: { a: 1 },
       }),
     ).toEqual({
@@ -56,6 +58,7 @@ describe("normalizeSettings", () => {
         locale: null,
       },
       folders: { sort: "alpha", manualOrder: false },
+      proofreading: { dictionary: ["Ania", "Kwak"] },
     });
     expect(
       normalizeSettings({
@@ -108,6 +111,7 @@ describe("parseSettingsPatch", () => {
       { editor: "wide" },
       { folders: { sort: "alpha" } },
       { folders: { manualOrder: true } },
+      { proofreading: { dictionary: ["Ania"] } },
       { editor: { toString: "x" } },
       {},
       { editor: {} },

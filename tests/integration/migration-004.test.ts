@@ -83,6 +83,7 @@ describe("004-settings", () => {
         locale: null,
       },
       folders: { sort: "alpha", manualOrder: false },
+      proofreading: { dictionary: [] },
     });
   });
 

@@ -5,17 +5,26 @@ import type { Node } from "@tiptap/pm/model";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+import { addToDictionary } from "@/app/[locale]/(protected)/actions";
 import { Button } from "@/components/ui/button";
 import { DialogClose, DialogFooter } from "@/components/ui/dialog";
 import { Comment } from "@/lib/editor/comment";
 import { contentExtensions, MARKED_OPTIONS } from "@/lib/editor/extensions";
+import { parseDictionaryWord } from "@/lib/proofreading/dictionary";
 import type { ProofreadIssue } from "@/lib/proofreading/languagetool";
 import { placeIssues } from "@/lib/proofreading/map";
 import {
   applyProposal,
   chooseSuggestion,
   currentProposal,
+  dismissWord,
   loadProposals,
   patchSource,
   Proposals,
@@ -109,6 +118,12 @@ function Review({
   const tEditor = useTranslations("markdownEditor");
   const initial = useRef<Node | null>(null);
   const [found, setFound] = useState<number | null>(null);
+  const [adding, startAdding] = useTransition();
+  // Kept with its proposal, so it does not stay under the next one.
+  const [dictionaryError, setDictionaryError] = useState<{
+    id: number;
+    message: string;
+  } | null>(null);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -178,6 +193,21 @@ function Review({
         <Footer />
       </>
     );
+
+  const word =
+    current?.issue.kind === "spelling"
+      ? parseDictionaryWord(current.original)
+      : null;
+  function addWord(id: number, word: string) {
+    setDictionaryError(null);
+    startAdding(async () => {
+      const result = await addToDictionary(word).catch(() => null);
+      if (!result) setDictionaryError({ id, message: t("dictionaryFailed") });
+      else if (!result.ok) setDictionaryError({ id, message: result.message });
+      // The dialog may have closed while the word was being saved.
+      else if (!editor!.isDestroyed) dismissWord(editor!.view, word);
+    });
+  }
 
   const index = current ? state!.proposals.indexOf(current) : -1;
   const step = (direction: 1 | -1) => {
@@ -279,6 +309,22 @@ function Review({
                   {t("reject")}
                 </Button>
               </div>
+              {word !== null && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="self-start"
+                  disabled={adding}
+                  onClick={() => addWord(current.id, word)}
+                >
+                  {t("addToDictionary")}
+                </Button>
+              )}
+              {dictionaryError?.id === current.id && (
+                <p role="alert" className="text-destructive text-sm">
+                  {dictionaryError.message}
+                </p>
+              )}
             </>
           ) : (
             state && <p className="text-sm">{t("allDecided")}</p>

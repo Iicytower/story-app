@@ -41,7 +41,13 @@
     "language": "Interface language",
     "account": "Account",
     "changePassword": "Change password",
-    "logOut": "Log out"
+    "logOut": "Log out",
+    "dictionary": "Proofreading dictionary",
+    "dictionaryHelp": "Words the proofreading does not mark as spelling errors. Add them with “Add to dictionary” in the proofreading.",
+    "dictionaryCount": "{count, plural, =0 {No words yet.} one {# word} other {# words}}",
+    "removeWord": "Remove “{word}”",
+    "dictionaryFailed": "The list could not be loaded or changed. Reload the page and try again.",
+    "loadingDictionary": "Loading…"
   },
   "errors": {
     "nicknameRequirement": "Nickname must be 3-30 characters: letters a-z, digits, _ and -.",
@@ -100,7 +106,9 @@
     "importFailed": "This text could not be imported. It may be too large.",
     "toolUnavailable": "This tool is not available right now. Try again later.",
     "toolTimeout": "The check took too long. Try again later or with a shorter chapter.",
-    "tooManyChecks": "Too many checks. Try again in a few minutes."
+    "tooManyChecks": "Too many checks. Try again in a few minutes.",
+    "dictionaryWordInvalid": "This word cannot be added to the dictionary. Use one word of up to 50 characters.",
+    "dictionaryFull": "The dictionary is full (1000 words). Remove a word in Settings first."
   },
   "password": {
     "mustContain": "The password must contain:",
@@ -420,7 +428,9 @@
     "reject": "Reject change",
     "allDecided": "No changes left. Accept to update the chapter.",
     "cancel": "Cancel",
-    "accept": "Accept"
+    "accept": "Accept",
+    "addToDictionary": "Add to dictionary",
+    "dictionaryFailed": "The word could not be added. Reload the page and try again."
   },
   "nameGenerator": {
     "typeGroups": {
