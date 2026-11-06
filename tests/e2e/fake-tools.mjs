@@ -1,7 +1,7 @@
 // Stands in for the tools server (D56) in E2E: answers LanguageTool's /v2/check from a
 // fixed list of words, so results do not depend on a running LT, and the dictionary service's
-// /dict/lemmas and /dict/definitions from a small form table (task 25) and a few entries (task
-// 32). Markers in the text or the looked-up word: AWARIA answers 503, POWOLI answers after a
+// /dict/lemmas, /dict/definitions and /dict/synonyms from a small form table (task 25), a few
+// entries (task 32) and synonyms (task 33). Markers in the text or the looked-up word: AWARIA answers 503, POWOLI answers after a
 // delay.
 import { createServer } from "node:http";
 
@@ -90,6 +90,47 @@ const ENTRIES = {
   ],
 };
 
+const synonym = (word, labels = [], extra = {}) => ({ word, labels, ...extra });
+
+// Headword → synonyms of each source, as built (task 33). "sierściuch" is in both, with
+// different labels.
+const SYNONYMS = {
+  wiktionary: {
+    kot: [
+      {
+        pos: "noun",
+        posTitle: "rzeczownik",
+        senses: [
+          {
+            index: "1.1",
+            gloss: "zwierzę domowe",
+            synonyms: [
+              synonym("dachowiec"),
+              synonym("sierściuch", ["scornfully"]),
+              synonym("kociamber", ["dialectal"], { region: "Poznań" }),
+            ],
+          },
+          {
+            index: "1.4",
+            gloss: "kłąb kurzu",
+            synonyms: [synonym("farfocel")],
+          },
+        ],
+      },
+    ],
+  },
+  thesaurus: {
+    kot: [
+      [
+        synonym("dachowiec"),
+        synonym("sierściuch", ["colloquial"]),
+        synonym("mruczek", ["endearing"]),
+      ],
+    ],
+    pies: [[synonym("kundel", ["veryColloquial"])]],
+  },
+};
+
 function matches(annotation) {
   const found = [];
   let offset = 0;
@@ -123,7 +164,7 @@ createServer(async (request, response) => {
   }
   let body = "";
   for await (const chunk of request) body += chunk;
-  if (request.url === "/dict/lemmas" || request.url === "/dict/definitions") {
+  if (request.url.startsWith("/dict/")) {
     const { forms } = JSON.parse(body);
     if (forms.some((form) => form.includes("AWARIA"))) {
       response.statusCode = 503;
@@ -136,22 +177,30 @@ createServer(async (request, response) => {
       rows: FORMS.filter(({ form }) => forms.includes(form)),
     };
     const words = [...forms, ...lemmas.rows.map(({ lemma }) => lemma)];
+    const rows = (table, field) =>
+      Object.entries(table)
+        .filter(([word]) => words.includes(word))
+        .map(([word, data]) => ({ word, [field]: data }));
+    const answers = {
+      "/dict/lemmas": lemmas,
+      "/dict/definitions": {
+        lemmas,
+        definitions: { source: "wiktionary", rows: rows(ENTRIES, "entries") },
+      },
+      "/dict/synonyms": {
+        lemmas,
+        synonyms: {
+          wiktionary: rows(SYNONYMS.wiktionary, "entries"),
+          thesaurus: rows(SYNONYMS.thesaurus, "senses"),
+        },
+      },
+    };
+    if (!answers[request.url]) {
+      response.statusCode = 404;
+      return response.end();
+    }
     response.setHeader("Content-Type", "application/json");
-    return response.end(
-      JSON.stringify(
-        request.url === "/dict/lemmas"
-          ? lemmas
-          : {
-              lemmas,
-              definitions: {
-                source: "wiktionary",
-                rows: Object.entries(ENTRIES)
-                  .filter(([word]) => words.includes(word))
-                  .map(([word, entries]) => ({ word, entries })),
-              },
-            },
-      ),
-    );
+    return response.end(JSON.stringify(answers[request.url]));
   }
   const { annotation } = JSON.parse(new URLSearchParams(body).get("data"));
   const text = annotation.map((part) => part.text ?? "").join("");

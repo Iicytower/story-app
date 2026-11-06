@@ -66,6 +66,21 @@ export function rankLemmas(word: string, response: unknown): Lemma[] {
   }));
 }
 
+// Headwords shown for one lookup in the dictionary tiles (tasks 32–34): the word itself and its
+// lemmas.
+export const MAX_HEADWORDS = 8;
+
+// The word as typed, its lemmas (as rankLemmas), then its other spellings; those with results.
+export function orderHeadwords(
+  word: string,
+  lemmas: string[],
+  hasResults: (headword: string) => boolean,
+): string[] {
+  return [...new Set([word, ...lemmas, ...lookupForms(word)])]
+    .filter(hasResults)
+    .slice(0, MAX_HEADWORDS);
+}
+
 export async function findLemmas(
   config: ToolsConfig,
   word: string,

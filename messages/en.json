@@ -410,7 +410,39 @@
     },
     "sources": {
       "title": "Sources",
-      "changed": "Changed: labels are shown apart from the text, and dialect and regional senses come last."
+      "changedDefinitions": "Changed: labels are shown apart from the text, and dialect and regional senses come last.",
+      "changedSynonyms": "Changed: labels and regions are shown apart from the words, pointers to other entries are left out, and each sense shows its definition.",
+      "changedThesaurus": "Changed: registers are shown as labels, and the headword itself and repeated senses are left out."
+    },
+    "labels": {
+      "colloquial": "colloquial",
+      "obsolete": "obsolete",
+      "dated": "dated",
+      "literary": "literary",
+      "rare": "rare",
+      "dialectal": "dialect",
+      "regional": "regional",
+      "vulgar": "vulgar",
+      "humorous": "humorous",
+      "pejorative": "pejorative",
+      "offensive": "offensive",
+      "slang": "slang",
+      "diminutive": "diminutive",
+      "augmentative": "augmentative",
+      "endearing": "endearing",
+      "ironic": "ironic",
+      "euphemistic": "euphemistic",
+      "metaphoric": "figurative",
+      "formal": "formal",
+      "neologism": "neologism",
+      "elevatedly": "elevated",
+      "poetic": "poetic",
+      "scornfully": "scornful",
+      "youth": "youth slang",
+      "veryColloquial": "very colloquial",
+      "specialist": "specialist",
+      "expressive": "expressive",
+      "jargon": "jargon"
     }
   },
   "proofread": {
@@ -634,23 +666,24 @@
   "languages": {
     "pl": "Polish"
   },
-  "definitions": {
+  "lookup": {
     "word": "Word",
     "search": "Look up",
     "searching": "Looking up…",
     "failed": "The lookup could not run. Reload the page and try again.",
+    "newTab": "(opens in a new tab)",
+    "label": "{label} ({region})"
+  },
+  "definitions": {
     "notFound": "No definitions found for “{word}”.",
     "results": "Definitions of “{word}”",
     "shownFor": "Shown for: {headword}",
-    "entry": "{source}, {licence}",
     "lookElsewhere": "Look up “{word}” in:",
     "external": {
       "wiktionary": "Wikisłownik",
       "sjp": "sjp.pl",
       "pwn": "PWN"
     },
-    "newTab": "(opens in a new tab)",
-    "label": "{label} ({region})",
     "pos": {
       "noun": "noun",
       "adj": "adjective",
@@ -673,32 +706,13 @@
       "suffix": "suffix",
       "symbol": "symbol",
       "contraction": "contraction"
-    },
-    "labels": {
-      "colloquial": "colloquial",
-      "obsolete": "obsolete",
-      "dated": "dated",
-      "literary": "literary",
-      "rare": "rare",
-      "dialectal": "dialect",
-      "regional": "regional",
-      "vulgar": "vulgar",
-      "humorous": "humorous",
-      "pejorative": "pejorative",
-      "offensive": "offensive",
-      "slang": "slang",
-      "diminutive": "diminutive",
-      "augmentative": "augmentative",
-      "endearing": "endearing",
-      "ironic": "ironic",
-      "euphemistic": "euphemistic",
-      "metaphoric": "figurative",
-      "formal": "formal",
-      "neologism": "neologism",
-      "elevatedly": "elevated",
-      "poetic": "poetic",
-      "scornfully": "scornful",
-      "youth": "youth slang"
     }
+  },
+  "synonyms": {
+    "notFound": "No synonyms found for “{word}”.",
+    "results": "Synonyms of “{word}”",
+    "shownFor": "Shown for: {headword}",
+    "senseNumber": "{number}.",
+    "entry": "Entry in Wikisłownik"
   }
 }

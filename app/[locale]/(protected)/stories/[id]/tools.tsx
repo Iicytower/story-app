@@ -33,12 +33,16 @@ const Definitions = lazy(() =>
   import("./definitions").then((module) => ({ default: module.Definitions })),
 );
 
+const Synonyms = lazy(() =>
+  import("./synonyms").then((module) => ({ default: module.Synonyms })),
+);
+
 function ComingSoon() {
   const t = useTranslations("tools");
   return <p className="text-muted-foreground text-sm">{t("comingSoon")}</p>;
 }
 
-// A new tool adds its tile and view here. Placeholders until tasks 33 and 34.
+// A new tool adds its tile and view here. Placeholder until task 34.
 export const TOOLS: Tool[] = [
   {
     id: "proofread",
@@ -61,7 +65,8 @@ export const TOOLS: Tool[] = [
   {
     id: "synonyms",
     icon: ReplaceIcon,
-    View: ComingSoon,
+    View: Synonyms,
+    dialogClassName: "max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl",
   },
   {
     id: "rhymes",

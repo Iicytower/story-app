@@ -1,15 +1,17 @@
-// Sources of the dictionary tools and their attribution (tasks 32–34, D62). The tile names the
-// sources its results came from, by the `source` label the dictionary service gives each one.
+// Sources of the dictionary tools and their attribution (tasks 32–34, D62, D63). The tile names
+// the sources its results came from, by the `source` label the dictionary service gives each one.
 
-export type SourceId = "wiktionary" | "polimorf";
+export type SourceId = "wiktionary" | "dobryslownik" | "polimorf";
 
 export interface SourceInfo {
   name: string;
   url: string;
   licence: string;
   licenceUrl: string;
-  // CC BY-SA asks to say that the text was changed (labels moved out of it, D62).
-  changed: boolean;
+  // Copyright lines the licence asks to keep; `dict:build` checks them against the package.
+  copyright?: string[];
+  // Short name marking each synonym with its sources (task 33).
+  short: string;
 }
 
 export const SOURCES: Record<SourceId, SourceInfo> = {
@@ -18,14 +20,22 @@ export const SOURCES: Record<SourceId, SourceInfo> = {
     url: "https://pl.wiktionary.org/",
     licence: "CC BY-SA 4.0",
     licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
-    changed: true,
+    short: "WS",
+  },
+  dobryslownik: {
+    name: "Dobry słownik",
+    url: "https://dobryslownik.pl/",
+    licence: "LGPL 2.1",
+    licenceUrl: "https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html",
+    copyright: ["2014–2026 Dobry słownik", "2004–2014 Marcin Miłkowski"],
+    short: "DS",
   },
   polimorf: {
     name: "PoliMorf",
     url: "https://zil.ipipan.waw.pl/PoliMorf",
     licence: "BSD 2-Clause",
     licenceUrl: "https://opensource.org/license/bsd-2-clause",
-    changed: false,
+    short: "PM",
   },
 };
 

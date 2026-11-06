@@ -410,7 +410,39 @@
     },
     "sources": {
       "title": "Źródła",
-      "changed": "Zmiany: etykiety są pokazane poza tekstem, a znaczenia gwarowe i regionalne na końcu."
+      "changedDefinitions": "Zmiany: etykiety są pokazane poza tekstem, a znaczenia gwarowe i regionalne na końcu.",
+      "changedSynonyms": "Zmiany: etykiety i regiony są pokazane poza słowami, odsyłacze do innych haseł pominięte, a przy każdym znaczeniu jest jego definicja.",
+      "changedThesaurus": "Zmiany: kwalifikatory są pokazane jako etykiety, a samo hasło i powtórzone znaczenia pominięte."
+    },
+    "labels": {
+      "colloquial": "potocznie",
+      "obsolete": "przestarzale",
+      "dated": "dawniej",
+      "literary": "książkowo",
+      "rare": "rzadko",
+      "dialectal": "gwarowo",
+      "regional": "regionalnie",
+      "vulgar": "wulgarnie",
+      "humorous": "żartobliwie",
+      "pejorative": "pejoratywnie",
+      "offensive": "obraźliwie",
+      "slang": "slangowo",
+      "diminutive": "zdrobniale",
+      "augmentative": "zgrubiale",
+      "endearing": "pieszczotliwie",
+      "ironic": "ironicznie",
+      "euphemistic": "eufemistycznie",
+      "metaphoric": "przenośnie",
+      "formal": "oficjalnie",
+      "neologism": "neologizm",
+      "elevatedly": "podniośle",
+      "poetic": "poetycko",
+      "scornfully": "pogardliwie",
+      "youth": "młodzieżowo",
+      "veryColloquial": "bardzo potocznie",
+      "specialist": "specjalistycznie",
+      "expressive": "ekspresywnie",
+      "jargon": "środowiskowo"
     }
   },
   "proofread": {
@@ -634,23 +666,24 @@
   "languages": {
     "pl": "Polski"
   },
-  "definitions": {
+  "lookup": {
     "word": "Słowo",
     "search": "Szukaj",
     "searching": "Szukam…",
     "failed": "Nie udało się wyszukać. Odśwież stronę i spróbuj ponownie.",
+    "newTab": "(otwiera się w nowej karcie)",
+    "label": "{label} ({region})"
+  },
+  "definitions": {
     "notFound": "Nie znaleziono definicji słowa „{word}”.",
     "results": "Definicje słowa „{word}”",
     "shownFor": "Pokazane dla: {headword}",
-    "entry": "{source}, {licence}",
     "lookElsewhere": "Sprawdź „{word}” w:",
     "external": {
       "wiktionary": "Wikisłownik",
       "sjp": "sjp.pl",
       "pwn": "PWN"
     },
-    "newTab": "(otwiera się w nowej karcie)",
-    "label": "{label} ({region})",
     "pos": {
       "noun": "rzeczownik",
       "adj": "przymiotnik",
@@ -673,32 +706,13 @@
       "suffix": "przyrostek",
       "symbol": "symbol",
       "contraction": "forma ściągnięta"
-    },
-    "labels": {
-      "colloquial": "potocznie",
-      "obsolete": "przestarzale",
-      "dated": "dawniej",
-      "literary": "książkowo",
-      "rare": "rzadko",
-      "dialectal": "gwarowo",
-      "regional": "regionalnie",
-      "vulgar": "wulgarnie",
-      "humorous": "żartobliwie",
-      "pejorative": "pejoratywnie",
-      "offensive": "obraźliwie",
-      "slang": "slangowo",
-      "diminutive": "zdrobniale",
-      "augmentative": "zgrubiale",
-      "endearing": "pieszczotliwie",
-      "ironic": "ironicznie",
-      "euphemistic": "eufemistycznie",
-      "metaphoric": "przenośnie",
-      "formal": "oficjalnie",
-      "neologism": "neologizm",
-      "elevatedly": "podniośle",
-      "poetic": "poetycko",
-      "scornfully": "pogardliwie",
-      "youth": "młodzieżowo"
     }
+  },
+  "synonyms": {
+    "notFound": "Nie znaleziono synonimów słowa „{word}”.",
+    "results": "Synonimy słowa „{word}”",
+    "shownFor": "Pokazane dla: {headword}",
+    "senseNumber": "{number}.",
+    "entry": "Hasło w Wikisłowniku"
   }
 }

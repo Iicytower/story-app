@@ -2,9 +2,16 @@ import { useTranslations } from "next-intl";
 import { useId } from "react";
 import { SOURCES, type SourceId } from "@/lib/tools/sources";
 
-// Attribution under the results of a dictionary tool (tasks 32–34, D62): each source the
-// results came from, with its licence.
-export function ToolSources({ sources }: { sources: SourceId[] }) {
+// Attribution under the results of a dictionary tool (tasks 32–34, D62, D63): each source the
+// results came from, with its licence, copyright lines and what the tool changed in it (CC BY-SA
+// and LGPL ask to say so).
+export function ToolSources({
+  sources,
+  changes = {},
+}: {
+  sources: SourceId[];
+  changes?: Partial<Record<SourceId, string>>;
+}) {
   const t = useTranslations("tools.sources");
   const id = useId();
   if (sources.length === 0) return null;
@@ -16,7 +23,7 @@ export function ToolSources({ sources }: { sources: SourceId[] }) {
       <h3 id={id} className="font-medium">
         {t("title")}
       </h3>
-      <ul>
+      <ul className="grid gap-1">
         {sources.map((source) => {
           const info = SOURCES[source];
           return (
@@ -38,7 +45,10 @@ export function ToolSources({ sources }: { sources: SourceId[] }) {
               >
                 {info.licence}
               </a>
-              {info.changed && <>. {t("changed")}</>}
+              {info.copyright?.map((line) => (
+                <span key={line}>. © {line}</span>
+              ))}
+              {changes[source] && <>. {changes[source]}</>}
             </li>
           );
         })}

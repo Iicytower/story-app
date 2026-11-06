@@ -1,6 +1,11 @@
 import { toolsJson, ToolsError, type ToolsConfig } from "./client";
 import type { SourceId } from "./sources";
-import { DICTIONARY_TIMEOUT_MS, lookupForms, rankLemmas } from "./dictionary";
+import {
+  DICTIONARY_TIMEOUT_MS,
+  lookupForms,
+  orderHeadwords,
+  rankLemmas,
+} from "./dictionary";
 import {
   type Entry,
   type Label,
@@ -10,8 +15,7 @@ import {
 
 export type { Entry, Label, Sense };
 
-// Headwords shown for one lookup: the word itself and its lemmas.
-export const MAX_GROUPS = 8;
+export { MAX_HEADWORDS as MAX_GROUPS } from "./dictionary";
 
 export interface DefinitionGroup {
   headword: string;
@@ -56,8 +60,8 @@ function validEntry(entry: unknown): entry is Entry {
 const hasMeaning = (group: DefinitionGroup) =>
   group.entries.some((entry) => entry.senses.some((sense) => !sense.reference));
 
-// The service answers the lemma rows (as /lemmas) and the entries of the spellings and lemmas.
-// Order: the word as typed, its lemmas (as rankLemmas), the other spellings. A headword whose
+// The service answers the lemma rows (as /lemmas) and the entries of the spellings and lemmas,
+// in the order of orderHeadwords. A headword whose
 // only senses point elsewhere ("tego": "od: ten") goes when another one has meanings
 // (criterion 4).
 export function rankDefinitions(word: string, response: unknown): Definitions {
@@ -92,10 +96,9 @@ export function rankDefinitions(word: string, response: unknown): Definitions {
       })),
     ]),
   );
-  const groups = [...new Set([word, ...ranked, ...lookupForms(word)])]
-    .filter((headword) => byWord.has(headword))
-    .slice(0, MAX_GROUPS)
-    .map((headword) => ({ headword, entries: byWord.get(headword)! }));
+  const groups = orderHeadwords(word, ranked, (headword) =>
+    byWord.has(headword),
+  ).map((headword) => ({ headword, entries: byWord.get(headword)! }));
   const shown = groups.some(hasMeaning) ? groups.filter(hasMeaning) : groups;
   return {
     groups: shown,
