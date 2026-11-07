@@ -70,6 +70,8 @@ Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 - Kafelek odmiany: paradygmat z tabeli form zapytaniem po lemacie, wymaga indeksu po lemacie i czytelnego układu tagów (Morfologik ma ich 1336) (po tasku 25).
 - Asonans w rymach, zwinięty pod wynikami; 271 kluczy na 4,2 mln form, wyniki bliskie losowym (po tasku 34).
 - oznaczenie folderu lub rozdziału jako 18+
+- narzędzie do znajdywania etymologii
+- narzędzie do frazeologizmów. wytłumaczenie frazeologizmu oraz znalezienie na zadany opis. 
 
 ## Branche
 
