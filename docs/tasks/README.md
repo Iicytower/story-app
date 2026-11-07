@@ -50,6 +50,12 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 26 | [Upload okładek](26-cover-upload.md) | – | [ ] |
 | 40 | [Wyświetlanie okładek](40-cover-display.md) | 26 | [ ] |
 | 28 | [Serwer na Mikrusie](28-mikrus-server.md) | 54, 25, 29 | [~] |
+| 56 | [Aktualizacja Next.js i podatnych zależności](56-dependency-updates.md) | – | [ ] |
+| 57 | [Zaufany adres klienta w limitach](57-trusted-client-ip.md) | – | [ ] |
+| 58 | [Unieważnianie sesji](58-session-revocation.md) | – | [ ] |
+| 59 | [Limity rozmiaru i liczby danych](59-data-limits.md) | – | [ ] |
+| 60 | [Nagłówki bezpieczeństwa](60-security-headers.md) | – | [ ] |
+| 61 | [Typy argumentów Server Actions](61-action-input-types.md) | – | [ ] |
 | 53 | [Projekt systemu społecznościowego i plan tasków](53-social-system-plan.md) (zawieszony) | – | [ ] |
 
 ## Backlog
