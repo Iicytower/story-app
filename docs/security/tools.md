@@ -19,10 +19,25 @@ Nic nie było instalowane – ani z repozytorium Debiana, ani obrazy Dockera. U�
 
 Skrypty testowe leżały w scratchpadzie sesji Claude Code (poza repo, usuwany automatycznie).
 
+### Narzędzia – druga tura (skanery i exploity)
+
+Obrazy Dockera pobrane na tę turę (poza zakresem `npm`, do ewentualnego usunięcia):
+
+| Narzędzie | Obraz Dockera | Do czego |
+| --- | --- | --- |
+| Semgrep | `semgrep/semgrep:latest` | SAST na kodzie źródłowym |
+| OWASP ZAP | `ghcr.io/zaproxy/zaproxy:stable` | skan baseline (pasywny) na żywo |
+| nuclei | `projectdiscovery/nuclei:latest` | szablony CVE/misconfig/exposure na żywo |
+
+Usunięcie obrazów: `docker rmi semgrep/semgrep:latest ghcr.io/zaproxy/zaproxy:stable projectdiscovery/nuclei:latest` (oraz `docker image prune` dla warstw pośrednich).
+
+PoC exploity zostają w repo: [`exploits/`](exploits/) – kod, bez danych. Używają kodera `encodeReply` z `node_modules` (nic nie instalują).
+
 ### Artefakty do usunięcia
 
 | Co | Jak usunąć |
 | --- | --- |
-| Baza `story_app_pentest` (konta `alice_pt`, `bob_pt`, `spam_*`, `spamx_*`, dane testowe) | `docker exec story_app-mongo-1 mongosh story_app_pentest --quiet --eval 'db.dropDatabase()'` |
+| Baza `story_app_pentest` (konta `alice_pt`, `bob_pt`, `spam_*`, `spamx_*`, `flood_*`, dane testowe) | `docker exec story_app-mongo-1 mongosh story_app_pentest --quiet --eval 'db.dropDatabase()'` |
 | Build instancji testowej `.next-pentest/` (w `.gitignore`) | `rm -rf .next-pentest` |
 | Proces `next start` na `127.0.0.1:3100` | kończy się z sesją Claude Code; inaczej `pkill -f "next start -H 127.0.0.1 -p 3100"` |
+| Obrazy Dockera skanerów | `docker rmi semgrep/semgrep:latest ghcr.io/zaproxy/zaproxy:stable projectdiscovery/nuclei:latest` |

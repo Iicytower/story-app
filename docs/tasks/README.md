@@ -56,6 +56,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 59 | [Limity rozmiaru i liczby danych](59-data-limits.md) | – | [ ] |
 | 60 | [Nagłówki bezpieczeństwa](60-security-headers.md) | – | [ ] |
 | 61 | [Typy argumentów Server Actions](61-action-input-types.md) | – | [ ] |
+| 62 | [Zapis dużej treści rozdziału kończy się 500](62-large-content-save.md) | – | [ ] |
 | 53 | [Projekt systemu społecznościowego i plan tasków](53-social-system-plan.md) (zawieszony) | – | [ ] |
 
 ## Backlog

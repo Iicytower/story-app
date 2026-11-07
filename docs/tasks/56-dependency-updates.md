@@ -8,6 +8,8 @@ Z testów bezpieczeństwa 2026-11-07 ([F1](../security/pentest-2026-11-07.md#f1-
 - `npm audit fix` dla zależności przechodnich bez zmian major (`undici`, `zod`, `body-parser`, `systeminformation`, `fast-uri`, `qs`, `ip-address`, `minimatch`, `deepmerge`).
 - Przed zmianą przeczytać notatki wydania Next.js 16.4 (`node_modules/next/dist/docs/`) pod kątem zmian w proxy, Server Actions i `next-intl`.
 
+Po aktualizacji sprawdzić, czy zmienił się próg z taska 62 (F8): blokada dekodera React Flight przy dużej treści `saveStory` zależy od wersji React/Next.
+
 ## Kryteria akceptacji
 
 1. `npm audit --omit=dev` nie zgłasza podatności critical ani high w `next`.
