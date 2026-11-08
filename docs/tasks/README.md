@@ -50,6 +50,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 26 | [Upload okładek](26-cover-upload.md) | – | [ ] |
 | 40 | [Wyświetlanie okładek](40-cover-display.md) | 26 | [ ] |
 | 28 | [Serwer na Mikrusie](28-mikrus-server.md) | 54, 25, 29 | [ ] |
+| 56 | [Aktualizacja zależności (2026-11-08)](56-dependency-updates-2026-11-08.md) | – | [ ] |
 | 53 | [Projekt systemu społecznościowego i plan tasków](53-social-system-plan.md) (zawieszony) | – | [ ] |
 
 ## Backlog
