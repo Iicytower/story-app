@@ -6,6 +6,7 @@ import {
   FileUpIcon,
   GlobeIcon,
   GlobeLockIcon,
+  LanguagesIcon,
   ListChecksIcon,
   PencilIcon,
   TagIcon,
@@ -14,7 +15,11 @@ import {
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useOptimistic, useState, useTransition } from "react";
-import { ActionMenu, SortSubmenu } from "@/components/action-menu";
+import {
+  ActionMenu,
+  RadioSubmenu,
+  SortSubmenu,
+} from "@/components/action-menu";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ExportDialog } from "@/components/export-dialog";
 import { TagsDialog } from "@/components/tags-dialog";
@@ -27,9 +32,15 @@ import { ImportDialog } from "../../stories/import-dialog";
 import {
   publishAllChapters,
   setChapterSort,
+  setFolderLanguage,
   setFolderPublished,
   setFolderTags,
 } from "../actions";
+import {
+  FOLDER_LANGUAGES,
+  type FolderOption,
+  folderLanguage,
+} from "@/lib/languages";
 import { DeleteFolderDialog } from "./delete-folder-dialog";
 import { RenameFolderDialog } from "./rename-folder-dialog";
 
@@ -45,7 +56,7 @@ type Dialog =
 
 export function FolderMenu({
   folder,
-  folderNames,
+  folders,
   userTags,
   isPublic,
   unpublishedCount,
@@ -55,9 +66,10 @@ export function FolderMenu({
     name: string;
     tags: string[];
     chapterSort: string;
+    language: string;
     chapterCount: number;
   };
-  folderNames: string[];
+  folders: FolderOption[];
   userTags: string[];
   isPublic: boolean;
   unpublishedCount: number;
@@ -65,10 +77,12 @@ export function FolderMenu({
   const router = useRouter();
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [sort, setOptimisticSort] = useOptimistic(folder.chapterSort);
-  const [sortError, setSortError] = useState<string | null>(null);
+  const [language, setOptimisticLanguage] = useOptimistic(folder.language);
+  const [menuError, setMenuError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const t = useTranslations("menu");
   const tFolders = useTranslations("folders");
+  const tLanguages = useTranslations("languages");
   const tTags = useTranslations("tags");
   const tCommon = useTranslations("common");
   const tChapters = useTranslations("chapters");
@@ -80,11 +94,20 @@ export function FolderMenu({
   });
 
   function changeSort(mode: string) {
-    setSortError(null);
+    setMenuError(null);
     startTransition(async () => {
       setOptimisticSort(mode);
       const result = await setChapterSort(folder.id, mode);
-      if (!result.ok) setSortError(result.message);
+      if (!result.ok) setMenuError(result.message);
+    });
+  }
+
+  function changeLanguage(value: string) {
+    setMenuError(null);
+    startTransition(async () => {
+      setOptimisticLanguage(value);
+      const result = await setFolderLanguage(folder.id, value);
+      if (!result.ok) setMenuError(result.message);
     });
   }
 
@@ -104,6 +127,16 @@ export function FolderMenu({
             { value: "alpha", label: tFolders("sortAlpha") },
           ]}
           onChange={changeSort}
+        />
+        <RadioSubmenu
+          icon={<LanguagesIcon />}
+          label={t("language")}
+          value={language}
+          options={FOLDER_LANGUAGES.map((value) => ({
+            value,
+            label: tLanguages(value),
+          }))}
+          onChange={changeLanguage}
         />
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => setDialog("tags")}>
@@ -143,14 +176,14 @@ export function FolderMenu({
           {tCommon("delete")}
         </DropdownMenuItem>
       </ActionMenu>
-      {sortError && (
+      {menuError && (
         <p role="alert" className="text-destructive order-last w-full text-sm">
-          {sortError}
+          {menuError}
         </p>
       )}
       <CreateStoryDialog
         {...dialogProps("newChapter")}
-        folderNames={folderNames}
+        folders={folders}
         defaultFolder={folder.name}
       />
       <TagsDialog
@@ -171,7 +204,12 @@ export function FolderMenu({
         fallbackName="folder"
         chapterFiles
       />
-      <ImportDialog {...dialogProps("import")} folderId={folder.id} />
+      <ImportDialog
+        {...dialogProps("import")}
+        folderId={folder.id}
+        folders={[{ name: folder.name, language: folderLanguage(language) }]}
+        defaultFolder={folder.name}
+      />
       <ConfirmDialog
         {...dialogProps("publish")}
         title={isPublic ? t("unpublishFolderTitle") : t("publishFolderTitle")}

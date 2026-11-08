@@ -63,9 +63,10 @@ export default async function FolderPage({
               name: folder.name,
               tags: folder.tags ?? [],
               chapterSort: folder.chapterSort,
+              language: folder.language,
               chapterCount: folder.chapters.length,
             }}
-            folderNames={folders.map((f) => f.name)}
+            folders={folders.map(({ name, language }) => ({ name, language }))}
             userTags={userTags}
             isPublic={Boolean(folder.published)}
             unpublishedCount={unpublishedCount}
@@ -131,6 +132,7 @@ export default async function FolderPage({
             folderId={folder.id}
             initialNotes={folder.notes}
             initialNotesUpdatedAt={folder.notesUpdatedAt}
+            lang={folder.language}
           />
           <FolderVersions folderId={folder.id} versions={versions} />
         </div>

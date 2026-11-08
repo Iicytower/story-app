@@ -13,6 +13,7 @@ Wynik researchu. Kafelek „Rhymes” w Tools. Filtry: task 35.
 
 ## Ustalenia
 
+- Słownik otwiera się dla języka folderu otwartego rozdziału (D58). Dziś lista języków folderu to tylko polski; nowy język dochodzi do listy, gdy obsługują go korekta i słowniki.
 - Klucz uwzględnia akcent: czwarta sylaba od końca w `(li|ły)by(śmy|ście)$`, trzecia w trybie przypuszczającym i `-liśmy`, reszta przedostatnia. Tag czasownika sprawdza dopasowanie, a mała tabela obsługuje wyjątki.
 - Near: i=y, końcowe ą=o oraz spółgłoski według klasy artykulacyjnej.
 - Last syllable przy końcówce zamkniętej. Przy otwartej wymaga poprzedzającej spółgłoski (`-ki`); tego wariantu nie zbudowano w prototypie.
@@ -25,6 +26,21 @@ Do decyzji przy implementacji, lista częstości:
 - **N-gramy NKJP**: CC BY, nie pobrano.
 
 Kolumna z listy CC BY-SA czyni tabelę bazą share-alike, więc opisać ją jako osobny artefakt. Decyzja po próbie na tych samych słowach.
+
+## Ustalone przy starcie (2026-11-06)
+
+Decyzje użytkownika i wynik próby, szczegóły w D64:
+
+- Lista częstości: wordfreq `large_pl` 3.2 (próba na woda, kot, kota, krew, serce, kochanie, dobremu: częstość dla 306 tys. form tabeli wobec 43 tys. w FrequencyWords).
+- Nazwy własne z PoliMorfu wchodzą do bazy; wszystkie formy, bez przycinania (baza 657 MB).
+- Poprawki reguł z przeglądu: `ł[aoy]by` z obowiązkową samogłoską (`zrobiłbym` → `iwbym`), `-eusz` jako dwie sylaby.
+
+| Pomiar | Wynik |
+| --- | --- |
+| Pan Tadeusz, księgi 1–5, 1687 par: dokładny / + bliski / + ostatnia sylaba | 86,5% / 94,3% / 97,0% |
+| Partnerzy rymów w bazie | 93,1% |
+| Baza `rhymes.sqlite` | 5 341 500 form, 657 MB, budowa ok. 2 min |
+| `/dict/rhymes` na lokalnym serwerze narzędzi | 5–8 ms, ok. 35 kB odpowiedzi, 22 MB pamięci serwisu |
 
 ## Dane z researchu
 

@@ -1,6 +1,7 @@
 import mongoose, { Schema, type Model, type Types } from "mongoose";
 import { FOLDER_SORTS } from "@/lib/folders/sort";
 import { routing } from "@/i18n/routing";
+import { MAX_WORD_LENGTH } from "@/lib/proofreading/dictionary";
 import { ACCENTS, MOBILE_VIEWS, THEMES } from "@/lib/settings/settings";
 
 // Only values the user chose are stored, without defaults: getUserSettings fills in the
@@ -15,6 +16,7 @@ export interface SettingsFields {
     locale?: string | null;
   };
   folders?: { sort?: string; manualOrder?: boolean };
+  proofreading?: { dictionary?: string[] };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,6 +43,13 @@ const settingsSchema = new Schema<SettingsFields>(
     folders: {
       sort: { type: String, enum: FOLDER_SORTS },
       manualOrder: { type: Boolean },
+    },
+    proofreading: {
+      // Without a default Mongoose would store an empty list for every user.
+      dictionary: {
+        type: [{ type: String, maxLength: MAX_WORD_LENGTH }],
+        default: undefined,
+      },
     },
   },
   { timestamps: true, collection: "settings" },

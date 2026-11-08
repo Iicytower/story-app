@@ -9,13 +9,13 @@ Zgłoszenie użytkownika (2026-10-30), przebudowane po researchu z 2026-10-31. B
 - Lematyzacja: „kota” → kot, kota, z listą lematów przy wieloznaczności.
 - Skrypt budujący bazę lokalnie i wgrywający plik na serwer (lokalny z taska 54; na Mikrusie w tasku 28).
 - Klient po stronie aplikacji: Server Action z sesją, `AbortSignal.timeout(2000)` i wynikiem `{ ok, ... }`, na wspólnym kliencie i fladze z taska 29 (D56).
-- Wspólny blok „Sources” do atrybucji w narzędziach.
+- ~~Wspólny blok „Sources” do atrybucji w narzędziach.~~ Przeniesiony do taska 32 (decyzja użytkownika); tu każda pozycja wyniku ma etykietę źródła.
 
 ## Ustalenia
 
 - Bez zewnętrznych API w czasie działania. Do serwisu trafia tylko szukane słowo.
 - Narzędzia tylko wyszukują: bez wysyłania zaznaczenia i bez podmiany w tekście (decyzja użytkownika z researchu, kryteria 3–5 poprzedniej wersji odpadają).
-- Tylko polski. Pole `lang` dojdzie, gdy język folderu (task 29) obejmie inne języki.
+- Tylko polski. Pole `lang` dojdzie, gdy lista języków folderu (`FOLDER_LANGUAGES`, D58) obejmie inne języki; słowniki działają dla języka folderu.
 - Baza budowana lokalnie, odświeżana na żądanie, bez ustalonego rytmu.
 - Bez cache po stronie serwera. Szukanie tylko po zatwierdzeniu, a formularz jest zablokowany, dopóki trwa poprzednie, bo Server Actions idą kolejno i wstrzymują autozapis.
 - Tabele każdego źródła osobno, scalanie przy odpowiedzi, a każda pozycja ma etykietę źródła (licencje). Dane poza publicznym repo, z opisem licencji.
@@ -27,6 +27,34 @@ Do decyzji przy implementacji, po testach:
 - Język i biblioteka serwisu oraz SQLite (nowe pakiety wymagają zgody).
 
 Przy realizacji dopisać decyzję o Server Actions do odczytu, serwisie i wybranych źródłach, z wynikami testów obu tabel form.
+
+## Ustalone przy starcie (2026-11-06)
+
+Decyzje użytkownika:
+
+- Zmierzyć oba źródła, potem wybór: **PoliMorf** („zasoby mają małe znaczenie, najważniejsza jest jakość działania”).
+- Serwis w Node (`node:24.22.2-alpine`, wbudowany `node:sqlite`, bez pakietów), kod jako plik `content:` w `docker/tools/compose.yml`.
+- Kryteria 3–4 tu testami integracyjnymi akcji; część E2E (autozapis przy zawieszonym serwisie, „Failed to find Server Action”, blokada formularza) przeniesiona do kryteriów taska 32, razem z blokiem „Sources”. Atrapa E2E już odpowiada na `/dict/lemmas`.
+
+Pomiary (2026-11-06) **[pomiar]**. Serwis w kontenerze z limitem 128 MB i 1 CPU, zapytania przez HTTP o formy słowa (jak wpisane, małymi, z wielkiej, wersalikami):
+
+|  | Morfologik | PoliMorf |
+| --- | --- | --- |
+| Wiersze (forma, lemat, tag; bez duplikatów) | 4 811 854 | 8 129 532 |
+| Lematy / tagi | 315 689 / 4335 | 389 821 / 714 |
+| SQLite (`WITHOUT ROWID`, indeks po lemacie) | 252 MB | 413 MB |
+| Budowa | ok. 30 s | ok. 60 s |
+| RAM serwisu po 5000 zapytań / szczyt RSS | 25 MB / 85 MB | 25 MB / 86 MB |
+| Czas zapytania: mediana / p95 / pierwsze | 1,10 / 1,81 / 66 ms | 1,12 / 1,74 / 61 ms |
+| Słowa współczesne (49) | 69,4% | 91,8% |
+| Słowa literackie i dawne (42) | 95,2% | 95,2% |
+| Pan Tadeusz, księgi 1–5: słowa kończące wers (3616) | 92,2% | 93,0% |
+| Pan Tadeusz, księgi 1–5: wszystkie słowa (12 728) | 92,2% | 92,9% |
+
+- Morfologikowi brakuje m.in.: selfie, influencer, lajk, hejtować, koronawirus, lockdown, youtuber, fejk. Obu: streamować, streaming, wifi, czelendż (współczesne), poczem, bieżyć (dawne). Pan Tadeusz w pisowni wydania z Gutenberga (é→e), więc część braków to dawna pisownia.
+- Rymy (1825 par) to algorytm z taska 34; zamiast nich pokrycie słów kończących wersy. Wynik rymów sprawdza task 34 na wybranej tabeli.
+- Lematy z PoliMorfu: kota → kot, kota (i Kot z „Kota”); mam → mama, mamić, mieć; zamku → zamek (i Zamek); szła → iść; poszedłem → pójść; ludzi → człowiek; lepszy → dobry (i nazwy Lepsza, Lepszy); psa → pies; Łodzi → Łódź, łódź (i Łodzia).
+- Na lokalnym serwerze narzędzi obok LT (400 MB): serwis 17 MB po restarcie, baza przetrwała restart kontenera; wgranie 413 MB ok. 17 s.
 
 ## Dane z researchu
 
@@ -75,8 +103,8 @@ Share-alike dotyczy danych, nie kodu aplikacji. Aplikacja ma wiele kont, więc n
 
 1. Serwis odpowiada na szukane słowo tylko z poprawnym sekretem.
 2. Słowo odmienione znajduje lemat; przy wieloznaczności zwracane są wszystkie, a brak daje pusty wynik.
-3. Zawieszony serwis kończy akcję po 2 s wynikiem `{ ok: false, ... }`, a zapis czeka najwyżej tyle.
-4. Niedostępny serwis, przekroczony czas i „Failed to find Server Action” dają komunikat i nie blokują edycji ani zapisu.
+3. Zawieszony serwis kończy akcję po 2 s wynikiem `{ ok: false, ... }`, a zapis czeka najwyżej tyle (E2E zapisu: task 32).
+4. Niedostępny serwis, przekroczony czas i „Failed to find Server Action” dają komunikat i nie blokują edycji ani zapisu (komunikat w UI i „Failed to find Server Action”: task 32).
 5. Do serwisu trafia tylko szukane słowo, a adres i sekret nie trafiają do klienta.
 6. Działanie wymaga zalogowania.
 7. Skrypt odtwarza bazę z danych źródłowych, a wgranie jej nie wymaga zmian w kodzie.
@@ -84,4 +112,4 @@ Share-alike dotyczy danych, nie kodu aplikacji. Aplikacja ma wiele kont, więc n
 
 ## Testy
 
-Unit: normalizacja zapytania, mapowanie odpowiedzi serwisu. Integracyjne: sesja, atrapa serwisu, timeout, błędy (bez wywołań sieciowych). Test autozapisu przy zawieszonym serwisie. `manual`: sekret na serwisie na lokalnym serwerze z taska 54 (1), odtworzenie i wgranie bazy (7), pomiary źródeł i RAM. Połączenie ze stagingu: task 28.
+Unit: normalizacja zapytania, mapowanie odpowiedzi serwisu. Integracyjne: sesja, atrapa serwisu, timeout, błędy (bez wywołań sieciowych). Test autozapisu przy zawieszonym serwisie: w tasku 32 (E2E na atrapie). `manual`: sekret na serwisie na lokalnym serwerze z taska 54 (1), odtworzenie i wgranie bazy (7), pomiary źródeł i RAM. Połączenie ze stagingu: task 28.

@@ -1,6 +1,10 @@
 export const E2E_PORT = 3100;
 export const E2E_BASE_URL = `http://127.0.0.1:${E2E_PORT}`;
 // Never the database from .env.local (testing.md).
+// The fake tools server (fake-tools.mjs) stands in for LanguageTool.
+export const E2E_TOOLS_PORT = 3199;
+export const E2E_TOOLS_SECRET = "e2e-tools-secret";
+
 export const E2E_MONGODB_URI = "mongodb://127.0.0.1:27017/story_app_e2e";
 
 export const USERS = {

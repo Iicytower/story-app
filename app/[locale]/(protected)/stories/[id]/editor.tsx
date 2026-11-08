@@ -18,7 +18,11 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { MarkdownEditor } from "@/components/markdown-editor";
+import { flushSync } from "react-dom";
+import {
+  MarkdownEditor,
+  type MarkdownEditorApi,
+} from "@/components/markdown-editor";
 import { Button } from "@/components/ui/button";
 import { WithTooltip } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
@@ -42,6 +46,8 @@ import {
   FolderNotesField,
   useFolderNotes,
 } from "../../folders/[id]/folder-notes";
+import { DEFAULT_FOLDER_LANGUAGE } from "@/lib/languages";
+import type { StoredProofreading } from "@/lib/proofreading/stored";
 import { saveStory, setChapterPublished } from "../actions";
 import { ChaptersPanel } from "./chapters-panel";
 import { EditorMenu } from "./editor-menu";
@@ -52,10 +58,17 @@ import {
   useEditorSettings,
   useIsDesktop,
 } from "./layout-store";
+import { type EditorTool, EditorToolContext } from "./tool-context";
 import type { Tool } from "./tools";
 import { ToolDialog, ToolsPanel } from "./tools-panel";
 
-type Values = { title: string; content: string; notes: string };
+// proofreading: the chapter's open proofreading as JSON (task 55), "" when there is none.
+type Values = {
+  title: string;
+  content: string;
+  notes: string;
+  proofreading: string;
+};
 
 const MOBILE_VIEWS: MobileView[] = ["story", "notes", "chapters", "tools"];
 
@@ -64,7 +77,12 @@ type SaveState =
   | { status: "error"; message: string };
 
 function isSame(a: Values, b: Values) {
-  return a.title === b.title && a.content === b.content && a.notes === b.notes;
+  return (
+    a.title === b.title &&
+    a.content === b.content &&
+    a.notes === b.notes &&
+    a.proofreading === b.proofreading
+  );
 }
 
 const subscribeNever = () => () => {};
@@ -85,9 +103,17 @@ export function Editor({
   const tErrors = useTranslations("errors");
   const tSave = useTranslations("save");
   const tFolders = useTranslations("folders");
+  const lang = folder?.language ?? DEFAULT_FOLDER_LANGUAGE;
   const [title, setTitle] = useState(story.title);
   const [content, setContent] = useState(story.content);
   const [notes, setNotes] = useState(story.notes);
+  const initial: Values = {
+    title: story.title,
+    content: story.content,
+    notes: story.notes,
+    proofreading: story.proofreading ? JSON.stringify(story.proofreading) : "",
+  };
+  const [proofreading, setProofreading] = useState(initial.proofreading);
   const { layout, mobileView } = useEditorSettings(userId, settings);
   const isDesktop = useIsDesktop();
   // Without a folder the hook still runs (hooks cannot be conditional) but never saves.
@@ -108,10 +134,13 @@ export function Editor({
     () => "",
   );
   const publicUrl = publicPath && origin + publicPath;
-  const latest = useRef<Values>(story);
-  const saved = useRef<Values>(story);
+  const latest = useRef<Values>(initial);
+  const saved = useRef<Values>(initial);
   const updatedAt = useRef(story.updatedAt);
   const queue = useRef(Promise.resolve());
+  const contentApi = useRef<MarkdownEditorApi | null>(null);
+  // Set when a check placed proposals: the editor takes the focus once the dialog has closed.
+  const showProofreading = useRef(false);
   const words = countWords(content);
 
   // Saves run one at a time, so each one sends the updatedAt returned by the previous one.
@@ -131,6 +160,7 @@ export function Editor({
             values.content,
             values.notes,
             updatedAt.current,
+            values.proofreading ? JSON.parse(values.proofreading) : null,
           );
           if (result.ok) {
             saved.current = values;
@@ -177,6 +207,41 @@ export function Editor({
     return storySaved ? null : t("notSavedChapter");
   }
 
+  const editorTool: EditorTool = {
+    storyId: story.id,
+    lang,
+    proofreading: proofreading !== "",
+    // Saves before the check (task 23); the open dialog then blocks editing.
+    async prepare() {
+      if (!latest.current.title.trim()) {
+        const message = tErrors("titleRequired");
+        setSaveState({ status: "error", message });
+        return message;
+      }
+      const [storySaved] = await Promise.all([save(), folderNotes.flush()]);
+      return storySaved ? null : t("notSavedBeforeCheck");
+    },
+    content: () => latest.current.content,
+    startProofreading(markdown, issues) {
+      const placed = contentApi.current?.startProofreading(markdown, issues) ?? 0;
+      if (placed > 0) {
+        showProofreading.current = true;
+        setOpenTool(null);
+      }
+      return placed;
+    },
+  };
+
+  // The modal dialog keeps the focus until it has closed.
+  function focusProofreading(event: Event) {
+    if (!showProofreading.current) return;
+    showProofreading.current = false;
+    event.preventDefault();
+    // A field under visibility: hidden cannot take focus.
+    if (!isDesktop) flushSync(() => setMobileView("story"));
+    contentApi.current?.showProofreading();
+  }
+
   async function togglePublished() {
     const result = await setChapterPublished(story.id, !publicPath);
     if (result.ok) {
@@ -194,11 +259,11 @@ export function Editor({
   }
 
   useEffect(() => {
-    latest.current = { title, content, notes };
+    latest.current = { title, content, notes, proofreading };
     if (!title.trim() || isSame(latest.current, saved.current)) return;
     const timer = setTimeout(() => save(), AUTOSAVE_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [title, content, notes, save]);
+  }, [title, content, notes, proofreading, save]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -235,15 +300,34 @@ export function Editor({
     }));
   }
 
+  // Set at once, so a save right after a change includes it. The content and the
+  // proofreading come from one transaction of the editor and are saved together.
+  function changeContent(value: string) {
+    latest.current = { ...latest.current, content: value };
+    setContent(value);
+  }
+
+  function changeProofreading(value: StoredProofreading | null) {
+    const json = value ? JSON.stringify(value) : "";
+    latest.current = { ...latest.current, proofreading: json };
+    setProofreading(json);
+  }
+
   const storyEditor = (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <MarkdownEditor
         value={content}
-        onChange={setContent}
+        onChange={changeContent}
         label={t("content")}
         placeholder={t("contentPlaceholder")}
+        lang={lang}
         className="flex-1"
         scrollMemory={{ storyId: story.id, field: "content" }}
+        apiRef={contentApi}
+        proofreading={{
+          initial: story.proofreading ?? null,
+          onChange: changeProofreading,
+        }}
       />
       <p className="text-muted-foreground border-t px-4 py-2 text-xs md:px-6">
         {t("stats", {
@@ -263,6 +347,7 @@ export function Editor({
         onChange={setNotes}
         label={t("notes")}
         placeholder={t("notesPlaceholder")}
+        lang={lang}
         className="flex-1"
         compact
         scrollMemory={{ storyId: story.id, field: "notes" }}
@@ -285,6 +370,7 @@ export function Editor({
       <ResizablePanel id="folder-notes-panel" minSize="15%" defaultSize="40%">
         <FolderNotesField
           state={folderNotes}
+          lang={lang}
           className="h-full"
           scrollMemory={{ storyId: story.id, field: "folderNotes" }}
         />
@@ -332,7 +418,7 @@ export function Editor({
           onChange={(event) => setTitle(event.target.value)}
           aria-label={t("title")}
           placeholder={t("title")}
-          lang="pl"
+          lang={lang}
           spellCheck
           className="h-9 w-full text-lg font-semibold md:w-auto md:flex-1 md:text-lg"
         />
@@ -515,6 +601,7 @@ export function Editor({
               {folder && (
                 <FolderNotesField
                   state={folderNotes}
+                  lang={lang}
                   className="min-h-64 border-b"
                   scrollMemory={{ storyId: story.id, field: "folderNotes" }}
                 />
@@ -530,7 +617,13 @@ export function Editor({
           </div>
         </>
       )}
-      <ToolDialog tool={openTool} onClose={() => setOpenTool(null)} />
+      <EditorToolContext value={editorTool}>
+        <ToolDialog
+          tool={openTool}
+          onClose={() => setOpenTool(null)}
+          onCloseAutoFocus={focusProofreading}
+        />
+      </EditorToolContext>
     </div>
   );
 }

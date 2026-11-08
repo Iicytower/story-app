@@ -41,7 +41,13 @@
     "language": "Język interfejsu",
     "account": "Konto",
     "changePassword": "Zmień hasło",
-    "logOut": "Wyloguj"
+    "logOut": "Wyloguj",
+    "dictionary": "Słownik korekty",
+    "dictionaryHelp": "Słowa, których korekta nie oznacza jako błędy pisowni. Dodajesz je przyciskiem „Dodaj do słownika” w korekcie.",
+    "dictionaryCount": "{count, plural, =0 {Brak słów.} one {# słowo} few {# słowa} many {# słów} other {# słowa}}",
+    "removeWord": "Usuń „{word}”",
+    "dictionaryFailed": "Nie udało się wczytać ani zmienić listy. Odśwież stronę i spróbuj ponownie.",
+    "loadingDictionary": "Wczytywanie…"
   },
   "errors": {
     "nicknameRequirement": "Nick musi mieć 3–30 znaków: litery a-z, cyfry, _ i -.",
@@ -97,7 +103,16 @@
     "importEpubInvalid": "Nie udało się odczytać pliku EPUB.",
     "importFileTooLarge": "Ten plik jest większy niż 50 MB.",
     "importUnreadable": "Nie udało się odczytać tego pliku.",
-    "importFailed": "Nie udało się zaimportować tego tekstu. Może być za duży."
+    "importFailed": "Nie udało się zaimportować tego tekstu. Może być za duży.",
+    "toolUnavailable": "To narzędzie jest teraz niedostępne. Spróbuj ponownie później.",
+    "toolTimeout": "Sprawdzanie trwało za długo. Spróbuj ponownie później albo z krótszym rozdziałem.",
+    "tooManyChecks": "Za dużo sprawdzeń. Spróbuj ponownie za kilka minut.",
+    "dictionaryWordInvalid": "Tego słowa nie można dodać do słownika. Wpisz jedno słowo, maks. 50 znaków.",
+    "dictionaryFull": "Słownik jest pełny (1000 słów). Najpierw usuń jakieś słowo w Ustawieniach.",
+    "lookupWordInvalid": "Wpisz jedno słowo, maks. 50 znaków.",
+    "rhymeFiltersInvalid": "Wybierz część mowy i liczbę sylab z listy.",
+    "proofreadingInvalid": "Nie udało się zapisać stanu korekty. Odśwież stronę i spróbuj ponownie.",
+    "dictionaryTimeout": "Słownik nie odpowiedział na czas. Spróbuj ponownie."
   },
   "password": {
     "mustContain": "Hasło musi zawierać:",
@@ -317,7 +332,8 @@
     "pickedUp": "Chwycono {name}.",
     "movedOver": "{name} jest teraz na pozycji {position} z {total}.",
     "dropped": "Upuszczono {name} na pozycji {position} z {total}.",
-    "cancelled": "Anulowano przenoszenie {name}."
+    "cancelled": "Anulowano przenoszenie {name}.",
+    "language": "Język"
   },
   "stories": {
     "newStory": "Nowe opowiadanie",
@@ -359,7 +375,8 @@
     "backTo": "Wróć do {folder}",
     "title": "Tytuł",
     "isPublic": "Ten rozdział jest publiczny:",
-    "view": "Widok"
+    "view": "Widok",
+    "notSavedBeforeCheck": "Nie udało się zapisać rozdziału, więc nie został sprawdzony. Zobacz komunikat nad edytorem."
   },
   "chapters": {
     "noFolder": "To opowiadanie nie jest w folderze.",
@@ -370,11 +387,18 @@
   "tools": {
     "list": "Narzędzia",
     "loading": "Wczytywanie…",
-    "comingSoon": "Wkrótce.",
     "items": {
+      "proofread": {
+        "label": "Korekta",
+        "description": "Pisownia, gramatyka, interpunkcja i styl tego rozdziału, zaznaczone w jego tekście."
+      },
       "name-generator": {
         "label": "Generator nazw",
         "description": "Znajdź imiona i nazwy dla postaci i miejsc."
+      },
+      "definitions": {
+        "label": "Definicje",
+        "description": "Sprawdź znaczenia słowa."
       },
       "synonyms": {
         "label": "Synonimy",
@@ -384,7 +408,80 @@
         "label": "Rymy",
         "description": "Znajdź słowa, które się rymują."
       }
+    },
+    "sources": {
+      "title": "Źródła",
+      "changedDefinitions": "Zmiany: etykiety są pokazane poza tekstem, a znaczenia gwarowe i regionalne na końcu.",
+      "changedSynonyms": "Zmiany: etykiety i regiony są pokazane poza słowami, odsyłacze do innych haseł pominięte, a przy każdym znaczeniu jest jego definicja.",
+      "changedThesaurus": "Zmiany: kwalifikatory są pokazane jako etykiety, a samo hasło i powtórzone znaczenia pominięte.",
+      "changedRhymeForms": "Użyte: każda forma dostaje klucz rymu z wymowy.",
+      "changedRhymes": "Użyte: częstości porządkują rymy. Dane z Wikipedii, OpenSubtitles 2018 (opensubtitles.org), wiadomości, stron WWW, Twittera i Reddita. Zbudowana z nimi baza rymów jest na licencji CC BY-SA 4.0."
+    },
+    "labels": {
+      "colloquial": "potocznie",
+      "obsolete": "przestarzale",
+      "dated": "dawniej",
+      "literary": "książkowo",
+      "rare": "rzadko",
+      "dialectal": "gwarowo",
+      "regional": "regionalnie",
+      "vulgar": "wulgarnie",
+      "humorous": "żartobliwie",
+      "pejorative": "pejoratywnie",
+      "offensive": "obraźliwie",
+      "slang": "slangowo",
+      "diminutive": "zdrobniale",
+      "augmentative": "zgrubiale",
+      "endearing": "pieszczotliwie",
+      "ironic": "ironicznie",
+      "euphemistic": "eufemistycznie",
+      "metaphoric": "przenośnie",
+      "formal": "oficjalnie",
+      "neologism": "neologizm",
+      "elevatedly": "podniośle",
+      "poetic": "poetycko",
+      "scornfully": "pogardliwie",
+      "youth": "młodzieżowo",
+      "veryColloquial": "bardzo potocznie",
+      "specialist": "specjalistycznie",
+      "expressive": "ekspresywnie",
+      "jargon": "środowiskowo"
     }
+  },
+  "proofread": {
+    "question": "Czy chcesz użyć narzędzia do korekty?",
+    "details": "LanguageTool sprawdzi pisownię, gramatykę, interpunkcję i styl tego rozdziału; niezapisane zmiany zostaną najpierw zapisane. Błędy zostaną zaznaczone w tekście rozdziału: wybierz podpowiedź i zastosuj ją przyciskiem ✓ albo odrzuć przyciskiem ✗. W tym czasie możesz dalej pisać i używać innych narzędzi. Korekta zapisuje się razem z rozdziałem, więc możesz do niej wrócić później.",
+    "againQuestion": "Ten rozdział jest w trakcie korekty. Czy chcesz sprawdzić go od nowa?",
+    "againDetails": "Nowe sprawdzenie zastąpi pozostałe błędy nowymi. Niezapisane zmiany zostaną najpierw zapisane.",
+    "check": "Sprawdź",
+    "checkAgain": "Sprawdź ponownie",
+    "checking": "Sprawdzanie rozdziału… Przy długim rozdziale może to chwilę potrwać.",
+    "failed": "Nie udało się uruchomić sprawdzania. Odśwież stronę i spróbuj ponownie.",
+    "changed": "Rozdział zmienił się w trakcie sprawdzania. Sprawdź ponownie.",
+    "noIssues": "Nie znaleziono błędów.",
+    "notShown": "Znaleziono błędy, ale żadnego nie da się pokazać w tekście (np. przechodzą przez formatowanie). Sprawdź rozdział ręcznie.",
+    "panel": "Błąd",
+    "position": "{index} z {count}",
+    "previous": "Poprzednia zmiana",
+    "next": "Następna zmiana",
+    "kinds": {
+      "spelling": "Pisownia",
+      "grammar": "Gramatyka",
+      "punctuation": "Interpunkcja",
+      "style": "Styl",
+      "other": "Inne"
+    },
+    "suggestions": "Podpowiedzi",
+    "remove": "(usuń)",
+    "noSuggestion": "Brak podpowiedzi. Popraw tekst samodzielnie albo odrzuć zmianę.",
+    "apply": "Zastosuj zmianę",
+    "reject": "Odrzuć zmianę",
+    "addToDictionary": "Dodaj do słownika",
+    "dictionaryFailed": "Nie udało się dodać słowa. Odśwież stronę i spróbuj ponownie.",
+    "bar": "Korekta",
+    "finish": "Zakończ korektę",
+    "closeBubble": "Zamknij szczegóły",
+    "sourceBlocked": "Zakończ korektę, aby przełączyć na Source."
   },
   "nameGenerator": {
     "typeGroups": {
@@ -574,5 +671,86 @@
   },
   "notFound": {
     "text": "404 | Nie znaleziono tej strony."
+  },
+  "languages": {
+    "pl": "Polski"
+  },
+  "lookup": {
+    "word": "Słowo",
+    "search": "Szukaj",
+    "searching": "Szukam…",
+    "failed": "Nie udało się wyszukać. Odśwież stronę i spróbuj ponownie.",
+    "newTab": "(otwiera się w nowej karcie)",
+    "label": "{label} ({region})"
+  },
+  "definitions": {
+    "notFound": "Nie znaleziono definicji słowa „{word}”.",
+    "results": "Definicje słowa „{word}”",
+    "shownFor": "Pokazane dla: {headword}",
+    "lookElsewhere": "Sprawdź „{word}” w:",
+    "external": {
+      "wiktionary": "Wikisłownik",
+      "sjp": "sjp.pl",
+      "pwn": "PWN"
+    },
+    "pos": {
+      "noun": "rzeczownik",
+      "adj": "przymiotnik",
+      "verb": "czasownik",
+      "adv": "przysłówek",
+      "name": "nazwa własna",
+      "pron": "zaimek",
+      "num": "liczebnik",
+      "prep": "przyimek",
+      "conj": "spójnik",
+      "intj": "wykrzyknik",
+      "particle": "partykuła",
+      "phrase": "fraza",
+      "proverb": "przysłowie",
+      "abbrev": "skrót",
+      "adv_phrase": "fraza przysłówkowa",
+      "adj_phrase": "fraza przymiotnikowa",
+      "prep_phrase": "fraza przyimkowa",
+      "prefix": "przedrostek",
+      "suffix": "przyrostek",
+      "symbol": "symbol",
+      "contraction": "forma ściągnięta"
+    }
+  },
+  "synonyms": {
+    "notFound": "Nie znaleziono synonimów słowa „{word}”.",
+    "results": "Synonimy słowa „{word}”",
+    "shownFor": "Pokazane dla: {headword}",
+    "senseNumber": "{number}.",
+    "entry": "Hasło w Wikisłowniku"
+  },
+  "rhymes": {
+    "notFound": "Nie znaleziono rymów do słowa „{word}”.",
+    "notFoundFiltered": "Żadne rymy do słowa „{word}” nie pasują do filtrów.",
+    "results": "Rymy do słowa „{word}”",
+    "levels": {
+      "exact": "Dokładne",
+      "near": "Przybliżone",
+      "last": "Ostatnia sylaba"
+    },
+    "showMore": "Pokaż więcej ({count})",
+    "showLess": "Pokaż mniej",
+    "onlyMore": "Tylko słowa rzadkie lub mniej przydatne.",
+    "filters": {
+      "partOfSpeech": "Część mowy",
+      "any": "Dowolna",
+      "parts": {
+        "noun": "Rzeczownik",
+        "adjective": "Przymiotnik",
+        "verb": "Czasownik",
+        "adverb": "Przysłówek",
+        "other": "Inna"
+      },
+      "syllables": "Sylaby",
+      "syllablesFrom": "Sylab od",
+      "syllablesTo": "do",
+      "orMore": "{count} i więcej",
+      "clear": "Wyczyść filtry"
+    }
   }
 }

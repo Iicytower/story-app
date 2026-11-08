@@ -1,0 +1,80 @@
+"use server";
+
+import type { ActionResult } from "@/lib/action-result";
+import { requireUser } from "@/lib/auth/session";
+import { actionError } from "@/lib/i18n/action-error";
+import { toolsConfig, type ToolsConfig, ToolsError } from "@/lib/tools/client";
+import { type Definitions, findDefinitions } from "@/lib/tools/definitions";
+import {
+  findRhymes,
+  NO_FILTERS,
+  parseRhymeFilters,
+  type Rhymes,
+} from "@/lib/tools/rhymes";
+import { findSynonyms, type Synonyms } from "@/lib/tools/synonyms";
+import {
+  findLemmas,
+  parseLookupWord,
+  type Lemma,
+} from "@/lib/tools/dictionary";
+
+// Lookups are Server Actions though they write nothing (D61): the word goes in the POST body,
+// not in a URL that ends up in logs. An unknown word gives an empty list.
+async function lookUp<T>(
+  value: unknown,
+  find: (config: ToolsConfig, word: string) => Promise<T>,
+  // Other input of the tile is valid.
+  valid = true,
+): Promise<ActionResult<{ word: string } & T>> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  const config = toolsConfig();
+  if (!config) return actionError("TOOL_UNAVAILABLE", "toolUnavailable");
+  const word = parseLookupWord(value);
+  if (word === null) return actionError("INVALID_INPUT", "lookupWordInvalid");
+  if (!valid) return actionError("INVALID_INPUT", "rhymeFiltersInvalid");
+
+  try {
+    return { ok: true, word, ...(await find(config, word)) };
+  } catch (error) {
+    if (!(error instanceof ToolsError)) throw error;
+    return error.failure === "TIMEOUT"
+      ? actionError("TIMEOUT", "dictionaryTimeout")
+      : actionError("TOOL_UNAVAILABLE", "toolUnavailable");
+  }
+}
+
+export async function lookUpLemmas(
+  value: unknown,
+): Promise<ActionResult<{ word: string; lemmas: Lemma[] }>> {
+  return lookUp(value, async (config, word) => ({
+    lemmas: await findLemmas(config, word),
+  }));
+}
+
+// The Definitions tile (task 32): every lemma of the word with its senses.
+export async function lookUpDefinitions(
+  value: unknown,
+): Promise<ActionResult<{ word: string } & Definitions>> {
+  return lookUp(value, findDefinitions);
+}
+
+// The Synonyms tile (task 33): every lemma of the word with its synonyms from each source.
+export async function lookUpSynonyms(
+  value: unknown,
+): Promise<ActionResult<{ word: string } & Synonyms>> {
+  return lookUp(value, findSynonyms);
+}
+
+// The Rhymes tile (task 34): rhymes of the word as typed, by level, with the filters of task 35.
+export async function lookUpRhymes(
+  value: unknown,
+  filters: unknown = NO_FILTERS,
+): Promise<ActionResult<{ word: string } & Rhymes>> {
+  const parsed = parseRhymeFilters(filters);
+  return lookUp(
+    value,
+    (config, word) => findRhymes(config, word, parsed ?? NO_FILTERS),
+    parsed !== null,
+  );
+}

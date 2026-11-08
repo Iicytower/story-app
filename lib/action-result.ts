@@ -11,7 +11,9 @@ export type ErrorCode =
   | "EMPTY_CONTENT"
   | "INVALID_INPUT"
   | "TOO_LARGE"
-  | "RATE_LIMITED";
+  | "RATE_LIMITED"
+  | "TOOL_UNAVAILABLE"
+  | "TIMEOUT";
 
 export type ActionError = { ok: false; error: ErrorCode; message: string };
 

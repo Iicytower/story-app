@@ -14,24 +14,25 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { type FolderOption, languageOfFolder } from "@/lib/languages";
 import { createStory } from "./actions";
 
 export function CreateStoryDialog({
   open,
   onOpenChange,
-  folderNames,
+  folders,
   defaultFolder,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  folderNames: string[];
+  folders: FolderOption[];
   defaultFolder: string;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <CreateStoryForm
-          folderNames={folderNames}
+          folders={folders}
           defaultFolder={defaultFolder}
         />
       </DialogContent>
@@ -41,10 +42,10 @@ export function CreateStoryDialog({
 
 // Separate component so its state resets each time the dialog content mounts.
 function CreateStoryForm({
-  folderNames,
+  folders,
   defaultFolder,
 }: {
-  folderNames: string[];
+  folders: FolderOption[];
   defaultFolder: string;
 }) {
   const router = useRouter();
@@ -81,7 +82,7 @@ function CreateStoryForm({
           autoComplete="off"
         />
         <datalist id="new-story-folders">
-          {folderNames.map((name) => (
+          {folders.map(({ name }) => (
             <option key={name} value={name} />
           ))}
         </datalist>
@@ -91,7 +92,7 @@ function CreateStoryForm({
         <Input
           id="new-story-title"
           value={title}
-          lang="pl"
+          lang={languageOfFolder(folders, folder)}
           spellCheck
           onChange={(event) => setTitle(event.target.value)}
           aria-invalid={error !== null}

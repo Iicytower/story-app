@@ -370,6 +370,36 @@ describe("restoreFolderVersion", () => {
     expect((await story(id))!.content).toBe("A content");
   });
 
+  it("drops the proofreading of a chapter whose content it changes (task 55)", async () => {
+    const folderId = await seedFolder();
+    const changed = await seedStory(folderId, "A");
+    const same = await seedStory(folderId, "B");
+    await createFolderVersion(folderId.toString(), "One");
+    const proofreading = { proposals: [], selected: 0 };
+    await edit(changed, { content: "A edited", proofreading });
+    await edit(same, { title: "B renamed", proofreading });
+    const deleted = await seedStory(folderId, "C");
+    await createFolderVersion(folderId.toString(), "Two");
+    await edit(deleted, { deletedAt: new Date(), proofreading });
+
+    await restoreFolderVersion(
+      folderId.toString(),
+      1,
+      [changed, same].map((id) => id.toString()),
+      [],
+    );
+    await restoreFolderVersion(
+      folderId.toString(),
+      2,
+      [deleted.toString()],
+      [],
+    );
+
+    expect((await story(changed))!.proofreading).toBeUndefined();
+    expect((await story(same))!.proofreading).toEqual(proofreading);
+    expect((await story(deleted))!.proofreading).toBeUndefined();
+  });
+
   it("leaves a chapter that did not change alone", async () => {
     const folderId = await seedFolder();
     const id = await seedStory(folderId, "A");

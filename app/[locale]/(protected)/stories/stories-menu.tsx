@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { setFolderSort } from "../folders/actions";
+import type { FolderOption } from "@/lib/languages";
 import { CreateFolderDialog } from "../folders/create-folder-dialog";
 import { CreateStoryDialog } from "./create-story-dialog";
 import { ImportDialog } from "./import-dialog";
@@ -17,11 +18,11 @@ type Dialog = "newStory" | "newFolder" | "import";
 
 export function StoriesMenu({
   sort,
-  folderNames,
+  folders,
   defaultFolder,
 }: {
   sort: string;
-  folderNames: string[];
+  folders: FolderOption[];
   defaultFolder: string;
 }) {
   const [dialog, setDialog] = useState<Dialog | null>(null);
@@ -80,13 +81,13 @@ export function StoriesMenu({
       </ActionMenu>
       <CreateStoryDialog
         {...dialogProps("newStory")}
-        folderNames={folderNames}
+        folders={folders}
         defaultFolder={defaultFolder}
       />
       <CreateFolderDialog {...dialogProps("newFolder")} />
       <ImportDialog
         {...dialogProps("import")}
-        folderNames={folderNames}
+        folders={folders}
         defaultFolder={defaultFolder}
       />
     </>

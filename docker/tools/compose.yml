@@ -1,0 +1,319 @@
+# Tools services deployed by Coolify to the tools server (task 54, D56; LanguageTool: task 29, D58).
+# scripts/tools.ts sends this file to Coolify.
+# Coolify keeps the first content of a `content:` file; scripts/tools.ts updates changed content
+# through the storages API before the restart.
+services:
+  gateway:
+    image: caddy:2.11.9-alpine
+    restart: unless-stopped
+    ports:
+      - "8110:8080"
+    environment:
+      - TOOLS_API_SECRET=${TOOLS_API_SECRET:?}
+    volumes:
+      - type: bind
+        source: ./Caddyfile
+        target: /etc/caddy/Caddyfile
+        content: |
+          {
+            admin off
+            auto_https off
+          }
+          :8080 {
+            @authorized header X-Tools-Secret {$TOOLS_API_SECRET}
+            handle @authorized {
+              handle /health {
+                respond "ok" 200
+              }
+              handle_path /lt/* {
+                reverse_proxy languagetool:8010
+              }
+              handle_path /dict/* {
+                reverse_proxy dictionary:8000
+              }
+              respond 404
+            }
+            respond 401
+          }
+
+  languagetool:
+    image: erikvl87/languagetool:6.8
+    restart: unless-stopped
+    environment:
+      # -Xmx256m checks several times slower; 512m fits the 800m limit (task 29, test on Coolify).
+      - Java_Xms=128m
+      - Java_Xmx=512m
+      # LT stops a check the app has already given up on (PROOFREAD_TIMEOUT_MS).
+      - langtool_maxCheckTimeMillis=120000
+    mem_limit: 800m
+    # Also the warm-up: the first Polish check after a start is several times slower, so the
+    # healthcheck makes it before the first user does (D58).
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl --fail --silent --output /dev/null --data "language=pl-PL&text=Ala ma kota." http://localhost:8010/v2/check
+      interval: 60s
+      timeout: 60s
+      start_period: 120s
+      start_interval: 5s
+
+  # Lemmas from the form table (task 25, D61), definitions from the Polish Wiktionary (task 32,
+  # D62), synonyms from Wiktionary and the Dobry słownik thesaurus (task 33, D63) and rhymes from
+  # the rhyme keys of the form table (task 34, D64). The SQLite files come from
+  # `npm run dict:upload` onto the dict-data volume; without the form table every request gets
+  # 503, without another file only its route does. No `$` in the code: Compose would interpolate
+  # it.
+  dictionary:
+    image: node:24.22.2-alpine
+    restart: unless-stopped
+    command: ["node", "/app/server.mjs"]
+    mem_limit: 128m
+    volumes:
+      - dict-data:/data
+      - type: bind
+        source: ./server.mjs
+        target: /app/server.mjs
+        content: |
+          import fs from "node:fs";
+          import { createServer } from "node:http";
+          import { DatabaseSync } from "node:sqlite";
+
+          const MAX_BODY = 1024;
+          const MAX_FORMS = 4;
+          const MAX_LENGTH = 50;
+          // Headwords looked up for definitions and synonyms besides the forms themselves.
+          const MAX_LEMMAS = 8;
+
+          // The upload replaces a file by rename, so a new inode means new data.
+          function opener(file) {
+            let db = null;
+            let inode = null;
+            return () => {
+              let stat;
+              try {
+                stat = fs.statSync(file);
+              } catch {
+                return null;
+              }
+              if (db && stat.ino === inode) return db;
+              // The old connection is left to the GC: a request may still be reading from it.
+              try {
+                db = new DatabaseSync(file, { readOnly: true });
+              } catch {
+                return null;
+              }
+              inode = stat.ino;
+              return db;
+            };
+          }
+          const formsDb = opener("/data/forms.sqlite");
+          const definitionsDb = opener("/data/definitions.sqlite");
+          const synonymsDb = opener("/data/synonyms.sqlite");
+          const rhymesDb = opener("/data/rhymes.sqlite");
+          // Rows of each rhyme level, the most frequent first.
+          const RHYME_LIMIT = 150;
+          // Phones and classes of the keys (lib/tools/rhyme-key.ts).
+          const NOT_KEY = /[^a-ząęćńśźšžčʣʥʤxvwjPFCNLJ]/u;
+          const isKey = (key) => typeof key === "string" && key.length > 0 && key.length <= MAX_LENGTH && !NOT_KEY.test(key);
+
+          function send(response, status, body) {
+            response.writeHead(status, { "Content-Type": "application/json" });
+            response.end(JSON.stringify(body));
+          }
+
+          const validForms = (forms) =>
+            Array.isArray(forms) &&
+            forms.length > 0 &&
+            forms.length <= MAX_FORMS &&
+            forms.every((form) => typeof form === "string" && form.length > 0 && form.length <= MAX_LENGTH);
+
+          function meta(db) {
+            const rows = db.prepare("SELECT key, value FROM meta WHERE key IN ('source', 'version', 'builtAt', 'forms', 'words')").all();
+            return Object.fromEntries(rows.map((row) => [row.key, row.value]));
+          }
+
+          const marks = (values) => values.map(() => "?").join(", ");
+
+          // POST /lemmas {"forms": [...]}: the forms are spellings of one word (as typed, lower
+          // case, capitalised), so the app ranks the rows itself.
+          function lemmas(db, forms) {
+            const rows = db
+              .prepare(
+                "SELECT DISTINCT f.form AS form, l.lemma AS lemma FROM forms f JOIN lemmas l ON l.id = f.lemma_id WHERE f.form IN (" + marks(forms) + ") ORDER BY l.lemma",
+              )
+              .all(...forms);
+            return { source: meta(db).source, rows };
+          }
+
+          // The forms and their lemmas (those of the form as typed first), for the app to order.
+          function headwords(found, forms) {
+            const ranked = [
+              ...found.rows.filter((row) => row.form === forms[0]),
+              ...found.rows.filter((row) => row.form !== forms[0]),
+            ].map((row) => row.lemma);
+            return [...new Set([...forms, ...ranked])].slice(0, forms.length + MAX_LEMMAS);
+          }
+
+          function rows(db, table, words, field) {
+            return db
+              .prepare("SELECT word, data FROM " + table + " WHERE word IN (" + marks(words) + ")")
+              .all(...words)
+              .map((row) => ({ word: row.word, [field]: JSON.parse(row.data) }));
+          }
+
+          // POST /definitions {"forms": [...]}: the lemma rows as from /lemmas and the entries of
+          // the headwords.
+          function definitions(formTable, definitionTable, forms) {
+            const found = lemmas(formTable, forms);
+            return {
+              lemmas: found,
+              definitions: {
+                source: meta(definitionTable).source,
+                rows: rows(definitionTable, "entries", headwords(found, forms), "entries"),
+              },
+            };
+          }
+
+          // POST /rhymes {"forms": [...], "keys": {"exact", "near", "last"}, "filters"?: {"pos"?,
+          // "min"?, "max"?}}: the rows of the spellings and the rhymes of each level. A spelling in
+          // the table brings its own keys (stress by its tags), the keys the app sends are for a
+          // word not in it. Filters (task 35) narrow the rhymes: parts of speech as bits
+          // (lib/tools/rhymes-import.ts), syllables from min to max.
+          function rhymes(db, forms, keys, filters = {}) {
+            const columns = "form, phones, freq, lemmas, flags";
+            const self = db.prepare("SELECT " + columns + ", exact, near, last FROM words WHERE form IN (" + marks(forms) + ")").all(...forms);
+            const own = forms.map((form) => self.find((row) => row.form === form)).find(Boolean) ?? keys;
+            const conditions = [
+              ["(pos & ?) != 0", filters.pos],
+              ["syllables >= ?", filters.min],
+              ["syllables <= ?", filters.max],
+            ].filter(([, value]) => value !== undefined);
+            const where = conditions.map(([condition]) => " AND " + condition).join("");
+            const values = conditions.map(([, value]) => value);
+            const level = (column, key) =>
+              key === null
+                ? []
+                : db.prepare("SELECT " + columns + " FROM words WHERE " + column + " = ?" + where + " ORDER BY freq DESC LIMIT " + RHYME_LIMIT).all(key, ...values);
+            return {
+              source: meta(db).source,
+              self,
+              exact: level("exact", own.exact),
+              near: level("near", own.near),
+              last: level("last", own.last),
+            };
+          }
+
+          const validKeys = (keys) =>
+            keys !== null &&
+            typeof keys === "object" &&
+            isKey(keys.exact) &&
+            isKey(keys.near) &&
+            (keys.last === null || isKey(keys.last));
+
+          // The checks of parseRhymeFilters in lib/tools/rhymes.ts.
+          const MAX_SYLLABLES = 6;
+          // MAX_SYLLABLES means "that many or more", so it is no upper bound.
+          const isCount = (value, highest) => value === undefined || (Number.isInteger(value) && value >= 1 && value <= highest);
+          const validFilters = (filters) =>
+            filters === undefined ||
+            (filters !== null &&
+              typeof filters === "object" &&
+              (filters.pos === undefined || (Number.isInteger(filters.pos) && filters.pos >= 1 && filters.pos <= 31)) &&
+              isCount(filters.min, MAX_SYLLABLES) &&
+              isCount(filters.max, MAX_SYLLABLES - 1) &&
+              (filters.min === undefined || filters.max === undefined || filters.min <= filters.max));
+
+          // POST /synonyms {"forms": [...]}: the lemma rows and the synonyms of the headwords from
+          // each source's table.
+          function synonyms(formTable, synonymTable, forms) {
+            const found = lemmas(formTable, forms);
+            const words = headwords(found, forms);
+            return {
+              lemmas: found,
+              synonyms: {
+                wiktionary: rows(synonymTable, "wiktionary", words, "entries"),
+                thesaurus: rows(synonymTable, "thesaurus", words, "senses"),
+              },
+            };
+          }
+
+          const ROUTES = {
+            "/lemmas": lemmas,
+            "/definitions": (formTable, forms) => {
+              const definitionTable = definitionsDb();
+              return definitionTable && definitions(formTable, definitionTable, forms);
+            },
+            "/synonyms": (formTable, forms) => {
+              const synonymTable = synonymsDb();
+              return synonymTable && synonyms(formTable, synonymTable, forms);
+            },
+            "/rhymes": (formTable, forms, input) => {
+              if (!validKeys(input.keys) || !validFilters(input.filters)) return { invalid: true };
+              const rhymeTable = rhymesDb();
+              return rhymeTable && rhymes(rhymeTable, forms, input.keys, input.filters);
+            },
+          };
+
+          createServer((request, response) => {
+            const forms = formsDb();
+            if (!forms) return send(response, 503, { error: "NO_DATA" });
+            if (request.method === "GET" && request.url === "/health") {
+              const optional = (open) => {
+                try {
+                  const db = open();
+                  return db && meta(db);
+                } catch {
+                  return null;
+                }
+              };
+              try {
+                return send(response, 200, {
+                  forms: meta(forms),
+                  definitions: optional(definitionsDb),
+                  synonyms: optional(synonymsDb),
+                  rhymes: optional(rhymesDb),
+                });
+              } catch {
+                return send(response, 500, { error: "QUERY_FAILED" });
+              }
+            }
+            if (request.method !== "POST" || !Object.hasOwn(ROUTES, request.url)) return send(response, 404, { error: "NOT_FOUND" });
+            const route = ROUTES[request.url];
+            let body = "";
+            let tooLarge = false;
+            request.setEncoding("utf8");
+            request.on("data", (chunk) => {
+              if (tooLarge) return;
+              body += chunk;
+              tooLarge = body.length > MAX_BODY;
+            });
+            request.on("end", () => {
+              if (tooLarge) return send(response, 413, { error: "TOO_LARGE" });
+              let input;
+              try {
+                input = JSON.parse(body);
+              } catch {}
+              if (!validForms(input?.forms)) return send(response, 400, { error: "BAD_REQUEST" });
+              try {
+                const result = route(forms, input.forms, input);
+                if (result?.invalid) return send(response, 400, { error: "BAD_REQUEST" });
+                if (!result) return send(response, 503, { error: "NO_DATA" });
+                send(response, 200, result);
+              } catch {
+                send(response, 500, { error: "QUERY_FAILED" });
+              }
+            });
+          }).listen(8000);
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8000/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 60s
+      timeout: 10s
+      start_period: 10s
+      start_interval: 2s
+
+volumes:
+  dict-data:

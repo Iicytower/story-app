@@ -137,7 +137,9 @@ test("Tools shows tiles, and a tile opens its tool in a dialog", async ({
 
   await e.sideTab("Tools").click();
   await expect(e.tools.getByRole("button")).toHaveText([
+    "Proofread",
     "Name generator",
+    "Definitions",
     "Synonyms",
     "Rhymes",
   ]);
@@ -145,7 +147,7 @@ test("Tools shows tiles, and a tile opens its tool in a dialog", async ({
 
   await e.tools.getByRole("button", { name: "Rhymes" }).click();
   const dialog = page.getByRole("dialog", { name: "Rhymes" });
-  await expect(dialog).toContainText("Coming soon.");
+  await expect(dialog.getByRole("textbox", { name: "Word" })).toBeVisible();
   await dialog.getByRole("button", { name: "Close" }).first().click();
   await expect(dialog).toBeHidden();
   await expect(e.tools).toBeVisible();

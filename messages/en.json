@@ -41,7 +41,13 @@
     "language": "Interface language",
     "account": "Account",
     "changePassword": "Change password",
-    "logOut": "Log out"
+    "logOut": "Log out",
+    "dictionary": "Proofreading dictionary",
+    "dictionaryHelp": "Words the proofreading does not mark as spelling errors. Add them with “Add to dictionary” in the proofreading.",
+    "dictionaryCount": "{count, plural, =0 {No words yet.} one {# word} other {# words}}",
+    "removeWord": "Remove “{word}”",
+    "dictionaryFailed": "The list could not be loaded or changed. Reload the page and try again.",
+    "loadingDictionary": "Loading…"
   },
   "errors": {
     "nicknameRequirement": "Nickname must be 3-30 characters: letters a-z, digits, _ and -.",
@@ -97,7 +103,16 @@
     "importEpubInvalid": "This EPUB file could not be read.",
     "importFileTooLarge": "This file is larger than 50 MB.",
     "importUnreadable": "This file could not be read.",
-    "importFailed": "This text could not be imported. It may be too large."
+    "importFailed": "This text could not be imported. It may be too large.",
+    "toolUnavailable": "This tool is not available right now. Try again later.",
+    "toolTimeout": "The check took too long. Try again later or with a shorter chapter.",
+    "tooManyChecks": "Too many checks. Try again in a few minutes.",
+    "dictionaryWordInvalid": "This word cannot be added to the dictionary. Use one word of up to 50 characters.",
+    "dictionaryFull": "The dictionary is full (1000 words). Remove a word in Settings first.",
+    "lookupWordInvalid": "Type one word of up to 50 characters.",
+    "rhymeFiltersInvalid": "Choose a part of speech and syllables from the list.",
+    "proofreadingInvalid": "The proofreading state could not be saved. Reload the page and try again.",
+    "dictionaryTimeout": "The dictionary did not answer in time. Try again."
   },
   "password": {
     "mustContain": "The password must contain:",
@@ -317,7 +332,8 @@
     "pickedUp": "Picked up {name}.",
     "movedOver": "{name} is now at position {position} of {total}.",
     "dropped": "{name} dropped at position {position} of {total}.",
-    "cancelled": "Moving {name} was cancelled."
+    "cancelled": "Moving {name} was cancelled.",
+    "language": "Language"
   },
   "stories": {
     "newStory": "New story",
@@ -359,7 +375,8 @@
     "backTo": "Back to {folder}",
     "title": "Title",
     "isPublic": "This chapter is public:",
-    "view": "View"
+    "view": "View",
+    "notSavedBeforeCheck": "The chapter could not be saved, so it was not checked. See the message above the editor."
   },
   "chapters": {
     "noFolder": "This story is not in a folder.",
@@ -370,11 +387,18 @@
   "tools": {
     "list": "Tools",
     "loading": "Loading…",
-    "comingSoon": "Coming soon.",
     "items": {
+      "proofread": {
+        "label": "Proofread",
+        "description": "Spelling, grammar, punctuation and style of this chapter, marked in its text."
+      },
       "name-generator": {
         "label": "Name generator",
         "description": "Find names for characters and places."
+      },
+      "definitions": {
+        "label": "Definitions",
+        "description": "Look up the meanings of a word."
       },
       "synonyms": {
         "label": "Synonyms",
@@ -384,7 +408,80 @@
         "label": "Rhymes",
         "description": "Look up words that rhyme."
       }
+    },
+    "sources": {
+      "title": "Sources",
+      "changedDefinitions": "Changed: labels are shown apart from the text, and dialect and regional senses come last.",
+      "changedSynonyms": "Changed: labels and regions are shown apart from the words, pointers to other entries are left out, and each sense shows its definition.",
+      "changedThesaurus": "Changed: registers are shown as labels, and the headword itself and repeated senses are left out.",
+      "changedRhymeForms": "Used: each form gets a rhyme key from its pronunciation.",
+      "changedRhymes": "Used: frequencies rank the rhymes. Data from Wikipedia, OpenSubtitles 2018 (opensubtitles.org), news, web pages, Twitter and Reddit. The rhyme database built with them is under CC BY-SA 4.0."
+    },
+    "labels": {
+      "colloquial": "colloquial",
+      "obsolete": "obsolete",
+      "dated": "dated",
+      "literary": "literary",
+      "rare": "rare",
+      "dialectal": "dialect",
+      "regional": "regional",
+      "vulgar": "vulgar",
+      "humorous": "humorous",
+      "pejorative": "pejorative",
+      "offensive": "offensive",
+      "slang": "slang",
+      "diminutive": "diminutive",
+      "augmentative": "augmentative",
+      "endearing": "endearing",
+      "ironic": "ironic",
+      "euphemistic": "euphemistic",
+      "metaphoric": "figurative",
+      "formal": "formal",
+      "neologism": "neologism",
+      "elevatedly": "elevated",
+      "poetic": "poetic",
+      "scornfully": "scornful",
+      "youth": "youth slang",
+      "veryColloquial": "very colloquial",
+      "specialist": "specialist",
+      "expressive": "expressive",
+      "jargon": "jargon"
     }
+  },
+  "proofread": {
+    "question": "Do you want to use the proofreading tool?",
+    "details": "LanguageTool checks the spelling, grammar, punctuation and style of this chapter; unsaved changes are saved first. The issues are marked in the chapter's text: pick a suggestion and apply it with ✓, or dismiss it with ✗. Meanwhile you can keep writing and use the other tools. The proofreading is saved with the chapter, so you can come back to it later.",
+    "againQuestion": "This chapter is being proofread. Do you want to check it again?",
+    "againDetails": "A new check replaces the issues left with new ones. Unsaved changes are saved first.",
+    "check": "Check",
+    "checkAgain": "Check again",
+    "checking": "Checking the chapter… This can take a while for a long chapter.",
+    "failed": "The check could not run. Reload the page and try again.",
+    "changed": "The chapter changed while it was being checked. Check again.",
+    "noIssues": "No issues found.",
+    "notShown": "Issues were found, but none of them can be shown in the text (for example, they cross formatting). Check the chapter by hand.",
+    "panel": "Issue",
+    "position": "{index} of {count}",
+    "previous": "Previous change",
+    "next": "Next change",
+    "kinds": {
+      "spelling": "Spelling",
+      "grammar": "Grammar",
+      "punctuation": "Punctuation",
+      "style": "Style",
+      "other": "Other"
+    },
+    "suggestions": "Suggestions",
+    "remove": "(remove)",
+    "noSuggestion": "No suggestion. Edit the text yourself or reject the change.",
+    "apply": "Apply change",
+    "reject": "Reject change",
+    "addToDictionary": "Add to dictionary",
+    "dictionaryFailed": "The word could not be added. Reload the page and try again.",
+    "bar": "Proofreading",
+    "finish": "Finish proofreading",
+    "closeBubble": "Close details",
+    "sourceBlocked": "Finish proofreading to switch to Source."
   },
   "nameGenerator": {
     "typeGroups": {
@@ -574,5 +671,86 @@
   },
   "notFound": {
     "text": "404 | This page could not be found."
+  },
+  "languages": {
+    "pl": "Polish"
+  },
+  "lookup": {
+    "word": "Word",
+    "search": "Look up",
+    "searching": "Looking up…",
+    "failed": "The lookup could not run. Reload the page and try again.",
+    "newTab": "(opens in a new tab)",
+    "label": "{label} ({region})"
+  },
+  "definitions": {
+    "notFound": "No definitions found for “{word}”.",
+    "results": "Definitions of “{word}”",
+    "shownFor": "Shown for: {headword}",
+    "lookElsewhere": "Look up “{word}” in:",
+    "external": {
+      "wiktionary": "Wikisłownik",
+      "sjp": "sjp.pl",
+      "pwn": "PWN"
+    },
+    "pos": {
+      "noun": "noun",
+      "adj": "adjective",
+      "verb": "verb",
+      "adv": "adverb",
+      "name": "proper noun",
+      "pron": "pronoun",
+      "num": "numeral",
+      "prep": "preposition",
+      "conj": "conjunction",
+      "intj": "interjection",
+      "particle": "particle",
+      "phrase": "phrase",
+      "proverb": "proverb",
+      "abbrev": "abbreviation",
+      "adv_phrase": "adverbial phrase",
+      "adj_phrase": "adjectival phrase",
+      "prep_phrase": "prepositional phrase",
+      "prefix": "prefix",
+      "suffix": "suffix",
+      "symbol": "symbol",
+      "contraction": "contraction"
+    }
+  },
+  "synonyms": {
+    "notFound": "No synonyms found for “{word}”.",
+    "results": "Synonyms of “{word}”",
+    "shownFor": "Shown for: {headword}",
+    "senseNumber": "{number}.",
+    "entry": "Entry in Wikisłownik"
+  },
+  "rhymes": {
+    "notFound": "No rhymes found for “{word}”.",
+    "notFoundFiltered": "No rhymes for “{word}” match the filters.",
+    "results": "Rhymes for “{word}”",
+    "levels": {
+      "exact": "Exact",
+      "near": "Near",
+      "last": "Last syllable"
+    },
+    "showMore": "Show more ({count})",
+    "showLess": "Show less",
+    "onlyMore": "Only rare or less useful words.",
+    "filters": {
+      "partOfSpeech": "Part of speech",
+      "any": "Any",
+      "parts": {
+        "noun": "Noun",
+        "adjective": "Adjective",
+        "verb": "Verb",
+        "adverb": "Adverb",
+        "other": "Other"
+      },
+      "syllables": "Syllables",
+      "syllablesFrom": "Syllables from",
+      "syllablesTo": "to",
+      "orMore": "{count} or more",
+      "clear": "Clear filters"
+    }
   }
 }

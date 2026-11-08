@@ -35,20 +35,27 @@ export function ToolsPanel({ onOpen }: { onOpen: (tool: Tool) => void }) {
 export function ToolDialog({
   tool,
   onClose,
+  onCloseAutoFocus,
 }: {
   tool: Tool | null;
   onClose: () => void;
+  onCloseAutoFocus?: (event: Event) => void;
 }) {
   const t = useTranslations("tools");
   return (
     <Dialog open={tool !== null} onOpenChange={(open) => !open && onClose()}>
       {tool && (
-        <DialogContent className={tool.dialogClassName}>
+        <DialogContent
+          className={tool.dialogClassName}
+          onCloseAutoFocus={onCloseAutoFocus}
+        >
           <DialogHeader>
             <DialogTitle>{t(`items.${tool.id}.label`)}</DialogTitle>
-            <DialogDescription>
-              {t(`items.${tool.id}.description`)}
-            </DialogDescription>
+            {!tool.ownDescription && (
+              <DialogDescription>
+                {t(`items.${tool.id}.description`)}
+              </DialogDescription>
+            )}
           </DialogHeader>
           <Suspense
             fallback={

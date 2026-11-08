@@ -163,7 +163,11 @@ async function restoreChapter(
       await withFreeTitle(title, (free) =>
         Story.updateOne(
           { _id: storyId },
-          { $set: { title: free, content, updatedAt } },
+          {
+            $set: { title: free, content, updatedAt },
+            // Positions of an open proofreading do not fit other content (task 55).
+            ...(story.content !== content && { $unset: { proofreading: 1 } }),
+          },
           { timestamps: false },
         ),
       );
@@ -190,7 +194,7 @@ async function restoreChapter(
             deletedAt: null,
             ...arrival.set,
           },
-          $unset: arrival.unset,
+          $unset: { ...arrival.unset, proofreading: 1 },
         },
         { timestamps: false },
       ),

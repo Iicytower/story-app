@@ -57,7 +57,7 @@ export default async function StoriesPage({
         <h1 className="mr-auto text-2xl font-semibold">{t("title")}</h1>
         <StoriesMenu
           sort={sort}
-          folderNames={folders.map((folder) => folder.name)}
+          folders={folders.map(({ name, language }) => ({ name, language }))}
           defaultFolder={defaultFolder?.name ?? ""}
         />
       </div>
