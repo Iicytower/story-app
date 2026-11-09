@@ -10,7 +10,7 @@ Zgłoszenie użytkownika (2026-10-30), wydzielone z dawnego taska „Okładki”
 - Skalowanie i kompresja obrazka w przeglądarce przed wysłaniem; plik trafia do Server Action (limit żądania 4,5 MB na Vercel Hobby), która sprawdza bajty i zapisuje okładkę.
 - Serwowanie przez Route Handler (poza `[locale]`, jak eksport) z długim cache (`immutable`); identyfikator w adresie zmienia się przy każdej wymianie okładki.
 - Automatyczny filtr 18+ okładek (zgłoszenie użytkownika 2026-11-08, research w sekcji „Dane z researchu”): okładka nie jest serwowana, dopóki serwer jej nie oceni (przepływ i usługa klasyfikatora w sekcji „Przepływ i usługa klasyfikatora”).
-- Okładka oceniona jako 18+ automatycznie oznacza folder jako 18+ przez wspólny system oznaczeń z taska [65](65-adult-rating.md): właściciel nie może zdjąć tego oznaczenia, dopóki nie usunie albo nie wymieni okładki. W wynikach wyszukiwania okładka 18+ jest ukryta za znaczkiem 18+. Właściciel może też sam oznaczyć okładkę jako 18+ (bez blokady folderu).
+- Okładka oceniona jako 18+ automatycznie oznacza folder jako 18+ przez wspólny system oznaczeń z taska [65](done/65-adult-rating.md): właściciel nie może zdjąć tego oznaczenia, dopóki nie usunie albo nie wymieni okładki. W wynikach wyszukiwania okładka 18+ jest ukryta za znaczkiem 18+. Właściciel może też sam oznaczyć okładkę jako 18+ (bez blokady folderu).
 - Twardy limit łącznego rozmiaru okładek (decyzja użytkownika 2026-11-09), bo zapełnienie M0 zablokowałoby zapis opowiadań.
 - Zmiana kopii przed migracją (D14): przed migracją backup poza Atlasem (forma, sposób i miejsce: do decyzji użytkownika), usunięcie kopii sprzed poprzedniej migracji, nowa kopia, migracja. Zostaje jedna kopia zamiast trzech.
 

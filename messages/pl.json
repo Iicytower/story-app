@@ -112,7 +112,9 @@
     "lookupWordInvalid": "Wpisz jedno słowo, maks. 50 znaków.",
     "rhymeFiltersInvalid": "Wybierz część mowy i liczbę sylab z listy.",
     "proofreadingInvalid": "Nie udało się zapisać stanu korekty. Odśwież stronę i spróbuj ponownie.",
-    "dictionaryTimeout": "Słownik nie odpowiedział na czas. Spróbuj ponownie."
+    "dictionaryTimeout": "Słownik nie odpowiedział na czas. Spróbuj ponownie.",
+    "adultLockedByImage": "Obrazek został oceniony jako 18+, więc oznaczenie 18+ zostaje, dopóki go nie usuniesz albo nie wymienisz.",
+    "adultLockedByFolder": "Ten rozdział jest 18+, bo jego folder jest 18+. Najpierw zdejmij oznaczenie z folderu."
   },
   "password": {
     "mustContain": "Hasło musi zawierać:",
@@ -752,5 +754,25 @@
       "orMore": "{count} i więcej",
       "clear": "Wyczyść filtry"
     }
+  },
+  "adult": {
+    "badge": "18+",
+    "label": "Tylko dla dorosłych (18+)",
+    "mark": "Oznacz jako 18+",
+    "unmark": "Zdejmij 18+",
+    "lockedByImage": "Zablokowane: obrazek oceniony jako 18+",
+    "lockedByFolder": "Zablokowane: folder jest 18+",
+    "gateTitle": "Treści dla dorosłych",
+    "gateText": "Ten rozdział jest oznaczony jako 18+. Czy masz ukończone 18 lat?",
+    "gateConfirm": "Mam ukończone 18 lat",
+    "gateBack": "Wróć",
+    "markFolderTitle": "Oznaczyć folder jako 18+?",
+    "markFolderDescription": "„{name}” i wszystkie jego rozdziały zostaną oznaczone jako 18+. Czytelnicy zobaczą ostrzeżenie przed czytaniem.",
+    "unmarkFolderTitle": "Zdjąć 18+ z folderu?",
+    "unmarkFolderDescription": "„{name}” przestanie być 18+. Rozdziały oznaczone jako 18+ osobno zachowają oznaczenie.",
+    "markChapterTitle": "Oznaczyć rozdział jako 18+?",
+    "markChapterDescription": "„{name}” zostanie oznaczony jako 18+. Czytelnicy zobaczą ostrzeżenie przed czytaniem.",
+    "unmarkChapterTitle": "Zdjąć 18+ z rozdziału?",
+    "unmarkChapterDescription": "„{name}” przestanie być 18+."
   }
 }

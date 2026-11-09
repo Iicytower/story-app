@@ -40,7 +40,9 @@ export async function saveSettings(patch: unknown): Promise<ActionResult> {
 
 // The dictionary of the proofreading (task 30). Each change returns the whole list, so the
 // Settings view does not read it again. Nothing is revalidated: the editor page stays as is.
-export async function listDictionary(): Promise<ActionResult<{ words: string[] }>> {
+export async function listDictionary(): Promise<
+  ActionResult<{ words: string[] }>
+> {
   const user = await requireUser();
   if (!user.ok) return user;
   return { ok: true, words: await getDictionary(user.userId) };

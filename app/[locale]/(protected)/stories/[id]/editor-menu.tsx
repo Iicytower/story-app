@@ -9,6 +9,7 @@ import {
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { ActionMenu } from "@/components/action-menu";
+import { AdultDialog, AdultMenuItem } from "@/components/adult";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ExportDialog } from "@/components/export-dialog";
 import {
@@ -16,14 +17,17 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import type { ActionResult } from "@/lib/action-result";
+import type { AdultState } from "@/lib/adult/adult";
+import { setStoryAdult } from "../actions";
 import { DeleteStoryDialog } from "../delete-story-dialog";
 
-type Dialog = "export" | "publish" | "delete";
+type Dialog = "export" | "publish" | "adult" | "delete";
 
 export function EditorMenu({
   id,
   title,
   isPublic,
+  adult,
   beforeExport,
   togglePublished,
   onDeleted,
@@ -31,6 +35,7 @@ export function EditorMenu({
   id: string;
   title: string;
   isPublic: boolean;
+  adult: AdultState;
   beforeExport: () => Promise<boolean>;
   togglePublished: () => Promise<ActionResult>;
   onDeleted: () => void;
@@ -56,6 +61,7 @@ export function EditorMenu({
           {isPublic ? <GlobeLockIcon /> : <GlobeIcon />}
           {isPublic ? tFolders("unpublish") : tFolders("publish")}
         </DropdownMenuItem>
+        <AdultMenuItem state={adult} onSelect={() => setDialog("adult")} />
         <DropdownMenuSeparator />
         <DropdownMenuItem
           variant="destructive"
@@ -81,6 +87,13 @@ export function EditorMenu({
         }
         confirmLabel={isPublic ? tFolders("unpublish") : tFolders("publish")}
         action={togglePublished}
+      />
+      <AdultDialog
+        {...dialogProps("adult")}
+        kind="chapter"
+        name={title}
+        adult={adult.adult}
+        action={() => setStoryAdult(id, !adult.adult)}
       />
       <DeleteStoryDialog
         {...dialogProps("delete")}

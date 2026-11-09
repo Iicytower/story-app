@@ -1,8 +1,8 @@
 # 65 – Oznaczenie 18+
 
-Subtask zbiorczego taska [66](66-covers-and-adult-rating.md) (branch, kolejność, środowisko lokalne).
+Subtask zbiorczego taska [66](../66-covers-and-adult-rating.md) (branch, kolejność, środowisko lokalne).
 
-Zgłoszenie użytkownika (2026-11-08), wcześniej punkt backlogu „oznaczenie folderu lub rozdziału jako 18+”. Wspólny system oznaczeń 18+ dla folderów, rozdziałów i obrazków. Ten task wprowadza oznaczenie folderu i rozdziału oraz miejsce na źródło automatyczne; obrazki (okładki) i automatyczny filtr podłącza task [26](26-cover-upload.md).
+Zgłoszenie użytkownika (2026-11-08), wcześniej punkt backlogu „oznaczenie folderu lub rozdziału jako 18+”. Wspólny system oznaczeń 18+ dla folderów, rozdziałów i obrazków. Ten task wprowadza oznaczenie folderu i rozdziału oraz miejsce na źródło automatyczne; obrazki (okładki) i automatyczny filtr podłącza task [26](../26-cover-upload.md).
 
 ## Zakres
 
@@ -40,7 +40,7 @@ Poza zakresem i kryteriami akceptacji tego taska (pytanie użytkownika 2026-11-0
 
 - **Pomysł:** słowniki lematów ryzykownych (wulgaryzmy, słownictwo seksualne, gore, narkotyki) i punktacja gęstości (trafienia na 1000 słów z wagą kategorii); próg oznacza rozdział jako 18+.
 - **Co już mamy:**
-  - Lematyzacja przez serwis słownikowy (task [25](done/25-dictionary-service.md), PoliMorf): lista trzyma lematy, odmiana trafia sama.
+  - Lematyzacja przez serwis słownikowy (task [25](25-dictionary-service.md), PoliMorf): lista trzyma lematy, odmiana trafia sama.
   - Etykieta „wulgarnie” z Wikisłownika w bazie definicji (D62) jako źródło listy wulgaryzmów; rdzenie wulgarne z generatora nazw (D43).
   - Język tekstu z ustawienia folderu (D58).
 - **Do zbudowania:** ręcznie ułożone listy słownictwa seksualnego, gore i narkotyków, osobno dla polskiego i angielskiego (kilkaset lematów na język, szac.).

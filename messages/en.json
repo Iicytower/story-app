@@ -112,7 +112,9 @@
     "lookupWordInvalid": "Type one word of up to 50 characters.",
     "rhymeFiltersInvalid": "Choose a part of speech and syllables from the list.",
     "proofreadingInvalid": "The proofreading state could not be saved. Reload the page and try again.",
-    "dictionaryTimeout": "The dictionary did not answer in time. Try again."
+    "dictionaryTimeout": "The dictionary did not answer in time. Try again.",
+    "adultLockedByImage": "An image here was rated 18+, so the 18+ mark stays until you remove or replace the image.",
+    "adultLockedByFolder": "This chapter is 18+ because its folder is. Remove the mark from the folder first."
   },
   "password": {
     "mustContain": "The password must contain:",
@@ -752,5 +754,25 @@
       "orMore": "{count} or more",
       "clear": "Clear filters"
     }
+  },
+  "adult": {
+    "badge": "18+",
+    "label": "For adults only (18+)",
+    "mark": "Mark as 18+",
+    "unmark": "Remove 18+",
+    "lockedByImage": "Locked: an image was rated 18+",
+    "lockedByFolder": "Locked: the folder is 18+",
+    "gateTitle": "Content for adults",
+    "gateText": "This chapter is marked as 18+. Are you at least 18 years old?",
+    "gateConfirm": "I am 18 or older",
+    "gateBack": "Go back",
+    "markFolderTitle": "Mark folder as 18+?",
+    "markFolderDescription": "“{name}” and all its chapters will be marked as 18+. Readers will see a warning before reading.",
+    "unmarkFolderTitle": "Remove 18+ from folder?",
+    "unmarkFolderDescription": "“{name}” will no longer be 18+. Chapters marked as 18+ on their own keep the mark.",
+    "markChapterTitle": "Mark chapter as 18+?",
+    "markChapterDescription": "“{name}” will be marked as 18+. Readers will see a warning before reading.",
+    "unmarkChapterTitle": "Remove 18+ from chapter?",
+    "unmarkChapterDescription": "“{name}” will no longer be 18+."
   }
 }

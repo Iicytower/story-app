@@ -3,6 +3,7 @@
 import { isObjectIdOrHexString, Types } from "mongoose";
 import { refresh } from "next/cache";
 import type { ActionResult, ValidationError } from "@/lib/action-result";
+import { chapterAdultState } from "@/lib/adult/adult";
 import { requireUser } from "@/lib/auth/session";
 import { connectDB, isDuplicateKeyError } from "@/lib/db";
 import { actionError, translateError } from "@/lib/i18n/action-error";
@@ -425,7 +426,9 @@ export async function saveStory(
     return actionError("EMPTY_TITLE", "titleRequired");
   }
   const parsed =
-    proofreading === undefined ? undefined : parseStoredProofreading(proofreading);
+    proofreading === undefined
+      ? undefined
+      : parseStoredProofreading(proofreading);
   if (parsed === "invalid") {
     return actionError("INVALID_INPUT", "proofreadingInvalid");
   }
@@ -544,4 +547,44 @@ export async function setChapterPublished(
     ok: true,
     publicPath: await chapterPublicPath(user.userId, folder._id.toString(), id),
   };
+}
+
+// Never touches updatedAt, like publishing (D67).
+export async function setStoryAdult(
+  id: string,
+  adult: boolean,
+): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+
+  await connectDB();
+  const owned = { _id: id, userId: user.userId, deletedAt: null };
+  const story = await Story.findOne(owned)
+    .select({ folderId: 1, adult: 1 })
+    .lean();
+  if (!story) return NOT_FOUND();
+  const folder = await Folder.findOne({
+    _id: story.folderId,
+    userId: user.userId,
+    deletedAt: null,
+  })
+    .select({ adult: 1 })
+    .lean();
+  if (!folder) return NOT_FOUND();
+  const { lock } = chapterAdultState(story.adult, folder.adult);
+  if (!adult && lock) {
+    return actionError(
+      "ADULT_LOCKED",
+      lock === "auto" ? "adultLockedByImage" : "adultLockedByFolder",
+    );
+  }
+  await Story.updateOne(
+    owned,
+    { $set: { "adult.manual": adult } },
+    { timestamps: false },
+  );
+
+  refresh();
+  return { ok: true };
 }

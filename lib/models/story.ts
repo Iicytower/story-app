@@ -1,4 +1,5 @@
 import mongoose, { Schema, type Model, type Types } from "mongoose";
+import { adultMarkSchema, type AdultMark } from "@/lib/models/adult-mark";
 import type { StoredProofreading } from "@/lib/proofreading/stored";
 
 export type Publication = "public" | "hidden";
@@ -21,6 +22,8 @@ export interface StoryFields {
   publishedAt?: Date;
   // The open proofreading of the chapter (task 55); missing when there is none.
   proofreading?: StoredProofreading;
+  // Missing means not 18+ (D67).
+  adult?: AdultMark;
   deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -40,6 +43,7 @@ const storySchema = new Schema<StoryFields>(
     publishedAt: { type: Date },
     // Checked by parseStoredProofreading in saveStory.
     proofreading: { type: Schema.Types.Mixed },
+    adult: { type: adultMarkSchema },
     // Always stored: a partial index filter cannot express "field does not exist".
     deletedAt: { type: Date, default: null },
   },

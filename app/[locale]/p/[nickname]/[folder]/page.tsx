@@ -5,6 +5,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { connection } from "next/server";
 import { requestOrigin } from "@/i18n/request-origin";
 import { languageAlternates } from "@/i18n/routing";
+import { AdultBadge } from "@/components/adult";
 import { getPublishedFolder } from "@/lib/publish/queries";
 
 export async function generateMetadata({
@@ -37,16 +38,20 @@ export default async function PublishedFolderPage({
 
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-10">
-      <h1 className="text-3xl font-bold">{folder.name}</h1>
+      <div className="flex items-center gap-3">
+        <h1 className="text-3xl font-bold">{folder.name}</h1>
+        {folder.adult && <AdultBadge />}
+      </div>
       <p className="text-muted-foreground mb-8 text-sm">
         {t("by", { nickname: folder.nickname })}
       </p>
       <ol aria-label={t("chapters")} className="flex flex-col gap-2">
         {folder.chapters.map((chapter, index) => (
-          <li key={chapter.path}>
+          <li key={chapter.path} className="flex items-center gap-2">
             <Link href={chapter.path} className="hover:underline">
               {index + 1}. {chapter.title}
             </Link>
+            {chapter.adult && !folder.adult && <AdultBadge />}
           </li>
         ))}
       </ol>
