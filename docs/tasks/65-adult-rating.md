@@ -13,7 +13,7 @@ Zgłoszenie użytkownika (2026-11-08), wcześniej punkt backlogu „oznaczenie f
 - Znaczek 18+ przy rozdziale i folderze w widokach właściciela i na stronach publicznych (wyszukiwarka, strona czytania, ostatnio opublikowane).
 - Teksty w `messages/en.json` i `messages/pl.json`, także wyjaśnienie, dlaczego przełącznik jest zablokowany.
 
-Do decyzji przy starcie taska (wynik jako nowa decyzja w `decisions.md`):
+**Do decyzji użytkownika** (zapytać przed implementacją; wynik jako nowa decyzja w `decisions.md`):
 
 - Dziedziczenie: czy folder 18+ czyni 18+ wszystkie swoje rozdziały (i czy rozdział może być wtedy „nie 18+”), czy rozdział 18+ oznacza folder, czy poziomy są niezależne. Przeniesienie rozdziału między folderami.
 - Model danych: np. `adult: { manual: boolean, autoLocked: boolean }` na folderze i rozdziale albo pole wyliczane z obrazków przy odczycie. Migracja istniejących rekordów (domyślnie nie 18+).

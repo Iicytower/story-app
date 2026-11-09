@@ -8,7 +8,7 @@ Wydzielone z dawnego taska 26 (zgłoszenie z 2026-10-30). Na razie tylko okładk
 
 - Wyświetlanie okładek folderów w widokach ustalonych przy starcie taska.
 
-Do decyzji przy starcie taska (wynik jako nowa decyzja w `decisions.md`): widoki z okładką: lista folderów, strona folderu, panel Chapters, edytor, strony publiczne.
+**Do decyzji użytkownika** (zapytać przed implementacją; wynik jako nowa decyzja w `decisions.md`): widoki z okładką: lista folderów, strona folderu, panel Chapters, edytor, strony publiczne.
 
 ## Kryteria akceptacji
 

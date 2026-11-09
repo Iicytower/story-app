@@ -8,6 +8,14 @@ Decyzja użytkownika (2026-11-09): taski [65](65-adult-rating.md), [26](26-cover
 - Wszystko lokalnie na lokalnym stosie narzędzi (`npm run up`, task 54), który pełni rolę Mikrusa: klasyfikator ONNX z taska 26 jest nową usługą tego stosu za bramką z `X-Tools-Secret`, w `docker/tools/compose.yml`, więc na prawdziwy Mikrus trafia bez zmian razem z taskiem 28.
 - Na stagingu i produkcji bez `TOOLS_API_URL` upload okładek jest wyłączony (task 26, D56), więc wydanie tego taska nie wymaga taska 28.
 
+## Do decyzji użytkownika
+
+Zebrane z subtasków (szczegóły i opcje w ich plikach); zapytać przed implementacją każdego subtasku:
+
+- 65: dziedziczenie 18+ między folderem a rozdziałem, model danych, zachowanie na stronach publicznych, miejsce przełącznika, wpływ na eksport, wersje i `updatedAt`.
+- 26: wartość globalnego limitu (po pomiarze w Atlasie przez użytkownika), backup przed migracją, model (OwenElliott sam czy z Marqo) i próg, zachowanie bez werdyktu, dostarczenie modelu do usługi, miejsce ponownego kodowania obrazu.
+- 40: widoki z okładką.
+
 ## Branche
 
 - `feature/66-covers-and-adult-rating` z `develop`.
