@@ -69,7 +69,10 @@ describe("issueKind", () => {
     [{ issueType: "misspelling" }, "spelling"],
     [{ issueType: "typographical" }, "punctuation"],
     [{ issueType: "style" }, "style"],
-    [{ category: { id: "SOMETHING_NEW" }, issueType: "uncategorized" }, "other"],
+    [
+      { category: { id: "SOMETHING_NEW" }, issueType: "uncategorized" },
+      "other",
+    ],
     [undefined, "other"],
   ] as const)("%j is %s", (rule, kind) => {
     expect(issueKind(rule)).toBe(kind);

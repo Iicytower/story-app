@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Link, redirect } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { connection } from "next/server";
+import { after, connection } from "next/server";
+import { retryDueCovers } from "@/lib/covers/mutations";
 import { requestOrigin } from "@/i18n/request-origin";
 import { languageAlternates } from "@/i18n/routing";
 import { AdultBadge } from "@/components/adult";
@@ -29,6 +30,7 @@ export default async function PublishedFolderPage({
 }: PageProps<"/[locale]/p/[nickname]/[folder]">) {
   // Without a request-time API the page could be cached and outlive "Unpublish".
   await connection();
+  after(() => retryDueCovers());
   const { nickname, folder: slug } = await params;
   const folder = await getPublishedFolder(nickname, slug);
   if (!folder) notFound();

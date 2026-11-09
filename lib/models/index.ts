@@ -6,3 +6,4 @@ import "./settings";
 import "./folder-version";
 import "./chapter-content";
 import "./rate-limit";
+import "./cover";

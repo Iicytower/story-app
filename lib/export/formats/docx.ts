@@ -3,6 +3,7 @@ import {
   Document,
   ExternalHyperlink,
   HeadingLevel,
+  ImageRun,
   LevelFormat,
   Packer,
   Paragraph,
@@ -93,11 +94,32 @@ function blocksToParagraphs(blocks: Block[], context: Context): Paragraph[] {
 export async function buildDocx({
   title,
   sections,
+  cover,
 }: ExportDocument): Promise<Uint8Array> {
   let lists = 0;
   const nextList = () => lists++;
   const children = [
-    new Paragraph({ heading: HEADINGS[0], text: title }),
+    ...(cover
+      ? [
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [
+              new ImageRun({
+                type: "jpg",
+                data: cover,
+                // 4 x 6 inches: fits an A4 or Letter page with default margins.
+                transformation: { width: 384, height: 576 },
+                altText: { name: "cover", description: title, title },
+              }),
+            ],
+          }),
+        ]
+      : []),
+    new Paragraph({
+      heading: HEADINGS[0],
+      text: title,
+      pageBreakBefore: Boolean(cover),
+    }),
     ...sections.flatMap((section) => [
       ...(section.title
         ? [new Paragraph({ heading: HEADINGS[1], text: section.title })]

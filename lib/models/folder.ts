@@ -27,6 +27,10 @@ export interface FolderFields {
   language?: FolderLanguage;
   // Missing means not 18+ (D67).
   adult?: AdultMark;
+  // The rated cover shown for the folder (task 26); a pending one only waits in `covers`.
+  coverId?: Types.ObjectId;
+  // Set when a pending cover was dropped after its last try (D68); the folder page tells why.
+  coverRejectedAt?: Date;
   deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -48,6 +52,8 @@ const folderSchema = new Schema<FolderFields>(
     versionCounter: { type: Number },
     language: { type: String, enum: FOLDER_LANGUAGES },
     adult: { type: adultMarkSchema },
+    coverId: { type: Schema.Types.ObjectId, ref: "Cover" },
+    coverRejectedAt: { type: Date },
     deletedAt: { type: Date, default: null },
   },
   { timestamps: true },

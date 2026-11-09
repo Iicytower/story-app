@@ -5,6 +5,7 @@ import { refresh } from "next/cache";
 import type { ActionResult } from "@/lib/action-result";
 import { folderAdultState } from "@/lib/adult/adult";
 import { requireUser } from "@/lib/auth/session";
+import { removeCovers } from "@/lib/covers/mutations";
 import { connectDB, isDuplicateKeyError } from "@/lib/db";
 import { actionError, translateError } from "@/lib/i18n/action-error";
 import {
@@ -105,6 +106,8 @@ export async function deleteFolder(id: string): Promise<ActionResult> {
     { $set: { deletedAt } },
     { timestamps: false },
   );
+  // A restored folder comes back without its cover (D68).
+  await removeCovers(id);
 
   return { ok: true };
 }

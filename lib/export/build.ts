@@ -13,8 +13,9 @@ export async function buildExport(
   source: ExportSource,
   includeExtras: boolean,
   labels: DocumentLabels = ENGLISH_DOCUMENT_LABELS,
+  cover?: Uint8Array,
 ): Promise<Uint8Array | string> {
-  const document = toExportDocument(source, includeExtras, labels);
+  const document = toExportDocument(source, includeExtras, labels, cover);
   switch (format) {
     case "md": {
       const { buildMarkdown } = await import("./formats/text");

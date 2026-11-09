@@ -19,8 +19,10 @@ ${body}
 </html>
 `;
 
+const COVER_PAGE = `<div style="text-align: center"><img src="cover.jpg" alt="" style="max-width: 100%; max-height: 100%"/></div>`;
+
 export function buildEpub(
-  { title, sections }: ExportDocument,
+  { title, sections, cover }: ExportDocument,
   now = new Date(),
 ): Uint8Array {
   const chapters = sections.map((section, index) => ({
@@ -39,10 +41,10 @@ export function buildEpub(
 </metadata>
 <manifest>
 <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
-${chapters.map((chapter, index) => `<item id="c${index + 1}" href="${chapter.file}" media-type="application/xhtml+xml"/>`).join("\n")}
+${cover ? `<item id="cover-image" href="cover.jpg" media-type="image/jpeg" properties="cover-image"/>\n<item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>\n` : ""}${chapters.map((chapter, index) => `<item id="c${index + 1}" href="${chapter.file}" media-type="application/xhtml+xml"/>`).join("\n")}
 </manifest>
 <spine>
-${chapters.map((_, index) => `<itemref idref="c${index + 1}"/>`).join("\n")}
+${cover ? `<itemref idref="cover"/>\n` : ""}${chapters.map((_, index) => `<itemref idref="c${index + 1}"/>`).join("\n")}
 </spine>
 </package>
 `;
@@ -60,6 +62,10 @@ ${chapters.map((chapter) => `<li><a href="${chapter.file}">${escapeXml(chapter.t
     "OEBPS/content.opf": strToU8(opf),
     "OEBPS/nav.xhtml": strToU8(nav),
   };
+  if (cover) {
+    files["OEBPS/cover.jpg"] = cover;
+    files["OEBPS/cover.xhtml"] = strToU8(xhtml(title, COVER_PAGE));
+  }
   for (const chapter of chapters) {
     files[`OEBPS/${chapter.file}`] = strToU8(
       xhtml(chapter.title, chapter.body),

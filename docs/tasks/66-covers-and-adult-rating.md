@@ -1,6 +1,6 @@
 # 66 – Okładki folderów i oznaczenie 18+ (zbiorczy)
 
-Decyzja użytkownika (2026-11-09): taski [65](done/65-adult-rating.md), [26](26-cover-upload.md) i [40](40-cover-display.md) są subtaskami tego taska i są implementowane razem, w tej kolejności. Szczegóły, ustalenia, kryteria i testy są w plikach subtasków.
+Decyzja użytkownika (2026-11-09): taski [65](done/65-adult-rating.md), [26](done/26-cover-upload.md) i [40](40-cover-display.md) są subtaskami tego taska i są implementowane razem, w tej kolejności. Szczegóły, ustalenia, kryteria i testy są w plikach subtasków.
 
 ## Zakres
 

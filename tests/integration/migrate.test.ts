@@ -151,25 +151,32 @@ describe("runMigrations", () => {
     expect(await documents("missing_backup_001-a")).toEqual([]);
   });
 
-  it("keeps backups of the 3 most recent migrations only", async () => {
+  it("keeps the backup of the latest migration only, dropping older ones before it", async () => {
     await seedStories();
-    await run(
-      ["001-a", "002-b", "003-c"].map((id) => migration(id, ["stories"])),
-    );
-    expect(await backupNames()).toEqual([
-      "stories_backup_001-a",
+    let backupsDuringUp: string[] = [];
+    await run([
+      migration("001-a", ["stories"]),
+      migration("002-b", ["stories", "users"], async () => {
+        backupsDuringUp = await backupNames();
+      }),
+    ]);
+    expect(backupsDuringUp).toEqual([
       "stories_backup_002-b",
-      "stories_backup_003-c",
+      "users_backup_002-b",
+    ]);
+    expect(await backupNames()).toEqual([
+      "stories_backup_002-b",
+      "users_backup_002-b",
     ]);
 
-    await run([migration("004-d", ["stories", "users"])]);
+    await run([migration("003-c", ["stories"])]);
+    expect(await backupNames()).toEqual(["stories_backup_003-c"]);
+  });
 
-    expect(await backupNames()).toEqual([
-      "stories_backup_002-b",
-      "stories_backup_003-c",
-      "stories_backup_004-d",
-      "users_backup_004-d",
-    ]);
+  it("never backs up the covers collection", async () => {
+    await db().collection("covers").insertOne({ size: 1 });
+    await run([migration("001-a", ["stories", "covers"])]);
+    expect(await backupNames()).toEqual(["stories_backup_001-a"]);
   });
 
   it("fails without changes while another migration holds the lock", async () => {

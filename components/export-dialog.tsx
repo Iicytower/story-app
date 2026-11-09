@@ -76,7 +76,19 @@ export function ExportDialog({
         );
         download(zip, `${baseName}.zip`, "application/zip");
       } else {
-        const data = await buildExport(formatId, source, includeExtras, labels);
+        const { COVER_FORMATS, loadCoverJpeg } =
+          await import("@/lib/export/cover");
+        const cover =
+          source.coverUrl && COVER_FORMATS.includes(formatId)
+            ? await loadCoverJpeg(source.coverUrl)
+            : undefined;
+        const data = await buildExport(
+          formatId,
+          source,
+          includeExtras,
+          labels,
+          cover,
+        );
         download(data, `${baseName}.${format.extension}`, format.mime);
       }
       setOpen(false);

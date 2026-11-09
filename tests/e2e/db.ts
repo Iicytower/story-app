@@ -26,6 +26,7 @@ export function clearStories(): Promise<void> {
     await connection.collection("settings").deleteMany({});
     await connection.collection("folderVersions").deleteMany({});
     await connection.collection("chapterContents").deleteMany({});
+    await connection.collection("covers").deleteMany({});
   });
 }
 

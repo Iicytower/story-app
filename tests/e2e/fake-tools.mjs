@@ -2,7 +2,9 @@
 // fixed list of words, so results do not depend on a running LT, and the dictionary service's
 // /dict/lemmas, /dict/definitions, /dict/synonyms and /dict/rhymes from a small form table
 // (task 25), a few entries (task 32), synonyms (task 33) and rhymes (task 34). Markers in the
-// text or the looked-up word: AWARIA answers 503, POWOLI answers after a delay.
+// text or the looked-up word: AWARIA answers 503, POWOLI answers after a delay. /classify
+// (task 26) echoes the image with the scores of the mode set by POST /classify/mode: safe,
+// adult or down (503).
 import { createServer } from "node:http";
 
 const [port, secret] = process.argv.slice(2);
@@ -199,11 +201,38 @@ function filterRhymes(answer, { pos, min, max } = {}) {
   };
 }
 
+const SCORES = {
+  safe: { nsfl: 0.01, nsfw: 0.02, sfw: 0.97 },
+  adult: { nsfl: 0.01, nsfw: 0.95, sfw: 0.04 },
+};
+let classifyMode = "safe";
+
 createServer(async (request, response) => {
   if (request.url === "/") return response.end("ok");
   if (request.headers["x-tools-secret"] !== secret) {
     response.statusCode = 401;
     return response.end();
+  }
+  if (request.url.startsWith("/classify")) {
+    const chunks = [];
+    for await (const chunk of request) chunks.push(chunk);
+    const image = Buffer.concat(chunks);
+    if (request.url === "/classify/mode") {
+      classifyMode = image.toString();
+      return response.end();
+    }
+    if (classifyMode === "down") {
+      response.statusCode = 503;
+      return response.end();
+    }
+    response.setHeader("Content-Type", "application/json");
+    return response.end(
+      JSON.stringify({
+        model: "fake",
+        scores: SCORES[classifyMode],
+        image: image.toString("base64"),
+      }),
+    );
   }
   let body = "";
   for await (const chunk of request) body += chunk;

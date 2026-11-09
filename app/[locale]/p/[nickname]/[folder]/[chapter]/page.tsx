@@ -3,7 +3,8 @@ import { Link, redirect } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { cookies } from "next/headers";
-import { connection } from "next/server";
+import { after, connection } from "next/server";
+import { retryDueCovers } from "@/lib/covers/mutations";
 import { requestOrigin } from "@/i18n/request-origin";
 import { languageAlternates } from "@/i18n/routing";
 import { AdultBadge } from "@/components/adult";
@@ -33,6 +34,7 @@ export default async function PublishedChapterPage({
   params,
 }: PageProps<"/[locale]/p/[nickname]/[folder]/[chapter]">) {
   await connection();
+  after(() => retryDueCovers());
   const { nickname, folder, chapter: slug } = await params;
   const chapter = await getPublishedChapter(nickname, folder, slug);
   if (!chapter) notFound();

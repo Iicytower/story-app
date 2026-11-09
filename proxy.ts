@@ -8,7 +8,8 @@ import { isPublicPath } from "@/lib/auth/public-paths";
 const intl = createMiddleware(routing);
 
 // Route Handlers stay outside the locale prefix (D46).
-const UNPREFIXED = /^\/(api\/|(stories|folders)\/[^/]+\/export(\/|$))/;
+const UNPREFIXED =
+  /^\/(api\/|(stories|folders)\/[^/]+\/export(\/|$)|covers\/[^/]+$)/;
 // No page has a two-letter first segment, so this is a locale outside the list.
 const LOCALE_LIKE = /^\/[a-z]{2}(-[A-Za-z]{2})?(\/|$)/;
 
