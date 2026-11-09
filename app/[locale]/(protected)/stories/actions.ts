@@ -17,6 +17,7 @@ import {
   savePositions,
   touchFolder,
 } from "@/lib/folders/mutations";
+import { canAddFolder, chapterRoom } from "@/lib/folders/limits";
 import { findChaptersInOrder } from "@/lib/folders/queries";
 import { chapterOrder, isPositionIndex } from "@/lib/folders/sort";
 import {
@@ -26,6 +27,12 @@ import {
   MAX_IMPORT_TITLE_LENGTH,
   type ImportedChapter,
 } from "@/lib/import/limits";
+import {
+  countError,
+  lengthError,
+  MAX_CONTENT_LENGTH,
+  MAX_NOTES_LENGTH,
+} from "@/lib/limits";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
 import { parseStoredProofreading } from "@/lib/proofreading/stored";
@@ -51,6 +58,10 @@ const DUPLICATE_TITLE = () => actionError("DUPLICATE_TITLE", "duplicateTitle");
 
 const INVALID_REQUEST = () => actionError("INVALID_INPUT", "requestInvalid");
 
+const TOO_MANY_FOLDERS = () => translateError(countError("tooManyFolders"));
+
+const TOO_MANY_CHAPTERS = () => translateError(countError("tooManyChapters"));
+
 // The folder is picked by name; a name the user has no folder for creates one.
 export async function createStory(
   title: string,
@@ -69,9 +80,16 @@ export async function createStory(
   if (!trimmedFolder) {
     return actionError("EMPTY_NAME", "folderRequired");
   }
+  const tooLong =
+    lengthError("title", trimmed) ?? lengthError("folderName", trimmedFolder);
+  if (tooLong) return translateError(tooLong);
 
   await connectDB();
   const folderId = await findOrCreateFolder(user.userId, trimmedFolder);
+  if (!folderId) return TOO_MANY_FOLDERS();
+  if ((await chapterRoom(user.userId, folderId)) < 1) {
+    return TOO_MANY_CHAPTERS();
+  }
   try {
     const story = await Story.create({
       userId: user.userId,
@@ -129,6 +147,22 @@ function checkImport(
       max: MAX_IMPORT_TITLE_LENGTH,
     });
   }
+  const long = chapters.find(({ content }) => lengthError("content", content));
+  if (long) {
+    return invalidImport("importChapterTooLong", {
+      title: long.title,
+      max: MAX_CONTENT_LENGTH,
+    });
+  }
+  const longNotes = chapters.find(({ notes }) => lengthError("notes", notes));
+  if (longNotes) {
+    return invalidImport("importNotesTooLong", {
+      title: longNotes.title,
+      max: MAX_NOTES_LENGTH,
+    });
+  }
+  const folderNotesError = lengthError("folderNotes", folderNotes.trim());
+  if (folderNotesError) return folderNotesError;
   if (importTextBytes(chapters, folderNotes) > MAX_IMPORT_TEXT_BYTES) {
     return { ok: false, error: "TOO_LARGE", key: "importTooLarge" };
   }
@@ -228,12 +262,28 @@ export async function importStories(
     if (!name) {
       return actionError("EMPTY_NAME", "folderRequired");
     }
+    const tooLong = lengthError("folderName", name);
+    if (tooLong) return translateError(tooLong);
     if (target.kind === "new") {
+      if (!(await canAddFolder(user.userId))) return TOO_MANY_FOLDERS();
       folderId = await createNumberedFolder(user.userId, name, notesToAppend);
       notesToAppend = "";
     } else {
-      folderId = await findOrCreateFolder(user.userId, name);
+      const found = await findOrCreateFolder(user.userId, name);
+      if (!found) return TOO_MANY_FOLDERS();
+      folderId = found;
     }
+  }
+  if ((await chapterRoom(user.userId, folderId)) < chapters.length) {
+    return TOO_MANY_CHAPTERS();
+  }
+  if (notesToAppend) {
+    const existing = await Folder.findById(folderId)
+      .select({ notes: 1 })
+      .lean();
+    const joined = `${existing?.notes ?? ""}\n\n${notesToAppend}`;
+    const tooLong = lengthError("folderNotes", joined);
+    if (tooLong) return translateError(tooLong);
   }
 
   let ids: Types.ObjectId[];
@@ -297,11 +347,17 @@ export async function moveStory(
     userId: user.userId,
     deletedAt: null,
   })
-    .select({ tags: 1 })
+    .select({ tags: 1, folderId: 1 })
     .lean();
   if (!story) return NOT_FOUND();
   if (exceedsTagLimit(story.tags, folder.tags)) {
     return translateError(TAG_LIMIT_ERROR);
+  }
+  if (
+    !story.folderId?.equals(folder._id) &&
+    (await chapterRoom(user.userId, folderId)) < 1
+  ) {
+    return TOO_MANY_CHAPTERS();
   }
   const arrival = await arrivalUpdate(folderId);
   try {
@@ -437,6 +493,12 @@ export async function saveStory(
   if (!trimmed) {
     return actionError("EMPTY_TITLE", "titleRequired");
   }
+  // Rejects only a save still over the limit, so a longer text stored before can be shortened.
+  const tooLong =
+    lengthError("title", trimmed) ??
+    lengthError("content", content) ??
+    lengthError("notes", notes);
+  if (tooLong) return translateError(tooLong);
   const parsed =
     proofreading === undefined
       ? undefined

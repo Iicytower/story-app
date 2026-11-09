@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { AUTOSAVE_DELAY_MS, onTabHidden } from "@/lib/autosave";
+import { lengthError } from "@/lib/limits";
 import { saveFolderNotes } from "../actions";
 
 type SaveState =
@@ -33,6 +34,12 @@ export function useFolderNotes(
     const run = queue.current.then(async (): Promise<FlushResult> => {
       const value = latest.current;
       if (value === saved.current) return { ok: true };
+      const tooLong = lengthError("folderNotes", value);
+      if (tooLong) {
+        const message = tErrors(tooLong.key, tooLong.values);
+        setSaveState({ status: "error", message });
+        return { ok: false, message };
+      }
       setSaveState({ status: "saving" });
       try {
         const result = await saveFolderNotes(

@@ -121,7 +121,17 @@
     "coversUnavailable": "Covers are not available right now.",
     "coverLimitAccount": "You can have at most {max} covers. Remove one or replace an existing cover.",
     "coverLimitTotal": "There is no room for new covers right now. You can still replace an existing one.",
-    "coverNotFound": "This folder has no cover."
+    "coverNotFound": "This folder has no cover.",
+    "folderNameTooLong": "A folder name can have at most {max, number} characters.",
+    "titleTooLong": "A title can have at most {max, number} characters.",
+    "contentTooLong": "A chapter can have at most {max, number} characters. Shorten it or split it into chapters; the text stays in the editor until then.",
+    "notesTooLong": "Chapter notes can have at most {max, number} characters.",
+    "folderNotesTooLong": "Folder notes can have at most {max, number} characters.",
+    "tooManyFolders": "You can have at most {max, number} folders. Delete a folder to add a new one.",
+    "tooManyChapters": "A folder can have at most {max, number} chapters.",
+    "tooManyVersions": "A folder can have at most {max, number} versions. Delete an old version to save a new one.",
+    "importChapterTooLong": "Chapter “{title}” is too long: a chapter can have at most {max, number} characters.",
+    "importNotesTooLong": "The notes of chapter “{title}” are too long: notes can have at most {max, number} characters."
   },
   "password": {
     "mustContain": "The password must contain:",

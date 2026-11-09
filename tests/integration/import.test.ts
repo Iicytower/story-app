@@ -200,7 +200,10 @@ describe("importStories", () => {
     ],
     [
       "too much text, counted in bytes",
-      [chapter("A", "ż".repeat(MAX_IMPORT_TEXT_BYTES / 2 + 1))],
+      // Each chapter under MAX_CONTENT_LENGTH, together over the byte limit.
+      Array.from({ length: 8 }, (_, index) =>
+        chapter(`C${index}`, "ż".repeat(MAX_IMPORT_TEXT_BYTES / 16 + 1)),
+      ),
       "TOO_LARGE",
     ],
   ])("rejects %s and writes nothing", async (_, chapters, error) => {
