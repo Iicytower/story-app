@@ -1,6 +1,6 @@
 # 26 – Upload okładek
 
-Subtask zbiorczego taska [66](../66-covers-and-adult-rating.md) (branch, kolejność, środowisko lokalne).
+Subtask zbiorczego taska [66](66-covers-and-adult-rating.md) (branch, kolejność, środowisko lokalne).
 
 Zgłoszenie użytkownika (2026-10-30), wydzielone z dawnego taska „Okładki”. Upload okładki folderu, pliki w osobnej kolekcji MongoDB (zmiana 2026-11-09, wcześniej Cloudflare R2). Wyświetlanie: task 40. Okładki rozdziałów i obrazki w tekście są poza zakresem (backlog).
 
