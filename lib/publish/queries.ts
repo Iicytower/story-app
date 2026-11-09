@@ -2,6 +2,7 @@ import type { Types } from "mongoose";
 import { cache } from "react";
 import { findUserByNickname } from "@/lib/accounts";
 import { isAdult } from "@/lib/adult/adult";
+import { coversOf, type CoverView } from "@/lib/covers/queries";
 import { connectDB } from "@/lib/db";
 import { findChaptersInOrder } from "@/lib/folders/queries";
 import { chapterOrder, type ChapterSort } from "@/lib/folders/sort";
@@ -60,6 +61,7 @@ const findPublishedFolder = cache(
         formerSlugs: 1,
         chapterSort: 1,
         adult: 1,
+        coverId: 1,
       })
       .lean();
     const slugs = folderSlugs(folders);
@@ -97,10 +99,12 @@ const findPublishedFolder = cache(
         };
       });
     if (visible.length === 0) return null;
+    const covers = await coversOf([folder]);
     return {
       nickname: author.nickname,
       name: folder.name,
       adult: isAdult(folder.adult),
+      cover: covers.get(folder._id.toString()) ?? null,
       path,
       chapters: visible,
     };
@@ -185,7 +189,7 @@ export async function chapterPublicPath(
 // Accounts from before task 36 may have no nickname yet, so they have no public address.
 async function findSearchableFolders() {
   const folders = await Folder.find({ published: true, deletedAt: null })
-    .select({ userId: 1, name: 1, tags: 1, adult: 1 })
+    .select({ userId: 1, name: 1, tags: 1, adult: 1, coverId: 1 })
     .lean();
   const authors = await User.find({
     _id: { $in: folders.map(({ userId }) => userId) },
@@ -196,12 +200,15 @@ async function findSearchableFolders() {
   const nicknames = new Map(
     authors.map(({ _id, nickname }) => [_id.toString(), nickname]),
   );
-  return folders
-    .filter(({ userId }) => nicknames.has(userId.toString()))
-    .map((folder) => ({
-      ...folder,
-      nickname: nicknames.get(folder.userId.toString())!,
-    }));
+  const searchable = folders.filter(({ userId }) =>
+    nicknames.has(userId.toString()),
+  );
+  const covers = await coversOf(searchable);
+  return searchable.map((folder) => ({
+    ...folder,
+    nickname: nicknames.get(folder.userId.toString())!,
+    cover: covers.get(folder._id.toString()) ?? null,
+  }));
 }
 
 // Only tags of public chapters: anything else would reveal unpublished work.
@@ -229,6 +236,7 @@ export interface PublicSearchResult {
   tags: string[];
   folderTags: string[];
   adult: boolean;
+  cover: CoverView | null;
   snippet: Snippet;
 }
 
@@ -326,6 +334,7 @@ export async function searchPublishedChapters(
     tags: own,
     folderTags,
     adult: isAdult(chapter.adult) || isAdult(folder.adult),
+    cover: folder.cover,
     snippet: buildSnippet(text, query),
   }));
 }
@@ -374,6 +383,7 @@ export async function listRecentlyPublished(): Promise<RecentChapter[]> {
       tags: own,
       folderTags: inheritedOnly(own, folder.tags),
       adult: isAdult(chapter.adult) || isAdult(folder.adult),
+      cover: folder.cover,
       snippet: buildSnippet(stripComments(chapter.content)),
       publishedAt: chapter.publishedAt!,
     };

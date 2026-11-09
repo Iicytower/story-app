@@ -7,6 +7,7 @@ import { getLocale } from "next-intl/server";
 import { LocalDate } from "@/components/local-date";
 import { SortableList } from "@/components/sortable-list";
 import { AdultBadge } from "@/components/adult";
+import { CoverImage } from "@/components/cover";
 import { TagChips } from "@/components/tag-chips";
 import { Input } from "@/components/ui/input";
 import { requireUser } from "@/lib/auth/session";
@@ -55,6 +56,7 @@ export default async function StoriesPage({
     locale: await getLocale(),
   });
   const t = await getTranslations("folders");
+  const tCovers = await getTranslations("covers");
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
       <div className="flex items-center gap-2">
@@ -117,8 +119,15 @@ export default async function StoriesPage({
               <>
                 <Link
                   href={`/folders/${folder.id}`}
-                  className="hover:bg-muted/50 flex min-w-0 flex-1 items-baseline gap-4 px-4 py-3"
+                  className="hover:bg-muted/50 flex min-w-0 flex-1 items-center gap-4 px-4 py-3"
                 >
+                  {folder.cover && (
+                    <CoverImage
+                      path={folder.cover.path}
+                      alt={tCovers("alt", { name: folder.name })}
+                      size="sm"
+                    />
+                  )}
                   <span className="mr-auto flex min-w-0 flex-wrap items-center gap-2">
                     <span className="font-medium">{folder.name}</span>
                     {folder.adult.adult && <AdultBadge />}

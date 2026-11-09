@@ -215,3 +215,130 @@ test("importing a folder zip brings its cover.webp along", async ({ page }) => {
   await menuAction(page, "Actions for Book", "Cover");
   await expect(currentCover(page)).toBeVisible();
 });
+
+async function publishBook(page: Page) {
+  await menuAction(page, "Actions for Book", "Publish");
+  await page
+    .getByRole("alertdialog", { name: "Publish folder?" })
+    .getByRole("button", { name: "Publish", exact: true })
+    .click();
+  await expect(page.getByRole("alertdialog")).toBeHidden();
+}
+
+async function anonymous(page: Page) {
+  const context = await page
+    .context()
+    .browser()!
+    .newContext({ storageState: { cookies: [], origins: [] } });
+  return context.newPage();
+}
+
+test("the cover shows in the folder list and on the folder page, and changes with it", async ({
+  page,
+}) => {
+  const id = await seedBook();
+  await seedStory("alice", { title: "Other", folder: "Plain" });
+  await page.goto(`/folders/${id}`);
+  const onPage = page.getByRole("img", { name: "Cover of Book" });
+  await expect(onPage).toHaveCount(0);
+  await menuAction(page, "Actions for Book", "Cover");
+  await upload(page, [200, 40, 40]);
+  await expect(currentCover(page)).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(onPage).toBeVisible();
+  const first = await onPage.getAttribute("src");
+
+  await page.goto("/stories");
+  await expect(
+    page.getByRole("img", { name: "Cover of Book" }),
+  ).toHaveAttribute("src", first!);
+  await expect(page.getByRole("img", { name: "Cover of Plain" })).toHaveCount(
+    0,
+  );
+
+  await page.goto(`/folders/${id}`);
+  await menuAction(page, "Actions for Book", "Cover");
+  await upload(page, [40, 200, 40]);
+  await expect(currentCover(page)).not.toHaveAttribute("src", first!);
+  await page.keyboard.press("Escape");
+  await expect(onPage).not.toHaveAttribute("src", first!);
+  expect(
+    await onPage.evaluate((img: HTMLImageElement) => img.naturalWidth),
+  ).toBe(600);
+});
+
+test("readers see the cover on the contents page, in search and on the home page", async ({
+  page,
+}) => {
+  await seedStory("alice", {
+    title: "Night",
+    folder: "Book",
+    content: "Moonlit",
+  });
+  const id = (await findFolder("Book"))!._id.toString();
+  await page.goto(`/folders/${id}`);
+  await publishBook(page);
+  await menuAction(page, "Actions for Book", "Cover");
+  await upload(page, [200, 40, 40]);
+  await expect(currentCover(page)).toBeVisible();
+
+  const visitor = await anonymous(page);
+  await visitor.goto("/p/Alice/book");
+  await expect(
+    visitor.getByRole("img", { name: "Cover of Book" }),
+  ).toBeVisible();
+  await visitor.goto("/");
+  await expect(
+    visitor
+      .getByRole("region", { name: "Recently published" })
+      .getByRole("img", { name: "Cover of Book" }),
+  ).toBeVisible();
+  const field = visitor.getByRole("searchbox", {
+    name: "Search published stories",
+  });
+  await field.fill("Moonlit");
+  await field.press("Enter");
+  await expect(
+    visitor
+      .getByRole("list", { name: "Search results" })
+      .getByRole("img", { name: "Cover of Book" }),
+  ).toBeVisible();
+});
+
+test("an 18+ cover is a badge in search and blurred on the contents page", async ({
+  page,
+}) => {
+  await seedStory("alice", {
+    title: "Night",
+    folder: "Book",
+    content: "Moonlit",
+  });
+  const id = (await findFolder("Book"))!._id.toString();
+  await page.goto(`/folders/${id}`);
+  await publishBook(page);
+  await classifier("adult");
+  await menuAction(page, "Actions for Book", "Cover");
+  await upload(page, [10, 10, 10]);
+  await expect(dialog(page).getByRole("status")).toContainText("rated 18+");
+
+  const visitor = await anonymous(page);
+  await visitor.goto("/");
+  const field = visitor.getByRole("searchbox", {
+    name: "Search published stories",
+  });
+  await field.fill("Moonlit");
+  await field.press("Enter");
+  const result = visitor.getByRole("list", { name: "Search results" });
+  await expect(result.getByRole("img", { name: BADGE })).toHaveCount(2);
+  await expect(result.getByRole("img", { name: "Cover of Book" })).toHaveCount(
+    0,
+  );
+
+  await visitor.goto("/p/Alice/book");
+  const cover = visitor.getByRole("img", { name: "Cover of Book" });
+  await expect(cover).toHaveClass(/blur/);
+  await visitor
+    .getByRole("button", { name: "Show the cover (I am 18 or older)" })
+    .click();
+  await expect(cover).not.toHaveClass(/blur/);
+});

@@ -3,6 +3,7 @@ import { chapterAdultState, folderAdultState } from "@/lib/adult/adult";
 import { connectDB } from "@/lib/db";
 import { chapterOrder, folderOrder, type Order } from "@/lib/folders/sort";
 import { folderLanguage } from "@/lib/languages";
+import { coverPath, coversOf } from "@/lib/covers/queries";
 import { Cover } from "@/lib/models/cover";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
@@ -37,6 +38,7 @@ export async function listFolders(userId: string) {
         published: 1,
         language: 1,
         adult: 1,
+        coverId: 1,
       })
       .lean(),
     // aggregate() does not cast, so userId has to be an ObjectId here.
@@ -48,12 +50,14 @@ export async function listFolders(userId: string) {
   const countByFolder = new Map(
     counts.map(({ _id, count }) => [_id?.toString(), count]),
   );
+  const covers = await coversOf(folders);
   return {
     sort,
     folders: folders.map((folder) => ({
       ...serialize(folder),
       language: folderLanguage(folder.language),
       adult: folderAdultState(folder.adult),
+      cover: covers.get(folder._id.toString()) ?? null,
       chapterCount: countByFolder.get(folder._id.toString()) ?? 0,
     })),
   };
@@ -110,6 +114,7 @@ export async function getFolder(userId: string, id: string) {
     adult: folderAdultState(folder.adult),
     cover: cover && {
       id: cover._id.toString(),
+      path: coverPath(cover._id),
       manualAdult: Boolean(cover.manualAdult),
       autoAdult: Boolean(cover.autoAdult),
     },

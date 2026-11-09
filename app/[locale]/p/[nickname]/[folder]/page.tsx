@@ -2,12 +2,16 @@ import type { Metadata } from "next";
 import { Link, redirect } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
+import { cookies } from "next/headers";
 import { after, connection } from "next/server";
 import { retryDueCovers } from "@/lib/covers/mutations";
 import { requestOrigin } from "@/i18n/request-origin";
 import { languageAlternates } from "@/i18n/routing";
 import { AdultBadge } from "@/components/adult";
+import { CoverImage } from "@/components/cover";
+import { ADULT_COOKIE } from "@/lib/adult/gate";
 import { getPublishedFolder } from "@/lib/publish/queries";
+import { BlurredCover } from "./adult-cover";
 
 export async function generateMetadata({
   params,
@@ -37,9 +41,22 @@ export default async function PublishedFolderPage({
   if (folder.path !== `/p/${nickname}/${slug}`)
     redirect({ href: folder.path, locale: await getLocale() });
   const t = await getTranslations("public");
+  const tCovers = await getTranslations("covers");
+  const confirmed = (await cookies()).get(ADULT_COOKIE)?.value === "1";
+  const cover = folder.cover;
+  const coverAlt = tCovers("alt", { name: folder.name });
 
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-10">
+      {cover && (
+        <div className="mb-6">
+          {cover.adult && !confirmed ? (
+            <BlurredCover path={cover.path} alt={coverAlt} />
+          ) : (
+            <CoverImage path={cover.path} alt={coverAlt} size="lg" />
+          )}
+        </div>
+      )}
       <div className="flex items-center gap-3">
         <h1 className="text-3xl font-bold">{folder.name}</h1>
         {folder.adult && <AdultBadge />}

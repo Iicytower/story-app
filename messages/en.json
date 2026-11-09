@@ -800,6 +800,8 @@
     "autoAdult": "The filter rated this cover 18+.",
     "rejected": "The new cover could not be checked, so it was not saved. Add it again.",
     "dismiss": "Dismiss",
-    "inputInvalid": "Choose a JPEG, PNG or WebP image up to 10 MB."
+    "inputInvalid": "Choose a JPEG, PNG or WebP image up to 10 MB.",
+    "alt": "Cover of {name}",
+    "showAdult": "Show the cover (I am 18 or older)"
   }
 }
