@@ -114,6 +114,29 @@ services:
       # Tools gateway (Caddy with X-Tools-Secret), deployed by Coolify inside this server.
       - "127.0.0.1:8110:8110"
 
+  # A fresh "Mikrus" for testing `npm run tools:remote` (task 28, docs/deploy.md). Not started by
+  # `npm run up`: `docker compose --profile fake-mikrus up -d --build`.
+  fake-mikrus:
+    profiles: [fake-mikrus]
+    build: docker/fake-mikrus
+    image: story_app-fake-mikrus
+    privileged: true
+    cgroup: host
+    tmpfs: [/run, /run/lock, /tmp]
+    volumes:
+      - fake-mikrus-docker:/var/lib/docker
+      # Docker 29 keeps images in containerd; on the container's own overlay root its layers fail.
+      - fake-mikrus-containerd:/var/lib/containerd
+      - fake-mikrus-data:/data
+      - type: bind
+        source: .tools/fake-mikrus/id_ed25519.pub
+        target: /etc/fake-mikrus/authorized_keys
+        read_only: true
+    ports:
+      # SSH (Mikrus: 10000+ID) and the tools gateway (a port from the pool).
+      - "127.0.0.1:10022:22"
+      - "127.0.0.1:20110:20110"
+
 volumes:
   mongo-data:
   coolify-storage:
@@ -121,3 +144,6 @@ volumes:
   coolify-redis:
   tools-server-docker:
   tools-server-data:
+  fake-mikrus-docker:
+  fake-mikrus-data:
+  fake-mikrus-containerd:

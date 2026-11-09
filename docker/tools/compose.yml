@@ -7,7 +7,8 @@ services:
     image: caddy:2.11.9-alpine
     restart: unless-stopped
     ports:
-      - "8110:8080"
+      # 8110 inside the local tools server; on the real one the port from the pool (task 28).
+      - "${GATEWAY_PORT:-8110}:8080"
     environment:
       - TOOLS_API_SECRET=${TOOLS_API_SECRET:?}
     volumes:
