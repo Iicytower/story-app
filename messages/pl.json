@@ -68,6 +68,7 @@
     "folderNotFound": "Ten folder nie istnieje albo został usunięty.",
     "folderNameRequired": "Nazwa folderu jest wymagana.",
     "optionUnavailable": "Ta opcja jest niedostępna. Odśwież stronę i spróbuj ponownie.",
+    "requestInvalid": "To żądanie jest nieprawidłowe. Odśwież stronę i spróbuj ponownie.",
     "duplicateFolder": "Folder o tej nazwie już istnieje.",
     "notesConflict": "Te notatki zmieniono w innej karcie albo na innym urządzeniu. Odśwież stronę, aby pobrać najnowszą wersję.",
     "storyNotFound": "To opowiadanie nie istnieje albo zostało usunięte.",

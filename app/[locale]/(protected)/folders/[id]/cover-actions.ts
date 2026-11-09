@@ -1,7 +1,8 @@
 "use server";
 
-import { isObjectIdOrHexString, Types } from "mongoose";
+import { Types } from "mongoose";
 import { refresh } from "next/cache";
+import { isBoolean, isId } from "@/lib/action-input";
 import type { ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import {
@@ -23,7 +24,7 @@ import { toolsConfig } from "@/lib/tools/client";
 const NOT_FOUND = () => actionError("NOT_FOUND", "folderNotFound");
 
 async function ownedFolder(userId: string, id: string) {
-  if (!isObjectIdOrHexString(id)) return null;
+  if (!isId(id)) return null;
   await connectDB();
   return Folder.findOne({ _id: id, userId, deletedAt: null })
     .select({ coverId: 1 })
@@ -64,6 +65,9 @@ export async function setFolderCover(
   const folder = await ownedFolder(user.userId, id);
   if (!folder) return NOT_FOUND();
 
+  if (!(form instanceof FormData)) {
+    return actionError("INVALID_INPUT", "coverInvalid");
+  }
   const file = form.get("cover");
   if (!(file instanceof Blob)) {
     return actionError("INVALID_INPUT", "coverInvalid");
@@ -126,6 +130,9 @@ export async function setCoverAdult(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
+  if (!isBoolean(adult)) {
+    return actionError("INVALID_INPUT", "requestInvalid");
+  }
   const folder = await ownedFolder(user.userId, id);
   if (!folder) return NOT_FOUND();
   if (!folder.coverId) return actionError("NOT_FOUND", "coverNotFound");

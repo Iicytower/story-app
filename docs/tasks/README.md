@@ -59,7 +59,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 58 | [Unieważnianie sesji](58-session-revocation.md) | – | [ ] |
 | 59 | [Limity rozmiaru i liczby danych](59-data-limits.md) | – | [ ] |
 | 60 | [Nagłówki bezpieczeństwa](60-security-headers.md) | – | [ ] |
-| 61 | [Typy argumentów Server Actions](61-action-input-types.md) | – | [ ] |
+| 61 | [Typy argumentów Server Actions](done/61-action-input-types.md) | – | [x] |
 | 62 | [Zapis dużej treści rozdziału kończy się 500](62-large-content-save.md) | – | [ ] |
 | 63 | [Kody odzyskiwania konta](63-recovery-codes.md) | – | [ ] |
 | 64 | [Rozważenie predefiniowanych tagów](64-predefined-tags.md) | 24 | [ ] |

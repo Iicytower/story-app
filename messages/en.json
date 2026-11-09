@@ -68,6 +68,7 @@
     "folderNotFound": "This folder does not exist or has been deleted.",
     "folderNameRequired": "Folder name is required.",
     "optionUnavailable": "This option is not available. Reload the page and try again.",
+    "requestInvalid": "This request is not valid. Reload the page and try again.",
     "duplicateFolder": "A folder with this name already exists.",
     "notesConflict": "These notes were changed in another tab or on another device. Reload the page to get the latest version.",
     "storyNotFound": "This story does not exist or has been deleted.",
