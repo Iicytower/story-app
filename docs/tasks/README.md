@@ -4,7 +4,7 @@
 
 Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `develop`).
 
-Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56): najpierw lokalny serwer narzędzi w Dockerze (54) i taski od niego zależne, potem wygląd i okładki (R2), na końcu prawdziwy serwer na Mikrusie (28).
+Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56): najpierw lokalny serwer narzędzi w Dockerze (54) i taski od niego zależne, potem wygląd i okładki folderów (w MongoDB), na końcu prawdziwy serwer na Mikrusie (28).
 
 | # | Task | Zależy od | Status |
 | --- | --- | --- | --- |

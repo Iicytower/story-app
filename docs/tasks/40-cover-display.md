@@ -1,21 +1,19 @@
 # 40 – Wyświetlanie okładek
 
-Wydzielone z dawnego taska 26 (zgłoszenie z 2026-10-30).
+Wydzielone z dawnego taska 26 (zgłoszenie z 2026-10-30). Na razie tylko okładki folderów (decyzja użytkownika 2026-11-09, task 26).
 
 ## Zakres
 
-- Wyświetlanie okładek w widokach ustalonych przy starcie taska.
-- Rozdział bez własnej okładki pokazuje okładkę folderu.
+- Wyświetlanie okładek folderów w widokach ustalonych przy starcie taska.
 
 Do decyzji przy starcie taska (wynik jako nowa decyzja w `decisions.md`): widoki z okładką: lista folderów, strona folderu, panel Chapters, edytor, strony publiczne.
 
 ## Kryteria akceptacji
 
-1. Rozdział bez okładki pokazuje okładkę folderu, a rozdział z okładką własną.
-2. Usunięcie okładki rozdziału wraca do okładki folderu; rozdział i folder bez okładek nie pokazują uszkodzonego obrazka.
-3. Przeniesienie rozdziału bez własnej okładki pokazuje okładkę nowego folderu.
-4. Strony publiczne pokazują okładkę tylko, jeśli decyzja przy starcie tak stanowi.
+1. Folder z okładką pokazuje ją w wybranych widokach, a folder bez okładki nie pokazuje uszkodzonego obrazka.
+2. Wymiana okładki od razu pokazuje nową (nowy adres, bez starego obrazka z cache).
+3. Strony publiczne pokazują okładkę tylko, jeśli decyzja przy starcie tak stanowi, a okładka 18+ jest tam ukryta za znaczkiem 18+ (task 26).
 
 ## Testy
 
-Unit: wybór okładki z fallbackiem do folderu. E2E: fallback rozdziału do folderu, przeniesienie, brak okładek. `manual`: wyświetlanie przez adres R2.
+E2E: okładka w wybranych widokach, wymiana, brak okładki, okładka 18+ na stronie publicznej. `manual`: wyświetlanie na stagingu.

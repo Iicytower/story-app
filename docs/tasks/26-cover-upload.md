@@ -1,60 +1,67 @@
 # 26 – Upload okładek
 
-Zgłoszenie użytkownika (2026-10-30), wydzielone z dawnego taska „Okładki”. Upload okładki do rozdziału lub folderu, pliki w Cloudflare R2. Wyświetlanie: task 40. Obrazki w tekście są poza zakresem (backlog).
+Zgłoszenie użytkownika (2026-10-30), wydzielone z dawnego taska „Okładki”. Upload okładki folderu, pliki w osobnej kolekcji MongoDB (zmiana 2026-11-09, wcześniej Cloudflare R2). Wyświetlanie: task 40. Okładki rozdziałów i obrazki w tekście są poza zakresem (backlog).
 
 ## Zakres
 
-- Dodanie, wymiana i usunięcie okładki rozdziału oraz folderu.
-- Skalowanie i kompresja obrazka w przeglądarce przed wysłaniem.
-- Upload bezpośrednio z przeglądarki do R2 przez krótko ważny podpisany adres wydawany przez Server Action.
-- Automatyczny filtr 18+ okładek (zgłoszenie użytkownika 2026-11-08, research w sekcji „Dane z researchu”): okładka trafia najpierw do prywatnego bucketu `pending`, publiczna staje się dopiero po ocenie serwera.
-- Okładka oceniona jako 18+ automatycznie oznacza rozdział (lub folder) jako 18+ przez wspólny system oznaczeń z taska [65](65-adult-rating.md): właściciel nie może zdjąć tego oznaczenia, dopóki nie usunie albo nie wymieni okładki. W wynikach wyszukiwania okładka 18+ jest ukryta za znaczkiem 18+. Właściciel może też sam oznaczyć okładkę jako 18+ (bez blokady rozdziału).
+- Dodanie, wymiana i usunięcie okładki folderu (na razie tylko folderu, decyzja użytkownika 2026-11-09).
+- Skalowanie i kompresja obrazka w przeglądarce przed wysłaniem; plik trafia do Server Action (limit żądania 4,5 MB na Vercel Hobby), która sprawdza bajty i zapisuje okładkę.
+- Serwowanie przez Route Handler (poza `[locale]`, jak eksport) z długim cache (`immutable`); identyfikator w adresie zmienia się przy każdej wymianie okładki.
+- Automatyczny filtr 18+ okładek (zgłoszenie użytkownika 2026-11-08, research w sekcji „Dane z researchu”): okładka ma stan `pending` i nie jest serwowana, dopóki serwer jej nie oceni.
+- Okładka oceniona jako 18+ automatycznie oznacza folder jako 18+ przez wspólny system oznaczeń z taska [65](65-adult-rating.md): właściciel nie może zdjąć tego oznaczenia, dopóki nie usunie albo nie wymieni okładki. W wynikach wyszukiwania okładka 18+ jest ukryta za znaczkiem 18+. Właściciel może też sam oznaczyć okładkę jako 18+ (bez blokady folderu).
+- Twardy limit łącznego rozmiaru okładek (decyzja użytkownika 2026-11-09), bo zapełnienie M0 zablokowałoby zapis opowiadań.
+- Zmiana kopii przed migracją (D14): przed migracją backup poza Atlasem (forma, sposób i miejsce do ustalenia później), usunięcie kopii sprzed poprzedniej migracji, nowa kopia, migracja. Zostaje jedna kopia zamiast trzech.
 
 ## Ustalenia
 
-- Storage: Cloudflare R2, bo Vercel jest na planie free (decyzja użytkownika).
-- W bazie tylko ścieżka pliku (np. `covers/<id>.webp`), adres to `IMAGES_BASE_URL` + ścieżka. Zmiana serwera to skopiowanie plików z tymi samymi ścieżkami i zmiana tej wartości, bez migracji danych.
-- Nazwę pliku generuje aplikacja. Nowa okładka to nowy plik, a stary jest usuwany.
-- Klucze R2 tylko na serwerze. Osobne buckety dla produkcji i stagingu, jak osobne bazy (D13).
+Analiza 2026-11-09 (R2, pliki na Mikrusie, MongoDB na Mikrusie, cała baza na Mikrusie, Atlas): wybrany Atlas M0, bo bez nowego magazynu, backupu i punktu awarii, a pojemność na start wystarcza.
+
+- Okładki w osobnej kolekcji (np. `covers`: obrazek jako `Buffer`, typ, rozmiar, stan, wyniki filtra) z odniesieniem do folderu. Kopie przed migracją pomijają tę kolekcję, a wersje rozdziałów nie kopiują okładek (decyzje użytkownika).
+- Staging nie dostaje żadnych danych z produkcji, więc okładki zajmują miejsce w klastrze tylko raz (produkcja i staging dzielą klaster M0, `docs/deploy.md`).
+- Pojemność: (512 MB − ok. 50 MB zapasu − dane bez okładek z jedną kopią obu baz) / rozmiar okładki. Przy 100 KB na okładkę i 50 MB tekstu na bazę to ok. 2600 okładek. Przy starcie taska zmierzyć rzeczywisty rozmiar danych (`db.stats()` albo Atlas → Collections) i z tego ustawić limit.
+- Gdy limit zacznie przeszkadzać: przeniesienie okładek na pliki na Mikrusie (serwis za bramką z `X-Tools-Secret`, serwowanie przez Vercel z cache). Cała baza na Mikrusie odrzucona na razie (opóźnienie Vercel → Finlandia, jeden serwer bez SLA, przepisanie warstwy danych przy wariancie z NestJS).
 - Użytkownik nie ma własnej domeny.
+
+Decyzje użytkownika (2026-11-09):
+
+- Okładka nie jest częścią wersji folderów (D25), jak notatki.
+- Soft delete folderu od razu usuwa jego okładkę (przywrócony folder wraca bez niej).
+- Eksport: okładka w zipie folderu (`cover.webp`, D18, import ją wczytuje) oraz jako strona tytułowa w `.epub`, `.docx` i `.pdf`. Do sprawdzenia przy starcie: czy biblioteki eksportu przyjmują WebP, czy trzeba konwertować do JPEG/PNG.
+- Format: WebP 2:3, 600×900, kadrowanie w przeglądarce; wejście JPEG, PNG lub WebP do 10 MB.
+- Limity: 10 okładek na konto i globalny limit łącznego rozmiaru; po przekroczeniu komunikat, wymiana istniejącej okładki dalej działa.
+- Klasyfikator: tylko własny model ONNX w kontenerze stosu narzędzi (lokalnie Docker z taska 54, na produkcji Mikrus z taska 28), bez OpenAI i innych zewnętrznych API. Bez `TOOLS_API_URL` upload okładek jest wyłączony (jak narzędzia, D56), więc na stagingu i produkcji okładki działają dopiero po tasku 28.
+- Dwa progi: zwykła / 18+, bez odrzucania. Bez OpenAI nie ma sygnału samookaleczeń, a bez progu odrzucenia każda treść zostaje zapisana (ryzyko CSAM z „Dane z researchu” zostaje do rozwiązania razem z moderacją, task 53).
+- Fałszywy alarm: bez odwołania; właściciel usuwa lub wymienia okładkę, a komunikat wyjaśnia blokadę. Odwołania razem z moderacją (task 53).
 
 Do decyzji przy starcie taska (wynik jako nowa decyzja w `decisions.md`):
 
-- Adres publiczny bez własnej domeny: `r2.dev` (sprawdzić aktualne limity i przeznaczenie), proxy przez aplikację albo zakup domeny.
-- Klient S3 (nowy pakiet, wymaga zgody) czy własne podpisywanie.
-- Docelowy format, rozmiar, proporcje, kadrowanie oraz maksymalny rozmiar pliku wejściowego.
-- Zachowanie plików przy soft delete: usuwać od razu czy dopiero przy trwałym usunięciu.
-- Czy okładka jest częścią eksportu (`.epub`, `.docx`, `.pdf`), importu i wersji folderów (D25).
-- Backup plików z R2, bo `scripts/backup.sh` obejmuje tylko bazę (D26).
-- Ochrona przed podmianą cudzego pliku i przed wskazaniem ścieżki spoza `covers/`.
-- Filtr 18+ (szczegóły w „Dane z researchu”):
-  - Klasyfikator: rekomendacja to ONNX na Mikrusie + OpenAI moderation; wariant bez Mikrusa: OpenAI + Azure F0. Task 28 (Mikrus) jest w kolejce za taskiem 26, więc do ustalenia, czy 26 czeka na Mikrusa, czy klasyfikator na start działa lokalnie w Dockerze (jak serwer narzędzi z taska 54).
-  - Przepływ: presigned PUT do bucketu `pending` + `finalizeCover` albo plik przez Server Action (limit 4,5 MB na Vercel Hobby).
-  - Trzy progi: zwykła / 18+ / odrzucenie bardzo wyraźnych treści seksualnych (ograniczenie ryzyka CSAM). Dla avatarów odrzucenie wszystkiego, co nie jest SFW.
-  - Ścieżka odwołania od fałszywego alarmu (właściciel nie może zdjąć automatycznego 18+ bez usunięcia okładki, task 65).
-  - Własna domena: rozwiązuje limity `r2.dev` i daje darmowy skaner CSAM Cloudflare, ale łamie zasadę zerowego kosztu.
+- Wartość globalnego limitu: po pomiarze danych w Atlasie (`db.stats()` albo Atlas → Collections).
+- Backup przed migracją: forma, sposób i miejsce (np. `scripts/backup.sh`, D26) oraz czy obejmuje okładki.
+- Model: OwenElliott sam czy z Marqo jako drugą opinią; progi z próbki 50–100 okładek.
 
 ## Kryteria akceptacji
 
-1. Właściciel może dodać, wymienić i usunąć okładkę rozdziału i folderu.
-2. Do R2 trafia tylko obrazek po przeskalowaniu, a plik o złym typie lub zbyt duży daje komunikat.
-3. Wymiana i usunięcie okładki usuwają stary plik z R2.
-4. Baza trzyma tylko ścieżkę, a zmiana `IMAGES_BASE_URL` zmienia adresy wszystkich okładek.
-5. Podpisany adres wydaje tylko właściciel; cudzy rozdział lub folder daje `NOT_FOUND`, a klucze R2 nie trafiają do klienta.
-6. Błąd uploadu daje komunikat i zostawia poprzednią okładkę.
-7. Zmiana okładki nie zmienia `updatedAt` rozdziału (jak D11), więc otwarty edytor nie dostaje `CONFLICT`.
-8. Okładka nie jest publicznie dostępna, dopóki serwer jej nie oceni; przy niedostępnym klasyfikatorze zostaje `pending` i niewidoczna (fail-closed), a poprzednia okładka zostaje.
-9. Okładka oceniona jako 18+ oznacza rozdział (lub folder) jako 18+ (task 65), właściciel nie może zdjąć tego oznaczenia, a po usunięciu lub wymianie okładki na zwykłą blokada znika. W wynikach wyszukiwania pokazuje się znaczek 18+ zamiast okładki.
-10. Właściciel może ręcznie oznaczyć okładkę jako 18+; to nie blokuje oznaczenia rozdziału.
-11. Okładka powyżej progu odrzucenia daje komunikat i nie zostaje zapisana (jeśli decyzja przy starcie wprowadzi ten próg).
+1. Właściciel może dodać, wymienić i usunąć okładkę folderu.
+2. Zapisywany jest tylko obrazek po przeskalowaniu, a plik o złym typie lub zbyt duży daje komunikat.
+3. Wymiana i usunięcie okładki usuwają stary obrazek z kolekcji.
+4. Okładkę zapisuje i usuwa tylko właściciel; cudzy folder daje `NOT_FOUND`.
+5. Błąd uploadu daje komunikat i zostawia poprzednią okładkę.
+6. Zmiana okładki nie zmienia `updatedAt` folderu ani jego rozdziałów (jak D11).
+7. Okładka nie jest serwowana, dopóki serwer jej nie oceni; przy niedostępnym klasyfikatorze zostaje `pending` i niewidoczna (fail-closed), a poprzednia okładka zostaje.
+8. Okładka oceniona jako 18+ oznacza folder jako 18+ (task 65), właściciel nie może zdjąć tego oznaczenia, a po usunięciu lub wymianie okładki na zwykłą blokada znika. W wynikach wyszukiwania pokazuje się znaczek 18+ zamiast okładki.
+9. Właściciel może ręcznie oznaczyć okładkę jako 18+; to nie blokuje oznaczenia folderu.
+10. Po osiągnięciu limitu na konto lub globalnego nowa okładka daje komunikat i nie zostaje zapisana, a wymiana istniejącej działa.
+11. Bez `TOOLS_API_URL` upload okładek jest niedostępny.
+12. Eksport `.zip` zawiera `cover.webp`, import go wczytuje, a `.epub`, `.docx` i `.pdf` mają okładkę jako stronę tytułową.
+13. Kopia przed migracją pomija kolekcję okładek i zostaje tylko jedna kopia; migracja startuje dopiero po udanym backupie.
 
 ## Testy
 
-Unit: składanie adresu, walidacja typu i rozmiaru, skalowanie, werdykt z wyników klasyfikatorów (progi, brak jednego źródła, brak obu). Integracyjne: akcje okładek, własność, usuwanie starego pliku, `pending` → `approved`, automatyczne 18+ i blokada, migracja (R2 i klasyfikatory zastąpione atrapą, bez wywołań sieciowych). E2E: dodanie, wymiana i usunięcie okładki, znaczek 18+ w wyszukiwarce, zablokowany przełącznik 18+ rozdziału, ręczne oznaczenie. `manual`: prawdziwy upload na stagingu, klasyfikacja na próbce okładek.
+Unit: walidacja typu i rozmiaru, skalowanie, werdykt z wyniku klasyfikatora (próg 18+, brak odpowiedzi), limity. Integracyjne: akcje okładek, własność, usuwanie starego obrazka, `pending` → `approved`, automatyczne 18+ i blokada, limit, Route Handler (cudza i `pending` okładka niedostępne, nagłówki cache), kopie migracji bez `covers` i tylko jedna, okładka w eksporcie i imporcie, brak `TOOLS_API_URL` (klasyfikator zastąpiony atrapą, bez wywołań sieciowych). E2E: dodanie, wymiana i usunięcie okładki, znaczek 18+ w wyszukiwarce, zablokowany przełącznik 18+ folderu, ręczne oznaczenie. `manual`: prawdziwy upload na stagingu, klasyfikacja na próbce okładek.
 
 ## Dane z researchu
 
-Research 2026-11-08 (wynik: rekomendacja poniżej; nic nie mierzone na Mikrusie, liczby oznaczone „szac.” to szacunki). Twarde ograniczenie użytkownika: zero dodatkowych kosztów, darmowe limity tylko bez ryzyka rachunku.
+Research 2026-11-08, przed decyzjami z 2026-11-09 (kolekcja MongoDB zamiast R2, tylko ONNX bez OpenAI i innych API, dwa progi); części o R2, bucketach, podpisanych adresach, OpenAI i Azure są nieaktualne (wynik: rekomendacja poniżej; nic nie mierzone na Mikrusie, liczby oznaczone „szac.” to szacunki). Twarde ograniczenie użytkownika: zero dodatkowych kosztów, darmowe limity tylko bez ryzyka rachunku.
 
 ### Rekomendacja
 
