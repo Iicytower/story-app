@@ -5,6 +5,7 @@ import { getPathname, Link, redirect } from "@/i18n/navigation";
 import { getLocale } from "next-intl/server";
 import { LocalDate } from "@/components/local-date";
 import { SortableList } from "@/components/sortable-list";
+import { AdultBadge } from "@/components/adult";
 import { TagChips } from "@/components/tag-chips";
 import { Input } from "@/components/ui/input";
 import { requireUser } from "@/lib/auth/session";
@@ -117,6 +118,7 @@ export default async function StoriesPage({
                 >
                   <span className="mr-auto flex min-w-0 flex-wrap items-center gap-2">
                     <span className="font-medium">{folder.name}</span>
+                    {folder.adult.adult && <AdultBadge />}
                     <TagChips tags={folder.tags} />
                   </span>
                   <span className="text-muted-foreground text-sm">
@@ -132,6 +134,7 @@ export default async function StoriesPage({
                   tags={folder.tags ?? []}
                   userTags={userTags}
                   isPublic={Boolean(folder.published)}
+                  adult={folder.adult}
                   chapterCount={folder.chapterCount}
                 />
               </>
@@ -180,6 +183,7 @@ async function SearchResults({
             >
               <span className="flex items-baseline gap-2">
                 <span className="font-medium">{story.title}</span>
+                {story.adult && <AdultBadge />}
                 <span className="text-muted-foreground text-xs">
                   {t("inFolder", { folder: story.folderName })}
                 </span>

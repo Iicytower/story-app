@@ -1,4 +1,5 @@
 import { Link } from "@/i18n/navigation";
+import { AdultBadge } from "@/components/adult";
 import { TagChips } from "@/components/tag-chips";
 import type { Snippet } from "@/lib/stories/search";
 
@@ -10,6 +11,7 @@ export interface ChapterItemProps {
   snippet: Snippet;
   tags: string[];
   folderTags: string[];
+  adult: boolean;
   date?: { iso: string; text: string };
 }
 
@@ -21,6 +23,7 @@ export function ChapterItem({
   snippet,
   tags,
   folderTags,
+  adult,
   date,
 }: ChapterItemProps) {
   return (
@@ -31,6 +34,7 @@ export function ChapterItem({
       >
         <span className="flex flex-wrap items-baseline gap-x-2">
           <span className="min-w-0 font-medium">{title}</span>
+          {adult && <AdultBadge />}
           <span className="text-muted-foreground min-w-0 text-xs">
             {byline}
           </span>

@@ -1,4 +1,5 @@
 import { isObjectIdOrHexString, Types } from "mongoose";
+import { chapterAdultState, folderAdultState } from "@/lib/adult/adult";
 import { connectDB } from "@/lib/db";
 import { chapterOrder, folderOrder, type Order } from "@/lib/folders/sort";
 import { folderLanguage } from "@/lib/languages";
@@ -34,6 +35,7 @@ export async function listFolders(userId: string) {
         lastActivityAt: 1,
         published: 1,
         language: 1,
+        adult: 1,
       })
       .lean(),
     // aggregate() does not cast, so userId has to be an ObjectId here.
@@ -50,6 +52,7 @@ export async function listFolders(userId: string) {
     folders: folders.map((folder) => ({
       ...serialize(folder),
       language: folderLanguage(folder.language),
+      adult: folderAdultState(folder.adult),
       chapterCount: countByFolder.get(folder._id.toString()) ?? 0,
     })),
   };
@@ -71,6 +74,7 @@ export async function getFolder(userId: string, id: string) {
       tags: 1,
       published: 1,
       language: 1,
+      adult: 1,
     })
     .lean();
   if (!folder) return null;
@@ -80,13 +84,24 @@ export async function getFolder(userId: string, id: string) {
     id,
     chapterOrder(chapterSort),
   )
-    .select({ title: 1, content: 1, tags: 1, publication: 1, updatedAt: 1 })
+    .select({
+      title: 1,
+      content: 1,
+      tags: 1,
+      publication: 1,
+      updatedAt: 1,
+      adult: 1,
+    })
     .lean();
   return {
     ...serialize(folder),
     language: folderLanguage(folder.language),
+    adult: folderAdultState(folder.adult),
     chapterSort,
-    chapters: chapters.map(serialize),
+    chapters: chapters.map((chapter) => ({
+      ...serialize(chapter),
+      adult: chapterAdultState(chapter.adult, folder.adult),
+    })),
   };
 }
 

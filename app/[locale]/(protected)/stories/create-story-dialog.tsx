@@ -31,10 +31,7 @@ export function CreateStoryDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <CreateStoryForm
-          folders={folders}
-          defaultFolder={defaultFolder}
-        />
+        <CreateStoryForm folders={folders} defaultFolder={defaultFolder} />
       </DialogContent>
     </Dialog>
   );

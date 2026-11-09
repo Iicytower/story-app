@@ -30,6 +30,7 @@ describe("getStory", () => {
       // No such folder in this test.
       folderName: null,
       publicPath: null,
+      adult: { adult: false, lock: null },
       updatedAt: story.updatedAt.toISOString(),
     });
   });

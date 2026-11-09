@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Link, redirect } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
+import { AdultBadge } from "@/components/adult";
 import { LocalDate } from "@/components/local-date";
 import { TagChips } from "@/components/tag-chips";
 import { SortableList } from "@/components/sortable-list";
@@ -56,7 +57,9 @@ export default async function FolderPage({
           {t("allFolders")}
         </Link>
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="mr-auto text-2xl font-semibold">{folder.name}</h1>
+          <h1 className="text-2xl font-semibold">{folder.name}</h1>
+          {folder.adult.adult && <AdultBadge />}
+          <span className="mr-auto" />
           <FolderMenu
             folder={{
               id: folder.id,
@@ -69,6 +72,7 @@ export default async function FolderPage({
             folders={folders.map(({ name, language }) => ({ name, language }))}
             userTags={userTags}
             isPublic={Boolean(folder.published)}
+            adult={folder.adult}
             unpublishedCount={unpublishedCount}
           />
           {publicPath && <FolderPublicLink publicPath={publicPath} />}
@@ -96,7 +100,10 @@ export default async function FolderPage({
                       href={`/stories/${chapter.id}`}
                       className="hover:bg-muted/50 flex min-w-0 flex-1 flex-col gap-1 px-4 py-3"
                     >
-                      <span className="font-medium">{chapter.title}</span>
+                      <span className="flex items-center gap-2">
+                        <span className="font-medium">{chapter.title}</span>
+                        {chapter.adult.adult && <AdultBadge />}
+                      </span>
                       <span className="text-muted-foreground line-clamp-2 text-sm">
                         {snippet.before}
                       </span>
@@ -115,6 +122,7 @@ export default async function FolderPage({
                         Boolean(folder.published) &&
                         chapter.publication === "public"
                       }
+                      adult={chapter.adult}
                       otherFolders={otherFolders.map(({ id, name }) => ({
                         id,
                         name,

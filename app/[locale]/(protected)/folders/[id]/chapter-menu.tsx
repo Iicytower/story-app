@@ -10,17 +10,23 @@ import {
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { ActionMenu, PublicationIcon } from "@/components/action-menu";
+import { AdultDialog, AdultMenuItem } from "@/components/adult";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { TagsDialog } from "@/components/tags-dialog";
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { setChapterPublished, setStoryTags } from "../../stories/actions";
+import type { AdultState } from "@/lib/adult/adult";
+import {
+  setChapterPublished,
+  setStoryAdult,
+  setStoryTags,
+} from "../../stories/actions";
 import { DeleteStoryDialog } from "../../stories/delete-story-dialog";
 import { MoveStoryDialog } from "./move-story-dialog";
 
-type Dialog = "tags" | "move" | "publish" | "delete";
+type Dialog = "tags" | "move" | "publish" | "adult" | "delete";
 
 export function ChapterMenu({
   id,
@@ -29,6 +35,7 @@ export function ChapterMenu({
   folderTags,
   userTags,
   isPublic,
+  adult,
   otherFolders,
 }: {
   id: string;
@@ -37,6 +44,7 @@ export function ChapterMenu({
   folderTags: string[];
   userTags: string[];
   isPublic: boolean;
+  adult: AdultState;
   otherFolders: { id: string; name: string }[];
 }) {
   const [dialog, setDialog] = useState<Dialog | null>(null);
@@ -65,6 +73,7 @@ export function ChapterMenu({
           {isPublic ? <GlobeLockIcon /> : <GlobeIcon />}
           {isPublic ? tFolders("unpublish") : tFolders("publish")}
         </DropdownMenuItem>
+        <AdultMenuItem state={adult} onSelect={() => setDialog("adult")} />
         <DropdownMenuSeparator />
         <DropdownMenuItem
           variant="destructive"
@@ -98,6 +107,13 @@ export function ChapterMenu({
         }
         confirmLabel={isPublic ? tFolders("unpublish") : tFolders("publish")}
         action={() => setChapterPublished(id, !isPublic)}
+      />
+      <AdultDialog
+        {...dialogProps("adult")}
+        kind="chapter"
+        name={title}
+        adult={adult.adult}
+        action={() => setStoryAdult(id, !adult.adult)}
       />
       <DeleteStoryDialog {...dialogProps("delete")} id={id} title={title} />
     </>

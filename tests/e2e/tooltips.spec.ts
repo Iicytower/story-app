@@ -122,6 +122,7 @@ test("tooltips and menu items are in Polish on /pl", async ({ page }) => {
     "Tagi",
     "Przenieś do…",
     "Opublikuj",
+    "Oznacz jako 18+",
     "Usuń",
   ]);
 });

@@ -20,6 +20,7 @@ import {
   RadioSubmenu,
   SortSubmenu,
 } from "@/components/action-menu";
+import { AdultDialog, AdultMenuItem } from "@/components/adult";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ExportDialog } from "@/components/export-dialog";
 import { TagsDialog } from "@/components/tags-dialog";
@@ -32,6 +33,7 @@ import { ImportDialog } from "../../stories/import-dialog";
 import {
   publishAllChapters,
   setChapterSort,
+  setFolderAdult,
   setFolderLanguage,
   setFolderPublished,
   setFolderTags,
@@ -41,6 +43,7 @@ import {
   type FolderOption,
   folderLanguage,
 } from "@/lib/languages";
+import type { AdultState } from "@/lib/adult/adult";
 import { DeleteFolderDialog } from "./delete-folder-dialog";
 import { RenameFolderDialog } from "./rename-folder-dialog";
 
@@ -52,6 +55,7 @@ type Dialog =
   | "import"
   | "publish"
   | "publishAll"
+  | "adult"
   | "delete";
 
 export function FolderMenu({
@@ -59,6 +63,7 @@ export function FolderMenu({
   folders,
   userTags,
   isPublic,
+  adult,
   unpublishedCount,
 }: {
   folder: {
@@ -72,6 +77,7 @@ export function FolderMenu({
   folders: FolderOption[];
   userTags: string[];
   isPublic: boolean;
+  adult: AdultState;
   unpublishedCount: number;
 }) {
   const router = useRouter();
@@ -167,6 +173,7 @@ export function FolderMenu({
             {tFolders("publishAll")}
           </DropdownMenuItem>
         )}
+        <AdultMenuItem state={adult} onSelect={() => setDialog("adult")} />
         <DropdownMenuSeparator />
         <DropdownMenuItem
           variant="destructive"
@@ -229,6 +236,13 @@ export function FolderMenu({
         })}
         confirmLabel={tFolders("publishAll")}
         action={() => publishAllChapters(folder.id)}
+      />
+      <AdultDialog
+        {...dialogProps("adult")}
+        kind="folder"
+        name={folder.name}
+        adult={adult.adult}
+        action={() => setFolderAdult(folder.id, !adult.adult)}
       />
       <DeleteFolderDialog
         {...dialogProps("delete")}

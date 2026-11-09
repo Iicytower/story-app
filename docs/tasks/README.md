@@ -47,8 +47,8 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 35 | [Filtry rymów](done/35-rhyme-filters.md) | 34 | [x] |
 | 55 | [Korekta w głównym edytorze](done/55-inline-proofreading.md) | 23 | [x] |
 | 51 | [Poprawa wyglądu (mobile i web)](51-ui-polish.md) | – | [ ] |
-| 66 | [Okładki folderów i oznaczenie 18+ (zbiorczy)](66-covers-and-adult-rating.md) | – | [ ] |
-| 65 | ↳ [Oznaczenie 18+](65-adult-rating.md) (subtask 66) | – | [ ] |
+| 66 | [Okładki folderów i oznaczenie 18+ (zbiorczy)](66-covers-and-adult-rating.md) | – | [~] |
+| 65 | ↳ [Oznaczenie 18+](done/65-adult-rating.md) (subtask 66) | – | [x] |
 | 26 | ↳ [Upload okładek](26-cover-upload.md) (subtask 66) | 65 | [ ] |
 | 40 | ↳ [Wyświetlanie okładek](40-cover-display.md) (subtask 66) | 26 | [ ] |
 | 28 | [Serwer na Mikrusie](28-mikrus-server.md) | 54, 25, 29 | [~] |

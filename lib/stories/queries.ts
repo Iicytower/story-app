@@ -1,4 +1,5 @@
 import { isObjectIdOrHexString } from "mongoose";
+import { chapterAdultState, isAdult } from "@/lib/adult/adult";
 import { connectDB } from "@/lib/db";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
@@ -13,12 +14,19 @@ export async function listStories(
 ) {
   await connectDB();
   const folders = await Folder.find({ userId, deletedAt: null })
-    .select({ name: 1, tags: 1 })
+    .select({ name: 1, tags: 1, adult: 1 })
     .lean();
   const stories = await Story.find(
     buildStoryFilter(userId, query, tags, folders),
   )
-    .select({ title: 1, content: 1, folderId: 1, tags: 1, updatedAt: 1 })
+    .select({
+      title: 1,
+      content: 1,
+      folderId: 1,
+      tags: 1,
+      updatedAt: 1,
+      adult: 1,
+    })
     .sort({ updatedAt: -1, _id: -1 })
     .lean();
   const foldersById = new Map(
@@ -30,6 +38,7 @@ export async function listStories(
       ...serialize(story),
       folderName: folder?.name ?? "",
       folderTags: folder?.tags ?? [],
+      adult: isAdult(story.adult) || isAdult(folder?.adult),
     };
   });
 }
@@ -48,6 +57,7 @@ export async function getStory(userId: string, id: string) {
       folderId: 1,
       updatedAt: 1,
       proofreading: 1,
+      adult: 1,
     })
     .lean();
   if (!story) return null;
@@ -55,11 +65,12 @@ export async function getStory(userId: string, id: string) {
   const folder =
     story.folderId &&
     (await Folder.findOne({ _id: story.folderId, deletedAt: null })
-      .select({ name: 1, published: 1 })
+      .select({ name: 1, published: 1, adult: 1 })
       .lean());
   return {
     ...serialize(story),
     folderName: folder ? folder.name : null,
+    adult: chapterAdultState(story.adult, folder ? folder.adult : undefined),
     publicPath:
       folder && folder.published && story.publication === "public"
         ? await chapterPublicPath(userId, folder._id.toString(), id)
