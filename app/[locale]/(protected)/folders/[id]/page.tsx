@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { after } from "next/server";
 import { AdultBadge } from "@/components/adult";
+import { CoverImage } from "@/components/cover";
 import { LocalDate } from "@/components/local-date";
 import { TagChips } from "@/components/tag-chips";
 import { SortableList } from "@/components/sortable-list";
@@ -51,44 +52,57 @@ export default async function FolderPage({
     ({ publication }) => publication !== "public",
   ).length;
   const t = await getTranslations("folders");
+  const tCovers = await getTranslations("covers");
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
-      <div className="flex flex-col gap-1">
-        <Link
-          href="/stories"
-          className="text-muted-foreground hover:text-foreground text-sm"
-        >
-          {t("allFolders")}
-        </Link>
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold">{folder.name}</h1>
-          {folder.adult.adult && <AdultBadge />}
-          <span className="mr-auto" />
-          <FolderMenu
-            folder={{
-              id: folder.id,
-              name: folder.name,
-              tags: folder.tags ?? [],
-              chapterSort: folder.chapterSort,
-              language: folder.language,
-              chapterCount: folder.chapters.length,
-            }}
-            folders={folders.map(({ name, language }) => ({ name, language }))}
-            userTags={userTags}
-            isPublic={Boolean(folder.published)}
-            adult={folder.adult}
-            unpublishedCount={unpublishedCount}
-            cover={
-              toolsConfig()
-                ? { current: folder.cover, pending: folder.coverPending }
-                : undefined
-            }
+      <div className="flex gap-4">
+        {folder.cover && (
+          <CoverImage
+            path={folder.cover.path}
+            alt={tCovers("alt", { name: folder.name })}
+            size="md"
           />
-          {publicPath && <FolderPublicLink publicPath={publicPath} />}
+        )}
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <Link
+            href="/stories"
+            className="text-muted-foreground hover:text-foreground text-sm"
+          >
+            {t("allFolders")}
+          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-semibold">{folder.name}</h1>
+            {folder.adult.adult && <AdultBadge />}
+            <span className="mr-auto" />
+            <FolderMenu
+              folder={{
+                id: folder.id,
+                name: folder.name,
+                tags: folder.tags ?? [],
+                chapterSort: folder.chapterSort,
+                language: folder.language,
+                chapterCount: folder.chapters.length,
+              }}
+              folders={folders.map(({ name, language }) => ({
+                name,
+                language,
+              }))}
+              userTags={userTags}
+              isPublic={Boolean(folder.published)}
+              adult={folder.adult}
+              unpublishedCount={unpublishedCount}
+              cover={
+                toolsConfig()
+                  ? { current: folder.cover, pending: folder.coverPending }
+                  : undefined
+              }
+            />
+            {publicPath && <FolderPublicLink publicPath={publicPath} />}
+          </div>
+          <TagChips tags={folder.tags} />
+          {folder.coverRejected && <CoverRejected folderId={folder.id} />}
         </div>
-        <TagChips tags={folder.tags} />
-        {folder.coverRejected && <CoverRejected folderId={folder.id} />}
       </div>
       <div className="grid gap-6 md:grid-cols-[1fr_20rem]">
         {folder.chapters.length === 0 ? (

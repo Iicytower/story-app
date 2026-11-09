@@ -50,7 +50,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 66 | [Okładki folderów i oznaczenie 18+ (zbiorczy)](66-covers-and-adult-rating.md) | – | [~] |
 | 65 | ↳ [Oznaczenie 18+](done/65-adult-rating.md) (subtask 66) | – | [x] |
 | 26 | ↳ [Upload okładek](done/26-cover-upload.md) (subtask 66) | 65 | [x] |
-| 40 | ↳ [Wyświetlanie okładek](40-cover-display.md) (subtask 66) | 26 | [ ] |
+| 40 | ↳ [Wyświetlanie okładek](done/40-cover-display.md) (subtask 66) | 26 | [x] |
 | 28 | [Serwer na Mikrusie](28-mikrus-server.md) | 54, 25, 29 | [~] |
 | – | [Aktualizacja zależności (2026-11-09)](dependency-updates-2026-11-09.md) | – | [ ] |
 | 56 | [Aktualizacja Next.js i podatnych zależności](56-dependency-updates.md) | – | [ ] |

@@ -800,6 +800,8 @@
     "autoAdult": "Filtr ocenił tę okładkę jako 18+.",
     "rejected": "Nie udało się sprawdzić nowej okładki, więc nie została zapisana. Dodaj ją ponownie.",
     "dismiss": "Zamknij",
-    "inputInvalid": "Wybierz obraz JPEG, PNG albo WebP do 10 MB."
+    "inputInvalid": "Wybierz obraz JPEG, PNG albo WebP do 10 MB.",
+    "alt": "Okładka: {name}",
+    "showAdult": "Pokaż okładkę (mam ukończone 18 lat)"
   }
 }

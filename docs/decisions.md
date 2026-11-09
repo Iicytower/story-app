@@ -632,3 +632,9 @@ Dialog, panel i „Accept” zastąpiła korekta w głównym edytorze (D66); spr
 - Akcje w `folders/[id]/cover-actions.ts`, dialog „Okładka” w menu ⋮ nagłówka folderu (tylko z `TOOLS_API_URL`): kadr 2:3 z przeciąganiem i powiększeniem, WebP 600×900 z canvasu (JPEG, gdy przeglądarka nie koduje WebP), ręczne oznaczenie okładki jako 18+, usunięcie. Akcja przyjmuje WebP, JPEG lub PNG do 1 MB po bajtach.
 - `GET /covers/<id>`: tylko okładka z werdyktem i aktualna w folderze; właściciel zawsze (`private`), inni tylko dla opublikowanego folderu (`public`), oba `max-age=31536000, immutable`.
 - Eksport: `cover.webp` w zipie folderu; w `.epub`, `.docx` i `.pdf` przeglądarka zamienia okładkę na JPEG (biblioteki DOCX i PDF nie przyjmują WebP) i wstawia ją jako pierwszą stronę. Import zipa z `cover.webp` wysyła okładkę (przez ten sam filtr) tylko do nowo tworzonego folderu; błąd okładki nie przerywa importu.
+
+## D69 – Wyświetlanie okładek (2026-11-09)
+
+- Task 40 (subtask 66), decyzje użytkownika. Okładka folderu jest widoczna na liście folderów (`/stories`, miniatura 40×60), na stronie folderu właściciela (120×180), w publicznym spisie folderu (160×240), w publicznej wyszukiwarce i w „Ostatnio opublikowanych” na stronie głównej (miniatura przy wyniku). Nie ma jej w edytorze ani na publicznej stronie rozdziału. Folder bez okładki nie renderuje obrazka.
+- Okładka 18+ (ocena filtra albo ręczne oznaczenie właściciela) na publicznych listach jest zastąpiona polem ze znaczkiem 18+, a w publicznym spisie jest rozmyta z przyciskiem „Pokaż okładkę (mam ukończone 18 lat)”. Przycisk ustawia to samo cookie co ostrzeżenie przed rozdziałem (D67), więc potwierdzenie działa w obie strony. Właściciel widzi swoje okładki zawsze bez rozmycia.
+- Adres `/covers/<id>` zmienia się przy każdej wymianie okładki, więc nowa okładka pokazuje się od razu mimo `immutable`.

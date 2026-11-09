@@ -96,6 +96,7 @@ export async function PublicSearch({
 
 async function Results({ results }: { results: PublicSearchResult[] }) {
   const t = await getTranslations("search");
+  const tCovers = await getTranslations("covers");
   if (results.length === 0) {
     return <p className="text-muted-foreground">{t("none")}</p>;
   }
@@ -109,6 +110,7 @@ async function Results({ results }: { results: PublicSearchResult[] }) {
           key={result.path}
           {...result}
           byline={t("inFolderBy", { folder: folderName, nickname })}
+          coverAlt={tCovers("alt", { name: folderName })}
         />
       ))}
     </ul>

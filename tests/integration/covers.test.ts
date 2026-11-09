@@ -17,7 +17,12 @@ import { requireUser } from "@/lib/auth/session";
 import { classifyCover } from "@/lib/covers/classify";
 import { COVERS_PER_ACCOUNT } from "@/lib/covers/covers";
 import { coverBytes, retryDueCovers } from "@/lib/covers/mutations";
-import { getFolder } from "@/lib/folders/queries";
+import { getFolder, listFolders } from "@/lib/folders/queries";
+import {
+  getPublishedFolder,
+  listRecentlyPublished,
+  searchPublishedChapters,
+} from "@/lib/publish/queries";
 import { unzip } from "@/lib/import/files";
 import { Cover } from "@/lib/models/cover";
 import { Folder } from "@/lib/models/folder";
@@ -142,6 +147,7 @@ describe("setFolderCover", () => {
     expect(folder.coverId).toEqual(cover._id);
     expect((await getFolder(alice.toString(), id))!.cover).toEqual({
       id: cover._id.toString(),
+      path: `/covers/${cover._id}`,
       manualAdult: false,
       autoAdult: false,
     });
@@ -280,6 +286,8 @@ describe("without a verdict", () => {
     await setFolderCover(id, form());
     await Cover.updateMany({}, { $set: { nextAttemptAt: new Date(0) } });
     let release!: () => void;
+    // The upload's own try counts as a call; only the retries matter here.
+    vi.mocked(classifyCover).mockClear();
     vi.mocked(classifyCover).mockImplementation(
       () =>
         new Promise((_, reject) => {
@@ -430,5 +438,47 @@ describe("export", () => {
     });
     const files = unzip(new Uint8Array(await response.arrayBuffer()));
     expect(Buffer.from(files["cover.webp"])).toEqual(RATED);
+  });
+});
+
+describe("cover views", () => {
+  it("lists the cover path of each folder, and none without a cover", async () => {
+    const { id } = await seedFolder();
+    await seedFolder(alice, "Bez okładki");
+    await setFolderCover(id, form());
+    const coverId = (await folderDoc(id))!.coverId!.toString();
+    const { folders } = await listFolders(alice.toString());
+    expect(
+      Object.fromEntries(folders.map(({ name, cover }) => [name, cover])),
+    ).toEqual({
+      Księga: { path: `/covers/${coverId}`, adult: false },
+      "Bez okładki": null,
+    });
+  });
+
+  it("gives public pages the cover and whether it is 18+", async () => {
+    const { id } = await seedFolder();
+    await setFolderPublished(id, true);
+    classifierRates(ADULT);
+    await setFolderCover(id, form());
+    const path = `/covers/${(await folderDoc(id))!.coverId}`;
+    const cover = { path, adult: true };
+    expect(await getPublishedFolder("Alice", "ksiega")).toMatchObject({
+      cover,
+    });
+    expect(await searchPublishedChapters("text", [])).toMatchObject([
+      { cover },
+    ]);
+    expect(await listRecentlyPublished()).toMatchObject([{ cover }]);
+  });
+
+  it("treats the owner's own cover mark as 18+ in public", async () => {
+    const { id } = await seedFolder();
+    await setFolderPublished(id, true);
+    await setFolderCover(id, form());
+    await setCoverAdult(id, true);
+    expect((await getPublishedFolder("Alice", "ksiega"))!.cover).toMatchObject({
+      adult: true,
+    });
   });
 });
