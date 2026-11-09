@@ -47,7 +47,8 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 35 | [Filtry rymów](done/35-rhyme-filters.md) | 34 | [x] |
 | 55 | [Korekta w głównym edytorze](done/55-inline-proofreading.md) | 23 | [x] |
 | 51 | [Poprawa wyglądu (mobile i web)](51-ui-polish.md) | – | [ ] |
-| 26 | [Upload okładek](26-cover-upload.md) | – | [ ] |
+| 65 | [Oznaczenie 18+](65-adult-rating.md) | – | [ ] |
+| 26 | [Upload okładek](26-cover-upload.md) | 65 | [ ] |
 | 40 | [Wyświetlanie okładek](40-cover-display.md) | 26 | [ ] |
 | 28 | [Serwer na Mikrusie](28-mikrus-server.md) | 54, 25, 29 | [~] |
 | 56 | [Aktualizacja Next.js i podatnych zależności](56-dependency-updates.md) | – | [ ] |
@@ -70,7 +71,6 @@ Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 - Powtórzenia między zdaniami w korekcie (powtórzenia w zdaniu są w tasku 23).
 - Kafelek odmiany: paradygmat z tabeli form zapytaniem po lemacie, wymaga indeksu po lemacie i czytelnego układu tagów (Morfologik ma ich 1336) (po tasku 25).
 - Asonans w rymach, zwinięty pod wynikami; 271 kluczy na 4,2 mln form, wyniki bliskie losowym (po tasku 34).
-- oznaczenie folderu lub rozdziału jako 18+
 - narzędzie do znajdywania etymologii
 - narzędzie do frazeologizmów. wytłumaczenie frazeologizmu oraz znalezienie na zadany opis. 
 
