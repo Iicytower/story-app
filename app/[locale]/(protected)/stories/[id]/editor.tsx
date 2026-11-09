@@ -62,6 +62,7 @@ import {
 import { type EditorTool, EditorToolContext } from "./tool-context";
 import type { Tool } from "./tools";
 import { ToolDialog, ToolsPanel } from "./tools-panel";
+import { lengthError, MAX_CONTENT_LENGTH, MAX_NAME_LENGTH } from "@/lib/limits";
 
 // proofreading: the chapter's open proofreading as JSON (task 55), "" when there is none.
 type Values = {
@@ -153,6 +154,18 @@ export function Editor({
         const values = latest.current;
         if (!values.title.trim()) return false;
         if (!force && isSame(values, saved.current)) return true;
+        // Not sent at all: the text stays in the editor until the user shortens it.
+        const tooLong =
+          lengthError("title", values.title.trim()) ??
+          lengthError("content", values.content) ??
+          lengthError("notes", values.notes);
+        if (tooLong) {
+          setSaveState({
+            status: "error",
+            message: tErrors(tooLong.key, tooLong.values),
+          });
+          return false;
+        }
         setSaveState({ status: "saving" });
         try {
           const result = await saveStory(
@@ -337,6 +350,11 @@ export function Editor({
           characters: countCharacters(content),
           minutes: readAloudMinutes(words),
         })}
+        {content.length > MAX_CONTENT_LENGTH && (
+          <span className="text-destructive block">
+            {tErrors("contentTooLong", { max: MAX_CONTENT_LENGTH })}
+          </span>
+        )}
       </p>
     </div>
   );
@@ -417,6 +435,7 @@ export function Editor({
         )}
         <Input
           value={title}
+          maxLength={MAX_NAME_LENGTH}
           onChange={(event) => setTitle(event.target.value)}
           aria-label={t("title")}
           placeholder={t("title")}

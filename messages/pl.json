@@ -121,7 +121,17 @@
     "coversUnavailable": "Okładki są teraz niedostępne.",
     "coverLimitAccount": "Możesz mieć najwyżej {max} okładek. Usuń jedną albo wymień istniejącą.",
     "coverLimitTotal": "Teraz nie ma miejsca na nowe okładki. Nadal możesz wymienić istniejącą.",
-    "coverNotFound": "Ten folder nie ma okładki."
+    "coverNotFound": "Ten folder nie ma okładki.",
+    "folderNameTooLong": "Nazwa folderu może mieć najwyżej {max, number} znaków.",
+    "titleTooLong": "Tytuł może mieć najwyżej {max, number} znaków.",
+    "contentTooLong": "Rozdział może mieć najwyżej {max, number} znaków. Skróć go albo podziel na rozdziały; do tego czasu tekst zostaje w edytorze.",
+    "notesTooLong": "Notatki rozdziału mogą mieć najwyżej {max, number} znaków.",
+    "folderNotesTooLong": "Notatki folderu mogą mieć najwyżej {max, number} znaków.",
+    "tooManyFolders": "Możesz mieć najwyżej {max, number} folderów. Usuń folder, żeby dodać nowy.",
+    "tooManyChapters": "Folder może mieć najwyżej {max, number} rozdziałów.",
+    "tooManyVersions": "Folder może mieć najwyżej {max, number} wersji. Usuń starą wersję, żeby zapisać nową.",
+    "importChapterTooLong": "Rozdział „{title}” jest za długi: rozdział może mieć najwyżej {max, number} znaków.",
+    "importNotesTooLong": "Notatki rozdziału „{title}” są za długie: notatki mogą mieć najwyżej {max, number} znaków."
   },
   "password": {
     "mustContain": "Hasło musi zawierać:",

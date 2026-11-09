@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { renameFolder } from "../actions";
+import { MAX_NAME_LENGTH } from "@/lib/limits";
 
 export function RenameFolderDialog({
   open,
@@ -73,6 +74,7 @@ function RenameFolderForm({
         <Input
           id="rename-folder-name"
           value={name}
+          maxLength={MAX_NAME_LENGTH}
           onChange={(event) => setName(event.target.value)}
           aria-invalid={error !== null}
         />

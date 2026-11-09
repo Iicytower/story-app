@@ -24,6 +24,7 @@ import {
 import { type FolderOption, languageOfFolder } from "@/lib/languages";
 import { setFolderCover } from "../folders/[id]/cover-actions";
 import { importStories, type ImportTarget } from "./actions";
+import { MAX_NAME_LENGTH } from "@/lib/limits";
 
 const ACCEPT = ".md,.txt,.html,.docx,.odt,.pdf,.epub,.fb2,.zip";
 
@@ -203,6 +204,7 @@ function ImportForm({
                 id="import-folder"
                 list="import-folders"
                 value={folder}
+                maxLength={MAX_NAME_LENGTH}
                 onChange={(event) => setFolder(event.target.value)}
                 placeholder={t("folderPlaceholder")}
                 autoComplete="off"
@@ -220,6 +222,7 @@ function ImportForm({
               <Input
                 id="import-title"
                 value={title}
+                maxLength={MAX_NAME_LENGTH}
                 lang={languageOfFolder(folders, folder)}
                 spellCheck
                 onChange={(event) => setTitle(event.target.value)}

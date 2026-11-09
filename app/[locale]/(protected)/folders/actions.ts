@@ -21,7 +21,9 @@ import {
   isFolderSort,
   isPositionIndex,
 } from "@/lib/folders/sort";
+import { canAddFolder } from "@/lib/folders/limits";
 import { isFolderLanguage } from "@/lib/languages";
+import { countError, lengthError } from "@/lib/limits";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
 import { rememberFolderSlug, stampPublishedAt } from "@/lib/publish/mutations";
@@ -46,8 +48,13 @@ export async function createFolder(
   if (!isString(name)) return INVALID_REQUEST();
   const trimmed = name.trim();
   if (!trimmed) return EMPTY_NAME();
+  const tooLong = lengthError("folderName", trimmed);
+  if (tooLong) return translateError(tooLong);
 
   await connectDB();
+  if (!(await canAddFolder(user.userId))) {
+    return translateError(countError("tooManyFolders"));
+  }
   try {
     const folder = await Folder.create({
       userId: user.userId,
@@ -71,6 +78,8 @@ export async function renameFolder(
   if (!isString(name)) return INVALID_REQUEST();
   const trimmed = name.trim();
   if (!trimmed) return EMPTY_NAME();
+  const tooLong = lengthError("folderName", trimmed);
+  if (tooLong) return translateError(tooLong);
 
   await connectDB();
   try {
@@ -127,6 +136,8 @@ export async function saveFolderNotes(
   if (!isString(notes) || !isIsoDate(expectedNotesUpdatedAt)) {
     return INVALID_REQUEST();
   }
+  const tooLong = lengthError("folderNotes", notes);
+  if (tooLong) return translateError(tooLong);
 
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };

@@ -57,7 +57,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 56 | [Aktualizacja Next.js i podatnych zależności](done/56-dependency-updates.md) | – | [x] |
 | 57 | [Zaufany adres klienta w limitach](57-trusted-client-ip.md) | – | [ ] |
 | 58 | [Unieważnianie sesji](58-session-revocation.md) | – | [ ] |
-| 59 | [Limity rozmiaru i liczby danych](59-data-limits.md) | – | [ ] |
+| 59 | [Limity rozmiaru i liczby danych](done/59-data-limits.md) | – | [x] |
 | 60 | [Nagłówki bezpieczeństwa](60-security-headers.md) | – | [ ] |
 | 61 | [Typy argumentów Server Actions](done/61-action-input-types.md) | – | [x] |
 | 62 | [Zapis dużej treści rozdziału kończy się 500](62-large-content-save.md) | – | [ ] |

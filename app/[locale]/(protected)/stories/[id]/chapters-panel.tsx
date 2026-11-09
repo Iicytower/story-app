@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { recallScroll, rememberScroll } from "@/lib/editor/scroll-memory";
 import type { EditorFolder } from "@/lib/folders/queries";
 import { createStory } from "../actions";
+import { MAX_NAME_LENGTH } from "@/lib/limits";
 
 export function ChaptersPanel({
   folder,
@@ -164,6 +165,7 @@ function NewChapterForm({
         <Input
           id="new-chapter-title"
           value={title}
+          maxLength={MAX_NAME_LENGTH}
           lang={lang}
           spellCheck
           onChange={(event) => setTitle(event.target.value)}
