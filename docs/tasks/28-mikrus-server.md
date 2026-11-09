@@ -4,7 +4,7 @@ Wynik researchu (2026-11-01), zmieniony 2026-11-06 (D56). Prawdziwy serwer dla u
 
 ## Zakres
 
-- Mikrus 3.5 (4 GB RAM, 40 GB dysku, 197 zł/rok) z Coolify.
+- Mikrus 3.5 (4 GB RAM, 40 GB dysku, 197 zł/rok) z Debianem 13 i Coolify.
 - Ten sam stos co lokalnie (task 54): bramka z sekretnym nagłówkiem przed wszystkimi usługami oraz usługi gotowe w chwili realizacji (LT, serwis słownikowy z bazą).
 - Połączenie z Vercela przez subdomenę `wykr.es` z automatycznym HTTPS.
 - Zmienne `TOOLS_API_URL` i `TOOLS_API_SECRET` na Vercelu (produkcja, staging), tylko po stronie serwera. Ich ustawienie włącza narzędzia (D56).
@@ -30,6 +30,7 @@ Decyzje użytkownika: Coolify na Mikrusie jak lokalnie, bazy budowane lokalnie i
 - `npm run dict:upload:remote`: ta sama wysyłka co lokalnie, przez `ssh -C`.
 - Instrukcja krok po kroku: `docs/deploy.md`, „Serwer narzędzi na Mikrusie”.
 - Test na `fake-mikrus` (Ubuntu 24.04 z systemd w Dockerze): instalacja, idempotencja, wysyłka baz, 401 bez sekretu, panel tylko na loopbacku, restart. Na prawdziwym Mikrusie zostają wszystkie kryteria akceptacji.
+- System: Debian 13 zamiast Ubuntu 24.04 (decyzja użytkownika, 2026-11-09). Mikrus oferuje go na planie 3.5 ([lista dystrybucji](https://wiki.mikr.us/dystrybucje_linuxa), obraz z 2025.09), nowy serwer dostaje Ubuntu, więc system zmienia reinstalacja w panelu. Ten sam test na `fake-mikrus` z `debian:13` (13.7) przeszedł bez zmian w skryptach: Docker 29.9.3 z repozytorium `trixie`, Coolify 4.6.0, błąd instalatora Coolify z `trixie` ze zgłoszeń nie wystąpił. `fake-mikrus` używa odtąd Debiana 13.
 
 ## Dane z researchu
 

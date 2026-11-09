@@ -1,6 +1,7 @@
-# A stand-in for a fresh Mikrus VPS (task 28): Ubuntu 24.04 with systemd and sshd, root login by
-# key only, no Docker. scripts/tools.ts remote installs Docker and Coolify on it as on the real one.
-FROM ubuntu:24.04
+# A stand-in for a fresh Mikrus VPS (task 28): Debian 13, as chosen for Mikrus, with systemd and
+# sshd, root login by key only, no Docker. scripts/tools.ts remote installs Docker and Coolify on
+# it as on the real one.
+FROM debian:13
 
 RUN apt-get update \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \

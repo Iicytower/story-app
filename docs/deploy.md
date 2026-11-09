@@ -109,14 +109,15 @@ Reset generuje nowe sekrety i nowe hasło admina. Usuwać zawsze razem wolumeny 
 
 Produkcyjny odpowiednik lokalnego serwera narzędzi: ten sam stos (Coolify 4.6.0, bramka Caddy z `X-Tools-Secret`, LanguageTool, serwis słownikowy), ale Coolify stoi na samym VPS-ie i wdraża usługę na własny host (serwer `localhost` z instalatora). Wszystko robi `npm run tools:remote` z Twojego komputera przez SSH, a bazy wysyła `npm run dict:upload:remote`. Produkcja i staging używają jednego serwera i jednego sekretu.
 
-Skrypt sprawdzony na „fałszywym Mikrusie” (kontener Ubuntu 24.04 z systemd i SSH, profil `fake-mikrus` w `docker-compose.yml`). Na prawdziwym Mikrusie nie sprawdzono jeszcze: Dockera i Coolify w kontenerze LXC, `wykr.es` przed bramką, opóźnienia z Vercela i restartu maszyny. To kryteria taska 28 do odhaczenia przy pierwszym wdrożeniu.
+Skrypt sprawdzony na „fałszywym Mikrusie” (kontener Debian 13 z systemd i SSH, wcześniej też Ubuntu 24.04, profil `fake-mikrus` w `docker-compose.yml`). Na prawdziwym Mikrusie nie sprawdzono jeszcze: Dockera i Coolify w kontenerze LXC, `wykr.es` przed bramką, opóźnienia z Vercela i restartu maszyny. To kryteria taska 28 do odhaczenia przy pierwszym wdrożeniu.
 
 ### Pierwsze wdrożenie
 
-1. **Zakup:** Mikrus 3.5 (4 GB RAM, 40 GB dysku) na [mikr.us](https://mikr.us/), system **Ubuntu 24.04**. Z maila zapisz nazwę serwera (`srvNN`), numer ID i hasło roota.
-2. **Porty** (bez klikania w panelu): SSH to `10000+ID`, bramka dostaje domyślny port z puli `20000+ID`. Publiczny adres bramki to `https://srvNN-20ID.wykr.es` (np. ID 123 → `srv12-20123.wykr.es`). Subdomena `wykr.es` działa sama, a SSL zapewnia Mikrus.
-3. **Klucz SSH** (raz, z hasłem z maila): `ssh-copy-id -p 10ID root@srvNN.mikr.us`. Potem sprawdź logowanie bez hasła: `ssh -p 10ID root@srvNN.mikr.us true`.
-4. **Konfiguracja:** utwórz `.tools/mikrus/remote.env` (katalog w `.gitignore`):
+1. **Zakup:** Mikrus 3.5 (4 GB RAM, 40 GB dysku) na [mikr.us](https://mikr.us/). Z maila zapisz nazwę serwera (`srvNN`) i numer ID.
+2. **System Debian 13:** nowy serwer dostaje Ubuntu, więc w panelu Mój VPS → [Reinstalacja](https://mikr.us/panel/?a=reinstall) wybierz **Debian 13** (reinstalacja usuwa dane, na świeżym serwerze nie ma czego tracić). Zapisz hasło roota po reinstalacji. Obraz Mikrusa jest z 2025.09, więc po kroku 4 zaktualizuj system: `ssh -p 10ID root@srvNN.mikr.us 'apt-get update && apt-get -y full-upgrade && reboot'`.
+3. **Porty** (bez klikania w panelu): SSH to `10000+ID`, bramka dostaje domyślny port z puli `20000+ID`. Publiczny adres bramki to `https://srvNN-20ID.wykr.es` (np. ID 123 → `srv12-20123.wykr.es`). Subdomena `wykr.es` działa sama, a SSL zapewnia Mikrus.
+4. **Klucz SSH** (raz, z hasłem roota z kroku 2): `ssh-copy-id -p 10ID root@srvNN.mikr.us`. Potem sprawdź logowanie bez hasła: `ssh -p 10ID root@srvNN.mikr.us true`.
+5. **Konfiguracja:** utwórz `.tools/mikrus/remote.env` (katalog w `.gitignore`):
    ```sh
    SSH_HOST=srvNN.mikr.us
    SSH_PORT=10ID
@@ -124,7 +125,7 @@ Skrypt sprawdzony na „fałszywym Mikrusie” (kontener Ubuntu 24.04 z systemd 
    TOOLS_API_URL=https://srvNN-20ID.wykr.es
    # SSH_USER=root (domyślnie), SSH_KEY=ścieżka do klucza, jeśli nie ten z ~/.ssh
    ```
-5. **Instalacja i wdrożenie:** `npm run tools:remote`. Pierwszy raz trwa ok. 15–25 min (Docker, Coolify, obraz LanguageTool 0,75 GB). Skrypt:
+6. **Instalacja i wdrożenie:** `npm run tools:remote`. Pierwszy raz trwa ok. 15–25 min (Docker, Coolify, obraz LanguageTool 0,75 GB). Skrypt:
    - zapisuje `docker/mikrus/docker-compose.custom.yml` jako override Coolify, więc panel (8000, 6001, 6002) słucha tylko na `127.0.0.1`;
    - instaluje Dockera (skryptem Mikrusa `chce_dockera.sh`, gdy jest) i Coolify w wersji 4.6.0;
    - przez tunel SSH zakłada konto admina, wyłącza rejestrację i automatyczne aktualizacje, tworzy token API;
@@ -133,13 +134,13 @@ Skrypt sprawdzony na „fałszywym Mikrusie” (kontener Ubuntu 24.04 z systemd 
    - czeka na `/health` i rozgrzewa LanguageTool przez publiczny adres.
 
    Sekrety (hasło admina, `TOOLS_API_SECRET`) skrypt generuje w `.tools/mikrus/tools.env` i nigdy ich nie wypisuje. Na końcu podaje, co ustawić na Vercelu.
-6. **Bazy słownikowe:** `npm run dict:build` (jeśli nie ma ich w `.tools/dict/`), potem `npm run dict:upload:remote`. Wysyłka idzie przez SSH z kompresją (ok. 1,2 GB, w tym rymy ok. 730 MB). Przerwana wysyłka zostawia starą bazę, więc wystarczy ją powtórzyć. Kolejność przy zmianie schematu bazy: najpierw baza, potem `npm run tools:remote` (D65).
-7. **Vercel:** Settings → Environment Variables, tylko po stronie serwera (bez `NEXT_PUBLIC_`), dla **Production** oraz **Preview z branchem `staging`**:
+7. **Bazy słownikowe:** `npm run dict:build` (jeśli nie ma ich w `.tools/dict/`), potem `npm run dict:upload:remote`. Wysyłka idzie przez SSH z kompresją (ok. 1,2 GB, w tym rymy ok. 730 MB). Przerwana wysyłka zostawia starą bazę, więc wystarczy ją powtórzyć. Kolejność przy zmianie schematu bazy: najpierw baza, potem `npm run tools:remote` (D65).
+8. **Vercel:** Settings → Environment Variables, tylko po stronie serwera (bez `NEXT_PUBLIC_`), dla **Production** oraz **Preview z branchem `staging`**:
    - `TOOLS_API_URL` = `https://srvNN-20ID.wykr.es`
    - `TOOLS_API_SECRET` = wartość `TOOLS_API_SECRET` z `.tools/mikrus/tools.env`
 
    Potem Redeploy obu środowisk. Bez tych zmiennych narzędzia pokazują „not available” (D56).
-8. **Sprawdzenie** (kryteria taska 28):
+9. **Sprawdzenie** (kryteria taska 28):
    ```sh
    URL=https://srvNN-20ID.wykr.es
    set -a; source <(grep TOOLS_API_SECRET .tools/mikrus/tools.env); set +a
@@ -182,7 +183,7 @@ TOOLS_REMOTE_DIR=.tools/fake-mikrus npm run tools:remote
 TOOLS_REMOTE_DIR=.tools/fake-mikrus npm run dict:upload:remote
 ```
 
-Kontener ma systemd i nie ma Dockera, jak świeży VPS (potrzebuje `privileged` i `cgroup: host`). Wolumen `/var/lib/containerd` jest potrzebny, bo Docker 29 trzyma tam obrazy, a na overlayu kontenera ich warstwy się nie rozpakowują (na LXC Mikrusa tego problemu nie ma). Wynik (2026-11-06): pierwsze `npm run tools:remote` ok. 6 min, kolejne 36 s; `dict:upload:remote` 83 s; po restarcie kontenera wszystko wstaje samo, bez Traefika; panel tylko na `127.0.0.1`. Usunięcie: `docker compose --profile fake-mikrus down` i `docker volume rm story_app_fake-mikrus-docker story_app_fake-mikrus-containerd story_app_fake-mikrus-data`, potem `rm .tools/fake-mikrus/known_hosts` (nowe klucze hosta).
+Kontener ma systemd i nie ma Dockera, jak świeży VPS (potrzebuje `privileged` i `cgroup: host`). Wolumen `/var/lib/containerd` jest potrzebny, bo Docker 29 trzyma tam obrazy, a na overlayu kontenera ich warstwy się nie rozpakowują (na LXC Mikrusa tego problemu nie ma). Wynik na Ubuntu 24.04 (2026-11-06): pierwsze `npm run tools:remote` ok. 6 min, kolejne 36 s; `dict:upload:remote` 83 s. Na Debianie 13 (2026-11-09, obrazy w cache): 137 s, 34 s, 51 s, bramka po restarcie po 15 s. W obu przypadkach po restarcie kontenera wszystko wstaje samo, bez Traefika; panel tylko na `127.0.0.1`. Usunięcie: `docker compose --profile fake-mikrus down` i `docker volume rm story_app_fake-mikrus-docker story_app_fake-mikrus-containerd story_app_fake-mikrus-data`, potem `rm .tools/fake-mikrus/known_hosts` (nowe klucze hosta).
 
 ## Backup bazy
 
