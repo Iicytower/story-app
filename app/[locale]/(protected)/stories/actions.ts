@@ -1,7 +1,8 @@
 "use server";
 
-import { isObjectIdOrHexString, Types } from "mongoose";
+import { Types } from "mongoose";
 import { refresh } from "next/cache";
+import { isBoolean, isId, isIsoDate, isString } from "@/lib/action-input";
 import type { ActionResult, ValidationError } from "@/lib/action-result";
 import { chapterAdultState } from "@/lib/adult/adult";
 import { requireUser } from "@/lib/auth/session";
@@ -48,6 +49,8 @@ const FOLDER_NOT_FOUND = () => actionError("NOT_FOUND", "folderNotFound");
 
 const DUPLICATE_TITLE = () => actionError("DUPLICATE_TITLE", "duplicateTitle");
 
+const INVALID_REQUEST = () => actionError("INVALID_INPUT", "requestInvalid");
+
 // The folder is picked by name; a name the user has no folder for creates one.
 export async function createStory(
   title: string,
@@ -55,6 +58,7 @@ export async function createStory(
 ): Promise<ActionResult<{ id: string }>> {
   const user = await requireUser();
   if (!user.ok) return user;
+  if (!isString(title) || !isString(folderName)) return INVALID_REQUEST();
 
   // Both checked before the folder is created, so a rejected story leaves no empty folder behind.
   const trimmed = title.trim();
@@ -211,7 +215,7 @@ export async function importStories(
   let folderId: Types.ObjectId;
   let notesToAppend = folderNotes.trim();
   if (target?.kind === "folder") {
-    if (!isObjectIdOrHexString(target.id)) return FOLDER_NOT_FOUND();
+    if (!isId(target.id)) return FOLDER_NOT_FOUND();
     const folder = await Folder.exists({
       _id: target.id,
       userId: user.userId,
@@ -276,8 +280,8 @@ export async function moveStory(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
-  if (!isObjectIdOrHexString(folderId)) return FOLDER_NOT_FOUND();
+  if (!isId(id)) return NOT_FOUND();
+  if (!isId(folderId)) return FOLDER_NOT_FOUND();
 
   await connectDB();
   const folder = await Folder.findOne({
@@ -331,7 +335,7 @@ export async function setStoryTags(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isId(id)) return NOT_FOUND();
   const normalized = normalizeTags(tags);
   if (!normalized.ok) return translateError(normalized);
 
@@ -365,7 +369,7 @@ export async function moveChapter(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isId(id)) return NOT_FOUND();
   if (!isPositionIndex(index)) {
     return actionError("INVALID_INPUT", "optionUnavailable");
   }
@@ -395,7 +399,7 @@ export async function moveChapter(
 export async function deleteStory(id: string): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isId(id)) return NOT_FOUND();
 
   await connectDB();
   const { matchedCount } = await Story.updateOne(
@@ -419,7 +423,15 @@ export async function saveStory(
 ): Promise<ActionResult<{ updatedAt: string }>> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isId(id)) return NOT_FOUND();
+  if (
+    !isString(title) ||
+    !isString(content) ||
+    !isString(notes) ||
+    !isIsoDate(expectedUpdatedAt)
+  ) {
+    return INVALID_REQUEST();
+  }
 
   const trimmed = title.trim();
   if (!trimmed) {
@@ -489,7 +501,8 @@ export async function setChapterPublished(
 ): Promise<ActionResult<{ publicPath: string | null }>> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isId(id)) return NOT_FOUND();
+  if (!isBoolean(enabled)) return INVALID_REQUEST();
 
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };
@@ -556,7 +569,8 @@ export async function setStoryAdult(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isId(id)) return NOT_FOUND();
+  if (!isBoolean(adult)) return INVALID_REQUEST();
 
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };

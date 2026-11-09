@@ -20,6 +20,9 @@ export async function login(
   _previous: ActionError | null,
   formData: FormData,
 ): Promise<ActionError | null> {
+  if (!(formData instanceof FormData)) {
+    return actionError("INVALID_INPUT", "detailsInvalid");
+  }
   const nickname = formData.get("nickname");
   try {
     await signIn("credentials", {

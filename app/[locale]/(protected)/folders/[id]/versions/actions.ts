@@ -1,8 +1,9 @@
 "use server";
 
-import { isObjectIdOrHexString, type Types } from "mongoose";
+import type { Types } from "mongoose";
 import { refresh } from "next/cache";
 import { getTranslations } from "next-intl/server";
+import { isId, isString } from "@/lib/action-input";
 import type { ActionResult, ValidationError } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import { connectDB } from "@/lib/db";
@@ -37,7 +38,10 @@ export async function createFolderVersion(
 ): Promise<ActionResult<{ number: number }>> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(folderId)) return FOLDER_NOT_FOUND();
+  if (!isId(folderId)) return FOLDER_NOT_FOUND();
+  if (!isString(name)) {
+    return actionError("INVALID_INPUT", "requestInvalid");
+  }
   const valid = validateVersionName(name);
   if (!valid.ok) return translateError(valid);
 
@@ -69,7 +73,7 @@ async function restoreVersion(
 ): Promise<ActionResult<{ savedNumber: number }>> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(folderId)) return FOLDER_NOT_FOUND();
+  if (!isId(folderId)) return FOLDER_NOT_FOUND();
   if (!isVersionNumber(number)) return NOT_FOUND();
 
   await connectDB();
@@ -151,7 +155,7 @@ export async function deleteFolderVersion(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(folderId)) return FOLDER_NOT_FOUND();
+  if (!isId(folderId)) return FOLDER_NOT_FOUND();
   if (!isVersionNumber(number)) return NOT_FOUND();
 
   await connectDB();
