@@ -2,12 +2,19 @@ import type { Metadata } from "next";
 import { Link, redirect } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { connection } from "next/server";
+import { cookies } from "next/headers";
+import { after, connection } from "next/server";
+import { retryDueCovers } from "@/lib/covers/mutations";
 import { requestOrigin } from "@/i18n/request-origin";
 import { languageAlternates } from "@/i18n/routing";
+import { AdultBadge } from "@/components/adult";
+import { CoverImage } from "@/components/cover";
 import { MarkdownPreview } from "@/components/markdown-preview";
+import { ADULT_COOKIE } from "@/lib/adult/gate";
 import { getPublishedChapter } from "@/lib/publish/queries";
 import { stripComments } from "@/lib/stories/strip-comments";
+import { BlurredCover } from "../adult-cover";
+import { AdultGate } from "./adult-gate";
 
 export async function generateMetadata({
   params,
@@ -29,6 +36,7 @@ export default async function PublishedChapterPage({
   params,
 }: PageProps<"/[locale]/p/[nickname]/[folder]/[chapter]">) {
   await connection();
+  after(() => retryDueCovers());
   const { nickname, folder, chapter: slug } = await params;
   const chapter = await getPublishedChapter(nickname, folder, slug);
   if (!chapter) notFound();
@@ -36,6 +44,11 @@ export default async function PublishedChapterPage({
     redirect({ href: chapter.path, locale: await getLocale() });
   }
   const t = await getTranslations("public");
+  const tCovers = await getTranslations("covers");
+  const confirmed = (await cookies()).get(ADULT_COOKIE)?.value === "1";
+  const gated = chapter.adult && !confirmed;
+  const { cover } = chapter;
+  const coverAlt = tCovers("alt", { name: chapter.folderName });
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10">
@@ -45,8 +58,21 @@ export default async function PublishedChapterPage({
           nickname: chapter.nickname,
         })}
       </p>
-      <h1 className="-mt-6 text-3xl font-bold">{chapter.title}</h1>
-      <MarkdownPreview content={stripComments(chapter.content)} />
+      <div className="-mt-6 flex items-center gap-3">
+        <h1 className="text-3xl font-bold">{chapter.title}</h1>
+        {chapter.adult && <AdultBadge />}
+      </div>
+      {cover &&
+        (cover.adult && !confirmed ? (
+          <BlurredCover path={cover.path} alt={coverAlt} size="md" />
+        ) : (
+          <CoverImage path={cover.path} alt={coverAlt} size="md" />
+        ))}
+      {gated ? (
+        <AdultGate backPath={chapter.folderPath} />
+      ) : (
+        <MarkdownPreview content={stripComments(chapter.content)} />
+      )}
       <nav
         aria-label={t("chapters")}
         className="text-muted-foreground flex items-center gap-4 text-sm"

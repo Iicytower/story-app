@@ -3,7 +3,9 @@
 import { isObjectIdOrHexString } from "mongoose";
 import { refresh } from "next/cache";
 import type { ActionResult } from "@/lib/action-result";
+import { folderAdultState } from "@/lib/adult/adult";
 import { requireUser } from "@/lib/auth/session";
+import { removeCovers } from "@/lib/covers/mutations";
 import { connectDB, isDuplicateKeyError } from "@/lib/db";
 import { actionError, translateError } from "@/lib/i18n/action-error";
 import {
@@ -104,6 +106,8 @@ export async function deleteFolder(id: string): Promise<ActionResult> {
     { $set: { deletedAt } },
     { timestamps: false },
   );
+  // A restored folder comes back without its cover (D68).
+  await removeCovers(id);
 
   return { ok: true };
 }
@@ -330,6 +334,32 @@ export async function publishAllChapters(id: string): Promise<ActionResult> {
     { timestamps: false },
   );
   await stampPublishedAt(chapters);
+
+  refresh();
+  return { ok: true };
+}
+
+// Organizational change like publishing: keeps updatedAt and lastActivityAt (D67).
+export async function setFolderAdult(
+  id: string,
+  adult: boolean,
+): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+
+  await connectDB();
+  const owned = { _id: id, userId: user.userId, deletedAt: null };
+  const folder = await Folder.findOne(owned).select({ adult: 1 }).lean();
+  if (!folder) return NOT_FOUND();
+  if (!adult && folderAdultState(folder.adult).lock) {
+    return actionError("ADULT_LOCKED", "adultLockedByImage");
+  }
+  await Folder.updateOne(
+    owned,
+    { $set: { "adult.manual": adult } },
+    { timestamps: false },
+  );
 
   refresh();
   return { ok: true };

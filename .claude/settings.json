@@ -20,6 +20,7 @@
       "Bash(git status*)",
       "Bash(git diff*)",
       "Bash(git log*)",
+      "Bash(git checkout*)",
       "Bash(npm run test:e2e*)",
       "Bash(npm run verify*)",
       "Bash(npx playwright test*)",

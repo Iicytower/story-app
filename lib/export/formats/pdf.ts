@@ -112,7 +112,7 @@ function writeBlocks(
 }
 
 export function buildPdf(
-  { title, sections }: ExportDocument,
+  { title, sections, cover }: ExportDocument,
   fonts: PdfFonts,
 ): Promise<Uint8Array> {
   const doc = new PDFDocument({
@@ -142,6 +142,18 @@ export function buildPdf(
     });
   });
 
+  if (cover) {
+    const { width, height, margins } = doc.page;
+    doc.image(cover, margins.left, margins.top, {
+      fit: [
+        width - margins.left - margins.right,
+        height - margins.top - margins.bottom,
+      ],
+      align: "center",
+      valign: "center",
+    });
+    doc.addPage();
+  }
   doc.font("bold").fontSize(SIZES[0]).text(title, { align: "center" });
   doc.moveDown();
   sections.forEach((section, index) => {

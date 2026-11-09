@@ -19,7 +19,11 @@ declare module "pdfkit" {
       autoFirstPage?: boolean;
     });
     outline: { addItem(title: string): void };
-    page: { width: number; margins: { left: number; right: number } };
+    page: {
+      width: number;
+      height: number;
+      margins: { left: number; right: number; top: number; bottom: number };
+    };
     x: number;
     y: number;
     registerFont(name: string, source: Uint8Array): this;
@@ -28,6 +32,16 @@ declare module "pdfkit" {
     text(text: string, options?: TextOptions): this;
     moveDown(lines?: number): this;
     addPage(): this;
+    image(
+      source: Uint8Array,
+      x: number,
+      y: number,
+      options: {
+        fit: [number, number];
+        align?: "center";
+        valign?: "center";
+      },
+    ): this;
     end(): void;
     on(event: "data", listener: (chunk: Uint8Array) => void): this;
     on(event: "end", listener: () => void): this;

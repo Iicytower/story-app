@@ -1,6 +1,8 @@
 import type { Types } from "mongoose";
 import { cache } from "react";
 import { findUserByNickname } from "@/lib/accounts";
+import { isAdult } from "@/lib/adult/adult";
+import { coversOf, type CoverView } from "@/lib/covers/queries";
 import { connectDB } from "@/lib/db";
 import { findChaptersInOrder } from "@/lib/folders/queries";
 import { chapterOrder, type ChapterSort } from "@/lib/folders/sort";
@@ -53,7 +55,14 @@ const findPublishedFolder = cache(
     if (!author) return null;
     const userId = author._id.toString();
     const folders = await Folder.find({ userId, deletedAt: null })
-      .select({ name: 1, published: 1, formerSlugs: 1, chapterSort: 1 })
+      .select({
+        name: 1,
+        published: 1,
+        formerSlugs: 1,
+        chapterSort: 1,
+        adult: 1,
+        coverId: 1,
+      })
       .lean();
     const slugs = folderSlugs(folders);
     const folder =
@@ -72,20 +81,30 @@ const findPublishedFolder = cache(
       folder._id.toString(),
       chapterOrder(folder.chapterSort ?? "created"),
     )
-      .select({ title: 1, publication: 1, formerSlugs: 1 })
+      .select({ title: 1, publication: 1, formerSlugs: 1, adult: 1 })
       .lean();
     const path = `/p/${author.nickname}/${slugs.get(folder._id.toString())}`;
     const slugsOfChapters = chapterSlugs(chapters);
     const visible = readingOrder(chapters, folder.chapterSort)
       .filter(({ publication }) => publication === "public")
-      .map(({ _id, title, formerSlugs }) => {
+      .map(({ _id, title, formerSlugs, adult }) => {
         const slug = slugsOfChapters.get(_id.toString())!;
-        return { _id, title, slug, formerSlugs, path: `${path}/${slug}` };
+        return {
+          _id,
+          title,
+          slug,
+          formerSlugs,
+          path: `${path}/${slug}`,
+          adult: isAdult(adult) || isAdult(folder.adult),
+        };
       });
     if (visible.length === 0) return null;
+    const covers = await coversOf([folder]);
     return {
       nickname: author.nickname,
       name: folder.name,
+      adult: isAdult(folder.adult),
+      cover: covers.get(folder._id.toString()) ?? null,
       path,
       chapters: visible,
     };
@@ -98,7 +117,11 @@ export const getPublishedFolder = cache(
     if (!folder) return null;
     return {
       ...folder,
-      chapters: folder.chapters.map(({ title, path }) => ({ title, path })),
+      chapters: folder.chapters.map(({ title, path, adult }) => ({
+        title,
+        path,
+        adult,
+      })),
     };
   },
 );
@@ -128,8 +151,10 @@ export const getPublishedChapter = cache(
       nickname: folder.nickname,
       folderName: folder.name,
       folderPath: folder.path,
+      cover: folder.cover,
       path: chapters[index].path,
       title: chapters[index].title,
+      adult: chapters[index].adult,
       content: chapter.content,
       previous: link(chapters[index - 1]),
       next: link(chapters[index + 1]),
@@ -165,7 +190,7 @@ export async function chapterPublicPath(
 // Accounts from before task 36 may have no nickname yet, so they have no public address.
 async function findSearchableFolders() {
   const folders = await Folder.find({ published: true, deletedAt: null })
-    .select({ userId: 1, name: 1, tags: 1 })
+    .select({ userId: 1, name: 1, tags: 1, adult: 1, coverId: 1 })
     .lean();
   const authors = await User.find({
     _id: { $in: folders.map(({ userId }) => userId) },
@@ -176,12 +201,15 @@ async function findSearchableFolders() {
   const nicknames = new Map(
     authors.map(({ _id, nickname }) => [_id.toString(), nickname]),
   );
-  return folders
-    .filter(({ userId }) => nicknames.has(userId.toString()))
-    .map((folder) => ({
-      ...folder,
-      nickname: nicknames.get(folder.userId.toString())!,
-    }));
+  const searchable = folders.filter(({ userId }) =>
+    nicknames.has(userId.toString()),
+  );
+  const covers = await coversOf(searchable);
+  return searchable.map((folder) => ({
+    ...folder,
+    nickname: nicknames.get(folder.userId.toString())!,
+    cover: covers.get(folder._id.toString()) ?? null,
+  }));
 }
 
 // Only tags of public chapters: anything else would reveal unpublished work.
@@ -208,6 +236,8 @@ export interface PublicSearchResult {
   path: string;
   tags: string[];
   folderTags: string[];
+  adult: boolean;
+  cover: CoverView | null;
   snippet: Snippet;
 }
 
@@ -262,7 +292,14 @@ export async function searchPublishedChapters(
 
   const hits = [];
   const cursor = Story.find(buildPublicFilter(query, tags, folders))
-    .select({ userId: 1, folderId: 1, title: 1, content: 1, tags: 1 })
+    .select({
+      userId: 1,
+      folderId: 1,
+      title: 1,
+      content: 1,
+      tags: 1,
+      adult: 1,
+    })
     .sort({ updatedAt: -1, _id: 1 })
     .lean()
     .cursor();
@@ -297,6 +334,8 @@ export async function searchPublishedChapters(
     path: paths.get(chapter._id.toString())!,
     tags: own,
     folderTags,
+    adult: isAdult(chapter.adult) || isAdult(folder.adult),
+    cover: folder.cover,
     snippet: buildSnippet(text, query),
   }));
 }
@@ -321,6 +360,7 @@ export async function listRecentlyPublished(): Promise<RecentChapter[]> {
       title: 1,
       content: 1,
       tags: 1,
+      adult: 1,
       publishedAt: 1,
     })
     .sort({ publishedAt: -1, _id: -1 })
@@ -343,6 +383,8 @@ export async function listRecentlyPublished(): Promise<RecentChapter[]> {
       path: paths.get(chapter._id.toString())!,
       tags: own,
       folderTags: inheritedOnly(own, folder.tags),
+      adult: isAdult(chapter.adult) || isAdult(folder.adult),
+      cover: folder.cover,
       snippet: buildSnippet(stripComments(chapter.content)),
       publishedAt: chapter.publishedAt!,
     };

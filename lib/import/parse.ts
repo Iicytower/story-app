@@ -1,4 +1,5 @@
 import { type ChapterTitle, ImportError, type ImportedFile } from "./document";
+import { COVER_FILE } from "@/lib/folders/export";
 import { decodeText, unzip } from "./files";
 
 export const IMPORT_EXTENSIONS = [
@@ -95,6 +96,10 @@ async function readZip(
     lossy: false,
   };
   for (const [name, data] of entries) {
+    if (name === COVER_FILE) {
+      file.cover = data;
+      continue;
+    }
     const { base, extension } = split(name);
     if (!IMPORT_EXTENSIONS.includes(extension) || extension === "zip") continue;
     const entry = await readFile(extension, data, base, chapterTitle);

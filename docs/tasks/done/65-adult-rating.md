@@ -13,7 +13,7 @@ Zgłoszenie użytkownika (2026-11-08), wcześniej punkt backlogu „oznaczenie f
 - Znaczek 18+ przy rozdziale i folderze w widokach właściciela i na stronach publicznych (wyszukiwarka, strona czytania, ostatnio opublikowane).
 - Teksty w `messages/en.json` i `messages/pl.json`, także wyjaśnienie, dlaczego przełącznik jest zablokowany.
 
-Do decyzji przy starcie taska (wynik jako nowa decyzja w `decisions.md`):
+**Do decyzji użytkownika** (zapytać przed implementacją; wynik jako nowa decyzja w `decisions.md`):
 
 - Dziedziczenie: czy folder 18+ czyni 18+ wszystkie swoje rozdziały (i czy rozdział może być wtedy „nie 18+”), czy rozdział 18+ oznacza folder, czy poziomy są niezależne. Przeniesienie rozdziału między folderami.
 - Model danych: np. `adult: { manual: boolean, autoLocked: boolean }` na folderze i rozdziale albo pole wyliczane z obrazków przy odczycie. Migracja istniejących rekordów (domyślnie nie 18+).
@@ -40,7 +40,7 @@ Poza zakresem i kryteriami akceptacji tego taska (pytanie użytkownika 2026-11-0
 
 - **Pomysł:** słowniki lematów ryzykownych (wulgaryzmy, słownictwo seksualne, gore, narkotyki) i punktacja gęstości (trafienia na 1000 słów z wagą kategorii); próg oznacza rozdział jako 18+.
 - **Co już mamy:**
-  - Lematyzacja przez serwis słownikowy (task [25](done/25-dictionary-service.md), PoliMorf): lista trzyma lematy, odmiana trafia sama.
+  - Lematyzacja przez serwis słownikowy (task [25](25-dictionary-service.md), PoliMorf): lista trzyma lematy, odmiana trafia sama.
   - Etykieta „wulgarnie” z Wikisłownika w bazie definicji (D62) jako źródło listy wulgaryzmów; rdzenie wulgarne z generatora nazw (D43).
   - Język tekstu z ustawienia folderu (D58).
 - **Do zbudowania:** ręcznie ułożone listy słownictwa seksualnego, gore i narkotyków, osobno dla polskiego i angielskiego (kilkaset lematów na język, szac.).

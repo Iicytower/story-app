@@ -11,6 +11,7 @@ import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { ActionMenu, PublicationIcon } from "@/components/action-menu";
+import { AdultDialog, AdultMenuItem } from "@/components/adult";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { TagsDialog } from "@/components/tags-dialog";
 import {
@@ -19,9 +20,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DeleteFolderDialog } from "./[id]/delete-folder-dialog";
 import { RenameFolderDialog } from "./[id]/rename-folder-dialog";
-import { setFolderPublished, setFolderTags } from "./actions";
+import type { AdultState } from "@/lib/adult/adult";
+import { setFolderAdult, setFolderPublished, setFolderTags } from "./actions";
 
-type Dialog = "tags" | "rename" | "publish" | "delete";
+type Dialog = "tags" | "rename" | "publish" | "adult" | "delete";
 
 export function FolderRowMenu({
   id,
@@ -29,6 +31,7 @@ export function FolderRowMenu({
   tags,
   userTags,
   isPublic,
+  adult,
   chapterCount,
 }: {
   id: string;
@@ -36,6 +39,7 @@ export function FolderRowMenu({
   tags: string[];
   userTags: string[];
   isPublic: boolean;
+  adult: AdultState;
   chapterCount: number;
 }) {
   const router = useRouter();
@@ -65,6 +69,7 @@ export function FolderRowMenu({
           {isPublic ? <GlobeLockIcon /> : <GlobeIcon />}
           {isPublic ? tFolders("unpublish") : tFolders("publish")}
         </DropdownMenuItem>
+        <AdultMenuItem state={adult} onSelect={() => setDialog("adult")} />
         <DropdownMenuSeparator />
         <DropdownMenuItem
           variant="destructive"
@@ -74,6 +79,13 @@ export function FolderRowMenu({
           {tCommon("delete")}
         </DropdownMenuItem>
       </ActionMenu>
+      <AdultDialog
+        {...dialogProps("adult")}
+        kind="folder"
+        name={name}
+        adult={adult.adult}
+        action={() => setFolderAdult(id, !adult.adult)}
+      />
       <TagsDialog
         {...dialogProps("tags")}
         name={name}

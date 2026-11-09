@@ -206,6 +206,33 @@ describe("export → import", () => {
     expect(file.chapters[0].notes).toBe("N");
   });
 
+  it("reads cover.webp of a folder zip apart from the chapters", async () => {
+    const cover = new Uint8Array([
+      82, 73, 70, 70, 0, 0, 0, 0, 87, 69, 66, 80, 1,
+    ]);
+    const zip = buildFolderZip(
+      {
+        name: "Folder",
+        notes: "",
+        createdAt: "2026-01-01",
+        notesUpdatedAt: "2026-01-01",
+        chapters: [
+          {
+            title: "Jeden",
+            content: "Treść",
+            notes: "",
+            createdAt: "2026-01-01",
+            updatedAt: "2026-01-01",
+          },
+        ],
+      },
+      cover,
+    );
+    const file = await parseImportFile("folder.zip", zip);
+    expect(file.cover).toEqual(cover);
+    expect(file.chapters.map(({ title }) => title)).toEqual(["Jeden"]);
+  });
+
   it("reads a raw .zip export with notes and frontmatter", async () => {
     const dates = { createdAt: "2026-01-01", updatedAt: "2026-01-02" };
     const zip = buildFolderZip({
