@@ -267,7 +267,7 @@ test("the cover shows in the folder list and on the folder page, and changes wit
   ).toBe(600);
 });
 
-test("readers see the cover on the contents page, in search and on the home page", async ({
+test("readers see the cover on the contents page, chapter pages, in search and on the home page", async ({
   page,
 }) => {
   await seedStory("alice", {
@@ -287,6 +287,18 @@ test("readers see the cover on the contents page, in search and on the home page
   await expect(
     visitor.getByRole("img", { name: "Cover of Book" }),
   ).toBeVisible();
+  await visitor.goto("/p/Alice/book/night");
+  const onChapter = visitor.getByRole("img", { name: "Cover of Book" });
+  await expect(onChapter).toBeVisible();
+  // Title, then cover, then text.
+  const top = async (locator: typeof onChapter) =>
+    (await locator.boundingBox())!.y;
+  expect(
+    await top(visitor.getByRole("heading", { name: "Night" })),
+  ).toBeLessThan(await top(onChapter));
+  expect(await top(onChapter)).toBeLessThan(
+    await top(visitor.getByText("Moonlit")),
+  );
   await visitor.goto("/");
   await expect(
     visitor
@@ -305,7 +317,7 @@ test("readers see the cover on the contents page, in search and on the home page
   ).toBeVisible();
 });
 
-test("an 18+ cover is a badge in search and blurred on the contents page", async ({
+test("an 18+ cover is a badge in search and blurred on the contents and chapter pages", async ({
   page,
 }) => {
   await seedStory("alice", {
@@ -332,6 +344,11 @@ test("an 18+ cover is a badge in search and blurred on the contents page", async
   await expect(result.getByRole("img", { name: BADGE })).toHaveCount(2);
   await expect(result.getByRole("img", { name: "Cover of Book" })).toHaveCount(
     0,
+  );
+
+  await visitor.goto("/p/Alice/book/night");
+  await expect(visitor.getByRole("img", { name: "Cover of Book" })).toHaveClass(
+    /blur/,
   );
 
   await visitor.goto("/p/Alice/book");

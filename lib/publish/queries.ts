@@ -151,6 +151,7 @@ export const getPublishedChapter = cache(
       nickname: folder.nickname,
       folderName: folder.name,
       folderPath: folder.path,
+      cover: folder.cover,
       path: chapters[index].path,
       title: chapters[index].title,
       adult: chapters[index].adult,

@@ -8,10 +8,12 @@ import { retryDueCovers } from "@/lib/covers/mutations";
 import { requestOrigin } from "@/i18n/request-origin";
 import { languageAlternates } from "@/i18n/routing";
 import { AdultBadge } from "@/components/adult";
+import { CoverImage } from "@/components/cover";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { ADULT_COOKIE } from "@/lib/adult/gate";
 import { getPublishedChapter } from "@/lib/publish/queries";
 import { stripComments } from "@/lib/stories/strip-comments";
+import { BlurredCover } from "../adult-cover";
 import { AdultGate } from "./adult-gate";
 
 export async function generateMetadata({
@@ -42,8 +44,11 @@ export default async function PublishedChapterPage({
     redirect({ href: chapter.path, locale: await getLocale() });
   }
   const t = await getTranslations("public");
-  const gated =
-    chapter.adult && (await cookies()).get(ADULT_COOKIE)?.value !== "1";
+  const tCovers = await getTranslations("covers");
+  const confirmed = (await cookies()).get(ADULT_COOKIE)?.value === "1";
+  const gated = chapter.adult && !confirmed;
+  const { cover } = chapter;
+  const coverAlt = tCovers("alt", { name: chapter.folderName });
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10">
@@ -57,6 +62,12 @@ export default async function PublishedChapterPage({
         <h1 className="text-3xl font-bold">{chapter.title}</h1>
         {chapter.adult && <AdultBadge />}
       </div>
+      {cover &&
+        (cover.adult && !confirmed ? (
+          <BlurredCover path={cover.path} alt={coverAlt} size="md" />
+        ) : (
+          <CoverImage path={cover.path} alt={coverAlt} size="md" />
+        ))}
       {gated ? (
         <AdultGate backPath={chapter.folderPath} />
       ) : (

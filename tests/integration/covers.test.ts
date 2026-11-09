@@ -19,6 +19,7 @@ import { COVERS_PER_ACCOUNT } from "@/lib/covers/covers";
 import { coverBytes, retryDueCovers } from "@/lib/covers/mutations";
 import { getFolder, listFolders } from "@/lib/folders/queries";
 import {
+  getPublishedChapter,
   getPublishedFolder,
   listRecentlyPublished,
   searchPublishedChapters,
@@ -464,6 +465,9 @@ describe("cover views", () => {
     const path = `/covers/${(await folderDoc(id))!.coverId}`;
     const cover = { path, adult: true };
     expect(await getPublishedFolder("Alice", "ksiega")).toMatchObject({
+      cover,
+    });
+    expect(await getPublishedChapter("Alice", "ksiega", "one")).toMatchObject({
       cover,
     });
     expect(await searchPublishedChapters("text", [])).toMatchObject([

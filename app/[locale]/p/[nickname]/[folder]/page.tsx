@@ -51,7 +51,7 @@ export default async function PublishedFolderPage({
       {cover && (
         <div className="mb-6">
           {cover.adult && !confirmed ? (
-            <BlurredCover path={cover.path} alt={coverAlt} />
+            <BlurredCover path={cover.path} alt={coverAlt} size="lg" />
           ) : (
             <CoverImage path={cover.path} alt={coverAlt} size="lg" />
           )}
