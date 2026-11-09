@@ -38,10 +38,7 @@ const KINDS = new Set<string>([
 // How far from its offset a proposal's text is looked for when it is not there.
 const SEARCH_WINDOW = 100;
 
-const fits = ({
-  original,
-  issue,
-}: Pick<Proposal, "original" | "issue">) =>
+const fits = ({ original, issue }: Pick<Proposal, "original" | "issue">) =>
   original.length > 0 &&
   original.length <= MAX_ORIGINAL &&
   issue.message.length <= MAX_MESSAGE &&

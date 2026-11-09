@@ -1,7 +1,10 @@
 import { isObjectIdOrHexString, Types } from "mongoose";
+import { chapterAdultState, folderAdultState } from "@/lib/adult/adult";
 import { connectDB } from "@/lib/db";
 import { chapterOrder, folderOrder, type Order } from "@/lib/folders/sort";
 import { folderLanguage } from "@/lib/languages";
+import { coverPath, coversOf } from "@/lib/covers/queries";
+import { Cover } from "@/lib/models/cover";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
 import { serialize } from "@/lib/serialize";
@@ -34,6 +37,8 @@ export async function listFolders(userId: string) {
         lastActivityAt: 1,
         published: 1,
         language: 1,
+        adult: 1,
+        coverId: 1,
       })
       .lean(),
     // aggregate() does not cast, so userId has to be an ObjectId here.
@@ -45,11 +50,14 @@ export async function listFolders(userId: string) {
   const countByFolder = new Map(
     counts.map(({ _id, count }) => [_id?.toString(), count]),
   );
+  const covers = await coversOf(folders);
   return {
     sort,
     folders: folders.map((folder) => ({
       ...serialize(folder),
       language: folderLanguage(folder.language),
+      adult: folderAdultState(folder.adult),
+      cover: covers.get(folder._id.toString()) ?? null,
       chapterCount: countByFolder.get(folder._id.toString()) ?? 0,
     })),
   };
@@ -71,22 +79,52 @@ export async function getFolder(userId: string, id: string) {
       tags: 1,
       published: 1,
       language: 1,
+      adult: 1,
+      coverId: 1,
+      coverRejectedAt: 1,
     })
     .lean();
   if (!folder) return null;
   const chapterSort = folder.chapterSort ?? "created";
+  const [cover, pending] = await Promise.all([
+    folder.coverId
+      ? Cover.findOne({ _id: folder.coverId, state: "rated" })
+          .select({ manualAdult: 1, autoAdult: 1 })
+          .lean()
+      : null,
+    Cover.exists({ folderId: folder._id, state: "pending" }),
+  ]);
   const chapters = await findChaptersInOrder(
     userId,
     id,
     chapterOrder(chapterSort),
   )
-    .select({ title: 1, content: 1, tags: 1, publication: 1, updatedAt: 1 })
+    .select({
+      title: 1,
+      content: 1,
+      tags: 1,
+      publication: 1,
+      updatedAt: 1,
+      adult: 1,
+    })
     .lean();
   return {
     ...serialize(folder),
     language: folderLanguage(folder.language),
+    adult: folderAdultState(folder.adult),
+    cover: cover && {
+      id: cover._id.toString(),
+      path: coverPath(cover._id),
+      manualAdult: Boolean(cover.manualAdult),
+      autoAdult: Boolean(cover.autoAdult),
+    },
+    coverPending: Boolean(pending),
+    coverRejected: Boolean(folder.coverRejectedAt),
     chapterSort,
-    chapters: chapters.map(serialize),
+    chapters: chapters.map((chapter) => ({
+      ...serialize(chapter),
+      adult: chapterAdultState(chapter.adult, folder.adult),
+    })),
   };
 }
 
@@ -102,6 +140,7 @@ export async function getFolderForExport(userId: string, id: string) {
       createdAt: 1,
       notesUpdatedAt: 1,
       chapterSort: 1,
+      coverId: 1,
     })
     .lean();
   if (!folder) return null;

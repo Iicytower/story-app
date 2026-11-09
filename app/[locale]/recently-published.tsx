@@ -5,11 +5,12 @@ import { RecentList } from "./recent-list";
 
 // Reads no chapter text for a query, so it does not use up the search limit.
 export async function RecentlyPublished() {
-  const [chapters, locale, t, tSearch] = await Promise.all([
+  const [chapters, locale, t, tSearch, tCovers] = await Promise.all([
     listRecentlyPublished(),
     getLocale(),
     getTranslations("home"),
     getTranslations("search"),
+    getTranslations("covers"),
   ]);
   const now = new Date();
   return (
@@ -30,6 +31,7 @@ export async function RecentlyPublished() {
             ({ folderName, nickname, publishedAt, ...chapter }) => ({
               ...chapter,
               byline: tSearch("inFolderBy", { folder: folderName, nickname }),
+              coverAlt: tCovers("alt", { name: folderName }),
               date: {
                 iso: publishedAt.toISOString(),
                 text: formatPublishedAt(publishedAt, now, locale),

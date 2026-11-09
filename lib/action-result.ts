@@ -11,6 +11,7 @@ export type ErrorCode =
   | "EMPTY_CONTENT"
   | "INVALID_INPUT"
   | "TOO_LARGE"
+  | "ADULT_LOCKED"
   | "RATE_LIMITED"
   | "TOOL_UNAVAILABLE"
   | "TIMEOUT";

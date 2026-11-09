@@ -51,6 +51,7 @@ import type { StoredProofreading } from "@/lib/proofreading/stored";
 import { saveStory, setChapterPublished } from "../actions";
 import { ChaptersPanel } from "./chapters-panel";
 import { EditorMenu } from "./editor-menu";
+import { AdultBadge } from "@/components/adult";
 import {
   flushLayoutSave,
   setMobileView,
@@ -223,7 +224,8 @@ export function Editor({
     },
     content: () => latest.current.content,
     startProofreading(markdown, issues) {
-      const placed = contentApi.current?.startProofreading(markdown, issues) ?? 0;
+      const placed =
+        contentApi.current?.startProofreading(markdown, issues) ?? 0;
       if (placed > 0) {
         showProofreading.current = true;
         setOpenTool(null);
@@ -422,6 +424,7 @@ export function Editor({
           spellCheck
           className="h-9 w-full text-lg font-semibold md:w-auto md:flex-1 md:text-lg"
         />
+        {story.adult.adult && <AdultBadge />}
         <span
           role="status"
           className={
@@ -438,6 +441,7 @@ export function Editor({
           id={story.id}
           title={title}
           isPublic={Boolean(publicPath)}
+          adult={story.adult}
           beforeExport={saveForExport}
           togglePublished={togglePublished}
           onDeleted={() =>

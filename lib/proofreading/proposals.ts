@@ -72,7 +72,9 @@ function reduce(state: ProposalsState, action: Action): ProposalsState {
           ...current,
           proposals,
           selected:
-            current.selected === removed ? (next?.id ?? null) : current.selected,
+            current.selected === removed
+              ? (next?.id ?? null)
+              : current.selected,
         };
       }, state);
     case "choose":

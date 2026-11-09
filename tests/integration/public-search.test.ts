@@ -103,6 +103,8 @@ describe("searchPublishedChapters", () => {
 
     const [result] = await searchPublishedChapters("łąka", []);
     expect(Object.keys(result).toSorted()).toEqual([
+      "adult",
+      "cover",
       "folderName",
       "folderTags",
       "nickname",

@@ -22,6 +22,7 @@ import {
   MAX_IMPORT_TEXT_BYTES,
 } from "@/lib/import/limits";
 import { type FolderOption, languageOfFolder } from "@/lib/languages";
+import { setFolderCover } from "../folders/[id]/cover-actions";
 import { importStories, type ImportTarget } from "./actions";
 
 const ACCEPT = ".md,.txt,.html,.docx,.odt,.pdf,.epub,.fb2,.zip";
@@ -148,6 +149,9 @@ function ImportForm({
         setError(result.message);
         return;
       }
+      if (file.cover && target.kind === "new") {
+        await sendCover(result.folderId, file.cover);
+      }
       // The folder's own page stays open, so the dialog has to close itself.
       onImported();
       router.push(
@@ -256,4 +260,16 @@ function ImportForm({
       </DialogFooter>
     </form>
   );
+}
+
+// The zip's cover goes through the same scaling and filter as an upload; a failure (no tools
+// server, limits) leaves the imported folder without a cover.
+async function sendCover(folderId: string, bytes: Uint8Array) {
+  try {
+    const { renderCover } = await import("@/lib/covers/encode");
+    const image = await createImageBitmap(new Blob([new Uint8Array(bytes)]));
+    const form = new FormData();
+    form.set("cover", await renderCover(image));
+    await setFolderCover(folderId, form);
+  } catch {}
 }

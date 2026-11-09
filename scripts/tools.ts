@@ -1,11 +1,14 @@
-// Local tools server (task 54, D56): `npm run up` starts MongoDB, Coolify and the tools server, then
-// deploys the tools service through the Coolify API; `npm run down` stops everything.
+// Tools server (D56). Local (task 54): `npm run up` starts MongoDB, Coolify and the tools server,
+// then deploys the tools service through the Coolify API; `npm run down` stops everything.
+// Remote (task 28): `npm run tools:remote` installs Docker and Coolify on the VPS from
+// TOOLS_REMOTE_DIR/remote.env over SSH and deploys the same service there (scripts/remote.ts).
 // Secrets live in .tools/ (gitignored) and .env.local and are never printed.
 import { execFileSync } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
+import { readEnvFile, readRemote, type Remote, ssh, tunnel } from "./remote";
 
 const ROOT = process.cwd();
 const TOOLS_DIR = path.join(ROOT, ".tools");
@@ -15,16 +18,39 @@ const SSH_DIR = path.join(TOOLS_DIR, "ssh");
 const SSH_KEY = path.join(SSH_DIR, "id_ed25519");
 const ENV_LOCAL = path.join(ROOT, ".env.local");
 const SERVICE_COMPOSE = path.join(ROOT, "docker/tools/compose.yml");
-const DEPLOYED_HASH = path.join(TOOLS_DIR, "deployed-compose.sha256");
+const COOLIFY_OVERRIDE = path.join(
+  ROOT,
+  "docker/mikrus/docker-compose.custom.yml",
+);
 
 const PANEL_URL = "http://localhost:8000";
-const API_URL = "http://127.0.0.1:8000/api/v1";
 const TOOLS_API_URL = "http://127.0.0.1:8110";
 const ADMIN_EMAIL = "admin@story-app.localhost";
+// The version of the local Coolify (docker-compose.yml), installed on the remote server too.
+const COOLIFY_VERSION = "4.6.0";
+// Local end of the SSH tunnel to the remote Coolify panel.
+const REMOTE_PANEL_PORT = 18000;
 const NAME = "story-app-tools";
 const TOKEN_NAME = "story-app-tools-script";
 
 type Env = Record<string, string>;
+
+// Where the tools service is deployed: the local stand-in or the real server.
+interface Target {
+  // Secrets of the target (tools.env) and the hash of the deployed compose file.
+  dir: string;
+  apiUrl: string;
+  // TOOLS_API_URL of the gateway.
+  gatewayUrl: string;
+  // Service variables besides the secret.
+  envs: Env;
+  // Runs `php artisan tinker` in the Coolify container; `input` goes to its stdin.
+  tinker: (php: string, input: string) => string;
+  // Runs a command on the server the service is deployed to.
+  onServer: (args: string[]) => string;
+  // The Coolify server to deploy to, validated.
+  server: (request: Request) => Promise<Named>;
+}
 
 function compose(
   args: string[],
@@ -37,16 +63,6 @@ function compose(
     encoding: "utf8",
     stdio: ["pipe", "pipe", options.quiet ? "ignore" : "inherit"],
   });
-}
-
-function readEnvFile(file: string): Env {
-  if (!fs.existsSync(file)) return {};
-  const env: Env = {};
-  for (const line of fs.readFileSync(file, "utf8").split("\n")) {
-    const match = /^([A-Z0-9_]+)=(.*)$/.exec(line);
-    if (match) env[match[1]] = match[2];
-  }
-  return env;
 }
 
 function writeSecretFile(file: string, content: string) {
@@ -79,16 +95,21 @@ function ensureSecrets() {
     };
     writeSecretFile(COOLIFY_ENV, toEnvFile(env));
   }
-  if (!fs.existsSync(TOOLS_ENV)) {
+  return ensureToolsSecrets(TOOLS_ENV);
+}
+
+// The Coolify admin and the gateway's secret of a target.
+function ensureToolsSecrets(file: string) {
+  if (!fs.existsSync(file)) {
     const env: Env = {
       ADMIN_EMAIL,
       // Coolify requires upper and lower case letters, digits and a symbol.
       ADMIN_PASSWORD: `Aa1!${hex(16)}`,
       TOOLS_API_SECRET: hex(32),
     };
-    writeSecretFile(TOOLS_ENV, toEnvFile(env));
+    writeSecretFile(file, toEnvFile(env));
   }
-  return readEnvFile(TOOLS_ENV);
+  return readEnvFile(file);
 }
 
 function toEnvFile(env: Env) {
@@ -122,15 +143,18 @@ function ensureSshKey() {
 
 // Coolify's own root user seeder validates the e-mail against DNS and the password against
 // HaveIBeenPwned, so the account, the API switch and the token are set up directly instead.
-function createApiToken(tools: Env) {
+// The credentials go through stdin, never on a command line. Automatic updates are off: Coolify
+// stays at the version these scripts were tested with.
+function createApiToken(target: Target, tools: Env) {
   const php = `
+    $in = json_decode(stream_get_contents(STDIN), true);
     $user = App\\Models\\User::find(0);
     if (! $user) {
       $user = (new App\\Models\\User)->forceFill([
         'id' => 0,
         'name' => 'Admin',
-        'email' => getenv('ADMIN_EMAIL'),
-        'password' => Illuminate\\Support\\Facades\\Hash::make(getenv('ADMIN_PASSWORD')),
+        'email' => $in['email'],
+        'password' => Illuminate\\Support\\Facades\\Hash::make($in['password']),
         'email_verified_at' => now(),
       ]);
       $user->save();
@@ -138,44 +162,33 @@ function createApiToken(tools: Env) {
     if (! $user->teams()->where('team_id', 0)->exists()) {
       $user->teams()->attach(0, ['role' => 'owner']);
     }
-    App\\Models\\InstanceSettings::get()->update(['is_api_enabled' => true, 'is_registration_enabled' => false]);
+    App\\Models\\InstanceSettings::get()->update([
+      'is_api_enabled' => true,
+      'is_registration_enabled' => false,
+      'is_auto_update_enabled' => false,
+    ]);
     $user->tokens()->where('name', '${TOKEN_NAME}')->delete();
     echo 'TOKEN=' . $user->createToken('${TOKEN_NAME}', ['root'], null, 0)->plainTextToken . PHP_EOL;
   `;
-  const output = compose(
-    [
-      "exec",
-      "-T",
-      "-e",
-      "ADMIN_EMAIL",
-      "-e",
-      "ADMIN_PASSWORD",
-      "coolify",
-      "php",
-      "artisan",
-      "tinker",
-      "--execute",
-      php,
-    ],
-    {
-      env: {
-        ADMIN_EMAIL: tools.ADMIN_EMAIL,
-        ADMIN_PASSWORD: tools.ADMIN_PASSWORD,
-      },
-    },
+  const output = target.tinker(
+    php,
+    JSON.stringify({
+      email: tools.ADMIN_EMAIL,
+      password: tools.ADMIN_PASSWORD,
+    }),
   );
   const token = /^TOKEN=(.+)$/m.exec(output)?.[1];
   if (!token) throw new Error("Could not create a Coolify API token.");
   return token;
 }
 
-function api(token: string) {
+function api(apiUrl: string, token: string) {
   return async function request<T>(
     method: string,
     endpoint: string,
     body?: unknown,
   ): Promise<T> {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetch(`${apiUrl}${endpoint}`, {
       method,
       headers: {
         Authorization: `Bearer ${token}`,
@@ -211,17 +224,18 @@ async function poll<T>(
   throw new Error(`Timed out waiting for ${description}.`);
 }
 
-async function healthStatus(secret: string) {
-  const response = await fetch(`${TOOLS_API_URL}/health`, {
+async function healthStatus(gatewayUrl: string, secret: string) {
+  const response = await fetch(`${gatewayUrl}/health`, {
     headers: { "X-Tools-Secret": secret },
+    signal: AbortSignal.timeout(15_000),
   });
   return response.status;
 }
 
 // The first Polish check after a start takes about a minute on one CPU; this one makes it
 // before the app does (the container healthcheck does the same after unplanned restarts).
-async function languageToolStatus(secret: string) {
-  const response = await fetch(`${TOOLS_API_URL}/lt/v2/check`, {
+async function languageToolStatus(gatewayUrl: string, secret: string) {
+  const response = await fetch(`${gatewayUrl}/lt/v2/check`, {
     method: "POST",
     headers: { "X-Tools-Secret": secret },
     body: new URLSearchParams({ language: "pl-PL", text: "Ala ma kota." }),
@@ -236,7 +250,10 @@ type Request = ReturnType<typeof api>;
 // `content:` files of the compose file, by mount target.
 function contentFiles(composeContent: string): Map<string, string> {
   const compose = parseYaml(composeContent) as {
-    services: Record<string, { volumes?: (string | { target?: string; content?: string })[] }>;
+    services: Record<
+      string,
+      { volumes?: (string | { target?: string; content?: string })[] }
+    >;
   };
   const files = new Map<string, string>();
   for (const { volumes = [] } of Object.values(compose.services)) {
@@ -253,6 +270,7 @@ function contentFiles(composeContent: string): Map<string, string> {
 // content when the compose file changes, so changed content goes through the storages API.
 // Coolify then writes the file in a queued job; the restart must wait for it.
 async function syncContentFiles(
+  target: Target,
   request: Request,
   serviceUuid: string,
   composeContent: string,
@@ -282,13 +300,7 @@ async function syncContentFiles(
     await poll(
       `${storage.mount_path} on the tools server`,
       async () =>
-        same(
-          compose(["exec", "-T", "tools-server", "cat", storage.fs_path], {
-            quiet: true,
-          }),
-        )
-          ? true
-          : undefined,
+        same(target.onServer(["cat", storage.fs_path])) ? true : undefined,
       2 * 60_000,
     );
     changed = true;
@@ -296,9 +308,36 @@ async function syncContentFiles(
   return changed;
 }
 
-async function deploy(token: string, secret: string) {
-  const request = api(token);
+// Waits until Coolify has validated the server; a validation error stays until the next one.
+async function validated(request: Request, server: Named) {
+  console.log("Waiting for Coolify to validate the tools server…");
+  const details = await poll(
+    "server validation",
+    async () => {
+      const details = await request<{
+        is_validating: boolean;
+        validation_logs: string | null;
+        settings: { is_reachable: boolean; is_usable: boolean };
+      }>("GET", `/servers/${server.uuid}`);
+      if (details.validation_logs) return details;
+      return details.settings.is_reachable &&
+        details.settings.is_usable &&
+        !details.is_validating
+        ? details
+        : undefined;
+    },
+    5 * 60_000,
+  );
+  if (details.validation_logs) {
+    throw new Error(
+      `Coolify could not validate the tools server (fix it, then use Validate in the Coolify panel): ${details.validation_logs.replace(/<[^>]+>/g, " ")}`,
+    );
+  }
+  return server;
+}
 
+// The local Coolify deploys to the tools-server container, added as a server with its own key.
+async function localServer(request: Request) {
   const keys = await request<Named[]>("GET", "/security/keys");
   const key =
     keys.find((k) => k.name === NAME) ??
@@ -321,30 +360,47 @@ async function deploy(token: string, secret: string) {
       proxy_type: "none",
       instant_validate: true,
     }));
-  console.log("Waiting for Coolify to validate the tools server…");
-  const validated = await poll(
-    "server validation",
-    async () => {
-      const details = await request<{
-        is_validating: boolean;
-        validation_logs: string | null;
-        settings: { is_reachable: boolean; is_usable: boolean };
-      }>("GET", `/servers/${server.uuid}`);
-      if (details.validation_logs) return details;
-      return details.settings.is_reachable &&
-        details.settings.is_usable &&
-        !details.is_validating
-        ? details
-        : undefined;
-    },
-    5 * 60_000,
-  );
-  // Coolify keeps the last validation error until the server is validated again.
-  if (validated.validation_logs) {
+  return validated(request, server);
+}
+
+// On the real server Coolify deploys to its own host ("localhost", set up by its installer). The
+// gateway takes its port itself, so there is no proxy: Traefik would listen on 80 and 443,
+// which IPv6 makes public.
+async function remoteServer(request: Request) {
+  const servers = await request<(Named & { id?: number })[]>("GET", "/servers");
+  const server = servers.find((s) => s.name === "localhost");
+  if (!server) throw new Error("Coolify has no localhost server.");
+  await request("PATCH", `/servers/${server.uuid}`, {
+    proxy_type: "none",
+    instant_validate: true,
+  });
+  return validated(request, server);
+}
+
+// Coolify may start Traefik once more while it validates the server, after the type is changed,
+// so the container goes at the end and must stay gone.
+async function removeProxy(remote: Remote) {
+  const remove = "docker rm -f coolify-proxy >/dev/null 2>&1 || true";
+  ssh(remote, ["sh", "-c", remove]);
+  await new Promise((resolve) => setTimeout(resolve, 30_000));
+  const left = ssh(remote, [
+    "docker",
+    "ps",
+    "--all",
+    "--quiet",
+    "--filter",
+    "name=^coolify-proxy$",
+  ]).trim();
+  if (left) {
     throw new Error(
-      `Coolify could not validate the tools server (fix it, then use Validate in the Coolify panel): ${validated.validation_logs.replace(/<[^>]+>/g, " ")}`,
+      "Coolify started its proxy again: stop it for the localhost server in the Coolify panel (Proxy: None).",
     );
   }
+}
+
+async function deploy(target: Target, token: string, secret: string) {
+  const request = api(target.apiUrl, token);
+  const server = await target.server(request);
 
   const projects = await request<Named[]>("GET", "/projects");
   const project =
@@ -358,9 +414,10 @@ async function deploy(token: string, secret: string) {
   const composeRaw = Buffer.from(composeContent).toString("base64");
   const composeHash = createHash("sha256").update(composeContent).digest("hex");
   // Coolify only applies a changed compose file on restart.
+  const deployedHash = path.join(target.dir, "deployed-compose.sha256");
   const composeChanged =
-    !fs.existsSync(DEPLOYED_HASH) ||
-    fs.readFileSync(DEPLOYED_HASH, "utf8") !== composeHash;
+    !fs.existsSync(deployedHash) ||
+    fs.readFileSync(deployedHash, "utf8") !== composeHash;
   const services = await request<Named[]>("GET", "/services");
   let service = services.find((s) => s.name === NAME);
   if (service) {
@@ -380,6 +437,7 @@ async function deploy(token: string, secret: string) {
   }
 
   const filesChanged = await syncContentFiles(
+    target,
     request,
     service.uuid,
     composeContent,
@@ -389,19 +447,27 @@ async function deploy(token: string, secret: string) {
     "GET",
     `/services/${service.uuid}/envs`,
   );
-  const current = envs.find((e) => e.key === "TOOLS_API_SECRET");
-  const secretChanged = current?.value !== secret;
-  if (secretChanged) {
+  let envsChanged = false;
+  for (const [key, value] of Object.entries({
+    TOOLS_API_SECRET: secret,
+    ...target.envs,
+  })) {
+    const current = envs.find((e) => e.key === key);
+    if (current?.value === value) continue;
     await request(
       current ? "PATCH" : "POST",
       `/services/${service.uuid}/envs`,
-      { key: "TOOLS_API_SECRET", value: secret },
+      {
+        key,
+        value,
+      },
     );
+    envsChanged = true;
   }
 
   if (
-    (await healthStatus(secret).catch(() => 0)) !== 200 ||
-    secretChanged ||
+    (await healthStatus(target.gatewayUrl, secret).catch(() => 0)) !== 200 ||
+    envsChanged ||
     composeChanged ||
     filesChanged
   ) {
@@ -412,20 +478,16 @@ async function deploy(token: string, secret: string) {
     await poll(
       "the tools service restart",
       async () => {
-        const startedAt = compose(
-          [
-            "exec",
-            "-T",
-            "tools-server",
+        // The container is missing for a moment while Coolify recreates it.
+        const startedAt = target
+          .onServer([
             "docker",
             "inspect",
             "--format",
             "{{.State.Running}} {{.State.StartedAt}}",
             `gateway-${service.uuid}`,
-          ],
-          // The container is missing for a moment while Coolify recreates it.
-          { quiet: true },
-        ).trim();
+          ])
+          .trim();
         const [running, time] = startedAt.split(" ");
         return running === "true" && Date.parse(time) >= requestedAt
           ? true
@@ -454,30 +516,56 @@ function updateEnvLocal(secret: string) {
   fs.writeFileSync(ENV_LOCAL, `${lines.join("\n")}\n`);
 }
 
-async function up() {
-  const tools = ensureSecrets();
-  ensureSshKey();
-  console.log("Starting MongoDB, Coolify and the tools server…");
-  compose(["up", "-d", "--build", "--wait"]);
-  const token = createApiToken(tools);
-  const composeHash = await deploy(token, tools.TOOLS_API_SECRET);
+// Deploys the service and waits until the gateway and LanguageTool answer.
+async function deployAndWait(target: Target, tools: Env) {
+  const token = createApiToken(target, tools);
+  const composeHash = await deploy(target, token, tools.TOOLS_API_SECRET);
   console.log("Waiting for the tools gateway…");
   await poll(
     "the tools gateway /health",
     async () =>
-      (await healthStatus(tools.TOOLS_API_SECRET)) === 200 ? true : undefined,
+      (await healthStatus(target.gatewayUrl, tools.TOOLS_API_SECRET)) === 200
+        ? true
+        : undefined,
     5 * 60_000,
   );
   console.log("Waiting for LanguageTool…");
   await poll(
     "LanguageTool",
     async () =>
-      (await languageToolStatus(tools.TOOLS_API_SECRET)) === 200
+      (await languageToolStatus(target.gatewayUrl, tools.TOOLS_API_SECRET)) ===
+      200
         ? true
         : undefined,
     10 * 60_000,
   );
-  fs.writeFileSync(DEPLOYED_HASH, composeHash);
+  fs.writeFileSync(
+    path.join(target.dir, "deployed-compose.sha256"),
+    composeHash,
+  );
+}
+
+const localTarget: Target = {
+  dir: TOOLS_DIR,
+  apiUrl: "http://127.0.0.1:8000/api/v1",
+  gatewayUrl: TOOLS_API_URL,
+  envs: {},
+  tinker: (php, input) =>
+    compose(
+      ["exec", "-T", "coolify", "php", "artisan", "tinker", "--execute", php],
+      { input },
+    ),
+  onServer: (args) =>
+    compose(["exec", "-T", "tools-server", ...args], { quiet: true }),
+  server: localServer,
+};
+
+async function up() {
+  const tools = ensureSecrets();
+  ensureSshKey();
+  console.log("Starting MongoDB, Coolify and the tools server…");
+  compose(["up", "-d", "--build", "--wait"]);
+  await deployAndWait(localTarget, tools);
   updateEnvLocal(tools.TOOLS_API_SECRET);
   console.log(
     [
@@ -489,19 +577,118 @@ async function up() {
   );
 }
 
+// Docker (Mikrus's own script when there is one, or Coolify's installer) and Coolify, once. The
+// override goes first, so the panel never listens on a public address.
+function installCoolify(remote: Remote) {
+  const running = ssh(remote, [
+    "sh",
+    "-c",
+    "docker inspect --format '{{.State.Running}}' coolify 2>/dev/null || true",
+  ]).trim();
+  ssh(
+    remote,
+    [
+      "sh",
+      "-c",
+      "mkdir -p /data/coolify/source && cat > /data/coolify/source/docker-compose.custom.yml",
+    ],
+    { input: fs.readFileSync(COOLIFY_OVERRIDE, "utf8") },
+  );
+  if (running === "true") return;
+  console.log(
+    `Installing Docker and Coolify ${COOLIFY_VERSION} on ${remote.host}…`,
+  );
+  ssh(
+    remote,
+    [
+      "sh",
+      "-c",
+      [
+        "set -e",
+        "if ! command -v docker >/dev/null && [ -x /opt/noobs/scripts/chce_dockera.sh ]; then cd /opt/noobs/scripts && ./chce_dockera.sh; fi",
+        `curl -fsSL https://cdn.coollabs.io/coolify/install.sh | bash -s ${COOLIFY_VERSION}`,
+      ].join("\n"),
+    ],
+    { inherit: true },
+  );
+}
+
+async function remote() {
+  const remote = readRemote();
+  fs.mkdirSync(remote.dir, { recursive: true, mode: 0o700 });
+  const tools = ensureToolsSecrets(path.join(remote.dir, "tools.env"));
+  installCoolify(remote);
+  const close = await tunnel(remote, REMOTE_PANEL_PORT, 8000);
+  try {
+    const apiUrl = `http://127.0.0.1:${REMOTE_PANEL_PORT}/api/v1`;
+    console.log("Waiting for Coolify…");
+    await poll(
+      "Coolify",
+      async () => ((await fetch(`${apiUrl}/health`)).ok ? true : undefined),
+      5 * 60_000,
+    );
+    await deployAndWait(
+      {
+        dir: remote.dir,
+        apiUrl,
+        gatewayUrl: remote.url,
+        envs: { GATEWAY_PORT: remote.gatewayPort },
+        tinker: (php, input) =>
+          ssh(
+            remote,
+            [
+              "docker",
+              "exec",
+              "-i",
+              "coolify",
+              "php",
+              "artisan",
+              "tinker",
+              "--execute",
+              php,
+            ],
+            { input },
+          ),
+        onServer: (args) => ssh(remote, args, { quiet: true }),
+        server: remoteServer,
+      },
+      tools,
+    );
+    await removeProxy(remote);
+  } finally {
+    close();
+  }
+  const secretFile = path.relative(ROOT, path.join(remote.dir, "tools.env"));
+  console.log(
+    [
+      "Ready.",
+      `  Tools gateway: ${remote.url}`,
+      "  On Vercel (Production and Preview for the staging branch), server-side only:",
+      `    TOOLS_API_URL=${remote.url}`,
+      `    TOOLS_API_SECRET=<TOOLS_API_SECRET from ${secretFile}>`,
+      `  Coolify panel: ssh -N -L 8000:127.0.0.1:8000 -p ${remote.port} ${remote.user}@${remote.host}, then ${PANEL_URL}`,
+      `    (login ${tools.ADMIN_EMAIL}, password in ${secretFile})`,
+      "  Dictionary databases: npm run dict:upload:remote",
+    ].join("\n"),
+  );
+}
+
 function down() {
   compose(["down"]);
 }
 
 const command = process.argv[2];
+const fail = (error: Error) => {
+  console.error(error.message);
+  process.exitCode = 1;
+};
 if (command === "up") {
-  up().catch((error: Error) => {
-    console.error(error.message);
-    process.exitCode = 1;
-  });
+  up().catch(fail);
+} else if (command === "remote") {
+  remote().catch(fail);
 } else if (command === "down") {
   down();
 } else {
-  console.error("Usage: tsx scripts/tools.ts up|down");
+  console.error("Usage: tsx scripts/tools.ts up|down|remote");
   process.exitCode = 1;
 }

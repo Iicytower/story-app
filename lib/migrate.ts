@@ -6,7 +6,7 @@ import { isDuplicateKeyError } from "@/lib/db";
 
 export interface Migration {
   id: string;
-  // Copied to `<name>_backup_<id>` before `up` runs.
+  // Copied to `<name>_backup_<id>` before `up` runs, except NOT_BACKED_UP.
   collections: string[];
   up(db: mongo.Db): Promise<void>;
   // Runs `up` on every invocation, e.g. to fix data written by an old deployment during the build.
@@ -24,7 +24,8 @@ const LOCK_ID = "lock";
 // A failed build never releases its lock, so an old one is taken over.
 const LOCK_TIMEOUT_MS = 15 * 60 * 1000;
 const BACKUP_INFIX = "_backup_";
-const BACKUPS_KEPT = 3;
+// Cover images would take M0 space twice; scripts/backup.sh keeps them outside Atlas (D68).
+const NOT_BACKED_UP = new Set(["covers"]);
 const FILE_PATTERN = /^\d{3}-[\w-]+\.ts$/;
 
 export type MigrationDecision = { run: true } | { run: false; reason: string };
@@ -102,7 +103,6 @@ export async function runMigrations(
       }
       if (firstRun) {
         await records.insertOne({ _id: migration.id, appliedAt: new Date() });
-        await pruneBackups(db);
       }
     }
     if (pending.length === 0) log("No pending migrations.");
@@ -143,8 +143,11 @@ async function acquireLock(
   return startedAt;
 }
 
+// Only the backup of the latest migration is kept (D68): older ones go before the new one is taken.
 async function backup(db: mongo.Db, migration: Migration): Promise<void> {
+  await dropBackupsExcept(db, migration.id);
   for (const name of migration.collections) {
+    if (NOT_BACKED_UP.has(name)) continue;
     const target = `${name}${BACKUP_INFIX}${migration.id}`;
     // A retry after a failed `up` must keep the snapshot taken before the first attempt.
     if (await collectionExists(db, target)) continue;
@@ -155,20 +158,20 @@ async function backup(db: mongo.Db, migration: Migration): Promise<void> {
   }
 }
 
-async function pruneBackups(db: mongo.Db): Promise<void> {
+async function dropBackupsExcept(
+  db: mongo.Db,
+  migrationId: string,
+): Promise<void> {
   const names = (
     await db
       .listCollections({ name: { $regex: BACKUP_INFIX } }, { nameOnly: true })
       .toArray()
   ).map((collection) => collection.name);
-  const migrationId = (name: string) =>
+  const idOf = (name: string) =>
     name.slice(name.indexOf(BACKUP_INFIX) + BACKUP_INFIX.length);
-  const kept = new Set(
-    [...new Set(names.map(migrationId))].sort().slice(-BACKUPS_KEPT),
-  );
   await Promise.all(
     names
-      .filter((name) => !kept.has(migrationId(name)))
+      .filter((name) => idOf(name) !== migrationId)
       .map((name) => db.dropCollection(name)),
   );
 }

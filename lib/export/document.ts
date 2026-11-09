@@ -10,11 +10,18 @@ export type ExportSource = {
   title: string;
   notes: string;
   chapters: { title: string; content: string; notes: string }[];
+  // A folder's cover (task 26), loaded by the browser for the formats with a title page.
+  coverUrl?: string;
 };
 
 export type ExportSection = { title: string | null; blocks: Block[] };
 
-export type ExportDocument = { title: string; sections: ExportSection[] };
+// cover: a 600x900 JPEG, since the .docx and .pdf libraries take no WebP (task 26).
+export type ExportDocument = {
+  title: string;
+  sections: ExportSection[];
+  cover?: Uint8Array;
+};
 
 const notesHeading = (text: string): Block => ({
   type: "heading",
@@ -27,6 +34,7 @@ export function toExportDocument(
   source: ExportSource,
   includeExtras: boolean,
   labels: DocumentLabels = ENGLISH_DOCUMENT_LABELS,
+  cover?: Uint8Array,
 ): ExportDocument {
   const sections: ExportSection[] = source.chapters.map((chapter) => {
     const blocks = parseBlocks(
@@ -46,5 +54,5 @@ export function toExportDocument(
       blocks: parseBlocks(source.notes),
     });
   }
-  return { title: source.title, sections };
+  return { title: source.title, sections, ...(cover && { cover }) };
 }

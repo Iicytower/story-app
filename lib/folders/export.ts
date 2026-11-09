@@ -5,6 +5,8 @@ import {
   withFrontmatter,
 } from "@/lib/stories/export";
 
+export const COVER_FILE = "cover.webp";
+
 type ExportedFolder = {
   name: string;
   notes: string;
@@ -55,15 +57,19 @@ export function folderZipEntries(
   return entries;
 }
 
-export function buildFolderZip(folder: ExportedFolder): Uint8Array {
-  return zipSync(
-    Object.fromEntries(
+export function buildFolderZip(
+  folder: ExportedFolder,
+  cover?: Uint8Array,
+): Uint8Array {
+  return zipSync({
+    ...Object.fromEntries(
       Object.entries(folderZipEntries(folder)).map(([name, text]) => [
         name,
         strToU8(text),
       ]),
     ),
-  );
+    ...(cover && { [COVER_FILE]: cover }),
+  });
 }
 
 export function folderZipName(name: string): string {
