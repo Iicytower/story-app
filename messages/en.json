@@ -114,7 +114,13 @@
     "proofreadingInvalid": "The proofreading state could not be saved. Reload the page and try again.",
     "dictionaryTimeout": "The dictionary did not answer in time. Try again.",
     "adultLockedByImage": "An image here was rated 18+, so the 18+ mark stays until you remove or replace the image.",
-    "adultLockedByFolder": "This chapter is 18+ because its folder is. Remove the mark from the folder first."
+    "adultLockedByFolder": "This chapter is 18+ because its folder is. Remove the mark from the folder first.",
+    "coverInvalid": "This cover could not be read. Choose a JPEG, PNG or WebP image.",
+    "coverTooLarge": "This cover is too large.",
+    "coversUnavailable": "Covers are not available right now.",
+    "coverLimitAccount": "You can have at most {max} covers. Remove one or replace an existing cover.",
+    "coverLimitTotal": "There is no room for new covers right now. You can still replace an existing one.",
+    "coverNotFound": "This folder has no cover."
   },
   "password": {
     "mustContain": "The password must contain:",
@@ -774,5 +780,26 @@
     "markChapterDescription": "“{name}” will be marked as 18+. Readers will see a warning before reading.",
     "unmarkChapterTitle": "Remove 18+ from chapter?",
     "unmarkChapterDescription": "“{name}” will no longer be 18+."
+  },
+  "covers": {
+    "cover": "Cover",
+    "title": "Cover of {name}",
+    "none": "This folder has no cover yet.",
+    "choose": "Choose image",
+    "hint": "JPEG, PNG or WebP up to 10 MB. Drag the image to move the frame.",
+    "zoom": "Zoom",
+    "frame": "Cover frame",
+    "save": "Save cover",
+    "saving": "Checking…",
+    "remove": "Remove cover",
+    "current": "Current cover of {name}",
+    "pending": "The new cover is waiting to be checked; until then the previous one stays. It will be checked again 5 minutes, 30 minutes and 24 hours after the upload.",
+    "saved": "The cover is saved.",
+    "savedAdult": "The cover was rated 18+, so the folder is 18+ until you remove or replace the cover.",
+    "markAdult": "Mark the cover as 18+",
+    "autoAdult": "The filter rated this cover 18+.",
+    "rejected": "The new cover could not be checked, so it was not saved. Add it again.",
+    "dismiss": "Dismiss",
+    "inputInvalid": "Choose a JPEG, PNG or WebP image up to 10 MB."
   }
 }

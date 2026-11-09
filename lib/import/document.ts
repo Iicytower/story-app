@@ -17,6 +17,8 @@ export type ImportedFile = {
   folderNotes: string;
   // The format cannot keep the formatting, which the dialog warns about.
   lossy: boolean;
+  // cover.webp of a folder zip (task 26); the dialog sends it to the new folder.
+  cover?: Uint8Array;
 };
 
 // The message is English; the dialog shows the key in the page's language.

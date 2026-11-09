@@ -114,7 +114,13 @@
     "proofreadingInvalid": "Nie udało się zapisać stanu korekty. Odśwież stronę i spróbuj ponownie.",
     "dictionaryTimeout": "Słownik nie odpowiedział na czas. Spróbuj ponownie.",
     "adultLockedByImage": "Obrazek został oceniony jako 18+, więc oznaczenie 18+ zostaje, dopóki go nie usuniesz albo nie wymienisz.",
-    "adultLockedByFolder": "Ten rozdział jest 18+, bo jego folder jest 18+. Najpierw zdejmij oznaczenie z folderu."
+    "adultLockedByFolder": "Ten rozdział jest 18+, bo jego folder jest 18+. Najpierw zdejmij oznaczenie z folderu.",
+    "coverInvalid": "Nie udało się odczytać okładki. Wybierz obraz JPEG, PNG albo WebP.",
+    "coverTooLarge": "Ta okładka jest za duża.",
+    "coversUnavailable": "Okładki są teraz niedostępne.",
+    "coverLimitAccount": "Możesz mieć najwyżej {max} okładek. Usuń jedną albo wymień istniejącą.",
+    "coverLimitTotal": "Teraz nie ma miejsca na nowe okładki. Nadal możesz wymienić istniejącą.",
+    "coverNotFound": "Ten folder nie ma okładki."
   },
   "password": {
     "mustContain": "Hasło musi zawierać:",
@@ -774,5 +780,26 @@
     "markChapterDescription": "„{name}” zostanie oznaczony jako 18+. Czytelnicy zobaczą ostrzeżenie przed czytaniem.",
     "unmarkChapterTitle": "Zdjąć 18+ z rozdziału?",
     "unmarkChapterDescription": "„{name}” przestanie być 18+."
+  },
+  "covers": {
+    "cover": "Okładka",
+    "title": "Okładka: {name}",
+    "none": "Ten folder nie ma jeszcze okładki.",
+    "choose": "Wybierz obraz",
+    "hint": "JPEG, PNG albo WebP do 10 MB. Przeciągnij obraz, żeby przesunąć kadr.",
+    "zoom": "Powiększenie",
+    "frame": "Kadr okładki",
+    "save": "Zapisz okładkę",
+    "saving": "Sprawdzanie…",
+    "remove": "Usuń okładkę",
+    "current": "Obecna okładka: {name}",
+    "pending": "Nowa okładka czeka na sprawdzenie; do tego czasu zostaje poprzednia. Ponowne sprawdzenie nastąpi 5 minut, 30 minut i 24 godziny po wysłaniu.",
+    "saved": "Okładka zapisana.",
+    "savedAdult": "Okładka została oceniona jako 18+, więc folder jest 18+, dopóki nie usuniesz albo nie wymienisz okładki.",
+    "markAdult": "Oznacz okładkę jako 18+",
+    "autoAdult": "Filtr ocenił tę okładkę jako 18+.",
+    "rejected": "Nie udało się sprawdzić nowej okładki, więc nie została zapisana. Dodaj ją ponownie.",
+    "dismiss": "Zamknij",
+    "inputInvalid": "Wybierz obraz JPEG, PNG albo WebP do 10 MB."
   }
 }

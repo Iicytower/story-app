@@ -6,6 +6,7 @@ import {
   FileUpIcon,
   GlobeIcon,
   GlobeLockIcon,
+  ImageIcon,
   LanguagesIcon,
   ListChecksIcon,
   PencilIcon,
@@ -44,6 +45,7 @@ import {
   folderLanguage,
 } from "@/lib/languages";
 import type { AdultState } from "@/lib/adult/adult";
+import { CoverDialog, type FolderCover } from "./cover-dialog";
 import { DeleteFolderDialog } from "./delete-folder-dialog";
 import { RenameFolderDialog } from "./rename-folder-dialog";
 
@@ -56,6 +58,7 @@ type Dialog =
   | "publish"
   | "publishAll"
   | "adult"
+  | "cover"
   | "delete";
 
 export function FolderMenu({
@@ -65,6 +68,7 @@ export function FolderMenu({
   isPublic,
   adult,
   unpublishedCount,
+  cover,
 }: {
   folder: {
     id: string;
@@ -79,6 +83,8 @@ export function FolderMenu({
   isPublic: boolean;
   adult: AdultState;
   unpublishedCount: number;
+  // Missing while covers are off (no tools server, D56).
+  cover?: { current: FolderCover | null; pending: boolean };
 }) {
   const router = useRouter();
   const [dialog, setDialog] = useState<Dialog | null>(null);
@@ -94,6 +100,7 @@ export function FolderMenu({
   const tChapters = useTranslations("chapters");
   const tExport = useTranslations("export");
   const tImport = useTranslations("import");
+  const tCovers = useTranslations("covers");
   const dialogProps = (name: Dialog) => ({
     open: dialog === name,
     onOpenChange: (open: boolean) => setDialog(open ? name : null),
@@ -153,6 +160,12 @@ export function FolderMenu({
           <PencilIcon />
           {tCommon("rename")}
         </DropdownMenuItem>
+        {cover && (
+          <DropdownMenuItem onSelect={() => setDialog("cover")}>
+            <ImageIcon />
+            {tCovers("cover")}
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => setDialog("export")}>
           <FileDownIcon />
@@ -244,6 +257,15 @@ export function FolderMenu({
         adult={adult.adult}
         action={() => setFolderAdult(folder.id, !adult.adult)}
       />
+      {cover && (
+        <CoverDialog
+          {...dialogProps("cover")}
+          folderId={folder.id}
+          folderName={folder.name}
+          cover={cover.current}
+          pending={cover.pending}
+        />
+      )}
       <DeleteFolderDialog
         {...dialogProps("delete")}
         id={folder.id}

@@ -22,6 +22,7 @@ export async function GET(
       content,
       notes,
     })),
+    ...(folder.coverId && { coverUrl: `/covers/${folder.coverId}` }),
   };
   return Response.json(source, { headers: { "Cache-Control": "no-store" } });
 }

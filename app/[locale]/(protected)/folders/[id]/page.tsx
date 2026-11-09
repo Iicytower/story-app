@@ -2,18 +2,22 @@ import type { Metadata } from "next";
 import { Link, redirect } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
+import { after } from "next/server";
 import { AdultBadge } from "@/components/adult";
 import { LocalDate } from "@/components/local-date";
 import { TagChips } from "@/components/tag-chips";
 import { SortableList } from "@/components/sortable-list";
 import { requireUser } from "@/lib/auth/session";
+import { retryDueCovers } from "@/lib/covers/mutations";
 import { getFolder, listFolders } from "@/lib/folders/queries";
 import { folderPublicPath } from "@/lib/publish/queries";
 import { buildSnippet } from "@/lib/stories/search";
 import { listUserTags } from "@/lib/tags/queries";
+import { toolsConfig } from "@/lib/tools/client";
 import { listFolderVersions } from "@/lib/versions/queries";
 import { moveChapter } from "../../stories/actions";
 import { ChapterMenu } from "./chapter-menu";
+import { CoverRejected } from "./cover-rejected";
 import { FolderMenu } from "./folder-menu";
 import { FolderNotes } from "./folder-notes";
 import { FolderPublicLink } from "./folder-public-link";
@@ -37,6 +41,7 @@ export default async function FolderPage({
     listUserTags(user.userId),
   ]);
   if (!folder) notFound();
+  after(() => retryDueCovers());
   const versions = await listFolderVersions(user.userId, folder.id);
   const otherFolders = folders.filter((other) => other.id !== folder.id);
   const publicPath = folder.published
@@ -74,10 +79,16 @@ export default async function FolderPage({
             isPublic={Boolean(folder.published)}
             adult={folder.adult}
             unpublishedCount={unpublishedCount}
+            cover={
+              toolsConfig()
+                ? { current: folder.cover, pending: folder.coverPending }
+                : undefined
+            }
           />
           {publicPath && <FolderPublicLink publicPath={publicPath} />}
         </div>
         <TagChips tags={folder.tags} />
+        {folder.coverRejected && <CoverRejected folderId={folder.id} />}
       </div>
       <div className="grid gap-6 md:grid-cols-[1fr_20rem]">
         {folder.chapters.length === 0 ? (

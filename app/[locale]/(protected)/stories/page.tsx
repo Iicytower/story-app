@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Form from "next/form";
+import { after } from "next/server";
 import { getTranslations } from "next-intl/server";
 import { getPathname, Link, redirect } from "@/i18n/navigation";
 import { getLocale } from "next-intl/server";
@@ -9,6 +10,7 @@ import { AdultBadge } from "@/components/adult";
 import { TagChips } from "@/components/tag-chips";
 import { Input } from "@/components/ui/input";
 import { requireUser } from "@/lib/auth/session";
+import { retryDueCovers } from "@/lib/covers/mutations";
 import { listFolders } from "@/lib/folders/queries";
 import { listStories } from "@/lib/stories/queries";
 import { buildSnippet } from "@/lib/stories/search";
@@ -28,6 +30,7 @@ export default async function StoriesPage({
 }: PageProps<"/[locale]/stories">) {
   const user = await requireUser();
   if (!user.ok) redirect({ href: "/", locale: await getLocale() });
+  after(() => retryDueCovers());
 
   const { q, tag } = await searchParams;
   const query = typeof q === "string" ? q.trim() : "";

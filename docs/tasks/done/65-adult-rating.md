@@ -2,7 +2,7 @@
 
 Subtask zbiorczego taska [66](../66-covers-and-adult-rating.md) (branch, kolejność, środowisko lokalne).
 
-Zgłoszenie użytkownika (2026-11-08), wcześniej punkt backlogu „oznaczenie folderu lub rozdziału jako 18+”. Wspólny system oznaczeń 18+ dla folderów, rozdziałów i obrazków. Ten task wprowadza oznaczenie folderu i rozdziału oraz miejsce na źródło automatyczne; obrazki (okładki) i automatyczny filtr podłącza task [26](../26-cover-upload.md).
+Zgłoszenie użytkownika (2026-11-08), wcześniej punkt backlogu „oznaczenie folderu lub rozdziału jako 18+”. Wspólny system oznaczeń 18+ dla folderów, rozdziałów i obrazków. Ten task wprowadza oznaczenie folderu i rozdziału oraz miejsce na źródło automatyczne; obrazki (okładki) i automatyczny filtr podłącza task [26](26-cover-upload.md).
 
 ## Zakres
 

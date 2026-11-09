@@ -32,6 +32,9 @@ services:
               handle_path /dict/* {
                 reverse_proxy dictionary:8000
               }
+              handle /classify {
+                reverse_proxy classifier:8000
+              }
               respond 404
             }
             respond 401
@@ -316,5 +319,144 @@ services:
       start_period: 10s
       start_interval: 2s
 
+  # Cover filter (task 26, D68): the OwenElliott image-safety-classifier-s ONNX model on CPU.
+  # Packages and the model go to the classifier-data volume on the first start (the model is
+  # checked by SHA-256), so Coolify needs no build. POST /classify takes the raw image bytes,
+  # decodes and re-encodes them without metadata (WebP 600x900) and returns the scores of the
+  # re-encoded image; the app applies the 18+ threshold. No dollar sign in the code: Compose
+  # would interpolate it.
+  classifier:
+    image: python:3.13.18-slim
+    restart: unless-stopped
+    command: ["python", "/app/server.py"]
+    # 290 MiB measured locally after a classification (task 26).
+    mem_limit: 512m
+    volumes:
+      - classifier-data:/data
+      - type: bind
+        source: ./classifier.py
+        target: /app/server.py
+        content: |
+          import base64, hashlib, io, json, os, shutil, subprocess, sys, urllib.request, warnings
+          from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+          PACKAGES = ["onnxruntime==1.31.1", "pillow==13.0.0", "numpy==2.5.4"]
+          MODEL_URL = "https://huggingface.co/OwenElliott/image-safety-classifier-s/resolve/main/onnx/image-safety-classifier-s.onnx"
+          MODEL_SHA256 = "fef443ed68ae25ed693b6fef9e456071692ed3963cff4168acb39c3de6f017e7"
+          MODEL_ID = "owenelliott-s@" + MODEL_SHA256[:12]
+          PY = "/data/py"
+          MODEL = "/data/model-" + MODEL_SHA256[:12] + ".onnx"
+          MAX_BODY = 1024 * 1024
+          MAX_PIXELS = 4000000
+          SIZE = (600, 900)
+          # Output order of the model (config.json label_names).
+          LABELS = ["nsfl", "nsfw", "sfw"]
+
+          def ensure_packages():
+              wanted = "\n".join(PACKAGES)
+              try:
+                  with open(os.path.join(PY, ".packages")) as file:
+                      if file.read() == wanted:
+                          return
+              except FileNotFoundError:
+                  pass
+              staging = PY + ".tmp"
+              shutil.rmtree(staging, ignore_errors=True)
+              subprocess.run([sys.executable, "-m", "pip", "install", "--quiet", "--no-cache-dir", "--target", staging, *PACKAGES], check=True)
+              with open(os.path.join(staging, ".packages"), "w") as file:
+                  file.write(wanted)
+              shutil.rmtree(PY, ignore_errors=True)
+              os.rename(staging, PY)
+
+          def sha256(path):
+              digest = hashlib.sha256()
+              with open(path, "rb") as file:
+                  for chunk in iter(lambda: file.read(1 << 20), b""):
+                      digest.update(chunk)
+              return digest.hexdigest()
+
+          def ensure_model():
+              if os.path.exists(MODEL) and sha256(MODEL) == MODEL_SHA256:
+                  return
+              staging = MODEL + ".tmp"
+              urllib.request.urlretrieve(MODEL_URL, staging)
+              if sha256(staging) != MODEL_SHA256:
+                  os.remove(staging)
+                  sys.exit("Model checksum mismatch")
+              os.rename(staging, MODEL)
+
+          ensure_packages()
+          ensure_model()
+          sys.path.insert(0, PY)
+          import numpy as np
+          import onnxruntime as ort
+          from PIL import Image, ImageOps
+
+          Image.MAX_IMAGE_PIXELS = MAX_PIXELS
+          warnings.simplefilter("error", Image.DecompressionBombWarning)
+          session = ort.InferenceSession(MODEL, providers=["CPUExecutionProvider"])
+
+          def classify(body):
+              with Image.open(io.BytesIO(body)) as image:
+                  if image.format not in ("WEBP", "JPEG", "PNG"):
+                      raise ValueError("format")
+                  image = ImageOps.fit(image.convert("RGB"), SIZE, Image.LANCZOS)
+              output = io.BytesIO()
+              image.save(output, "WEBP", quality=85)
+              encoded = output.getvalue()
+              with Image.open(io.BytesIO(encoded)) as stored:
+                  small = stored.convert("RGB").resize((224, 224), Image.BILINEAR)
+              pixels = np.asarray(small, dtype=np.float32).transpose(2, 0, 1)[np.newaxis]
+              probabilities = session.run(None, {"image": pixels})[0][0]
+              return {
+                  "model": MODEL_ID,
+                  "scores": {label: float(value) for label, value in zip(LABELS, probabilities)},
+                  "image": base64.b64encode(encoded).decode("ascii"),
+              }
+
+          class Handler(BaseHTTPRequestHandler):
+              def send(self, status, body):
+                  data = json.dumps(body).encode()
+                  self.send_response(status)
+                  self.send_header("Content-Type", "application/json")
+                  self.send_header("Content-Length", str(len(data)))
+                  self.end_headers()
+                  self.wfile.write(data)
+
+              def do_GET(self):
+                  if self.path != "/health":
+                      return self.send(404, {"error": "NOT_FOUND"})
+                  self.send(200, {"model": MODEL_ID})
+
+              def do_POST(self):
+                  if self.path != "/classify":
+                      return self.send(404, {"error": "NOT_FOUND"})
+                  length = int(self.headers.get("Content-Length") or 0)
+                  if length <= 0 or length > MAX_BODY:
+                      return self.send(413, {"error": "TOO_LARGE"})
+                  body = self.rfile.read(length)
+                  try:
+                      result = classify(body)
+                  except Exception:
+                      return self.send(400, {"error": "BAD_IMAGE"})
+                  self.send(200, result)
+
+              def log_message(self, *args):
+                  pass
+
+          ThreadingHTTPServer(("0.0.0.0", 8000), Handler).serve_forever()
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"
+      interval: 60s
+      timeout: 10s
+      # The first start installs the packages and downloads the model.
+      start_period: 600s
+      start_interval: 5s
+
 volumes:
   dict-data:
+  classifier-data:

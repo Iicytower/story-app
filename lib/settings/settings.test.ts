@@ -40,7 +40,9 @@ describe("normalizeSettings", () => {
           layout: { tab: 3, collapsed: { tools: true } },
         },
         folders: { sort: "alpha", manualOrder: "yes" },
-        proofreading: { dictionary: [" Ania ", "Ania", 3, "dwa słowa", "Kwak"] },
+        proofreading: {
+          dictionary: [" Ania ", "Ania", 3, "dwa słowa", "Kwak"],
+        },
         other: { a: 1 },
       }),
     ).toEqual({

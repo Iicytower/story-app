@@ -133,6 +133,53 @@ describe("buildChapterFilesZip", () => {
   });
 });
 
+const COVER = Buffer.from(
+  "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABALDA4MChAODQ4SERATGCgaGBYWGDEjJR0oOjM9PDkzODdASFxOQERXRTc4UG1RV19iZ2hnPk1xeXBkeFxlZ2P/2wBDARESEhgVGC8aGi9jQjhCY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2P/wAARCAADAAIDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwBtFFFeWeyf/9k=",
+  "base64",
+);
+
+describe("cover title page", () => {
+  it("adds the cover to the EPUB manifest, spine and files", async () => {
+    const files = unzipSync(
+      (await buildExport(
+        "epub",
+        folder,
+        false,
+        undefined,
+        COVER,
+      )) as Uint8Array,
+    );
+    expect(Buffer.from(files["OEBPS/cover.jpg"])).toEqual(COVER);
+    const opf = strFromU8(files["OEBPS/content.opf"]);
+    expect(opf).toContain('properties="cover-image"');
+    expect(opf).toContain('<spine>\n<itemref idref="cover"/>');
+  });
+
+  it("puts the cover image before the title in DOCX", async () => {
+    const files = unzipSync(
+      (await buildExport(
+        "docx",
+        folder,
+        false,
+        undefined,
+        COVER,
+      )) as Uint8Array,
+    );
+    expect(
+      Object.keys(files).some((name) => name.startsWith("word/media/")),
+    ).toBe(true);
+    const xml = strFromU8(files["word/document.xml"]);
+    expect(xml.indexOf("<w:drawing>")).toBeLessThan(xml.indexOf("Zażółć"));
+  });
+
+  it("leaves formats without a cover unchanged", async () => {
+    const files = unzipSync(
+      (await buildExport("epub", folder, false)) as Uint8Array,
+    );
+    expect(files["OEBPS/cover.jpg"]).toBeUndefined();
+  });
+});
+
 describe("pdf", () => {
   async function fonts() {
     const entries = await Promise.all(
@@ -150,6 +197,16 @@ describe("pdf", () => {
     expect(raw.startsWith("%PDF-")).toBe(true);
     expect(raw.match(/\/Type \/Page\b/g)).toHaveLength(3);
     expect(raw).toContain("/Outlines");
+  });
+
+  it("adds the cover as a page of its own", async () => {
+    const pdf = await buildPdf(
+      toExportDocument(folder, true, undefined, COVER),
+      await fonts(),
+    );
+    const raw = Buffer.from(pdf).toString("latin1");
+    expect(raw.match(/\/Type \/Page\b/g)).toHaveLength(4);
+    expect(raw).toContain("/Subtype /Image");
   });
 });
 
