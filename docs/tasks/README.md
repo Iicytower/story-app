@@ -52,6 +52,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 26 | ↳ [Upload okładek](done/26-cover-upload.md) (subtask 66) | 65 | [x] |
 | 40 | ↳ [Wyświetlanie okładek](done/40-cover-display.md) (subtask 66) | 26 | [x] |
 | 28 | [Serwer na Mikrusie](28-mikrus-server.md) | 54, 25, 29 | [~] |
+| 67 | [Pomiar limitu okładek i kalibracja progu 18+](67-covers-limits-calibration.md) | 28 | [ ] |
 | – | [Aktualizacja zależności (2026-11-09)](dependency-updates-2026-11-09.md) | – | [ ] |
 | 56 | [Aktualizacja Next.js i podatnych zależności](56-dependency-updates.md) | – | [ ] |
 | 57 | [Zaufany adres klienta w limitach](57-trusted-client-ip.md) | – | [ ] |
