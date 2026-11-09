@@ -5,7 +5,7 @@
 // the rhyme keys of the form table with wordfreq's frequencies into .tools/dict/rhymes.sqlite
 // (task 34, D64); without an argument all. `npm run dict:upload [forms|definitions|synonyms|rhymes]`
 // sends the built files (without an argument all) to the dictionary service on the local tools
-// server. Source data and the built files stay out of the repo (licences: D61–D64).
+// server, `npm run dict:upload:remote [...]` to the real one (task 28). Source data and the built files stay out of the repo (licences: D61–D64).
 import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
@@ -24,6 +24,7 @@ import {
   wordFrequencies,
 } from "../lib/tools/rhymes-import";
 import { SOURCES } from "../lib/tools/sources";
+import { readEnvFile, readRemote, sshCommand } from "./remote";
 import {
   decodeThesaurus,
   parseSynonymEntry,
@@ -606,56 +607,76 @@ function builtAt(file: string): string {
   return row.value;
 }
 
-function secret(): string {
-  const match = /^TOOLS_API_SECRET=(.+?)\r?$/m.exec(
-    fs.existsSync(TOOLS_ENV) ? fs.readFileSync(TOOLS_ENV, "utf8") : "",
-  );
-  if (!match) throw new Error("No tools server secret: run `npm run up`.");
-  return match[1];
+// The server the service runs on: the local tools server, which runs it in Docker inside its
+// container (task 54), or the real one over SSH (task 28).
+interface Server {
+  // The command that runs `args` on the server.
+  command: (args: string[]) => [string, string[]];
+  url: string;
+  secret: string;
+  // What to run when the service is missing.
+  setUp: string;
 }
 
-const toolsServer = (args: string[]) => [
-  "compose",
-  "--profile",
-  "tools",
-  "exec",
-  "-T",
-  "tools-server",
-  ...args,
-];
+function secretFrom(file: string, setUp: string): string {
+  const secret = readEnvFile(file).TOOLS_API_SECRET;
+  if (!secret) throw new Error(`No tools server secret: run \`${setUp}\`.`);
+  return secret;
+}
 
-// The local tools server runs the service in Docker inside its container (task 54); on the real
-// server (task 28) the same stream goes over SSH.
-function dictionaryVolume(): { volume: string; image: string } {
-  const ids = execFileSync(
-    "docker",
-    toolsServer([
+function localServer(): Server {
+  return {
+    command: (args) => [
       "docker",
-      "ps",
-      "--quiet",
-      "--filter",
-      "label=com.docker.compose.service=dictionary",
-    ]),
-    { cwd: ROOT, encoding: "utf8" },
-  )
+      ["compose", "--profile", "tools", "exec", "-T", "tools-server", ...args],
+    ],
+    url: TOOLS_API_URL,
+    secret: secretFrom(TOOLS_ENV, "npm run up"),
+    setUp: "npm run up",
+  };
+}
+
+function remoteServer(): Server {
+  const remote = readRemote();
+  return {
+    // Compressed: the databases shrink to about a third.
+    command: (args) => sshCommand(remote, args, ["-C"]),
+    url: remote.url,
+    secret: secretFrom(
+      path.join(remote.dir, "tools.env"),
+      "npm run tools:remote",
+    ),
+    setUp: "npm run tools:remote",
+  };
+}
+
+const run = (server: Server, args: string[]) => {
+  const [command, commandArgs] = server.command(args);
+  return execFileSync(command, commandArgs, { cwd: ROOT, encoding: "utf8" });
+};
+
+function dictionaryVolume(server: Server): { volume: string; image: string } {
+  const ids = run(server, [
+    "docker",
+    "ps",
+    "--quiet",
+    "--filter",
+    "label=com.docker.compose.service=dictionary",
+  ])
     .split("\n")
     .filter(Boolean);
   if (ids.length !== 1) {
     throw new Error(
-      `Expected one running dictionary container, found ${ids.length}: run \`npm run up\`.`,
+      `Expected one running dictionary container, found ${ids.length}: run \`${server.setUp}\`.`,
     );
   }
-  const [volume, image] = execFileSync(
+  const [volume, image] = run(server, [
     "docker",
-    toolsServer([
-      "docker",
-      "inspect",
-      "--format",
-      '{{range .Mounts}}{{if eq .Destination "/data"}}{{.Name}}{{end}}{{end}} {{.Config.Image}}',
-      ids[0],
-    ]),
-    { cwd: ROOT, encoding: "utf8" },
-  )
+    "inspect",
+    "--format",
+    '{{range .Mounts}}{{if eq .Destination "/data"}}{{.Name}}{{end}}{{end}} {{.Config.Image}}',
+    ids[0],
+  ])
     .trim()
     .split(" ");
   if (!volume || !image) throw new Error("No data volume on the dictionary.");
@@ -668,32 +689,33 @@ function dictionaryVolume(): { volume: string; image: string } {
 // in the service's own (128 MB limit) the written pages count against it and the OOM killer
 // restarts the service.
 function uploadFile(
+  server: Server,
   file: string,
   { volume, image }: { volume: string; image: string },
 ): Promise<void> {
   const name = path.basename(file);
   console.log(`Uploading ${name}…`);
   return new Promise<void>((resolve, reject) => {
-    const child = spawn(
+    const [command, args] = server.command([
       "docker",
-      toolsServer([
-        "docker",
-        "run",
-        "--rm",
-        "-i",
-        "--volume",
-        `${volume}:/data`,
-        "--entrypoint",
-        "sh",
-        image,
-        "-c",
-        'cat > "/data/$2.tmp" && [ "$(wc -c < "/data/$2.tmp")" -eq "$1" ] && mv -f "/data/$2.tmp" "/data/$2" || { rm -f "/data/$2.tmp"; exit 1; }',
-        "sh",
-        String(fs.statSync(file).size),
-        name,
-      ]),
-      { cwd: ROOT, stdio: ["pipe", "inherit", "inherit"] },
-    );
+      "run",
+      "--rm",
+      "-i",
+      "--volume",
+      `${volume}:/data`,
+      "--entrypoint",
+      "sh",
+      image,
+      "-c",
+      'cat > "/data/$2.tmp" && [ "$(wc -c < "/data/$2.tmp")" -eq "$1" ] && mv -f "/data/$2.tmp" "/data/$2" || { rm -f "/data/$2.tmp"; exit 1; }',
+      "sh",
+      String(fs.statSync(file).size),
+      name,
+    ]);
+    const child = spawn(command, args, {
+      cwd: ROOT,
+      stdio: ["pipe", "inherit", "inherit"],
+    });
     const input = fs.createReadStream(file);
     input.on("error", reject);
     child.stdin.on("error", reject);
@@ -705,11 +727,11 @@ function uploadFile(
   });
 }
 
-async function upload() {
+async function upload(server = localServer()) {
   const what = process.argv[3];
   if (what !== undefined && !isDatabase(what)) {
     throw new Error(
-      "Usage: npm run dict:upload [forms|definitions|synonyms|rhymes]",
+      "Usage: npm run dict:upload[:remote] [forms|definitions|synonyms|rhymes]",
     );
   }
   const built = Object.entries(DATABASES).filter(
@@ -718,10 +740,10 @@ async function upload() {
   if (built.length === 0) {
     throw new Error("No database: run `npm run dict:build` first.");
   }
-  const target = dictionaryVolume();
-  for (const [, file] of built) await uploadFile(file, target);
-  const response = await fetch(`${TOOLS_API_URL}/dict/health`, {
-    headers: { "X-Tools-Secret": secret() },
+  const target = dictionaryVolume(server);
+  for (const [, file] of built) await uploadFile(server, file, target);
+  const response = await fetch(`${server.url}/dict/health`, {
+    headers: { "X-Tools-Secret": server.secret },
   });
   if (response.status === 503) {
     throw new Error(
@@ -743,14 +765,18 @@ async function upload() {
   }
 }
 
-const commands: Record<string, () => Promise<void>> = { build, upload };
-const run = commands[process.argv[2] ?? ""];
-if (run) {
-  run().catch((error: Error) => {
+const commands: Record<string, () => Promise<void>> = {
+  build,
+  upload: () => upload(),
+  "upload-remote": () => upload(remoteServer()),
+};
+const command = commands[process.argv[2] ?? ""];
+if (command) {
+  command().catch((error: Error) => {
     console.error(error.message);
     process.exitCode = 1;
   });
 } else {
-  console.error("Usage: tsx scripts/dictionary.ts build|upload");
+  console.error("Usage: tsx scripts/dictionary.ts build|upload|upload-remote");
   process.exitCode = 1;
 }
