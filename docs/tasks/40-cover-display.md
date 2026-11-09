@@ -1,5 +1,7 @@
 # 40 – Wyświetlanie okładek
 
+Subtask zbiorczego taska [66](66-covers-and-adult-rating.md) (branch, kolejność, środowisko lokalne).
+
 Wydzielone z dawnego taska 26 (zgłoszenie z 2026-10-30). Na razie tylko okładki folderów (decyzja użytkownika 2026-11-09, task 26).
 
 ## Zakres

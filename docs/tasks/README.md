@@ -47,9 +47,10 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 35 | [Filtry rymów](done/35-rhyme-filters.md) | 34 | [x] |
 | 55 | [Korekta w głównym edytorze](done/55-inline-proofreading.md) | 23 | [x] |
 | 51 | [Poprawa wyglądu (mobile i web)](51-ui-polish.md) | – | [ ] |
-| 65 | [Oznaczenie 18+](65-adult-rating.md) | – | [ ] |
-| 26 | [Upload okładek](26-cover-upload.md) | 65 | [ ] |
-| 40 | [Wyświetlanie okładek](40-cover-display.md) | 26 | [ ] |
+| 66 | [Okładki folderów i oznaczenie 18+ (zbiorczy)](66-covers-and-adult-rating.md) | – | [ ] |
+| 65 | ↳ [Oznaczenie 18+](65-adult-rating.md) (subtask 66) | – | [ ] |
+| 26 | ↳ [Upload okładek](26-cover-upload.md) (subtask 66) | 65 | [ ] |
+| 40 | ↳ [Wyświetlanie okładek](40-cover-display.md) (subtask 66) | 26 | [ ] |
 | 28 | [Serwer na Mikrusie](28-mikrus-server.md) | 54, 25, 29 | [~] |
 | 56 | [Aktualizacja Next.js i podatnych zależności](56-dependency-updates.md) | – | [ ] |
 | 57 | [Zaufany adres klienta w limitach](57-trusted-client-ip.md) | – | [ ] |
@@ -80,6 +81,7 @@ Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 - `staging` – środowisko testowe (Vercel Preview przypięty do brancha `staging`). Merge z `develop` na prośbę użytkownika.
 - `develop` – integracja: tu trafiają zakończone taski.
 - `feature/NN-<slug>` – jeden branch na task, tworzony z `develop`.
+- Task zbiorczy (np. 66): jego branch z `develop`, a branch każdego subtasku z brancha zbiorczego; subtask merge'ujemy do brancha zbiorczego, a ten do `develop` dopiero po wszystkich subtaskach.
 
 ## Definicja „zrobione” (każdy task)
 
