@@ -61,7 +61,18 @@
     "logOutOthersTitle": "Wylogować inne urządzenia?",
     "logOutOthersDescription": "Każda inna przeglądarka i urządzenie zalogowane na to konto będą musiały zalogować się ponownie. To urządzenie pozostanie zalogowane.",
     "logOutOthersConfirm": "Wyloguj inne urządzenia",
-    "logOutOthersDone": "Inne urządzenia zostały wylogowane."
+    "logOutOthersDone": "Inne urządzenia zostały wylogowane.",
+    "profile": "Profil",
+    "bio": "Bio",
+    "bioHelp": "Widoczne na Twoim profilu. Możesz użyć **pogrubienia**, *kursywy*, linków i > cytatów.",
+    "bioLength": "{length, number} / {max, number}",
+    "saveBio": "Zaktualizuj bio",
+    "bioSaved": "Bio zapisane.",
+    "avatar": "Avatar",
+    "avatarsUnavailable": "Avatary są teraz niedostępne.",
+    "viewProfile": "Zobacz profil",
+    "loadingProfile": "Wczytywanie…",
+    "profileFailed": "Nie udało się wczytać profilu. Odśwież stronę i spróbuj ponownie."
   },
   "errors": {
     "nicknameRequirement": "Nick musi mieć 3–30 znaków: litery a-z, cyfry, _ i -.",
@@ -163,7 +174,12 @@
     "quoteTooLong": "Cytat może mieć najwyżej {max, number} znaków.",
     "shelfNameTooLong": "Nazwa półki może mieć najwyżej {max, number} znaków.",
     "bookmarkNameTooLong": "Nazwa zakładki może mieć najwyżej {max, number} znaków.",
-    "quoteContextTooLong": "Kontekst cytatu może mieć najwyżej {max, number} znaków."
+    "quoteContextTooLong": "Kontekst cytatu może mieć najwyżej {max, number} znaków.",
+    "avatarsUnavailable": "Avatary są teraz niedostępne.",
+    "avatarInvalid": "Nie udało się odczytać avatara. Wybierz obraz JPEG, PNG albo WebP.",
+    "avatarTooLarge": "Ten avatar jest za duży.",
+    "avatarLimitTotal": "Teraz nie ma miejsca na nowe avatary. Nadal możesz wymienić istniejący.",
+    "avatarAdult": "Ten obraz został oceniony jako 18+, więc nie może być avatarem. Wybierz inny."
   },
   "password": {
     "mustContain": "Hasło musi zawierać:",
@@ -868,5 +884,28 @@
     "submit": "Ustaw nowe hasło",
     "submitting": "Ustawianie hasła…",
     "back": "Wróć do logowania"
+  },
+  "profile": {
+    "title": "{nickname} – Story App",
+    "avatarAlt": "Avatar: {nickname}",
+    "bio": "O mnie",
+    "books": "Książki",
+    "noBooks": "Brak opublikowanych książek.",
+    "coverAlt": "Okładka: {name}"
+  },
+  "avatar": {
+    "title": "Avatar",
+    "hint": "JPEG, PNG albo WebP do 10 MB. Przeciągnij obraz, żeby przesunąć kadr. Obraz oceniony jako 18+ nie zostanie przyjęty.",
+    "none": "Nie masz jeszcze avatara; profil pokazuje Twoje inicjały.",
+    "current": "Obecny avatar",
+    "choose": "Wybierz obraz",
+    "frame": "Kadr avatara",
+    "zoom": "Powiększenie",
+    "save": "Zapisz avatar",
+    "saving": "Sprawdzanie…",
+    "saved": "Avatar zapisany.",
+    "remove": "Usuń avatar",
+    "removed": "Avatar usunięty.",
+    "inputInvalid": "Wybierz obraz JPEG, PNG albo WebP do 10 MB."
   }
 }

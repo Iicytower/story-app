@@ -61,7 +61,18 @@
     "logOutOthersTitle": "Log out other devices?",
     "logOutOthersDescription": "Every other browser and device signed in to this account will have to sign in again. This one stays signed in.",
     "logOutOthersConfirm": "Log out other devices",
-    "logOutOthersDone": "Other devices are logged out."
+    "logOutOthersDone": "Other devices are logged out.",
+    "profile": "Profile",
+    "bio": "Bio",
+    "bioHelp": "Shown on your profile. You can use **bold**, *italics*, links and > quotes.",
+    "bioLength": "{length, number} / {max, number}",
+    "saveBio": "Update bio",
+    "bioSaved": "The bio is saved.",
+    "avatar": "Avatar",
+    "avatarsUnavailable": "Avatars are not available right now.",
+    "viewProfile": "View profile",
+    "loadingProfile": "Loading…",
+    "profileFailed": "The profile could not be loaded. Reload the page and try again."
   },
   "errors": {
     "nicknameRequirement": "Nickname must be 3-30 characters: letters a-z, digits, _ and -.",
@@ -163,7 +174,12 @@
     "quoteTooLong": "A quote can have at most {max, number} characters.",
     "shelfNameTooLong": "A shelf name can have at most {max, number} characters.",
     "bookmarkNameTooLong": "A bookmark name can have at most {max, number} characters.",
-    "quoteContextTooLong": "The quote context can have at most {max, number} characters."
+    "quoteContextTooLong": "The quote context can have at most {max, number} characters.",
+    "avatarsUnavailable": "Avatars are not available right now.",
+    "avatarInvalid": "This avatar could not be read. Choose a JPEG, PNG or WebP image.",
+    "avatarTooLarge": "This avatar is too large.",
+    "avatarLimitTotal": "There is no room for new avatars right now. You can still replace an existing one.",
+    "avatarAdult": "This image was rated 18+, so it cannot be an avatar. Choose another one."
   },
   "password": {
     "mustContain": "The password must contain:",
@@ -868,5 +884,28 @@
     "submit": "Set new password",
     "submitting": "Setting password…",
     "back": "Back to sign in"
+  },
+  "profile": {
+    "title": "{nickname} – Story App",
+    "avatarAlt": "Avatar of {nickname}",
+    "bio": "About",
+    "books": "Books",
+    "noBooks": "No published books yet.",
+    "coverAlt": "Cover of {name}"
+  },
+  "avatar": {
+    "title": "Avatar",
+    "hint": "JPEG, PNG or WebP up to 10 MB. Drag the image to move the frame. An image rated 18+ is not accepted.",
+    "none": "You have no avatar yet; your profile shows your initials.",
+    "current": "Current avatar",
+    "choose": "Choose image",
+    "frame": "Avatar frame",
+    "zoom": "Zoom",
+    "save": "Save avatar",
+    "saving": "Checking…",
+    "saved": "The avatar is saved.",
+    "remove": "Remove avatar",
+    "removed": "The avatar is removed.",
+    "inputInvalid": "Choose a JPEG, PNG or WebP image up to 10 MB."
   }
 }

@@ -164,6 +164,45 @@ export const getPublishedChapter = cache(
   },
 );
 
+export interface AuthorBook {
+  name: string;
+  path: string;
+  adult: boolean;
+  cover: CoverView | null;
+}
+
+// The author's books on the profile (task 70): the same visibility as the contents page (D38).
+// Slugs come from every active folder, so they match the addresses of the contents pages.
+export async function listAuthorBooks(
+  userId: Types.ObjectId,
+  nickname: string,
+): Promise<AuthorBook[]> {
+  await connectDB();
+  const folders = await Folder.find({ userId, deletedAt: null })
+    .select({ name: 1, published: 1, adult: 1, coverId: 1 })
+    .lean();
+  const published = folders.filter(({ published }) => published);
+  if (published.length === 0) return [];
+  const withPublic: Types.ObjectId[] = await Story.distinct("folderId", {
+    userId,
+    folderId: { $in: published.map(({ _id }) => _id) },
+    publication: "public",
+    deletedAt: null,
+  });
+  const publicIds = new Set(withPublic.map(String));
+  const visible = published
+    .filter(({ _id }) => publicIds.has(String(_id)))
+    .toSorted((a, b) => a.name.localeCompare(b.name, "pl"));
+  const slugs = folderSlugs(folders);
+  const covers = await coversOf(visible);
+  return visible.map((folder) => ({
+    name: folder.name,
+    path: `/p/${nickname}/${slugs.get(folder._id.toString())}`,
+    adult: isAdult(folder.adult),
+    cover: covers.get(folder._id.toString()) ?? null,
+  }));
+}
+
 export async function folderPublicPath(
   userId: string,
   folderId: string,

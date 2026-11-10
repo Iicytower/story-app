@@ -1,4 +1,4 @@
-import { COVER_HEIGHT, COVER_WIDTH } from "./covers";
+import { COVER_SIZE, type ImageSize } from "./covers";
 import { cropRect, type CropRect } from "./crop";
 
 // Browser only. Canvas re-encoding also drops EXIF and GPS data; Safari encodes no WebP, so
@@ -6,10 +6,11 @@ import { cropRect, type CropRect } from "./crop";
 export async function renderCover(
   image: ImageBitmap,
   rect: CropRect = cropRect(image.width, image.height, 1, { x: 0, y: 0 }),
+  size: ImageSize = COVER_SIZE,
 ): Promise<Blob> {
   const canvas = document.createElement("canvas");
-  canvas.width = COVER_WIDTH;
-  canvas.height = COVER_HEIGHT;
+  canvas.width = size.width;
+  canvas.height = size.height;
   canvas
     .getContext("2d")!
     .drawImage(
@@ -20,8 +21,8 @@ export async function renderCover(
       rect.height,
       0,
       0,
-      COVER_WIDTH,
-      COVER_HEIGHT,
+      size.width,
+      size.height,
     );
   const blob = (type: string) =>
     new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, 0.85));

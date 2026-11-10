@@ -1,13 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import {
-  useEffect,
-  useOptimistic,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+import { useOptimistic, useState, useTransition } from "react";
+import { CropFrame, useImageCrop } from "@/components/image-crop";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,12 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   COVER_HEIGHT,
+  COVER_SIZE,
   COVER_WIDTH,
   INPUT_TYPES,
-  MAX_INPUT_BYTES,
 } from "@/lib/covers/covers";
-import { clampedCenter, cropRect, MAX_ZOOM } from "@/lib/covers/crop";
-import { renderCover } from "@/lib/covers/encode";
 import {
   removeFolderCover,
   setCoverAdult,
@@ -57,9 +50,8 @@ export function CoverDialog({
 }) {
   const t = useTranslations("covers");
   const tErrors = useTranslations("errors");
-  const [image, setImage] = useState<ImageBitmap | null>(null);
-  const [zoom, setZoom] = useState(1);
-  const [center, setCenter] = useState({ x: 0, y: 0 });
+  const crop = useImageCrop(COVER_SIZE);
+  const image = crop.image;
   const [message, setMessage] = useState<{
     text: string;
     error: boolean;
@@ -68,32 +60,9 @@ export function CoverDialog({
   const [manualAdult, setManualAdult] = useOptimistic(
     cover?.manualAdult ?? false,
   );
-  const preview = useRef<HTMLCanvasElement>(null);
-  const drag = useRef<{ x: number; y: number } | null>(null);
-
-  useEffect(() => {
-    const canvas = preview.current;
-    if (!image || !canvas) return;
-    const rect = cropRect(image.width, image.height, zoom, center);
-    canvas
-      .getContext("2d")!
-      .drawImage(
-        image,
-        rect.x,
-        rect.y,
-        rect.width,
-        rect.height,
-        0,
-        0,
-        canvas.width,
-        canvas.height,
-      );
-  }, [image, zoom, center]);
 
   function reset() {
-    setImage(null);
-    setZoom(1);
-    setCenter({ x: 0, y: 0 });
+    crop.clear();
     setMessage(null);
   }
 
@@ -105,36 +74,9 @@ export function CoverDialog({
   async function choose(file: File | undefined) {
     setMessage(null);
     if (!file) return;
-    if (!INPUT_TYPES.includes(file.type) || file.size > MAX_INPUT_BYTES) {
-      setMessage({ text: t("inputInvalid"), error: true });
-      return;
-    }
-    try {
-      setImage(await createImageBitmap(file));
-      setZoom(1);
-      setCenter({ x: 0, y: 0 });
-    } catch {
+    if (!(await crop.choose(file))) {
       setMessage({ text: t("inputInvalid"), error: true });
     }
-  }
-
-  function move(event: React.PointerEvent<HTMLCanvasElement>) {
-    if (!drag.current || !image) return;
-    const rect = cropRect(image.width, image.height, zoom, center);
-    // Screen pixels to source pixels: the frame shows rect.width over the canvas width.
-    const factor = rect.width / event.currentTarget.clientWidth;
-    const moved = {
-      x: center.x - (event.clientX - drag.current.x) * factor,
-      y: center.y - (event.clientY - drag.current.y) * factor,
-    };
-    drag.current = { x: event.clientX, y: event.clientY };
-    setCenter(
-      clampedCenter(
-        image.width,
-        image.height,
-        cropRect(image.width, image.height, zoom, moved),
-      ),
-    );
   }
 
   function run(
@@ -166,17 +108,11 @@ export function CoverDialog({
     run(
       async () => {
         const form = new FormData();
-        form.set(
-          "cover",
-          await renderCover(
-            image,
-            cropRect(image.width, image.height, zoom, center),
-          ),
-        );
+        form.set("cover", await crop.render());
         return setFolderCover(folderId, form);
       },
       (result) => {
-        setImage(null);
+        crop.clear();
         if (result.state === "pending") return t("pending");
         return result.adult ? t("savedAdult") : t("saved");
       },
@@ -192,34 +128,12 @@ export function CoverDialog({
         </DialogHeader>
         <div className="flex flex-col gap-4">
           {image ? (
-            <div className="flex flex-col items-center gap-3">
-              <canvas
-                ref={preview}
-                width={COVER_WIDTH * PREVIEW_SCALE}
-                height={COVER_HEIGHT * PREVIEW_SCALE}
-                aria-label={t("frame")}
-                role="img"
-                className="cursor-move touch-none rounded-md border"
-                onPointerDown={(event) => {
-                  event.currentTarget.setPointerCapture(event.pointerId);
-                  drag.current = { x: event.clientX, y: event.clientY };
-                }}
-                onPointerMove={move}
-                onPointerUp={() => (drag.current = null)}
-              />
-              <Label className="flex w-full items-center gap-3">
-                {t("zoom")}
-                <input
-                  type="range"
-                  min={1}
-                  max={MAX_ZOOM}
-                  step={0.05}
-                  value={zoom}
-                  onChange={(event) => setZoom(Number(event.target.value))}
-                  className="flex-1"
-                />
-              </Label>
-            </div>
+            <CropFrame
+              crop={crop}
+              scale={PREVIEW_SCALE}
+              frameLabel={t("frame")}
+              zoomLabel={t("zoom")}
+            />
           ) : cover ? (
             <div className="flex flex-col items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element -- served by our own handler, already 600x900 */}

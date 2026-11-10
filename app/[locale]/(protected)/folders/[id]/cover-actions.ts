@@ -15,6 +15,7 @@ import {
   rateCover,
   removeCovers,
 } from "@/lib/covers/mutations";
+import { storedImageBytes } from "@/lib/covers/queries";
 import { connectDB } from "@/lib/db";
 import { actionError, translateError } from "@/lib/i18n/action-error";
 import { Cover } from "@/lib/models/cover";
@@ -37,18 +38,16 @@ async function exceedsLimits(
   folderId: Types.ObjectId,
   size: number,
 ) {
-  const [otherFolders, [total]] = await Promise.all([
+  const [otherFolders, total] = await Promise.all([
     Cover.distinct("folderId", { userId, folderId: { $ne: folderId } }),
-    Cover.aggregate<{ bytes: number }>([
-      { $group: { _id: null, bytes: { $sum: "$size" } } },
-    ]),
+    storedImageBytes(),
   ]);
   if (otherFolders.length >= COVERS_PER_ACCOUNT) {
     return actionError("TOO_LARGE", "coverLimitAccount", {
       max: COVERS_PER_ACCOUNT,
     });
   }
-  if ((total?.bytes ?? 0) + size > coversMaxTotalBytes()) {
+  if (total + size > coversMaxTotalBytes()) {
     return actionError("TOO_LARGE", "coverLimitTotal");
   }
   return null;

@@ -1,4 +1,5 @@
 import type { Types } from "mongoose";
+import { Avatar } from "@/lib/models/avatar";
 import { Cover } from "@/lib/models/cover";
 
 export interface CoverView {
@@ -27,4 +28,14 @@ export async function coversOf(
       },
     ]),
   );
+}
+
+// Bytes of all stored images, the room COVERS_MAX_TOTAL_MB limits: covers and avatars (task 70).
+export async function storedImageBytes(): Promise<number> {
+  const sum = [{ $group: { _id: null, bytes: { $sum: "$size" } } }];
+  const [[covers], [avatars]] = await Promise.all([
+    Cover.aggregate<{ bytes: number }>(sum),
+    Avatar.aggregate<{ bytes: number }>(sum),
+  ]);
+  return (covers?.bytes ?? 0) + (avatars?.bytes ?? 0);
 }

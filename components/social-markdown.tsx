@@ -14,7 +14,7 @@ const COMPONENTS: Components = {
 
 export function SocialMarkdown({ content }: { content: string }) {
   return (
-    <div className="prose dark:prose-invert max-w-none">
+    <div className="prose dark:prose-invert max-w-none [overflow-wrap:anywhere]">
       <Markdown
         remarkPlugins={[remarkBreaks]}
         allowedElements={ALLOWED_ELEMENTS}

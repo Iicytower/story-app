@@ -322,9 +322,9 @@ services:
   # Cover filter (task 26, D68): the OwenElliott image-safety-classifier-s ONNX model on CPU.
   # Packages and the model go to the classifier-data volume on the first start (the model is
   # checked by SHA-256), so Coolify needs no build. POST /classify takes the raw image bytes,
-  # decodes and re-encodes them without metadata (WebP 600x900) and returns the scores of the
-  # re-encoded image; the app applies the 18+ threshold. No dollar sign in the code: Compose
-  # would interpolate it.
+  # decodes and re-encodes them without metadata (WebP 600x900, or 256x256 for an avatar with
+  # ?size=256x256, task 70) and returns the scores of the re-encoded image; the app applies the
+  # 18+ threshold. No dollar sign in the code: Compose would interpolate it.
   classifier:
     image: python:3.13.18-slim
     restart: unless-stopped
@@ -337,7 +337,7 @@ services:
         source: ./classifier.py
         target: /app/server.py
         content: |
-          import base64, hashlib, io, json, os, shutil, subprocess, sys, urllib.request, warnings
+          import base64, hashlib, io, json, os, shutil, subprocess, sys, urllib.parse, urllib.request, warnings
           from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
           PACKAGES = ["onnxruntime==1.31.1", "pillow==13.0.0", "numpy==2.5.4"]
@@ -348,7 +348,8 @@ services:
           MODEL = "/data/model-" + MODEL_SHA256[:12] + ".onnx"
           MAX_BODY = 1024 * 1024
           MAX_PIXELS = 4000000
-          SIZE = (600, 900)
+          # Covers by default, avatars on request (task 70).
+          SIZES = {"600x900": (600, 900), "256x256": (256, 256)}
           # Output order of the model (config.json label_names).
           LABELS = ["nsfl", "nsfw", "sfw"]
 
@@ -396,11 +397,11 @@ services:
           warnings.simplefilter("error", Image.DecompressionBombWarning)
           session = ort.InferenceSession(MODEL, providers=["CPUExecutionProvider"])
 
-          def classify(body):
+          def classify(body, size):
               with Image.open(io.BytesIO(body)) as image:
                   if image.format not in ("WEBP", "JPEG", "PNG"):
                       raise ValueError("format")
-                  image = ImageOps.fit(image.convert("RGB"), SIZE, Image.LANCZOS)
+                  image = ImageOps.fit(image.convert("RGB"), size, Image.LANCZOS)
               output = io.BytesIO()
               image.save(output, "WEBP", quality=85)
               encoded = output.getvalue()
@@ -429,14 +430,18 @@ services:
                   self.send(200, {"model": MODEL_ID})
 
               def do_POST(self):
-                  if self.path != "/classify":
+                  url = urllib.parse.urlsplit(self.path)
+                  if url.path != "/classify":
                       return self.send(404, {"error": "NOT_FOUND"})
+                  size = SIZES.get(urllib.parse.parse_qs(url.query).get("size", ["600x900"])[0])
+                  if size is None:
+                      return self.send(400, {"error": "BAD_SIZE"})
                   length = int(self.headers.get("Content-Length") or 0)
                   if length <= 0 or length > MAX_BODY:
                       return self.send(413, {"error": "TOO_LARGE"})
                   body = self.rfile.read(length)
                   try:
-                      result = classify(body)
+                      result = classify(body, size)
                   except Exception:
                       return self.send(400, {"error": "BAD_IMAGE"})
                   self.send(200, result)

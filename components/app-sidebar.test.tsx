@@ -56,7 +56,7 @@ function render(locale: "en" | "pl") {
       messages={locale === "en" ? en : pl}
     >
       <TooltipProvider>
-        <AppSidebar defaultCollapsed={false} />
+        <AppSidebar defaultCollapsed={false} toolsAvailable />
       </TooltipProvider>
     </NextIntlClientProvider>,
   );

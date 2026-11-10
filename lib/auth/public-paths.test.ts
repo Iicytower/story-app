@@ -9,8 +9,10 @@ describe("isPublicPath", () => {
     "/en/register",
     "/api/auth/session",
     "/api/auth/callback/credentials",
+    "/en/p/alice",
     "/en/p/alice/book",
     "/en/p/alice/book/chapter",
+    "/avatars/abc",
   ])("%s is public", (path) => expect(isPublicPath(path)).toBe(true));
 
   it.each([
@@ -25,7 +27,7 @@ describe("isPublicPath", () => {
     "/en/register/x",
     "/en/s/abc123",
     "/en/p",
-    "/en/p/alice",
+    "/avatars/abc/x",
     "/en/p/alice/book/chapter/x",
     "/api/other",
   ])("%s requires a session", (path) => expect(isPublicPath(path)).toBe(false));
