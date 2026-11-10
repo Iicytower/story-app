@@ -1,6 +1,12 @@
 import { findStory, seedStory, seedFolder } from "./db";
 import { storageStatePath } from "./env";
-import { editorAction, expect, markdownEditor, test } from "./helpers";
+import {
+  allowCspViolation,
+  editorAction,
+  expect,
+  markdownEditor,
+  test,
+} from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
@@ -75,6 +81,9 @@ test("Enter starts a paragraph and Shift+Enter breaks the line", async ({
 test("does not execute or render a script from the content", async ({
   page,
 }) => {
+  // Parsing the pasted HTML in an inert document reports the onerror handler, though it would
+  // not run even without the policy (checked in Chromium, D77).
+  allowCspViolation("script-src-attr inline");
   const id = await seedStory("alice", { title: "XSS" });
   const dialogs: string[] = [];
   page.on("dialog", async (dialog) => {
