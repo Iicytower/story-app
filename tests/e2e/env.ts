@@ -19,3 +19,5 @@ export type UserName = keyof typeof USERS;
 export function storageStatePath(user: UserName): string {
   return `tests/e2e/.auth/${user}.json`;
 }
+
+export const E2E_IP_HEADER = "x-e2e-client-ip";

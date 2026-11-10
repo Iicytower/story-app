@@ -87,7 +87,7 @@
     "currentPasswordIncorrect": "The current password is incorrect.",
     "nicknameTaken": "This nickname is already taken.",
     "detailsInvalid": "These details are not valid.",
-    "tooManyAccounts": "Too many new accounts. Try again later.",
+    "tooManyAccounts": "Too many sign-up attempts. Try again later.",
     "tooManyAttempts": "Too many attempts. Try again in a few minutes.",
     "invalidCredentials": "Invalid nickname or password.",
     "nothingToImport": "There is nothing to import.",

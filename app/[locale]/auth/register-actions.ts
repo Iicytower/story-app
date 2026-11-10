@@ -10,12 +10,7 @@ import type { ActionResult } from "@/lib/action-result";
 import { nicknameError, passwordError } from "@/lib/credentials";
 import { connectDB } from "@/lib/db";
 import { actionError } from "@/lib/i18n/action-error";
-import {
-  clientIp,
-  giveBackAttempt,
-  REGISTRATION_LIMIT,
-  takeAttempt,
-} from "@/lib/rate-limit";
+import { REGISTRATION_LIMIT, takeIpAttempt } from "@/lib/rate-limit";
 
 const NICKNAME_TAKEN = () => actionError("DUPLICATE_NAME", "nicknameTaken");
 
@@ -41,19 +36,13 @@ export async function register(
   }
 
   await connectDB();
-  if (await userExists(trimmed)) return NICKNAME_TAKEN();
-
-  const attempt = await takeAttempt(
-    REGISTRATION_LIMIT,
-    clientIp(await headers()),
-  );
+  // Before the nickname check, so the limit also slows down probing which nicknames exist (I1).
+  const attempt = await takeIpAttempt(REGISTRATION_LIMIT, await headers());
   if (!attempt) {
     return actionError("RATE_LIMITED", "tooManyAccounts");
   }
-  if (!(await createUser(trimmed, password))) {
-    await giveBackAttempt(attempt);
-    return NICKNAME_TAKEN();
-  }
+  if (await userExists(trimmed)) return NICKNAME_TAKEN();
+  if (!(await createUser(trimmed, password))) return NICKNAME_TAKEN();
 
   const locale = await getLocale();
   try {

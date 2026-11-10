@@ -1,6 +1,6 @@
 import type { Browser, Page } from "@playwright/test";
 import { exhaustSearchLimit, findFolder, seedStory, withE2EDb } from "./db";
-import { storageStatePath } from "./env";
+import { E2E_IP_HEADER, storageStatePath } from "./env";
 import { expect, menuAction, test } from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
@@ -34,9 +34,13 @@ async function seedPublished() {
   return { id, folderId: folder!._id.toString() };
 }
 
-async function anonymous(browser: Browser) {
+async function anonymous(
+  browser: Browser,
+  extraHTTPHeaders?: Record<string, string>,
+) {
   const context = await browser.newContext({
     storageState: { cookies: [], origins: [] },
+    extraHTTPHeaders,
   });
   return context.newPage();
 }
@@ -162,11 +166,19 @@ test("over the limit a message replaces the results; the empty page still works"
   browser,
 }) => {
   await seedPublished();
-  const visitor = await anonymous(browser);
-  await search(visitor, "dragon");
-  await expect(results(visitor)).toHaveCount(1);
+  const first = await anonymous(browser, {
+    [E2E_IP_HEADER]: "203.0.113.7",
+    "x-forwarded-for": "198.51.100.1",
+  });
+  await search(first, "dragon");
+  await expect(results(first)).toHaveCount(1);
 
   await exhaustSearchLimit();
+  // The same client with another X-Forwarded-For gets no fresh limit (D74).
+  const visitor = await anonymous(browser, {
+    [E2E_IP_HEADER]: "203.0.113.7",
+    "x-forwarded-for": "198.51.100.2",
+  });
   await search(visitor, "dragon");
 
   await expect(visitor.getByText("Too many searches")).toBeVisible();

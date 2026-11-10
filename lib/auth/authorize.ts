@@ -2,10 +2,12 @@ import { CredentialsSignin } from "next-auth";
 import { findUserByNickname, verifyPassword } from "@/lib/accounts";
 import { connectDB } from "@/lib/db";
 import {
-  clientIp,
+  accountKey,
   giveBackAttempt,
+  LOGIN_ACCOUNT_LIMIT,
   LOGIN_LIMIT,
   takeAttempt,
+  takeIpAttempt,
 } from "@/lib/rate-limit";
 
 export const LOGIN_DELAY_MS = 1500;
@@ -22,18 +24,25 @@ export interface AuthorizedUser {
 async function verifyCredentials(
   nickname: unknown,
   password: unknown,
-  ip: string,
+  headers: Headers,
 ): Promise<AuthorizedUser | null> {
   if (typeof nickname !== "string" || typeof password !== "string") return null;
   await connectDB();
   // Here and not in the login action: /api/auth/callback/credentials can be called directly.
-  const attempt = await takeAttempt(LOGIN_LIMIT, ip);
-  if (!attempt) throw new LoginRateLimited();
+  const fromAddress = await takeIpAttempt(LOGIN_LIMIT, headers);
+  if (!fromAddress) throw new LoginRateLimited();
+  // Counted for nicknames without an account too, so the answer does not tell them apart.
+  const forAccount = await takeAttempt(
+    LOGIN_ACCOUNT_LIMIT,
+    accountKey(nickname),
+  );
+  if (!forAccount) throw new LoginRateLimited();
   const user = await findUserByNickname(nickname);
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
     return null;
   }
-  await giveBackAttempt(attempt);
+  await giveBackAttempt(fromAddress.slot);
+  await giveBackAttempt(forAccount);
   return { id: user._id.toString(), name: user.nickname };
 }
 
@@ -46,7 +55,7 @@ export async function authorizeCredentials(
     verifyCredentials(
       credentials.nickname,
       credentials.password,
-      clientIp(request?.headers ?? new Headers()),
+      request?.headers ?? new Headers(),
     ),
     new Promise((resolve) => setTimeout(resolve, LOGIN_DELAY_MS)),
   ]);
