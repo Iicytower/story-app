@@ -99,11 +99,11 @@ test("the owner adds, replaces and removes a folder cover", async ({
   await expect(currentCover(page)).toBeVisible();
   const first = await currentCover(page).getAttribute("src");
   expect(first).toMatch(/^\/covers\/[0-9a-f]{24}$/);
-  expect(
-    await currentCover(page).evaluate(
-      (img: HTMLImageElement) => img.naturalWidth,
-    ),
-  ).toBe(600);
+  await expect
+    .poll(() =>
+      currentCover(page).evaluate((img: HTMLImageElement) => img.naturalWidth),
+    )
+    .toBe(600);
 
   await upload(page, [40, 200, 40]);
   await expect(currentCover(page)).not.toHaveAttribute("src", first!);
@@ -262,9 +262,10 @@ test("the cover shows in the folder list and on the folder page, and changes wit
   await expect(currentCover(page)).not.toHaveAttribute("src", first!);
   await page.keyboard.press("Escape");
   await expect(onPage).not.toHaveAttribute("src", first!);
-  expect(
-    await onPage.evaluate((img: HTMLImageElement) => img.naturalWidth),
-  ).toBe(600);
+  // The new src is set before the image has loaded.
+  await expect
+    .poll(() => onPage.evaluate((img: HTMLImageElement) => img.naturalWidth))
+    .toBe(600);
 });
 
 test("readers see the cover on the contents page, chapter pages, in search and on the home page", async ({

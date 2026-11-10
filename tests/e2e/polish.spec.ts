@@ -1,7 +1,7 @@
 import type { Browser } from "@playwright/test";
 import { clearSettings, findSettings, seedSettings } from "./db";
 import { USERS, storageStatePath } from "./env";
-import { expect, test } from "./helpers";
+import { expect, login, test } from "./helpers";
 
 // Bob's language setting would otherwise leak into other tests that sign him in.
 test.afterEach(() => clearSettings("bob"));
@@ -18,6 +18,9 @@ test("switching to Polish keeps the page, survives a reload and is saved", async
   browser,
 }) => {
   const page = await signedIn(browser);
+  // A session of its own: the test logs out, and the saved one is for other tests (D75).
+  await page.context().clearCookies();
+  await login(page, "bob");
   await page.goto("/en/stories?q=dragon");
   await page
     .getByRole("navigation", { name: "Main" })

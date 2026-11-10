@@ -638,3 +638,70 @@ Dialog, panel i „Accept” zastąpiła korekta w głównym edytorze (D66); spr
 - Task 40 (subtask 66), decyzje użytkownika. Okładka folderu jest widoczna na liście folderów (`/stories`, miniatura 40×60), na stronie folderu właściciela (120×180), w publicznym spisie folderu (160×240), na każdej publicznej stronie rozdziału (120×180, między tytułem a treścią), w publicznej wyszukiwarce i w „Ostatnio opublikowanych” na stronie głównej (miniatura przy wyniku). Nie ma jej w edytorze. Folder bez okładki nie renderuje obrazka.
 - Okładka 18+ (ocena filtra albo ręczne oznaczenie właściciela) na publicznych listach jest zastąpiona polem ze znaczkiem 18+, a w publicznym spisie i na stronie rozdziału jest rozmyta z przyciskiem „Pokaż okładkę (mam ukończone 18 lat)”. Przycisk ustawia to samo cookie co ostrzeżenie przed rozdziałem (D67), więc potwierdzenie działa w obie strony. Właściciel widzi swoje okładki zawsze bez rozmycia.
 - Adres `/covers/<id>` zmienia się przy każdej wymianie okładki, więc nowa okładka pokazuje się od razu mimo `immutable`.
+
+## D70 – Branch `security` i aktualizacja zależności (2026-11-09)
+
+- Poprawki bezpieczeństwa (taski 56–63, aktualizacja zależności z 2026-11-09) idą na lokalny branch zbiorczy `security` z `develop`; branche tasków z niego. `security` nie jest pushowany, a do `develop` merguje go użytkownik po przeglądzie (decyzja użytkownika).
+- Aktualizacja zależności łącznie z majorami, każdy osobno (decyzja użytkownika). TypeScript zostaje na 6.x: `typescript-eslint` nie obsługuje jeszcze TS 7. `@types/node` na 24.x (D34).
+
+## D71 – Typy argumentów Server Actions (2026-11-09)
+
+- Task 61, decyzje użytkownika: własne guardy w `lib/action-input.ts` (`isString`, `isBoolean`, `isId`, `isIsoDate`) na początku akcji, bez `zod`.
+- Argument złego typu zwraca `INVALID_INPUT` z komunikatem `requestInvalid` (albo istniejącym komunikatem akcji, np. `coverInvalid`, `detailsInvalid`). ID złego typu (nie string z 24 znakami hex) to `NOT_FOUND`, jak nieistniejące ID (D1); `isId` zastępuje w akcjach `isObjectIdOrHexString`, które przepuszcza obiekt z `_bsontype`.
+- `expectedUpdatedAt` i `expectedNotesUpdatedAt` muszą być dokładnie w formacie `toISOString()`, który wysyła serwer.
+
+## D72 – Limity rozmiaru i liczby danych (2026-11-10)
+
+- Taski 59 i 62, decyzje użytkownika. Wartości w `lib/limits.ts`: nazwa folderu i tytuł rozdziału do 200 znaków (jak tytuł w imporcie), treść rozdziału do 500 000 znaków, notatki rozdziału i folderu do 100 000 znaków. Znaki to `String.length` zapisywanego markdownu, tak samo w przeglądarce i w akcji.
+- Liczby: 1000 folderów na konto (bez usuniętych), 500 rozdziałów w folderze (jak limit rozdziałów importu), 100 wersji folderu. Przy limicie wersji zapis jest blokowany z komunikatem „Usuń starą wersję…”; nic nie znika samo. Przywracanie wersji też go wymaga, bo najpierw zapisuje stan folderu jako wersję. Liczby sprawdzane przed zapisem, więc równoległe żądania mogą je minimalnie przekroczyć (to ochrona bazy, a nie dokładny limit).
+- Import: rozdział dłuższy niż 500 000 znaków albo z za długimi notatkami odrzuca cały import z komunikatem, który podaje tytuł rozdziału. Notatki folderu dopisywane do istniejących też muszą zmieścić się w limicie. `MAX_IMPORT_TEXT_BYTES` (3,5 MB na cały plik) zostaje.
+- Istniejące dane ponad limit da się otworzyć; zapis jest odrzucany, dopóki wartość jest ponad limitem, więc wystarczy ją skrócić.
+- UI: `maxLength` w polach nazw i tytułów. Edytor treści i notatek (Tiptap) nie ma `maxLength`, więc przy przekroczeniu pod treścią pojawia się komunikat, a zapis i autozapis nie wysyłają żądania i pokazują komunikat w statusie. Tekst zostaje w edytorze.
+
+## D73 – Zapis dużej treści a dekoder React Flight (2026-11-10)
+
+- Task 62. Przyczyna F8: dekoder argumentów Server Actions w React (`decodeReply`) sumuje długości napisów (jednostki UTF-16, nie bajty) leżących bezpośrednio w tablicy argumentów i odrzuca żądanie powyżej `arraySizeLimit` = 1 000 000 („Maximum array nesting exceeded”). Next.js 16.4.6 nie pozwala zmienić tej wartości. Aktualizacja z taska 56 (React 19.3.1) nie zmieniła progu. Import przechodzi, bo jego napisy leżą w obiektach.
+- Limit z D72 (treść 500 000 + notatki 100 000 + tytuł 200, a w `saveStory` także obiekt korekty) daje najwyżej ok. 600 300, czyli zapas ok. 400 000 do progu (pomiar: `encodeReply` → `decodeReply`, także z maksymalną korektą i polskimi znakami).
+- Edytor nie wysyła treści ponad limitem: pokazuje komunikat pod treścią i w statusie zapisu, a tekst zostaje (także przy autozapisie). Żądanie spreparowane ręcznie (500 000–~1 000 000) dostaje `INVALID_INPUT`. Powyżej 1 000 000 dalej jest 500 z dekodera, zanim akcja ruszy, i aplikacja nie ma na to wpływu. Wymaga to sesji i nie zmienia danych.
+
+## D74 – Zaufany adres klienta w limitach (2026-11-10)
+
+- Task 57, decyzje użytkownika. Na Vercelu adres klienta pochodzi tylko z `x-vercel-forwarded-for` (ustawia go platforma; według dokumentacji Vercela nadpisuje też `X-Forwarded-For`, ale ten nagłówek może zmienić proxy przed Vercelem). `X-Forwarded-For` jest ignorowany. Przy przeprowadzce poza Vercela zmienna `TRUSTED_IP_HEADER` wskazuje nagłówek proxy (używają jej też testy E2E). Pusta wartość nie wyłącza nagłówka Vercela.
+- Bez zaufanego adresu (lokalnie, w testach, źle skonfigurowany hosting) limity po adresie są wyłączone, a w produkcji przy pierwszym takim żądaniu idzie ostrzeżenie do logów. Wspólny kubełek „unknown”, który pozwalał jednej osobie zablokować wszystkim logowanie, zniknął. Rejestracja i wyszukiwarka nie mają wtedy limitu.
+- Limit logowania po koncie: 20 błędnych prób na godzinę na nick (bez rozróżniania wielkości liter), z dowolnych adresów, liczony także dla nicków bez konta (bez enumeracji). Po przekroczeniu blokuje także poprawne hasło do końca okna (najwyżej godzinę). Udane logowanie oddaje próbę.
+- I1: rejestracja liczy limit przed sprawdzeniem, czy nick jest zajęty, więc zajęty nick też zużywa próbę (5 na godzinę z adresu). Komunikat „Za dużo prób rejestracji”. Próby odrzucone przez walidację nicku i hasła się nie liczą.
+
+## D75 – Unieważnianie sesji i słabe hasła (2026-11-10)
+
+- Task 58, decyzje użytkownika. Każde logowanie zapisuje sesję w kolekcji `sessions` (losowe `_id`, `userId`, `expiresAt` z indeksem TTL), a JWT niesie jej `sid`. Callback `jwt` przy każdym `auth()` sprawdza, czy sesja istnieje; jeśli nie, zwraca `null` i Auth.js czyści cookie. Tokeny sprzed D75 nie mają `sid`, więc po wdrożeniu każdy loguje się raz ponownie.
+- Wylogowanie (`events.signOut`) usuwa sesję, więc skopiowane cookie przestaje działać. Zmiana hasła usuwa wszystkie inne sesje użytkownika, a bieżąca zostaje. Przycisk „Wyloguj inne urządzenia” w ustawieniach (z potwierdzeniem) robi to samo bez zmiany hasła. Bez listy sesji. `maxAge` zostaje 30 dni; `expiresAt` sesji przesuwa się razem z odnawianym JWT najwyżej raz na dobę.
+- Koszt: jeden odczyt sesji po `_id` na `auth()`, z cache pozytywnych wyników w pamięci procesu na 10 s. Usunięcie sesji czyści cache w tym samym bundlu. Inna instancja serwera, a także proxy (osobny bundle), mogą przez te 10 s uznawać sesję za ważną. Strony i akcje i tak sprawdzają `requireUser()`/`auth()` w bundlu aplikacji, więc po unieważnieniu chroniona strona przekierowuje na stronę główną.
+- `sid` jest też w obiekcie sesji (`/api/auth/session`), żeby akcje wiedziały, której sesji nie usuwać. Sam `sid` bez podpisanego cookie nic nie daje.
+- Limit `changePassword`: 5 błędnych obecnych haseł na 15 min na użytkownika (`RATE_LIMITED`), także dla poprawnego hasła po przekroczeniu. Udana zmiana oddaje próbę, a nowe hasło odrzucone przez walidację się nie liczy.
+- I5 (decyzja użytkownika: reguły bez listy): `passwordError` odrzuca hasło, w którym jeden znak stanowi co najmniej połowę znaków, hasło z ciągiem 6 kolejnych znaków alfabetu, cyfr albo rzędu klawiatury (`abcdef`, `123456`, `qwerty`, `asdfgh`, także wstecz) oraz hasło zawierające nick (bez rozróżniania wielkości liter). Działa przy rejestracji, zmianie hasła i w `create-account`; nie dotyczy logowania istniejących kont.
+
+## D76 – Kody odzyskiwania konta (2026-11-10)
+
+- Task 63, decyzje użytkownika. 10 kodów w formacie `XXXX-XXXX-XXXX` z alfabetu base32 Crockforda (bez I, L, O, U; ok. 60 bitów na kod). W bazie (`User.recoveryCodes: { hash, usedAt }[]`) tylko HMAC-SHA-256 z kluczem wyprowadzonym z `AUTH_SECRET`; jawnych kodów nigdzie nie ma. Zmiana `AUTH_SECRET` unieważnia wszystkie kody. Przy wpisywaniu wielkość liter, spacje i myślniki nie mają znaczenia, a O, I i L czytane są jako 0 i 1.
+- Kody dostaje się tylko przy rejestracji: okno pokazuje je raz i nie daje się zamknąć, dopóki użytkownik nie zaznaczy „Mam zapisane te kody”. Konta sprzed taska nie mają kodów i nie ma migracji (brak pola = brak kodów). W ustawieniach nie ma regeneracji.
+- „Nie pamiętasz hasła?” w oknie logowania: nick, kod, nowe hasło (pełna walidacja `passwordError` z nickiem, D75). Udany reset ustawia hasło, unieważnia użyty kod i zastępuje cały zestaw 10 nowymi kodami, które pokazuje raz (tak jak po rejestracji). Kończy wszystkie sesje konta (D75) i loguje na tym urządzeniu. Kod jest jednorazowy także przy równoległych żądaniach (warunek w filtrze aktualizacji). Pole `usedAt` zostaje na przyszłe 2FA.
+- Ochrona: stały czas odpowiedzi 1,5 s (jak logowanie). Błędny kod, użyty kod, nieistniejący nick i konto bez kodów dają ten sam komunikat. Limity: 5 błędnych prób na godzinę na nick (także nieistniejący) i 20 na 15 min z adresu (D74). Udany reset oddaje próby.
+
+## D77 – Nagłówki bezpieczeństwa i CSP (2026-11-10)
+
+- Task 60, decyzje użytkownika: CSP z nonce generowanym w `proxy.ts` przy każdym żądaniu (wszystkie strony i tak renderują się dynamicznie; statyczny jest tylko `app/not-found.tsx` bez skryptów) i HSTS ustawiany przez aplikację, bez `preload`.
+- Polityka (`lib/security-headers.ts`): `script-src 'self' 'nonce-…' 'strict-dynamic' 'wasm-unsafe-eval'` (w dev także `'unsafe-eval'`), `style-src 'self' 'unsafe-inline'` (atrybuty `style` edytora i Radix nie mogą mieć nonce), `img-src 'self' blob: data:`, `font-src 'self' data:`, `connect-src 'self'` (w dev także `ws:`), `worker-src 'self' blob:`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`. Next.js bierze nonce z nagłówka CSP żądania; skrypt motywu (`InlineScript`) dostaje go z `x-nonce`. `next-intl` przekazuje dalej nagłówki żądania, które dostaje.
+- `'wasm-unsafe-eval'` tylko dla pdf.js w imporcie PDF (bez niego pdf.js przechodzi na wolniejszy JavaScript). `eval` jest zablokowany: polyfille w bundlu czytnika `.docx` próbują `Function()` w `try/catch` i bez tego działają.
+- Nagłówki stałe z `next.config.ts` dla każdej odpowiedzi: `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, `Permissions-Policy` (bez kamery, mikrofonu, lokalizacji, płatności, USB i Topics), `Strict-Transport-Security: max-age=63072000; includeSubDomains`. `poweredByHeader: false`.
+- Testy E2E: fixture `context` w `tests/e2e/helpers.ts` zapisuje każde zdarzenie `securitypolicyviolation` i oblewa test, jeśli jakieś wystąpiło. Wyjątki tylko jawnie przez `allowCspViolation` z uzasadnieniem: parsowanie wklejonego HTML w nieaktywnym dokumencie zgłasza `script-src-attr`, choć handler i bez CSP by się nie wykonał (sprawdzone w Chromium), oraz próba `Function()` w imporcie `.docx`.
+
+## D78 – Decyzje Claude'a z nocy 2026-11-09/10 do potwierdzenia
+
+D70–D77 łączą decyzje użytkownika (z pytań przed startem) z rozstrzygnięciami Claude'a, których użytkownik jeszcze nie potwierdził:
+
+- D74: zmienna `TRUSTED_IP_HEADER` (użytkownik wybrał tylko Vercela; zmienna służy testom E2E i ewentualnej przeprowadzce). Limit rejestracji liczy też zajęte nicki (skutek I1), 5 na godzinę z adresu; nowy tekst `tooManyAccounts`.
+- D72: przy limicie wersji blokowane jest też przywracanie wersji. Edytor treści nie blokuje wpisywania ponad 500 000 znaków (Tiptap nie ma `maxLength`), tylko pokazuje komunikat i nie zapisuje.
+- D75: cache sesji 10 s w pamięci procesu (opóźnienie unieważnienia na innych instancjach i w proxy), `sid` widoczny w `/api/auth/session`, próg ciągu w regułach haseł (6 znaków) i próg powtórzeń (połowa hasła). Zmienione hasła kont testowych E2E.
+- D76: ekran kodów nie daje się zamknąć bez zaznaczenia „Mam zapisane te kody”; nowy tekst `noRecovery` przy rejestracji.
+- D77: `'wasm-unsafe-eval'` dla pdf.js; `style-src 'unsafe-inline'`.
+- D70: TypeScript 6.0.3 zamiast 7 (blokuje `typescript-eslint`).

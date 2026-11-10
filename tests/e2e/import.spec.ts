@@ -3,9 +3,19 @@ import type { Page } from "@playwright/test";
 import { EXPORT_FORMATS } from "@/lib/export/formats";
 import { findFolder, seedStory } from "./db";
 import { storageStatePath } from "./env";
-import { editorAction, expect, markdownEditor, test } from "./helpers";
+import {
+  allowCspViolation,
+  editorAction,
+  expect,
+  markdownEditor,
+  test,
+} from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
+
+// The .docx reader bundles polyfills that probe Function() inside try/catch; the policy blocks
+// the probe and they fall back to the native code (D77).
+test.beforeEach(() => allowCspViolation("script-src eval"));
 
 const pick = (page: Page, name: string, data: Buffer | string) =>
   page.getByLabel("File", { exact: true }).setInputFiles({
@@ -104,16 +114,33 @@ const prose = (megabytes: number) => {
   return line.repeat(Math.ceil((megabytes * 1024 * 1024) / size));
 };
 
+// Eight chapters, each below the chapter limit (D72), together just below the text limit.
 test("imports text just below the limit", async ({ page }) => {
-  const text = prose(3.4);
+  const chapters = Array.from(
+    { length: 8 },
+    (_, index) => `## R${index}\n\n${prose(3.4 / 8)}`,
+  ).join("");
   await openImport(page, "/stories");
-  await pick(page, "a.md", `# T\n\n## Raz\n\n${text}## Dwa\n\nB\n`);
+  await pick(page, "a.md", `# T\n\n${chapters}`);
   await expect(page.getByLabel("New folder")).toHaveValue("T");
   await submit(page);
   await expect(page).toHaveURL(/\/folders\/[0-9a-f]{24}$/);
   await expect(
     page.getByRole("list", { name: "Chapters" }).getByRole("listitem"),
-  ).toHaveCount(2);
+  ).toHaveCount(8);
+});
+
+test("refuses a chapter over the chapter limit", async ({ page }) => {
+  await openImport(page, "/stories");
+  await pick(
+    page,
+    "a.md",
+    `# T\n\n## Raz\n\n${"a".repeat(500_001)}\n\n## Dwa\n\nB\n`,
+  );
+  await submit(page);
+  await expect(page.getByRole("alert")).toHaveText(
+    "Chapter “Raz” is too long: a chapter can have at most 500,000 characters.",
+  );
 });
 
 test("refuses text over the limit", async ({ page }) => {

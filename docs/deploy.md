@@ -9,6 +9,7 @@
 | Lokalnie | dowolny | – | Docker, `story_app` (`npm run db:up` albo `npm run up`) |
 
 - Vercel: Settings → Environment Variables → `MONGODB_URI` i `AUTH_SECRET` dla **Preview** z wybranym branchem `staging`. Inny `AUTH_SECRET` niż na produkcji. URI różni się od produkcyjnego tylko nazwą bazy (`.../story-app-staging?...`).
+- Limity po adresie (task 57, D74): na Vercelu adres z `x-vercel-forwarded-for`, nic do ustawienia. Poza Vercelem `TRUSTED_IP_HEADER` musi wskazywać nagłówek ustawiany przez proxy (którego klient nie podrobi), inaczej limity po adresie są wyłączone (zostaje limit logowania po koncie).
 - Preview innych branchy (`feature/*`) nie dostaje zmiennych, więc nie łączy się z żadną bazą.
 - Stały adres stagingu: branch URL `story-app-git-staging-iicytowers-projects.vercel.app` (nie URL-e deploymentów z hashem).
 - Konto na stagingu: `MONGODB_URI='mongodb+srv://.../story-app-staging?...' npm run create-account` (niepotrzebne, jeśli baza zaimportowana z produkcji).

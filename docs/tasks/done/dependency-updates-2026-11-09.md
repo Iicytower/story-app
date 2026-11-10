@@ -38,7 +38,7 @@ Najpierw poprawki bezpieczeństwa, potem majory, minory i patche.
 | prettier | 3.9.9 → 3.9.10 | patch | niezbyt ważny | Może zmienić formatowanie, uruchomić `npm run format`. |
 | turndown | 7.2.4 → 7.2.5 | patch | niezbyt ważny | Import HTML/docx. |
 
-Pominięte jako fałszywe alarmy `npm outdated`: `next-auth` (zainstalowane `5.0.0-beta.32`, „latest” 4.24.15 to inny kanał) i `unpdf` (zainstalowane 2.1.0, „latest” 1.9.1 jest niższe, patrz [zadanie 21](done/21-unpdf-2.md)).
+Pominięte jako fałszywe alarmy `npm outdated`: `next-auth` (zainstalowane `5.0.0-beta.32`, „latest” 4.24.15 to inny kanał) i `unpdf` (zainstalowane 2.1.0, „latest” 1.9.1 jest niższe, patrz [zadanie 21](21-unpdf-2.md)).
 
 ### Uwagi
 
@@ -61,3 +61,19 @@ Pominięte jako fałszywe alarmy `npm outdated`: `next-auth` (zainstalowane `5.0
 - `npm run verify` (regresja: lint, typecheck, unit, integracyjne, E2E).
 - `manual`: `npm audit --omit=dev` przed i po aktualizacji, porównanie liczby podatności.
 - `manual`: deploy na stagingu (robi użytkownik) i szybki przegląd edytora, importu/eksportu oraz logowania.
+
+## Wynik (2026-11-09)
+
+Zrobione razem z [taskiem 56](56-dependency-updates.md) na branchu zbiorczym `security`.
+
+- Poprawki bezpieczeństwa: `next`/`eslint-config-next` 16.4.6, `shadcn` 4.23.0, `npm audit fix` (bez `--force`, bez downgrade'ów `eslint-config-next` i `@tailwindcss/typography`). `npm audit --omit=dev`: 14 → 6 (bez high i critical; pozostałe tylko w łańcuchu CLI `shadcn`, opis w tasku 56).
+- Minory i patche z tabeli: zaktualizowane do wersji docelowych lub nowszych (`next` 16.4.6, Tiptap 3.33.0 razem z `@tiptap/core`, Playwright 1.65.0 z nowym Chromium itd.).
+- Majory, każdy osobno z typecheckiem i testami, na końcu pełny `npm run verify`:
+  - `@types/node` → 24.x (D34: Node 24), nie 26.
+  - `marked` → 18.1.3: zmiany łamiące to przycinanie pustych linii na końcu tokenów blokowych i TS 6 w typach; testy importu, eksportu i korekty bez zmian.
+  - `eslint` → 10.14.0: `eslint-config-next` 16.4 oficjalnie wspiera ESLint 10; część wtyczek (`eslint-plugin-import`, `jsx-a11y`, `react`) nie ma go jeszcze w `peerDependencies`, więc `npm ls` pokazuje „invalid” (opisane w dokumentacji Next.js). Konfiguracja bez zmian.
+  - `cn` → 0.5.2: bez zmian w API, których używamy.
+  - `typescript` → **6.0.3, nie 7.0.2**: `tsc` 7 przechodzi, ale `typescript-eslint` (z `eslint-config-next`) rzuca „typescript-eslint does not support TS 7.0”, więc lint nie działa. TS 7 odroczony do wersji `typescript-eslint` z jego obsługą.
+- Dev: zostaje `minimatch` (moderate) w łańcuchu `typescript-eslint` i `@eslint/config-array` (poprawka tylko w 11.x, zależności chcą `^9`/`^10`).
+- `postcss-selector-parser` (dev, przez `@tailwindcss/typography`, który przypina 6.0.10): `overrides` na `^6.1.6` w `package.json`, ten sam major.
+- Niestabilny test E2E `covers.spec.ts` (czytał `naturalWidth` przed wczytaniem nowego obrazka) poprawiony na `expect.poll`.

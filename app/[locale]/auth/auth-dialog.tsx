@@ -11,9 +11,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { LoginForm } from "./login-form";
+import { RecoverForm } from "./recover-form";
+import { RecoveryCodesView } from "./recovery-codes-view";
 import { RegisterForm } from "./register-form";
 
-type Mode = "login" | "register";
+type Mode = "login" | "register" | "recover";
+
+type Codes = { codes: string[]; replaced: boolean; signedIn: boolean };
 
 export function AuthDialog({
   defaultOpen = false,
@@ -28,8 +32,20 @@ export function AuthDialog({
   trigger?: ReactNode;
 }) {
   const [mode, setMode] = useState<Mode>(initialMode);
-  const registering = mode === "register";
+  const [codes, setCodes] = useState<Codes | null>(null);
   const t = useTranslations("auth");
+  const tRecovery = useTranslations("recovery");
+  const title = codes
+    ? tRecovery("title")
+    : {
+        login: t("signIn"),
+        register: t("createAccount"),
+        recover: tRecovery("resetTitle"),
+      }[mode];
+  // The codes are shown only once: the dialog stays open until they are saved.
+  const keepOpen = (event: Event) => {
+    if (codes) event.preventDefault();
+  };
 
   return (
     <Dialog
@@ -44,27 +60,60 @@ export function AuthDialog({
       <DialogContent
         aria-describedby={undefined}
         className="max-h-[calc(100dvh-2rem)] overflow-y-auto"
+        showCloseButton={!codes}
+        onEscapeKeyDown={keepOpen}
+        onInteractOutside={keepOpen}
       >
         <DialogHeader>
-          <DialogTitle>
-            {registering ? t("createAccount") : t("signIn")}
-          </DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        {registering ? (
-          <RegisterForm />
+        {codes ? (
+          <RecoveryCodesView {...codes} />
+        ) : mode === "register" ? (
+          <RegisterForm
+            onRegistered={(list, signedIn) =>
+              setCodes({ codes: list, replaced: false, signedIn })
+            }
+          />
+        ) : mode === "recover" ? (
+          <RecoverForm
+            onReset={(list, signedIn) =>
+              setCodes({ codes: list, replaced: true, signedIn })
+            }
+          />
         ) : (
           <LoginForm callbackUrl={callbackUrl} />
         )}
-        <p className="text-muted-foreground text-sm">
-          {registering ? t("haveAccount") : t("noAccount")}
+        {!codes && mode === "login" && (
           <button
             type="button"
-            className="underline"
-            onClick={() => setMode(registering ? "login" : "register")}
+            className="text-muted-foreground self-start text-sm underline"
+            onClick={() => setMode("recover")}
           >
-            {registering ? t("signIn") : t("createOne")}
+            {tRecovery("forgot")}
           </button>
-        </p>
+        )}
+        {!codes && mode === "recover" && (
+          <button
+            type="button"
+            className="text-muted-foreground self-start text-sm underline"
+            onClick={() => setMode("login")}
+          >
+            {tRecovery("back")}
+          </button>
+        )}
+        {!codes && mode !== "recover" && (
+          <p className="text-muted-foreground text-sm">
+            {mode === "login" ? t("noAccount") : t("haveAccount")}
+            <button
+              type="button"
+              className="underline"
+              onClick={() => setMode(mode === "login" ? "register" : "login")}
+            >
+              {mode === "login" ? t("createOne") : t("signIn")}
+            </button>
+          </p>
+        )}
       </DialogContent>
     </Dialog>
   );

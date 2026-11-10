@@ -26,3 +26,16 @@ Do decyzji przy starcie taska (nowa decyzja w `decisions.md`): liczba i format k
 ## Testy
 
 Unit: hash i weryfikacja kodu, oznaczanie `usedAt`, odrzucenie zużytego. Integracyjne: pełny reset hasła kodem, limit prób, brak enumeracji nicku, regeneracja. E2E: ścieżka „nie pamiętam hasła" – wygenerowanie kodów, reset, logowanie nowym hasłem.
+
+## Wynik (2026-11-10)
+
+Decyzje: D76. Zmiany względem zakresu z decyzji użytkownika: kody tylko przy rejestracji (bez generowania w ustawieniach i bez prośby dla starych kont); nowy zestaw przychodzi automatycznie po każdym resecie kodem. Kod: `lib/auth/recovery-codes.ts`, `app/[locale]/auth/recover-actions.ts`, `recover-form.tsx`, `recovery-codes-view.tsx`, `auth-dialog.tsx`, kody w `register-actions.ts`, pole w `lib/models/user.ts`.
+
+Mapowanie kryteriów:
+1. Kody generowane i pokazane raz, w bazie tylko hash – `tests/integration/recovery.test.ts` („returns ten codes once and stores only their hashes”: dokument użytkownika nie zawiera kodu w żadnej postaci), `lib/auth/recovery-codes.test.ts`, E2E `tests/e2e/register.spec.ts` (okno z 10 kodami nie zamyka się Escape, „Dalej” aktywne dopiero po zaznaczeniu).
+2. Nick + nieużyty kod ustawia nowe hasło; ten sam kod drugi raz odrzucony – `recovery.test.ts` („sets a new password with an unused code, and the code works only once”), E2E `tests/e2e/recovery.spec.ts`.
+3. Błędny kod, użyty kod i nieistniejący nick dają ten sam błąd; nadmiar prób → `RATE_LIMITED` – `recovery.test.ts` („…get the same answer”, „refuses more than five wrong codes for one nickname”).
+4. Nowe hasło przechodzi `passwordError`; po resecie działa nowe hasło, stare nie – `recovery.test.ts` („checks the new password fully…”, „sets a new password…”), E2E `recovery.spec.ts` (stare hasło: „Invalid nickname or password.”, nowe loguje).
+5. Regeneracja unieważnia poprzedni zestaw – według decyzji użytkownika jako nowy zestaw po resecie: `recovery.test.ts` („gives a new set of codes that replaces the old one”), E2E (nowe kody różne od starych).
+
+Dodatkowo: reset kończy wszystkie sesje konta (`recovery.test.ts`, „ends every session of the account”).

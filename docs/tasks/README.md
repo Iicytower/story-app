@@ -53,15 +53,15 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 40 | ↳ [Wyświetlanie okładek](done/40-cover-display.md) (subtask 66) | 26 | [x] |
 | 28 | [Serwer na Mikrusie](28-mikrus-server.md) | 54, 25, 29 | [~] |
 | 67 | [Pomiar limitu okładek i kalibracja progu 18+](67-covers-limits-calibration.md) | 28 | [ ] |
-| – | [Aktualizacja zależności (2026-11-09)](dependency-updates-2026-11-09.md) | – | [ ] |
-| 56 | [Aktualizacja Next.js i podatnych zależności](56-dependency-updates.md) | – | [ ] |
-| 57 | [Zaufany adres klienta w limitach](57-trusted-client-ip.md) | – | [ ] |
-| 58 | [Unieważnianie sesji](58-session-revocation.md) | – | [ ] |
-| 59 | [Limity rozmiaru i liczby danych](59-data-limits.md) | – | [ ] |
-| 60 | [Nagłówki bezpieczeństwa](60-security-headers.md) | – | [ ] |
-| 61 | [Typy argumentów Server Actions](61-action-input-types.md) | – | [ ] |
-| 62 | [Zapis dużej treści rozdziału kończy się 500](62-large-content-save.md) | – | [ ] |
-| 63 | [Kody odzyskiwania konta](63-recovery-codes.md) | – | [ ] |
+| – | [Aktualizacja zależności (2026-11-09)](done/dependency-updates-2026-11-09.md) | – | [x] |
+| 56 | [Aktualizacja Next.js i podatnych zależności](done/56-dependency-updates.md) | – | [x] |
+| 57 | [Zaufany adres klienta w limitach](done/57-trusted-client-ip.md) | – | [x] |
+| 58 | [Unieważnianie sesji](done/58-session-revocation.md) | – | [x] |
+| 59 | [Limity rozmiaru i liczby danych](done/59-data-limits.md) | – | [x] |
+| 60 | [Nagłówki bezpieczeństwa](done/60-security-headers.md) | – | [x] |
+| 61 | [Typy argumentów Server Actions](done/61-action-input-types.md) | – | [x] |
+| 62 | [Zapis dużej treści rozdziału kończy się 500](done/62-large-content-save.md) | – | [x] |
+| 63 | [Kody odzyskiwania konta](done/63-recovery-codes.md) | – | [x] |
 | 64 | [Rozważenie predefiniowanych tagów](64-predefined-tags.md) | 24 | [ ] |
 | 53 | [Projekt systemu społecznościowego i plan tasków](53-social-system-plan.md) (zawieszony) | – | [ ] |
 
@@ -83,6 +83,7 @@ Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 - `staging` – środowisko testowe (Vercel Preview przypięty do brancha `staging`). Merge z `develop` na prośbę użytkownika.
 - `develop` – integracja: tu trafiają zakończone taski.
 - `feature/NN-<slug>` – jeden branch na task, tworzony z `develop`.
+- `security` – lokalny branch zbiorczy poprawek bezpieczeństwa (taski 56–63 i aktualizacja zależności z 2026-11-09), z `develop`. Branche tasków z niego i merge do niego; do `develop` merguje użytkownik po przeglądzie.
 - Task zbiorczy (np. 66): jego branch z `develop`, a branch każdego subtasku z brancha zbiorczego; subtask merge'ujemy do brancha zbiorczego, a ten do `develop` dopiero po wszystkich subtaskach.
 
 ## Definicja „zrobione” (każdy task)

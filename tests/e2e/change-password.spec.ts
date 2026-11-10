@@ -10,7 +10,7 @@ import {
   test,
 } from "./helpers";
 
-const NEW_PASSWORD = "Carol-new-password-678";
+const NEW_PASSWORD = "Meadow-new-secret-678";
 
 async function submitPasswords(
   page: Page,
@@ -82,7 +82,7 @@ test("after the change only the new password signs in", async ({ page }) => {
   await page.reload();
   await expect(page).toHaveURL("/en");
   const settings = await openSettings(page);
-  await settings.getByRole("button", { name: "Log out" }).click();
+  await settings.getByRole("button", { name: "Log out", exact: true }).click();
   await expectSignedOut(page);
 
   await signIn(page, USERS.carol.password);

@@ -10,7 +10,7 @@ import {
   searchPublishedChapters,
 } from "@/lib/publish/queries";
 import { MAX_QUERY_LENGTH } from "@/lib/publish/search";
-import { clientIp, SEARCH_LIMIT, takeAttempt } from "@/lib/rate-limit";
+import { SEARCH_LIMIT, takeIpAttempt } from "@/lib/rate-limit";
 import { MAX_TAGS, parseTagFilter, tagFilterHref } from "@/lib/tags/tags";
 import { ChapterItem } from "./chapter-item";
 
@@ -33,8 +33,7 @@ export async function PublicSearch({
   const tags = await listPublicTags();
   // An empty form is free: only an actual search reads chapter text.
   const allowed =
-    !searching ||
-    (await takeAttempt(SEARCH_LIMIT, clientIp(await headers()))) !== null;
+    !searching || (await takeIpAttempt(SEARCH_LIMIT, await headers())) !== null;
   const filterTags = [...new Set([...tags, ...selectedTags])];
 
   const searchPath = getPathname({ href: "/", locale: await getLocale() });

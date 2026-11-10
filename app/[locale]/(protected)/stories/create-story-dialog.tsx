@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { type FolderOption, languageOfFolder } from "@/lib/languages";
 import { createStory } from "./actions";
+import { MAX_NAME_LENGTH } from "@/lib/limits";
 
 export function CreateStoryDialog({
   open,
@@ -74,6 +75,7 @@ function CreateStoryForm({
           id="new-story-folder"
           list="new-story-folders"
           value={folder}
+          maxLength={MAX_NAME_LENGTH}
           onChange={(event) => setFolder(event.target.value)}
           placeholder={t("folderPlaceholder")}
           autoComplete="off"
@@ -89,6 +91,7 @@ function CreateStoryForm({
         <Input
           id="new-story-title"
           value={title}
+          maxLength={MAX_NAME_LENGTH}
           lang={languageOfFolder(folders, folder)}
           spellCheck
           onChange={(event) => setTitle(event.target.value)}

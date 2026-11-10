@@ -1,6 +1,6 @@
 "use server";
 
-import { isObjectIdOrHexString } from "mongoose";
+import { isId } from "@/lib/action-input";
 import type { ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import { connectDB } from "@/lib/db";
@@ -30,7 +30,7 @@ export async function checkChapter(id: string): Promise<
   if (!user.ok) return user;
   const config = toolsConfig();
   if (!config) return actionError("TOOL_UNAVAILABLE", "toolUnavailable");
-  if (!isObjectIdOrHexString(id)) {
+  if (!isId(id)) {
     return actionError("NOT_FOUND", "storyNotFound");
   }
 
