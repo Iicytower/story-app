@@ -60,7 +60,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 59 | [Limity rozmiaru i liczby danych](done/59-data-limits.md) | – | [x] |
 | 60 | [Nagłówki bezpieczeństwa](60-security-headers.md) | – | [ ] |
 | 61 | [Typy argumentów Server Actions](done/61-action-input-types.md) | – | [x] |
-| 62 | [Zapis dużej treści rozdziału kończy się 500](62-large-content-save.md) | – | [ ] |
+| 62 | [Zapis dużej treści rozdziału kończy się 500](done/62-large-content-save.md) | – | [x] |
 | 63 | [Kody odzyskiwania konta](63-recovery-codes.md) | – | [ ] |
 | 64 | [Rozważenie predefiniowanych tagów](64-predefined-tags.md) | 24 | [ ] |
 | 53 | [Projekt systemu społecznościowego i plan tasków](53-social-system-plan.md) (zawieszony) | – | [ ] |
