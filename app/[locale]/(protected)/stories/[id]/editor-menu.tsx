@@ -4,10 +4,12 @@ import {
   FileDownIcon,
   GlobeIcon,
   GlobeLockIcon,
+  MessageSquareIcon,
+  MessageSquareOffIcon,
   Trash2Icon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { ActionMenu } from "@/components/action-menu";
 import { AdultDialog, AdultMenuItem } from "@/components/adult";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -18,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { ActionResult } from "@/lib/action-result";
 import type { AdultState } from "@/lib/adult/adult";
-import { setStoryAdult } from "../actions";
+import { setStoryAdult, setStoryCommentsDisabled } from "../actions";
 import { DeleteStoryDialog } from "../delete-story-dialog";
 
 type Dialog = "export" | "publish" | "adult" | "delete";
@@ -28,6 +30,7 @@ export function EditorMenu({
   title,
   isPublic,
   adult,
+  commentsDisabled,
   beforeExport,
   togglePublished,
   onDeleted,
@@ -36,11 +39,14 @@ export function EditorMenu({
   title: string;
   isPublic: boolean;
   adult: AdultState;
+  commentsDisabled: boolean;
   beforeExport: () => Promise<boolean>;
   togglePublished: () => Promise<ActionResult>;
   onDeleted: () => void;
 }) {
   const [dialog, setDialog] = useState<Dialog | null>(null);
+  const [menuError, setMenuError] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
   const t = useTranslations("menu");
   const tFolders = useTranslations("folders");
   const tExport = useTranslations("export");
@@ -49,6 +55,14 @@ export function EditorMenu({
     open: dialog === name,
     onOpenChange: (open: boolean) => setDialog(open ? name : null),
   });
+
+  function toggleComments() {
+    setMenuError(null);
+    startTransition(async () => {
+      const result = await setStoryCommentsDisabled(id, !commentsDisabled);
+      if (!result.ok) setMenuError(result.message);
+    });
+  }
 
   return (
     <>
@@ -61,6 +75,10 @@ export function EditorMenu({
           {isPublic ? <GlobeLockIcon /> : <GlobeIcon />}
           {isPublic ? tFolders("unpublish") : tFolders("publish")}
         </DropdownMenuItem>
+        <DropdownMenuItem onSelect={toggleComments}>
+          {commentsDisabled ? <MessageSquareIcon /> : <MessageSquareOffIcon />}
+          {commentsDisabled ? t("enableComments") : t("disableComments")}
+        </DropdownMenuItem>
         <AdultMenuItem state={adult} onSelect={() => setDialog("adult")} />
         <DropdownMenuSeparator />
         <DropdownMenuItem
@@ -71,6 +89,11 @@ export function EditorMenu({
           {tCommon("delete")}
         </DropdownMenuItem>
       </ActionMenu>
+      {menuError && (
+        <p role="alert" className="text-destructive w-full text-sm">
+          {menuError}
+        </p>
+      )}
       <ExportDialog
         {...dialogProps("export")}
         dataUrl={`/stories/${id}/export/data`}

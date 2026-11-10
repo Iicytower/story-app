@@ -17,7 +17,12 @@ import { Story } from "@/lib/models/story";
 import { User } from "@/lib/models/user";
 import { stampPublishedAt } from "@/lib/publish/mutations";
 import { purgeSocialData } from "@/lib/social/cascade";
-import { FEED_PAGE_SIZE, getFeed, parseFeedCursor } from "@/lib/social/feed";
+import {
+  FEED_PAGE_SIZE,
+  type FeedEntry,
+  getFeed,
+  parseFeedCursor,
+} from "@/lib/social/feed";
 import { setupTestDb } from "./test-db";
 
 vi.mock("@/lib/auth/session", () => ({ requireUser: vi.fn() }));
@@ -52,6 +57,11 @@ async function seedBook(owner = alice, titles = ["One", "Two"], name = "Book") {
     ids.push(_id.toString());
   }
   return { folderId: folder._id.toString(), ids };
+}
+
+function chaptersOf(entry: FeedEntry) {
+  if (entry.type !== "chapterPublished") throw new Error(entry.type);
+  return entry.chapters;
 }
 
 async function feedOf(user: Types.ObjectId, after: string | null = null) {
@@ -90,7 +100,7 @@ describe("recording", () => {
     expect(await setFolderPublished(book.folderId, true)).toEqual({ ok: true });
     expect(await Activity.countDocuments()).toBe(1);
     const [entry] = (await feedOf(dave)).entries;
-    expect(entry.chapters).toHaveLength(3);
+    expect(chaptersOf(entry)).toHaveLength(3);
 
     await setFolderPublished(book.folderId, false);
     await setFolderPublished(book.folderId, true);
@@ -190,7 +200,10 @@ describe("feed", () => {
     await setFolderPublished(book.folderId, true);
     await setChapterPublished(book.ids[1], false);
     const [entry] = (await feedOf(dave)).entries;
-    expect(entry.chapters.map(({ title }) => title)).toEqual(["One", "Three"]);
+    expect(chaptersOf(entry).map(({ title }) => title)).toEqual([
+      "One",
+      "Three",
+    ]);
 
     await setFolderPublished(book.folderId, false);
     expect((await feedOf(dave)).entries).toEqual([]);

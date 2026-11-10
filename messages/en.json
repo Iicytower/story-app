@@ -187,7 +187,12 @@
     "libraryBookNotFound": "This book is not available or is not in your library.",
     "readerMarkNotFound": "This bookmark or note does not exist or has been deleted.",
     "tooManyChapterMarks": "You can have at most {max, number} bookmarks and notes in a chapter. Delete one to add a new one.",
-    "tooManyMarks": "You can have at most {max, number} bookmarks and notes. Delete one to add a new one."
+    "tooManyMarks": "You can have at most {max, number} bookmarks and notes. Delete one to add a new one.",
+    "commentRequired": "Write something first.",
+    "commentNotFound": "This comment does not exist or has been deleted.",
+    "commentTargetNotFound": "This chapter or book is not public, or has been deleted.",
+    "commentEditExpired": "A comment can be edited only within 15 minutes of posting. You can still delete it.",
+    "commentsDisabled": "The author has turned comments off here."
   },
   "password": {
     "mustContain": "The password must contain:",
@@ -413,7 +418,9 @@
     "movedOver": "{name} is now at position {position} of {total}.",
     "dropped": "{name} dropped at position {position} of {total}.",
     "cancelled": "Moving {name} was cancelled.",
-    "language": "Language"
+    "language": "Language",
+    "disableComments": "Turn off comments",
+    "enableComments": "Turn on comments"
   },
   "stories": {
     "newStory": "New story",
@@ -730,7 +737,8 @@
     "folderBy": "{folder} by {nickname}",
     "contents": "Contents",
     "continue": "Continue reading: {title}",
-    "newChapter": "New"
+    "newChapter": "New",
+    "commentCount": "{count, plural, one {# comment} other {# comments}}"
   },
   "search": {
     "title": "Search stories",
@@ -1011,6 +1019,34 @@
     "chapterPublished": "<author>{nickname}</author> published a new chapter <chapter>{title}</chapter> in <book>{bookName}</book>",
     "chaptersPublished": "<author>{nickname}</author> published {count, plural, one {# new chapter} other {# new chapters}} in <book>{bookName}</book>",
     "pages": "Pages",
-    "noOlder": "No older entries."
+    "noOlder": "No older entries.",
+    "authorReplyChapter": "<author>{nickname}</author> <comment>replied to a comment</comment> under <chapter>{title}</chapter> in <book>{bookName}</book>",
+    "authorReplyBook": "<author>{nickname}</author> <comment>replied to a comment</comment> under <book>{bookName}</book>"
+  },
+  "comments": {
+    "title": "{count, plural, =0 {Comments} one {# comment} other {# comments}}",
+    "disabled": "Comments are turned off.",
+    "signIn": "Log in to comment",
+    "placeholder": "Write a comment…",
+    "replyPlaceholder": "Write a reply…",
+    "newLabel": "New comment",
+    "submit": "Comment",
+    "editLabel": "Edit comment",
+    "edit": "Edit",
+    "reply": "Reply",
+    "replyTo": "Reply to {nickname}",
+    "submitReply": "Reply",
+    "deleteTitle": "Delete comment?",
+    "deleteDescription": "The comment will be deleted. If it has replies, they stay under \"Comment deleted\".",
+    "hidden": "Hidden by a moderator.",
+    "deleted": "Comment deleted.",
+    "edited": "edited",
+    "empty": "No comments yet.",
+    "noOlder": "No older comments.",
+    "list": "Comments",
+    "replies": "{count, plural, one {# reply} other {# replies}}",
+    "pages": "Comment pages",
+    "newest": "Newest comments",
+    "older": "Older comments"
   }
 }

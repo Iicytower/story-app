@@ -13,41 +13,16 @@ import {
   MAX_MARKS_PER_CHAPTER,
   type LimitedField,
 } from "@/lib/limits";
-import { Folder } from "@/lib/models/folder";
 import { ReaderMark, type ReaderMarkFields } from "@/lib/models/reader-mark";
 import { ReadingProgress } from "@/lib/models/reading-progress";
-import { Story } from "@/lib/models/story";
 import { SOCIAL_LIMITS, takeUserAttempt } from "@/lib/rate-limit";
 import { toMarkView, type ReaderMarkView } from "@/lib/reading/marks";
-import { isAuthorVisibleTo } from "@/lib/social/permissions";
+import { findVisibleStory } from "@/lib/social/visibility";
 
 const invalid = () => actionError("INVALID_INPUT", "requestInvalid");
 const rateLimited = () => actionError("RATE_LIMITED", "tooManyAttempts");
 const storyNotFound = () => actionError("NOT_FOUND", "storyNotFound");
 const markNotFound = () => actionError("NOT_FOUND", "readerMarkNotFound");
-
-// The same visibility as the library (D38, task 72): hidden authors' books are not found.
-async function findVisibleStory(viewerId: string, storyId: string) {
-  await connectDB();
-  const story = await Story.findOne({
-    _id: storyId,
-    publication: "public",
-    deletedAt: null,
-  })
-    .select({ folderId: 1, userId: 1 })
-    .lean();
-  if (!story) return null;
-  const [folder, author] = await Promise.all([
-    Folder.exists({
-      _id: story.folderId,
-      userId: story.userId,
-      published: true,
-      deletedAt: null,
-    }),
-    isAuthorVisibleTo(viewerId, story.userId),
-  ]);
-  return folder && author ? story : null;
-}
 
 // Called in the background every few seconds, so it does not refresh the page. A chapter
 // scrolled to the end (position 1) is read.
@@ -105,7 +80,9 @@ async function createMark(
   userId: string,
   storyId: string,
   fields: Pick<ReaderMarkFields, "kind" | "position"> &
-    Partial<Pick<ReaderMarkFields, "name" | "text" | "quote" | "prefix" | "suffix">>,
+    Partial<
+      Pick<ReaderMarkFields, "name" | "text" | "quote" | "prefix" | "suffix">
+    >,
 ): Promise<MarkResult> {
   if (!(await takeUserAttempt(SOCIAL_LIMITS.marks, userId))) {
     return rateLimited();

@@ -72,7 +72,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 73 | ↳ [Postęp czytania i nowe rozdziały](done/73-reading-progress.md) (subtask 68) | 72 | [x] |
 | 74 | ↳ [Zakładki i notatki czytelnika](done/74-reader-notes.md) (subtask 68) | 73 | [x] |
 | 75 | ↳ [Feed aktywności](done/75-feed.md) (subtask 68) | 71, 72 | [x] |
-| 76 | ↳ [Komentarze](76-comments.md) (subtask 68) | 69, 70, 75 | [ ] |
+| 76 | ↳ [Komentarze](done/76-comments.md) (subtask 68) | 69, 70, 75 | [x] |
 | 77 | ↳ [Reakcje](77-reactions.md) (subtask 68) | 76 | [ ] |
 | 78 | ↳ [Oceny](78-ratings.md) (subtask 68) | 69 | [ ] |
 | 79 | ↳ [Moderacja autora](79-author-moderation.md) (subtask 68) | 76 | [ ] |

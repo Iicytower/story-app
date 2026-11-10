@@ -94,6 +94,7 @@ export default async function FolderPage({
               isPublic={Boolean(folder.published)}
               adult={folder.adult}
               unpublishedCount={unpublishedCount}
+              commentsDisabled={folder.commentsDisabled}
               cover={
                 toolsConfig()
                   ? { current: folder.cover, pending: folder.coverPending }

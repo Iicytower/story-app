@@ -8,6 +8,7 @@ Subtask 68, zależy od 71, 72, 73, 76, 77 i 78. Podstawa: D80 (Statystyki i odkr
 - Zapis odczytu przy renderze publicznej strony rozdziału w `after()`: wstawienie `readEvents`, a tylko przy sukcesie (nie `E11000`) `$inc` w `dailyStats` (upsert). Nagłówek IP i `userId` czytane przed `after()` i przekazywane do callbacku (`headers()` nie działa w callbacku). Zapis tylko przy pełnym renderze strony, nie przy prefetchu (`<Link prefetch={false}>` do stron rozdziałów albo sprawdzenie nagłówka `next-router-prefetch`). Bez zaufanego IP gość nie jest liczony (D74). Autor czytający swój tekst nie jest liczony.
 - Strona `/stats` (autor z publikacjami): wykresy `recharts` (shadcn `chart`, motyw z `lib/theme.ts`) unikalnych czytelników w czasie (7/30/90/365 dni, z `dailyStats`), tabela per rozdział i książka: czytelnicy, reakcje, średnia i liczba ocen, komentarze, dodania do bibliotek; liczba obserwujących. Tylko własne dane (`authorId` z sesji). Pozycja „Statystyki” w sidebarze włączona warunkowo.
 - Kolekcje taska dopisane do `purgeSocialData` (69); test: trwałe usunięcie rozdziału i folderu kasuje ich wpisy.
+- Komentarze (76): liczba komentarzy z `comments` po indeksie `{authorId, createdAt: -1}` (`authorId` = właściciel tekstu).
 
 ## Kryteria akceptacji
 

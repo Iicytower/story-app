@@ -27,6 +27,7 @@ const NOT_FOUND = { ok: false, error: "NOT_FOUND", key: "userNotFound" };
 
 const ALL_KINDS: InteractionKind[] = [
   "comment",
+  "reply",
   "react",
   "rate",
   "forumPost",
@@ -73,7 +74,7 @@ describe("decideInteraction", () => {
     }
   });
 
-  it.each(["dm", "follow", "mention"] as const)(
+  it.each(["reply", "dm", "follow", "mention"] as const)(
     "leaves %s to a community-banned user",
     (kind) => {
       const facts = { ...NONE, communityBan: { until: null } };

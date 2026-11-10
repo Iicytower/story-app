@@ -9,6 +9,7 @@ Subtask 68, zależy od 82, 84 i 85. Podstawa: D80 (Role, bany, blokady – bloka
 - Ukryć przycisk Obserwuj przy blokadzie (71; dziś przycisk widoczny, odmawia akcja).
 - Przegląd wszystkich miejsc odczytu: komentarze, reakcje (lista nicków), feed, powiadomienia, podpowiedzi nicków, rankingi, listy obserwujących – zablokowani przez widza ukryci (`hiddenUserIdsFor`). Publiczna wyszukiwarka (39) dalej pokazuje teksty autorów zablokowanych przez widza: D80 pozwala B czytać A, a A nie musi ich ukrywać. Publiczne teksty blokującego dalej czytelne dla zablokowanego.
 - Test macierzowy: każda interakcja z D80 (komentarz, odpowiedź, reakcja, ocena, wzmianka, DM, obserwowanie, post forum – gdy 87 gotowe, dopisany tam) w obu kierunkach blokady.
+- Komentarze (76): odpowiedzi sprawdzane przez `canInteract(kind: "reply")` wobec autora rodzica i korzenia wątku (poza `COMMUNITY_KINDS`) – uwzględnić w teście macierzowym.
 
 ## Kryteria akceptacji
 

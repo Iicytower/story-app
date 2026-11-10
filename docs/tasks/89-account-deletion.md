@@ -9,6 +9,7 @@ Subtask 68, zależy od 69–88. Podstawa: D80 (Konto). Zmienia D37 (konta nie da
 - Tombstone w `users`: dokument zostaje z `nickname` (blokuje unikalny indeks, D37), `deletedAt`, bez `passwordHash` i `recoveryCodes`; logowanie i reset kodem odrzucane. Schemat: `User.deletedAt?: Date`, `passwordHash` opcjonalne; `authorize`, `recover-actions`, `findUserByNickname` (poza rejestracją, gdzie nick ma zostać zajęty) i wszystkie zapytania społeczności filtrują `deletedAt: { $exists: false }` (lub przez `hiddenUserIdsFor` z 69). `/p/<nick>` → 404. Wszystkie sesje usunięte (D75), wylogowanie.
 - Zakładki i notatki (74): `readerMarks` konta kasowane po `userId` (indeks `{userId, storyId}`), znaczniki innych na jego tekstach – przez `purgeSocialData` (indeksy `{storyId}`, `{folderId}`).
 - Kolejność: najpierw tombstone i sesje, potem sprzątanie w `after()` (znacznik `cleanupPendingAt`). Ponowienie: `after()` w `deleteAccount` i w layoucie `(protected)` przejmuje atomowo (`findOneAndUpdate` z `cleanupPendingAt < now-10 min` → `now`) jeden tombstone i dokańcza sprzątanie.
+- Komentarze (76): komentarze konta po `userId` (indeks `{userId}`), dziś konta bez nicku/nieistniejące są przy odczycie pomijane (poza zaślepką usuniętego/ukrytego) – dostosować do „usunięty użytkownik”. Nowe kolekcje z `folderId` dopisywać też do `moveChapterSocialData` (`lib/social/cascade.ts`).
 
 ## Kryteria akceptacji
 
