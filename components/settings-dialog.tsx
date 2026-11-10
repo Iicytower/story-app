@@ -6,11 +6,13 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import {
   changeLocale,
   listDictionary,
+  logOutOtherDevices,
   logout,
   removeFromDictionary,
   saveSettings,
 } from "@/app/[locale]/(protected)/actions";
 import { ChangePasswordForm } from "@/components/change-password-form";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -96,6 +98,8 @@ function SettingsContent() {
   const pathname = usePathname();
   const router = useRouter();
   const [changingPassword, setChangingPassword] = useState(false);
+  const [confirmLogOutOthers, setConfirmLogOutOthers] = useState(false);
+  const [othersLoggedOut, setOthersLoggedOut] = useState(false);
   const [saved, setSaved] = useState(savedTheme);
   const [theme, setThemeChoice] = useState(saved);
   const [savedAccentValue, setSavedAccent] = useState(savedAccent);
@@ -229,6 +233,27 @@ function SettingsContent() {
             {t("logOut")}
           </Button>
         </div>
+        <Button
+          variant="outline"
+          className="justify-self-start"
+          onClick={() => setConfirmLogOutOthers(true)}
+        >
+          {t("logOutOthers")}
+        </Button>
+        {othersLoggedOut && (
+          <p role="status" className="text-muted-foreground text-sm">
+            {t("logOutOthersDone")}
+          </p>
+        )}
+        <ConfirmDialog
+          open={confirmLogOutOthers}
+          onOpenChange={setConfirmLogOutOthers}
+          title={t("logOutOthersTitle")}
+          description={t("logOutOthersDescription")}
+          confirmLabel={t("logOutOthersConfirm")}
+          action={logOutOtherDevices}
+          onDone={() => setOthersLoggedOut(true)}
+        />
       </section>
       {error && (
         <p role="alert" className="text-destructive text-sm">

@@ -16,7 +16,7 @@ const t = createTranslator({
   namespace: "password",
 });
 
-const VALID_PASSWORD = "Abcdefghijklmno1!";
+const VALID_PASSWORD = "Ajrwbvzkqtmpnse1!";
 
 describe("nicknameError", () => {
   it.each(["abc", "Alice_01", "a-b", "x".repeat(30)])("accepts %s", (nick) => {
@@ -37,15 +37,15 @@ describe("passwordError", () => {
   });
 
   it("rejects a password below the minimum length", () => {
-    expect(passwordError("Abcdefghijklmn1!")).toEqual({
+    expect(passwordError("Ajrwbvzkqtmpns1!")).toEqual({
       key: "passwordTooShort",
       values: { min: 17 },
     });
   });
 
   it("accepts a password at the maximum length and rejects a longer one", () => {
-    expect(passwordError(VALID_PASSWORD.padEnd(256, "x"))).toBeNull();
-    expect(passwordError(VALID_PASSWORD.padEnd(257, "x"))).toEqual({
+    expect(passwordError(VALID_PASSWORD.padEnd(256, "xy3Q"))).toBeNull();
+    expect(passwordError(VALID_PASSWORD.padEnd(257, "xy3Q"))).toEqual({
       key: "passwordTooLong",
       values: { max: 256 },
     });
@@ -60,34 +60,34 @@ describe("passwordError", () => {
   });
 
   it("requires a lowercase letter", () => {
-    expect(passwordError("ABCDEFGHIJKLMNO1!")).toEqual({
+    expect(passwordError("AJRWBVZKQTMPNSE1!")).toEqual({
       key: "passwordNoLowercase",
     });
   });
 
   it("requires an uppercase letter", () => {
-    expect(passwordError("abcdefghijklmno1!")).toEqual({
+    expect(passwordError("ajrwbvzkqtmpnse1!")).toEqual({
       key: "passwordNoUppercase",
     });
   });
 
   it("requires a digit", () => {
-    expect(passwordError("Abcdefghijklmnop!")).toEqual({
+    expect(passwordError("Ajrwbvzkqtmpnsey!")).toEqual({
       key: "passwordNoDigit",
     });
   });
 
   it("requires an ASCII special character", () => {
-    expect(passwordError("Abcdefghijklmnop1")).toEqual({
+    expect(passwordError("Ajrwbvzkqtmpnsey1")).toEqual({
       key: "passwordNoSpecial",
     });
-    expect(passwordError("Abcdefghijklmn1 😀")).toEqual({
+    expect(passwordError("Ajrwbvzkqtmpns1 😀")).toEqual({
       key: "passwordNoSpecial",
     });
   });
 
   it.each(["!", "/", ":", "@", "[", "`", "{", "~"])("accepts %s", (char) => {
-    expect(passwordError(`Abcdefghijklmno1${char}`)).toBeNull();
+    expect(passwordError(`Ajrwbvzkqtmpnse1${char}`)).toBeNull();
   });
 });
 
@@ -112,7 +112,7 @@ describe("PASSWORD_REQUIREMENTS", () => {
       String.fromCharCode(i + 32),
     );
     const accepted = ascii.filter(
-      (char) => passwordError(`Abcdefghijklmno1${char}`) === null,
+      (char) => passwordError(`Ajrwbvzkqtmpnse1${char}`) === null,
     );
     expect(accepted.join("")).toBe(PASSWORD_SPECIAL_CHARACTERS);
   });
@@ -136,12 +136,12 @@ describe("passwordChecklist", () => {
   });
 
   it.each([
-    ["Abcdefghijklmn1!", 0],
-    [VALID_PASSWORD.padEnd(257, "x"), 0],
-    ["ABCDEFGHIJKLMNO1!", 1],
-    ["abcdefghijklmno1!", 2],
-    ["Abcdefghijklmnop!", 3],
-    ["Abcdefghijklmnop1", 4],
+    ["Ajrwbvzkqtmpns1!", 0],
+    [VALID_PASSWORD.padEnd(257, "xy3Q"), 0],
+    ["AJRWBVZKQTMPNSE1!", 1],
+    ["ajrwbvzkqtmpnse1!", 2],
+    ["Ajrwbvzkqtmpnsey!", 3],
+    ["Ajrwbvzkqtmpnsey1", 4],
   ])("marks only the unmet requirement for %s", (password, index) => {
     expect(missing(password)).toEqual([PASSWORD_REQUIREMENTS[index]]);
   });
@@ -150,13 +150,49 @@ describe("passwordChecklist", () => {
     VALID_PASSWORD,
     "",
     "Aa1!",
-    "Abcdefghijklmn1 😀",
-    "Ąbcdefghijklmnoż1!",
-    VALID_PASSWORD.padEnd(256, "x"),
-    VALID_PASSWORD.padEnd(257, "x"),
+    "Ajrwbvzkqtmpns1 😀",
+    "Ąjrwbvzkqtmpnsż1!",
+    VALID_PASSWORD.padEnd(256, "xy3Q"),
+    VALID_PASSWORD.padEnd(257, "xy3Q"),
   ])("agrees with passwordError for %j", (password) => {
     expect(missing(password).length === 0).toBe(
       passwordError(password) === null,
     );
+  });
+});
+
+// I5: passwords that pass every class but are easy to guess.
+describe("passwordError for weak passwords", () => {
+  it("rejects one character making up half of the password", () => {
+    expect(passwordError("aaaaaaaaaaaaaaaA1!")).toEqual({
+      key: "passwordRepetitive",
+    });
+    expect(passwordError("Ajrwbvzkqtmpnse1!")).toBeNull();
+  });
+
+  it.each([
+    "Xabcdefq-Lmw9!zzpt",
+    "Xfedcbaq-Lmw9!zzpt",
+    "Moje-hasło-123456!",
+    "Moje-hasło-987654!",
+    "Moje-QWERTY-hasło1!",
+    "Moje-Asdfgh-hasło1!",
+  ])("rejects a simple sequence in %s", (password) => {
+    expect(passwordError(password)).toEqual({
+      key: "passwordSequence",
+      values: { length: 6 },
+    });
+  });
+
+  it("allows shorter runs", () => {
+    expect(passwordError("Correct-horse-12345")).toBeNull();
+  });
+
+  it("rejects the nickname in the password, in any case", () => {
+    expect(passwordError("Alice-river-Mountain9!", "alice")).toEqual({
+      key: "passwordContainsNickname",
+    });
+    expect(passwordError("Alice-river-Mountain9!", "bob")).toBeNull();
+    expect(passwordError("Alice-river-Mountain9!")).toBeNull();
   });
 });

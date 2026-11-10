@@ -51,7 +51,40 @@ export function nicknameError(nickname: string): ErrorMessage | null {
     : { key: "nicknameRequirement" };
 }
 
-export function passwordError(password: string): ErrorMessage | null {
+// Runs the alphabet, digits and keyboard rows contain, forwards and backwards (I5, D75).
+const SEQUENCES = [
+  "abcdefghijklmnopqrstuvwxyz",
+  "0123456789",
+  "qwertyuiop",
+  "asdfghjkl",
+  "zxcvbnm",
+].flatMap((row) => [row, [...row].reverse().join("")]);
+export const PASSWORD_SEQUENCE_LENGTH = 6;
+
+function hasSequence(password: string): boolean {
+  const lower = password.toLowerCase();
+  for (let i = 0; i + PASSWORD_SEQUENCE_LENGTH <= lower.length; i++) {
+    const part = lower.slice(i, i + PASSWORD_SEQUENCE_LENGTH);
+    if (SEQUENCES.some((row) => row.includes(part))) return true;
+  }
+  return false;
+}
+
+// One character making up half of the password, e.g. "aaaaaaaaaaaaaaaA1!".
+function isRepetitive(password: string): boolean {
+  const characters = [...password];
+  const counts = new Map<string, number>();
+  for (const character of characters) {
+    counts.set(character, (counts.get(character) ?? 0) + 1);
+  }
+  return Math.max(...counts.values()) * 2 >= characters.length;
+}
+
+// nickname: the account's, when known; a password containing it is easy to guess.
+export function passwordError(
+  password: string,
+  nickname?: string,
+): ErrorMessage | null {
   const length = [...password].length;
   if (length < PASSWORD_MIN_LENGTH) {
     return { key: "passwordTooShort", values: { min: PASSWORD_MIN_LENGTH } };
@@ -63,5 +96,15 @@ export function passwordError(password: string): ErrorMessage | null {
   if (!UPPERCASE.test(password)) return { key: "passwordNoUppercase" };
   if (!DIGIT.test(password)) return { key: "passwordNoDigit" };
   if (!SPECIAL.test(password)) return { key: "passwordNoSpecial" };
+  if (isRepetitive(password)) return { key: "passwordRepetitive" };
+  if (hasSequence(password)) {
+    return {
+      key: "passwordSequence",
+      values: { length: PASSWORD_SEQUENCE_LENGTH },
+    };
+  }
+  if (nickname && password.toLowerCase().includes(nickname.toLowerCase())) {
+    return { key: "passwordContainsNickname" };
+  }
   return null;
 }
