@@ -1,12 +1,12 @@
 # 86 – Blokowanie w pełnym zakresie
 
-Subtask 68, zależy od 85 i 82. Podstawa: D80 (Role, bany, blokady – blokada). Branch `feature/86-blocking` z `feature/social`, merge do `feature/social`.
+Subtask 68, zależy od 82, 84 i 85. Podstawa: D80 (Role, bany, blokady – blokada). Branch `feature/86-blocking` z `feature/social`, merge do `feature/social`.
 
 ## Zakres
 
-- Akcje `blockUser(nick)` / `unblockUser(nick)` (nie siebie; limit 60/min). Blokada w jednej transakcji logicznej: usuwa obserwacje w obie strony (71), zamyka rozmowę (85, `closedAt`), daje zablokowanemu ban w społeczności blokującego bez terminu (efekt przez `canInteract`, bez dokumentu w `communityBans`, więc odblokowanie go zdejmuje).
-- „Zablokuj” na profilu i w menu ⋮ komentarza; lista zablokowanych z odblokowaniem w dialogu ustawień.
-- Przegląd wszystkich miejsc odczytu: komentarze, reakcje (lista nicków), feed, powiadomienia, podpowiedzi nicków, rankingi, listy obserwujących, wyniki wyszukiwania profili – zablokowani przez widza ukryci (`hiddenAuthorsFor`). Publiczne teksty blokującego dalej czytelne dla zablokowanego.
+- Akcje `blockUser(nick)` / `unblockUser(nick)` (nie siebie; limit `SOCIAL_LIMITS.block`, 60/min). Bez transakcji Mongo (standalone w testach): najpierw `insert` do `blocks` (od tej chwili `canInteract` odmawia), potem idempotentne `deleteMany` w `follows` (obie strony, 71) i `closedAt` rozmowy (85); ponowne `blockUser` dokańcza przerwane kroki. Blokada daje zablokowanemu ban w społeczności blokującego bez terminu (efekt przez `canInteract`, bez dokumentu w `communityBans`, więc odblokowanie go zdejmuje).
+- „Zablokuj” na profilu i w menu ⋮ komentarza; lista zablokowanych z odblokowaniem w dialogu ustawień. Odblokowanie zdejmuje `closedAt` rozmowy, jeśli żadna strona nie blokuje drugiej.
+- Przegląd wszystkich miejsc odczytu: komentarze, reakcje (lista nicków), feed, powiadomienia, podpowiedzi nicków, rankingi, listy obserwujących – zablokowani przez widza ukryci (`hiddenUserIdsFor`). Publiczna wyszukiwarka (39) dalej pokazuje teksty autorów zablokowanych przez widza: D80 pozwala B czytać A, a A nie musi ich ukrywać. Publiczne teksty blokującego dalej czytelne dla zablokowanego.
 - Test macierzowy: każda interakcja z D80 (komentarz, odpowiedź, reakcja, ocena, wzmianka, DM, obserwowanie, post forum – gdy 87 gotowe, dopisany tam) w obu kierunkach blokady.
 
 ## Kryteria akceptacji
@@ -14,7 +14,7 @@ Subtask 68, zależy od 85 i 82. Podstawa: D80 (Role, bany, blokady – blokada).
 1. Zablokowany nie pisze DM, nie odpowiada na komentarze blokującego, nie wspomina go, nie obserwuje go i nie komentuje, nie reaguje ani nie ocenia u niego (jako autora).
 2. Blokujący nie widzi komentarzy i postów zablokowanego nigdzie.
 3. Zablokowany nadal czyta publiczne teksty blokującego.
-4. Blokada usuwa obserwacje w obie strony i zamyka rozmowę; odblokowanie przywraca możliwość interakcji (bez przywracania obserwacji).
+4. Blokada usuwa obserwacje w obie strony i zamyka rozmowę; odblokowanie przywraca możliwość interakcji (bez przywracania obserwacji) i zdejmuje `closedAt` rozmowy, jeśli żadna strona nie blokuje drugiej.
 5. Lista zablokowanych w ustawieniach z odblokowaniem.
 
 ## Testy

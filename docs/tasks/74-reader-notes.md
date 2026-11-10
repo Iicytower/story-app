@@ -4,11 +4,12 @@ Subtask 68, zależy od 73. Podstawa: D80 (Profil, relacje, biblioteka – zakła
 
 ## Zakres
 
-- Kolekcja `readerMarks` (`userId`, `storyId`, `folderId`, `kind: bookmark | note`, `position` 0–1, `name?` (zakładka, do 100 znaków), `text?` (notatka, `MAX_NOTE_LENGTH`), `quote?` (`MAX_QUOTE_LENGTH`), `prefix?`/`suffix?` (do 50 znaków kontekstu), `createdAt`, `updatedAt`). Indeks `{ userId, storyId }`. Prywatne: każde zapytanie po `userId` z sesji.
+- Kolekcja `readerMarks` (`userId`, `storyId`, `folderId`, `kind: bookmark | note`, `position` 0–1, `name?` (zakładka, do 100 znaków), `text?` (notatka, `MAX_READER_NOTE_LENGTH`), `quote?` (`MAX_QUOTE_LENGTH`), `prefix?`/`suffix?` (do 50 znaków kontekstu), `createdAt`, `updatedAt`). Indeks `{ userId, storyId }`. Prywatne: każde zapytanie po `userId` z sesji.
 - Zakładka: przycisk na stronie czytania zapisuje bieżącą pozycję przewinięcia z opcjonalną nazwą. Notatka: po zaznaczeniu tekstu przycisk „Notatka” zapisuje cytat z kontekstem i tekst.
-- Kotwiczenie notatki przy odczycie (`lib/social/anchor.ts`, czysta funkcja na tekście po `stripComments`): dokładne wyszukanie `prefix+quote+suffix`, potem samego `quote`, potem przybliżenie pakietem `diff`; brak → „osierocona” (wyświetlana na liście z zapisanym cytatem, bez podświetlenia).
+- Cytat, `prefix` i `suffix` pochodzą z `textContent` wyrenderowanej treści rozdziału. Kotwiczenie notatki przy odczycie (`lib/social/anchor.ts`, czysta funkcja na tym samym tekście, podawanym z klienta; podświetlenie robi `Range` po stronie klienta, serwer tylko waliduje długości): dokładne wyszukanie `prefix+quote+suffix`, potem samego `quote`, potem przybliżenie pakietem `diff`; brak → „osierocona” (wyświetlana na liście z zapisanym cytatem, bez podświetlenia).
 - Panel „Zakładki i notatki” na stronie czytania (lista, przejście do miejsca, edycja, usunięcie) i lista przy książce w bibliotece.
-- Limity: 200 na rozdział, 5000 na konto (razem), sprawdzane przed zapisem.
+- Limity: 200 na rozdział, 5000 na konto (razem), sprawdzane przed zapisem; przekroczenie o kilka przy równoległych zapisach akceptowane.
+- Kolekcje taska dopisane do `purgeSocialData` (69); test: trwałe usunięcie rozdziału i folderu kasuje ich wpisy.
 
 ## Kryteria akceptacji
 

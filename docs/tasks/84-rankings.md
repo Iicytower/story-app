@@ -1,11 +1,11 @@
 # 84 – Rankingi na stronie głównej
 
-Subtask 68, zależy od 83. Podstawa: D80 (Statystyki i odkrywanie – strona główna). Branch `feature/84-rankings` z `feature/social`, merge do `feature/social`.
+Subtask 68, zależy od 71 i 83. Podstawa: D80 (Statystyki i odkrywanie – strona główna). Branch `feature/84-rankings` z `feature/social`, merge do `feature/social`.
 
 ## Zakres
 
-- Kolekcja `rankings` (`_id`: `weekly | topRated | tag:<klucz>`, `items: { folderId, storyId?, score }[]`, `computedAt`, `computing?`). Leniwe przeliczenie: odczyt starszego niż 1 h zleca przeliczenie w `after()`; atomowe przejęcie (`computing` z terminem) jak D68; do czasu nowego wyniku pokazywany stary.
-- Popularne tygodnia: suma `dailyStats.readers` z 7 dni per książka. Najwyżej oceniane: średnia bayesowska książek z co najmniej 5 ocenami (stała `C` = średnia globalna, `m` = 5). Popularne w kategoriach: dla każdego predefiniowanego tagu (D79) obecnego w danych, top 5 z tygodnia. Od obserwowanych (zalogowany): ostatnio opublikowane rozdziały obserwowanych, liczone na żywo (mała lista).
+- Kolekcja `rankings` (`_id`: `weekly | topRated | tag:<klucz>`, `items: { folderId, storyId?, score }[]` (30 pozycji; po filtrze widza pokazywane pierwsze 10), `computedAt`, `computing?`). Leniwe przeliczenie: odczyt starszego niż 1 h zleca przeliczenie w `after()`; atomowe przejęcie (`computing` z terminem) jak D68; do czasu nowego wyniku pokazywany stary.
+- Popularne tygodnia: liczba różnych `reader` w `readEvents` z 7 dni per `folderId` (agregacja `$group`, indeks `{ day, folderId }` z 83). Najwyżej oceniane: średnia bayesowska książek z co najmniej 5 ocenami (stała `C` = średnia globalna, `m` = 5). Popularne w kategoriach: dla każdego predefiniowanego tagu (D79) obecnego w danych, top 5 z tygodnia. Od obserwowanych (zalogowany): ostatnio opublikowane rozdziały obserwowanych, liczone na żywo (mała lista).
 - Przy odczycie filtr widoczności (D38), bana globalnego i blokad widza. 18+ ze znaczkiem i okładką jak D69.
 - Strona główna: sekcje pod „Recently published” (D54), każda do 10 pozycji, z okładką i autorem; puste sekcje ukryte. Bez zużycia `SEARCH_LIMIT`.
 

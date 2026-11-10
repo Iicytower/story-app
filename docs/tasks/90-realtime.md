@@ -5,7 +5,7 @@ Subtask 68, zależy od 81 i 85. Podstawa: D80 (Powiadomienia, DM, realtime – r
 ## Zakres
 
 - Usługa `realtime` w `docker/tools/compose.yml`: Node (oficjalny obraz `node` z przypiętą wersją), jeden plik `docker/tools/realtime/server.mjs` bez zależności (`node:http`, `node:crypto`), limit pamięci i healthcheck. Endpointy: `GET /rt/stream?token=…` (SSE, `text/event-stream`, heartbeat co 25 s, kanał = `userId` z tokenu) i `POST /publish` (`{ userIds, event }`, tylko z `X-Tools-Secret`).
-- Bramka Caddy: `handle_path /rt/*` bez `X-Tools-Secret` (z `flush_interval -1`), `/publish` w bloku z sekretem. CORS dla `REALTIME_PUBLIC_URL` aplikacji (zmienna usługi `APP_ORIGIN`).
+- Bramka Caddy: `handle_path /rt/*` bez `X-Tools-Secret` (z `flush_interval -1`), `/publish` w bloku z sekretem. Serwis odpowiada `Access-Control-Allow-Origin: <APP_ORIGIN>` (adres aplikacji, zmienna usługi); `REALTIME_PUBLIC_URL` to adres bramki, do `connect-src` CSP.
 - Token: HMAC-SHA-256 z kluczem wyprowadzonym z `TOOLS_API_SECRET` (`userId`, `exp` 10 min), wydawany akcją `realtimeToken()` (sesja wymagana); klient odnawia przed wygaśnięciem.
 - Aplikacja: `publishRealtime(userIds, event)` w `notify()` (81) i `sendMessage` (85), w `after()`, błąd tylko w logach. Zmienna `REALTIME_PUBLIC_URL` (publiczny adres bramki) – bez niej klient używa tylko pollingu; dopisana do `connect-src` w `lib/security-headers.ts` (D77).
 - Klient: `EventSource` przy widocznej karcie; zdarzenie odświeża licznik i otwartą rozmowę. Przy błędzie lub braku zmiennej – polling z 81/85 (30 s / 5 s). Przy działającym SSE polling wstrzymany.

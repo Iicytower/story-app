@@ -1,14 +1,15 @@
 # 76 – Komentarze
 
-Subtask 68, zależy od 69. Podstawa: D80 (Interakcje z tekstem; Zakres i zasady ogólne – widoczność; Role, bany, blokady). Branch `feature/76-comments` z `feature/social`, merge do `feature/social`.
+Subtask 68, zależy od 69, 70 i 75. Podstawa: D80 (Interakcje z tekstem; Zakres i zasady ogólne – widoczność; Role, bany, blokady). Branch `feature/76-comments` z `feature/social`, merge do `feature/social`.
 
 ## Zakres
 
-- Kolekcja `comments` (`authorId` – właściciel tekstu, `userId` – piszący, `folderId`, `storyId | null` (null = wątek spisu książki), `parentId | null` (jeden poziom), `body`, `createdAt`, `editedAt?`, `deletedAt?`, `hidden?: { by, at, reason? }`, `purgeAt?` (TTL, 30 dni od ukrycia)). Indeksy `{ storyId, createdAt }`, `{ folderId, storyId, createdAt }`.
+- Kolekcja `comments` (`authorId` – właściciel tekstu, `userId` – piszący, `folderId`, `storyId | null` (null = wątek spisu książki), `parentId | null` (jeden poziom), `body`, `createdAt`, `editedAt?`, `deletedAt?`, `hidden?: { by, at, reason? }`, `purgeAt?` (TTL, 30 dni od ukrycia)). Indeksy `{ storyId, createdAt }`, `{ folderId, storyId, createdAt }`, `{ userId: 1 }` (89, filtry banów) i `{ authorId: 1, createdAt: -1 }` (83, moderacja). Komentarze najwyższego poziomu stronicowane kursorem po 50 (od najnowszych), odpowiedzi do 100 na komentarz.
 - Akcje: `addComment`, `replyToComment` (odpowiedź na odpowiedź przypina się do rodzica), `editComment` (15 min od `createdAt`, potem `FORBIDDEN`), `deleteComment` (własny; z odpowiedziami → „komentarz usunięty”, bez → usunięty). Każda: `canInteract(kind: "comment")` wobec autora tekstu i, przy odpowiedzi, wobec autora komentarza-rodzica (blokada); limity `takeUserAttempt` (10/min, 200/dobę); `MAX_COMMENT_LENGTH`; obiekt musi być publiczny (D38), komentarze włączone.
 - Wyłączanie komentarzy: `folders.commentsDisabled`, `stories.commentsDisabled` (akcje autora w menu ⋮, `timestamps: false` jak D38); istniejące komentarze przy wyłączeniu ukryte.
-- UI: sekcja komentarzy pod publiczną stroną rozdziału i pod publicznym spisem książki (`SocialMarkdown`, `UserAvatar`, „edytowano”, daty względne), formularz textarea; gość widzi komentarze i przycisk logowania. Widz nie widzi komentarzy autorów, których zablokował (`hiddenAuthorsFor`), ani autorów z banem globalnym. Liczniki komentarzy na spisie.
+- UI: sekcja komentarzy pod publiczną stroną rozdziału i pod publicznym spisem książki (`SocialMarkdown`, `UserAvatar`, „edytowano”, daty względne), formularz textarea; gość widzi komentarze i przycisk logowania. Widz nie widzi komentarzy autorów, których zablokował (`hiddenUserIdsFor`), ani autorów z banem globalnym. Liczniki komentarzy na spisie.
 - `recordActivity(authorReply)` przy odpowiedzi autora tekstu. Hak dla powiadomień (81), wzmianek (82) i moderacji (79).
+- Kolekcje taska dopisane do `purgeSocialData` (69); test: trwałe usunięcie rozdziału i folderu kasuje ich wpisy.
 
 ## Kryteria akceptacji
 

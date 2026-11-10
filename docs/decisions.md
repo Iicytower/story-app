@@ -809,3 +809,10 @@ Task 53, decyzje użytkownika (brainstorm 2026-11-05 i pytania 2026-11-10). Task
 - Dodatkowe limity: nazwa półki 50, nazwa zakładki 100, kontekst cytatu 50 znaków, najwyżej 10 wzmianek na treść.
 - Usunięcie kategorii forum ukrywa jej wątki (bez kasowania); migracja `008-forum-categories`.
 - Realtime: token HMAC ważny 10 min, klucz wyprowadzony z `TOOLS_API_SECRET`, CORS serwisu przez zmienną `APP_ORIGIN`.
+- Avatar (70): upload synchroniczny, błąd klasyfikatora → `TOOLS_UNAVAILABLE`, bez stanu `pending` i ponowień z D68; limit globalny sumuje okładki i avatary.
+- Usunięcie konta (89): forum autora (wątki i posty) kasowane razem z kontem; wpisy `moderationLog` zostają z tombstone.
+- 18+ admina (88): `adult.admin: false` na rozdziale nie znosi 18+ dziedziczonego z folderu (blokada `folder` z D67 zostaje); okładka ma pole `adminAdult`.
+- Zgłoszenia (80): ban globalny nie blokuje zgłoszeń; zgłoszenie obiektu niewidocznego dla zgłaszającego → `NOT_FOUND`.
+- Antyspam (69): osobne reguły `react`, `rate`, `follow`, `block` i `suggest` po 60/min; akcja z limitem minutowym i dobowym sprawdza oba.
+- Blokada a wyszukiwarka (86): publiczna wyszukiwarka dalej pokazuje teksty autorów zablokowanych przez widza (B może czytać A, A nie musi ich ukrywać).
+- Zarezerwowane slugi folderów `followers`, `following`, `forum` (71, 87) dostają `-2`; zmienia adres istniejącego folderu o takiej nazwie.

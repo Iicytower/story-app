@@ -1,14 +1,14 @@
 # 87 – Fora autora i globalne
 
-Subtask 68, zależy od 77 i 80. Podstawa: D80 (Fora i panel admina – fora i kategorie; Interakcje z tekstem – edycja, długości, antyspam). Branch `feature/87-forums` z `feature/social`, merge do `feature/social`.
+Subtask 68, zależy od 75, 77, 80, 81, 82 i 86. Podstawa: D80 (Fora i panel admina – fora i kategorie; Interakcje z tekstem – edycja, długości, antyspam). Branch `feature/87-forums` z `feature/social`, merge do `feature/social`.
 
 ## Zakres
 
-- Kolekcje `forumCategories` (`_id` klucz, `labels: { en, pl }`, `scope: global`, `adminOnly?`, `order`, `moderatorIds`), `forumThreads` (`scope: global | author`, `categoryId?` (global), `authorId?` (forum autora), `userId`, `title` (`MAX_THREAD_TITLE_LENGTH`), `createdAt`, `lastPostAt`, `postCount`, `hidden?`, `deletedAt?`), `forumPosts` (`threadId`, `userId`, `body` (`MAX_POST_LENGTH`), `quotePostId?`, `createdAt`, `editedAt?`, `hidden?`, `purgeAt?`), `threadFollows` (`userId`, `threadId`, unikalny).
+- Kolekcje `forumCategories` (`_id` klucz, `labels: { en, pl }`, `scope: global`, `adminOnly?`, `order`, `moderatorIds`), `forumThreads` (`scope: global | author`, `categoryId?` (global), `authorId?` (forum autora), `userId`, `title` (`MAX_THREAD_TITLE_LENGTH`), `createdAt`, `lastPostAt`, `postCount`, `hidden?`, `purgeAt?` (TTL), `deletedAt?`; posty wątku usuniętego przez TTL sprzątane leniwie przy odczycie forum), `forumPosts` (`threadId`, `userId`, `body` (`MAX_POST_LENGTH`), `quotePostId?`, `createdAt`, `editedAt?`, `hidden?`, `purgeAt?`), `threadFollows` (`userId`, `threadId`, unikalny).
 - Migracja `008-forum-categories` (`$setOnInsert`, jak D79): Ogłoszenia (`adminOnly`), Warsztat pisarski, Pomysły i feedback do aplikacji, Polecenia lektur, Hyde Park, etykiety en/pl. Zarządzanie kategoriami w panelu admina (88).
-- Forum autora: `/p/<nick>/forum` (lista wątków) i wątki; moderuje autor i jego moderatorzy (79: `hideContent` obejmuje posty i wątki). Fora globalne: `/forums`, `/forums/<kategoria>`, `/forums/t/<id>`; moderują admini i moderatorzy kategorii.
+- Forum autora: `/p/<nick>/forum` (lista wątków) i wątki (`forum` jest już na liście zarezerwowanych slugów folderów z 71; test w `lib/publish/slugs.test.ts`); moderuje autor i jego moderatorzy (79: `hideContent` obejmuje posty i wątki). Forum autora istnieje dla każdego konta z nickiem, które ma co najmniej jedną publiczną książkę; inaczej `/p/<nick>/forum` → 404. Fora globalne: `/forums`, `/forums/<kategoria>`, `/forums/t/<id>`; moderują admini i moderatorzy kategorii.
 - Akcje: `createThread` (10/dobę), `createPost` (5/min, 100/dobę), `editPost` (15 min), `deletePost`, `quotePost` (cytat w treści + `quotePostId`), `followThread`/`unfollowThread`; `canInteract(kind: "forumPost")` (ban w społeczności dla forum autora, ban globalny, blokada z autorem forum i z autorem cytowanego posta). Pierwszy post wątku = treść wątku.
-- Reakcje na postach przez mechanizm 77 (`targetType: post`). Zgłoszenia (80): forum autora → autor, globalne → admin.
+- Reakcje na postach przez mechanizm 77 (`targetType: post`). Zgłoszenia (80): forum autora → autor, globalne → admin; typ `post` w `reports` dopisany tutaj z testem w `forums.test.ts`.
 - Powiadomienia (81): odpowiedź w obserwowanym wątku, cytat mojego posta; wzmianki (82). `recordActivity(forumThread)` dla wątku autora w swoim forum (75).
 - Gość czyta, strony indeksowane. Pozycja „Fora” w sidebarze włączona.
 
@@ -25,4 +25,4 @@ Subtask 68, zależy od 77 i 80. Podstawa: D80 (Fora i panel admina – fora i ka
 ## Testy
 
 - Integracyjne: `tests/integration/migration-008.test.ts` (1), `tests/integration/forums.test.ts` (2–7; macierz blokady z 86 rozszerzona o posty).
-- E2E: `tests/e2e/forums.spec.ts` (`dave` zakłada wątek w Warsztacie, `erin` cytuje, `dave` dostaje powiadomienie; forum autora `alice`; gość).
+- E2E: `tests/e2e/global-setup.ts` woła `up` z `migrations/008-forum-categories` jak dziś `007`; `tests/e2e/forums.spec.ts` (`dave` zakłada wątek w Warsztacie, `erin` cytuje, `dave` dostaje powiadomienie; forum autora `alice`; gość).

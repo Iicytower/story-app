@@ -5,7 +5,7 @@ Subtask 68, zależy od 76. Podstawa: D80 (Role, bany, blokady – moderatorzy au
 ## Zakres
 
 - Ukrywanie: akcje `hideContent(targetType, id, reason?)` i `restoreContent` dla komentarzy (posty forum autora w 87). Uprawniony: autor społeczności i jego aktywni moderatorzy; moderator nie ukrywa treści autora ani innych moderatorów. Ukryte: „ukryte przez moderatora”, odpowiedzi zostają, `purgeAt` = 30 dni (TTL).
-- Bany: `banFromCommunity(nick, duration: 1 | 7 | 30 | null, reason)` (powód obowiązkowy, `MAX_BAN_REASON_LENGTH`), `liftCommunityBan`. Zbanowany widzi baner z powodem i terminem w społeczności autora.
+- Bany: `banFromCommunity(authorId, nick, duration: 1 | 7 | 30 | null, reason)` (powód obowiązkowy, `MAX_BAN_REASON_LENGTH`) i `liftCommunityBan(authorId, nick)`; `authorId` z wejścia sprawdzany przez `isModeratorOf(sessionUserId, authorId)` albo równość z sesją, inaczej `NOT_FOUND`. `hideContent` bierze społeczność z dokumentu treści. Zbanowany widzi baner z powodem i terminem w społeczności autora.
 - Moderatorzy: `inviteModerator(nick)` (najwyżej 10 aktywnych + zaproszonych), `acceptModeratorInvite`, `declineModeratorInvite`, `resignModerator`, `removeModerator`. Akceptacja z powiadomienia (81) albo z panelu (do czasu 81 z panelu).
 - Kolekcja `moderationLog` (`authorId` | `scope: global`, `actorId`, `action`, `targetType`, `targetId`, `targetUserId?`, `reason?`, `createdAt`), wpis przy każdym działaniu.
 - Panel `/moderation` (autor z publikacjami lub moderator): społeczności, które moderuję; zakładki: treści ukryte, bany, moderatorzy (tylko autor), log, zgłoszenia (80). Pozycja „Moderacja” w sidebarze włączona warunkowo.
@@ -18,9 +18,9 @@ Subtask 68, zależy od 76. Podstawa: D80 (Role, bany, blokady – moderatorzy au
 3. Ban wymaga powodu, działa do terminu (po nim wygasa sam), zdjęcie działa od razu; zbanowany widzi powód.
 4. Zaproszenie wymaga akceptacji; limit 10; rezygnacja i odebranie roli działają.
 5. Każde działanie ma wpis w logu widoczny dla autora.
-6. Ukryty komentarz znika po 30 dniach (indeks TTL na `purgeAt`).
+6. Ukryty komentarz znika po 30 dniach (indeks TTL na `purgeAt`); odpowiedź, której rodzic nie istnieje, renderuje się pod „komentarz usunięty”.
 
 ## Testy
 
-- Integracyjne: `tests/integration/author-moderation.test.ts` (1–5, 6 przez definicję indeksu TTL w `syncIndexes()`).
+- Integracyjne: `tests/integration/author-moderation.test.ts` (1–5, 6 przez definicję indeksu TTL w `syncIndexes()` i render odpowiedzi bez rodzica).
 - E2E: `tests/e2e/moderation.spec.ts` (`alice` zaprasza `erin`, `erin` akceptuje i ukrywa komentarz `dave`, `alice` banuje `dave` z powodem, `dave` widzi baner).

@@ -1,13 +1,13 @@
 # 89 – Usuwanie konta
 
-Subtask 68, zależy od 85 i 87. Podstawa: D80 (Konto). Zmienia D37 (konta nie dało się usunąć). Branch `feature/89-account-deletion` z `feature/social`, merge do `feature/social`.
+Subtask 68, zależy od 69–88. Podstawa: D80 (Konto). Zmienia D37 (konta nie dało się usunąć). Branch `feature/89-account-deletion` z `feature/social`, merge do `feature/social`.
 
 ## Zakres
 
 - „Usuń konto” w dialogu ustawień: obecne hasło i wpisanie nicku; limit błędnych haseł jak `changePassword` (D75).
-- Akcja `deleteAccount`: usuwa foldery, rozdziały, wersje, okładki, avatar, profil, ustawienia, słownik użytkownika, obserwacje (obie strony), bibliotekę i półki, postęp, zakładki i notatki, powiadomienia (własne i te, gdzie był jedynym aktorem), oceny, reakcje, DM (rozmowy i wiadomości obu stron rozmowy z tym kontem), blokady, bany i role moderatora, `readEvents`; `dailyStats` jego tekstów. Komentarze i posty zostają z `userId` wskazującym tombstone: wyświetlane jako „usunięty użytkownik”, bez linku i avatara.
-- Tombstone w `users`: dokument zostaje z `nickname` (blokuje unikalny indeks, D37), `deletedAt`, bez `passwordHash` i `recoveryCodes`; logowanie i reset kodem odrzucane. `/p/<nick>` → 404. Wszystkie sesje usunięte (D75), wylogowanie.
-- Kolejność: najpierw tombstone i sesje, potem sprzątanie w `after()`, ponawiane leniwie, jeśli przerwane (znacznik `cleanupPendingAt`).
+- Akcja `deleteAccount`: usuwa (przez `purgeSocialData` z 69 dla danych jego tekstów, także notatek i postępu innych czytelników na nich) foldery, rozdziały, wersje, okładki, avatar, profil, ustawienia, słownik użytkownika, obserwacje (obie strony), bibliotekę i półki, postęp, zakładki i notatki, powiadomienia (własne i te, gdzie był jedynym aktorem), oceny, reakcje, DM (rozmowy i wiadomości obu stron rozmowy z tym kontem), blokady, bany i role moderatora, `readEvents`; `dailyStats` jego tekstów. Kasowane też: `activity` (aktor), `threadFollows`, `communityBans` i `communityModerators` w obu rolach, zgłoszenia złożone przez konto. Forum autora usuwanego konta: wątki i posty kasowane razem z kontem. Wpisy `moderationLog` zostają z tombstone. Komentarze i posty zostają z `userId` wskazującym tombstone: wyświetlane jako „usunięty użytkownik”, bez linku i avatara.
+- Tombstone w `users`: dokument zostaje z `nickname` (blokuje unikalny indeks, D37), `deletedAt`, bez `passwordHash` i `recoveryCodes`; logowanie i reset kodem odrzucane. Schemat: `User.deletedAt?: Date`, `passwordHash` opcjonalne; `authorize`, `recover-actions`, `findUserByNickname` (poza rejestracją, gdzie nick ma zostać zajęty) i wszystkie zapytania społeczności filtrują `deletedAt: { $exists: false }` (lub przez `hiddenUserIdsFor` z 69). `/p/<nick>` → 404. Wszystkie sesje usunięte (D75), wylogowanie.
+- Kolejność: najpierw tombstone i sesje, potem sprzątanie w `after()` (znacznik `cleanupPendingAt`). Ponowienie: `after()` w `deleteAccount` i w layoucie `(protected)` przejmuje atomowo (`findOneAndUpdate` z `cleanupPendingAt < now-10 min` → `now`) jeden tombstone i dokańcza sprzątanie.
 
 ## Kryteria akceptacji
 
@@ -19,5 +19,5 @@ Subtask 68, zależy od 85 i 87. Podstawa: D80 (Konto). Zmienia D37 (konta nie da
 
 ## Testy
 
-- Integracyjne: `tests/integration/account-deletion.test.ts` (1–5, sprawdzenie każdej kolekcji z listy).
+- Integracyjne: `tests/integration/account-deletion.test.ts` (1–5, sprawdzenie każdej kolekcji z listy; 5 przerywa sprzątanie wstrzykniętym błędem).
 - E2E: `tests/e2e/account-deletion.spec.ts` (nowe konto rejestrowane w teście komentuje i usuwa konto; komentarz widoczny jako „usunięty użytkownik”; rejestracja tym nickiem odrzucona).

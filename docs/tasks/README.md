@@ -72,20 +72,20 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 73 | ↳ [Postęp czytania i nowe rozdziały](73-reading-progress.md) (subtask 68) | 72 | [ ] |
 | 74 | ↳ [Zakładki i notatki czytelnika](74-reader-notes.md) (subtask 68) | 73 | [ ] |
 | 75 | ↳ [Feed aktywności](75-feed.md) (subtask 68) | 71, 72 | [ ] |
-| 76 | ↳ [Komentarze](76-comments.md) (subtask 68) | 69 | [ ] |
+| 76 | ↳ [Komentarze](76-comments.md) (subtask 68) | 69, 70, 75 | [ ] |
 | 77 | ↳ [Reakcje](77-reactions.md) (subtask 68) | 76 | [ ] |
 | 78 | ↳ [Oceny](78-ratings.md) (subtask 68) | 69 | [ ] |
 | 79 | ↳ [Moderacja autora](79-author-moderation.md) (subtask 68) | 76 | [ ] |
 | 80 | ↳ [Zgłoszenia](80-reports.md) (subtask 68) | 79 | [ ] |
-| 81 | ↳ [Powiadomienia](81-notifications.md) (subtask 68) | 71, 76, 79 | [ ] |
+| 81 | ↳ [Powiadomienia](81-notifications.md) (subtask 68) | 71, 72, 73, 76, 77, 78, 79, 80 | [ ] |
 | 82 | ↳ [Wzmianki @nick](82-mentions.md) (subtask 68) | 81 | [ ] |
-| 83 | ↳ [Statystyki autora](83-author-stats.md) (subtask 68) | 73, 77, 78 | [ ] |
-| 84 | ↳ [Rankingi na stronie głównej](84-rankings.md) (subtask 68) | 83 | [ ] |
+| 83 | ↳ [Statystyki autora](83-author-stats.md) (subtask 68) | 71, 72, 73, 76, 77, 78 | [ ] |
+| 84 | ↳ [Rankingi na stronie głównej](84-rankings.md) (subtask 68) | 71, 83 | [ ] |
 | 85 | ↳ [Wiadomości prywatne](85-direct-messages.md) (subtask 68) | 81 | [ ] |
-| 86 | ↳ [Blokowanie w pełnym zakresie](86-blocking.md) (subtask 68) | 85, 82 | [ ] |
-| 87 | ↳ [Fora autora i globalne](87-forums.md) (subtask 68) | 77, 80 | [ ] |
+| 86 | ↳ [Blokowanie w pełnym zakresie](86-blocking.md) (subtask 68) | 82, 84, 85 | [ ] |
+| 87 | ↳ [Fora autora i globalne](87-forums.md) (subtask 68) | 75, 77, 80, 81, 82, 86 | [ ] |
 | 88 | ↳ [Panel admina](88-admin-panel.md) (subtask 68) | 80, 87 | [ ] |
-| 89 | ↳ [Usuwanie konta](89-account-deletion.md) (subtask 68) | 85, 87 | [ ] |
+| 89 | ↳ [Usuwanie konta](89-account-deletion.md) (subtask 68) | 69–88 | [ ] |
 | 90 | ↳ [Realtime: serwis SSE w stosie narzędzi](90-realtime.md) (subtask 68) | 81, 85 | [ ] |
 | 91 | ↳ [Audyt bezpieczeństwa i E2E całości](91-social-audit.md) (subtask 68) | 69–90 | [ ] |
 
