@@ -10,7 +10,7 @@ Argument: numer taska zbiorczego (np. `68`) albo lista numerów. Ty (główna se
 ## Zasady przebiegu (bez udziału użytkownika)
 
 - Nie pytaj użytkownika. Decyzja spoza `docs/decisions.md` i pliku taska: wybierz najprostsze rozwiązanie spójne z decyzjami i zleć `docs-keeper` dopisanie go do sekcji „Rozstrzygnięcia Claude'a do potwierdzenia” decyzji taska zbiorczego (dla 68: D80).
-- Bez pushów, PR-ów, merge do `staging`/`main` (deny i hook). Pakiety npm tylko z listy w decyzji.
+- Bez pushów, PR-ów, merge do `staging`/`main` (hooki `autorun-guard.sh` i `protect-branches.sh`). Pakiety npm tylko z listy w decyzji.
 - Agentów wołaj na pierwszym planie (bez `run_in_background`), żeby hook Stop nie przerywał oczekiwania. Agenci piszący kod (`implementer`, `verifier`, `merger`, `docs-keeper`) pracują pojedynczo na jednym drzewie roboczym – nigdy dwóch naraz. Równolegle wolno puszczać tylko agentów bez zapisu (`researcher`, `reviewer`, `security-auditor`, `ui-checker`). Bez `isolation: worktree` (worktree powstaje z `main`).
 - Czerwone testy po 3 rundach implementer ↔ verifier: zostaw zmiany na branchu taska, zacommituj je jako `NN: WIP (blocked)`, zleć `docs-keeper` sekcję „Blokada”, status zostaje `[~]`, wróć na branch zbiorczy bez merge i przejdź do następnego taska, który od zablokowanego nie zależy (bezpośrednio ani pośrednio).
 
