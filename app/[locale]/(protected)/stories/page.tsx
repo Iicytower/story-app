@@ -16,6 +16,7 @@ import { retryDueCovers } from "@/lib/covers/mutations";
 import { listFolders } from "@/lib/folders/queries";
 import { listStories } from "@/lib/stories/queries";
 import { buildSnippet } from "@/lib/stories/search";
+import { listPublicTags } from "@/lib/publish/queries";
 import { listUserTags } from "@/lib/tags/queries";
 import { parseTagFilter } from "@/lib/tags/tags";
 import { moveFolder } from "../folders/actions";
@@ -37,10 +38,12 @@ export default async function StoriesPage({
   const { q, tag } = await searchParams;
   const query = typeof q === "string" ? q.trim() : "";
   const selectedTags = parseTagFilter(tag);
-  const [{ sort, folders }, userTags] = await Promise.all([
+  const [{ sort, folders }, userTags, publicTags] = await Promise.all([
     listFolders(user.userId),
     listUserTags(user.userId),
+    listPublicTags(),
   ]);
+  const tagOptions = { own: userTags, known: publicTags };
   // The most recently active folder, whatever order the list is shown in.
   const defaultFolder = folders.reduce<(typeof folders)[number] | undefined>(
     (latest, folder) =>
@@ -129,7 +132,7 @@ export default async function StoriesPage({
                   id={folder.id}
                   name={folder.name}
                   tags={folder.tags ?? []}
-                  userTags={userTags}
+                  tagOptions={tagOptions}
                   isPublic={Boolean(folder.published)}
                   adult={folder.adult}
                   chapterCount={folder.chapterCount}

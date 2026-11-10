@@ -11,7 +11,7 @@ import { SortableList } from "@/components/sortable-list";
 import { requireUser } from "@/lib/auth/session";
 import { retryDueCovers } from "@/lib/covers/mutations";
 import { getFolder, listFolders } from "@/lib/folders/queries";
-import { folderPublicPath } from "@/lib/publish/queries";
+import { folderPublicPath, listPublicTags } from "@/lib/publish/queries";
 import { buildSnippet } from "@/lib/stories/search";
 import { listUserTags } from "@/lib/tags/queries";
 import { toolsConfig } from "@/lib/tools/client";
@@ -36,12 +36,14 @@ export default async function FolderPage({
   if (!user.ok) redirect({ href: "/", locale: await getLocale() });
 
   const { id } = await params;
-  const [folder, { folders }, userTags] = await Promise.all([
+  const [folder, { folders }, userTags, publicTags] = await Promise.all([
     getFolder(user.userId, id),
     listFolders(user.userId),
     listUserTags(user.userId),
+    listPublicTags(),
   ]);
   if (!folder) notFound();
+  const tagOptions = { own: userTags, known: publicTags };
   after(() => retryDueCovers());
   const versions = await listFolderVersions(user.userId, folder.id);
   const otherFolders = folders.filter((other) => other.id !== folder.id);
@@ -88,7 +90,7 @@ export default async function FolderPage({
                 name,
                 language,
               }))}
-              userTags={userTags}
+              tagOptions={tagOptions}
               isPublic={Boolean(folder.published)}
               adult={folder.adult}
               unpublishedCount={unpublishedCount}
@@ -142,7 +144,7 @@ export default async function FolderPage({
                       title={chapter.title}
                       tags={chapter.tags ?? []}
                       folderTags={folder.tags ?? []}
-                      userTags={userTags}
+                      tagOptions={tagOptions}
                       isPublic={
                         Boolean(folder.published) &&
                         chapter.publication === "public"

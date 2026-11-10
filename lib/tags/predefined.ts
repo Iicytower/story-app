@@ -70,3 +70,26 @@ export function predefinedTagError(
   );
   return clash ? `A spelling is already used by "${clash.key}".` : null;
 }
+
+export interface TagChoice {
+  tag: string;
+  // What the user sees: the label of a predefined tag, the tag itself otherwise.
+  text: string;
+}
+
+export const MAX_SUGGESTIONS = 8;
+
+// Choices whose tag or shown text contains what was typed, in the given order.
+export function matchingSuggestions(
+  input: string,
+  choices: TagChoice[],
+): TagChoice[] {
+  const typed = normalizeTag(input);
+  if (!typed) return [];
+  return choices
+    .filter(
+      ({ tag, text }) =>
+        tag.includes(typed) || normalizeTag(text).includes(typed),
+    )
+    .slice(0, MAX_SUGGESTIONS);
+}
