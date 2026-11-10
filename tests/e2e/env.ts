@@ -12,7 +12,14 @@ export const USERS = {
   bob: { nickname: "Bob", password: "Granite-path-1357913" },
   // Only for changing the password: everyone else's must stay valid for other tests.
   carol: { nickname: "Carol", password: "Amber-meadow-12345" },
-} as const;
+  // Social scenarios with several users (D80).
+  dave: { nickname: "Dave", password: "Cobalt-harbor-24680!" },
+  erin: { nickname: "Erin", password: "Willow-ember-97531" },
+  admin: { nickname: "Admin", password: "Quartz-beacon-86420!", role: "admin" },
+} as const satisfies Record<
+  string,
+  { nickname: string; password: string; role?: "admin" }
+>;
 
 export type UserName = keyof typeof USERS;
 

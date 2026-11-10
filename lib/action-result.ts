@@ -2,6 +2,7 @@ import type { ErrorMessage } from "@/lib/i18n/messages";
 
 export type ErrorCode =
   | "UNAUTHORIZED"
+  | "FORBIDDEN"
   | "NOT_FOUND"
   | "CONFLICT"
   | "DUPLICATE_TITLE"

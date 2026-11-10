@@ -39,7 +39,7 @@ test("the dialog switches between the two forms", async ({ page }) => {
 test("registering shows the recovery codes once, then signs in with an empty account", async ({
   page,
 }) => {
-  await fillForm(page, "Dave", PASSWORD);
+  await fillForm(page, "Frank", PASSWORD);
   await submit(page);
 
   const dialog = page.getByRole("dialog", { name: "Save your recovery codes" });
@@ -84,12 +84,12 @@ test("requirements update live, one by one", async ({ page }) => {
 });
 
 test("a weak password is refused by the server", async ({ page }) => {
-  await fillForm(page, "Dave", "too-weak");
+  await fillForm(page, "Frank", "too-weak");
   await submit(page);
 
   await expect(alert(page)).toHaveText(/at least 17/);
   await expect(page).toHaveURL("/en");
-  await expect(page.getByLabel("Nickname")).toHaveValue("Dave");
+  await expect(page.getByLabel("Nickname")).toHaveValue("Frank");
 });
 
 test("different passwords give a message without a request", async ({
@@ -100,7 +100,7 @@ test("different passwords give a message without a request", async ({
     if (request.method() === "POST") posts.push(request.url());
   });
 
-  await fillForm(page, "Dave", PASSWORD, `${PASSWORD}x`);
+  await fillForm(page, "Frank", PASSWORD, `${PASSWORD}x`);
   await submit(page);
 
   await expect(alert(page)).toHaveText("The passwords do not match.");
