@@ -85,19 +85,26 @@ const findPublishedFolder = cache(
       folder._id.toString(),
       chapterOrder(folder.chapterSort ?? "created"),
     )
-      .select({ title: 1, publication: 1, formerSlugs: 1, adult: 1 })
+      .select({
+        title: 1,
+        publication: 1,
+        formerSlugs: 1,
+        adult: 1,
+        publishedAt: 1,
+      })
       .lean();
     const path = `/p/${author.nickname}/${slugs.get(folder._id.toString())}`;
     const slugsOfChapters = chapterSlugs(chapters);
     const visible = readingOrder(chapters, folder.chapterSort)
       .filter(({ publication }) => publication === "public")
-      .map(({ _id, title, formerSlugs, adult }) => {
+      .map(({ _id, title, formerSlugs, adult, publishedAt }) => {
         const slug = slugsOfChapters.get(_id.toString())!;
         return {
           _id,
           title,
           slug,
           formerSlugs,
+          publishedAt,
           path: `${path}/${slug}`,
           adult: isAdult(adult) || isAdult(folder.adult),
         };
@@ -143,17 +150,65 @@ export async function publishedFolderId(
   return (await findPublishedFolder(nickname, folderSlug))?.id ?? null;
 }
 
+export interface ReaderChapter {
+  id: string;
+  title: string;
+  path: string;
+  publishedAt?: Date;
+}
+
+// Only for a signed-in reader's progress (task 73), like publishedFolderId.
+export async function publishedReaderChapters(
+  nickname: string,
+  folderSlug: string,
+): Promise<{ folderId: string; chapters: ReaderChapter[] } | null> {
+  const folder = await findPublishedFolder(nickname, folderSlug);
+  if (!folder) return null;
+  return {
+    folderId: folder.id,
+    chapters: folder.chapters.map(({ _id, title, path, publishedAt }) => ({
+      id: _id.toString(),
+      title,
+      path,
+      publishedAt,
+    })),
+  };
+}
+
+function chapterIndex(
+  chapters: { slug: string; formerSlugs?: string[] }[],
+  chapterSlug: string,
+): number {
+  const index = chapters.findIndex(({ slug }) => slug === chapterSlug);
+  return index !== -1
+    ? index
+    : chapters.findIndex(({ formerSlugs }) =>
+        formerSlugs?.includes(chapterSlug),
+      );
+}
+
+// Only for the reading position of a signed-in reader (task 73).
+export async function publishedChapterId(
+  nickname: string,
+  folderSlug: string,
+  chapterSlug: string,
+): Promise<{ folderId: string; storyId: string } | null> {
+  const folder = await findPublishedFolder(nickname, folderSlug);
+  if (!folder) return null;
+  const index = chapterIndex(folder.chapters, chapterSlug);
+  if (index === -1) return null;
+  return {
+    folderId: folder.id,
+    storyId: folder.chapters[index]._id.toString(),
+  };
+}
+
 export const getPublishedChapter = cache(
   async (nickname: string, folderSlug: string, chapterSlug: string) => {
     const folder = await findPublishedFolder(nickname, folderSlug);
     if (!folder) return null;
     const { chapters } = folder;
-    let index = chapters.findIndex(({ slug }) => slug === chapterSlug);
-    if (index === -1) {
-      index = chapters.findIndex(({ formerSlugs }) =>
-        formerSlugs?.includes(chapterSlug),
-      );
-    }
+    const index = chapterIndex(chapters, chapterSlug);
     if (index === -1) return null;
     const chapter = await Story.findOne({
       _id: chapters[index]._id,

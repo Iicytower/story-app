@@ -35,6 +35,8 @@ export async function arrivalUpdate(folderId: Id) {
 export async function stampPublishedAt(
   filter: Record<string, unknown>,
 ): Promise<void> {
+  // The chapters stamped here are the new ones of library readers (task 73): the "new chapter"
+  // notification (task 81) reads them before the update.
   await Story.updateMany(
     { ...filter, publication: "public", publishedAt: { $exists: false } },
     { $set: { publishedAt: new Date() } },

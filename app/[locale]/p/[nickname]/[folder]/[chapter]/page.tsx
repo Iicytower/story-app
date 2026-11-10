@@ -11,10 +11,32 @@ import { AdultBadge } from "@/components/adult";
 import { CoverImage } from "@/components/cover";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { ADULT_COOKIE } from "@/lib/adult/gate";
-import { getPublishedChapter } from "@/lib/publish/queries";
+import { requireUser } from "@/lib/auth/session";
+import { getPublishedChapter, publishedChapterId } from "@/lib/publish/queries";
+import { CONTINUE_PARAM, savedPosition } from "@/lib/reading/queries";
 import { stripComments } from "@/lib/stories/strip-comments";
 import { BlurredCover } from "../adult-cover";
 import { AdultGate } from "./adult-gate";
+import { ReadingTracker } from "./reading-tracker";
+
+// Only a signed-in reader's position is saved; Continue reading also scrolls back to it.
+async function tracker(
+  userId: string,
+  nickname: string,
+  folder: string,
+  slug: string,
+  resume: boolean,
+) {
+  const { folderId, storyId } = (await publishedChapterId(
+    nickname,
+    folder,
+    slug,
+  ))!;
+  const resumeAt = resume
+    ? await savedPosition(userId, folderId, storyId)
+    : null;
+  return { storyId, resumeAt };
+}
 
 export async function generateMetadata({
   params,
@@ -34,6 +56,7 @@ export async function generateMetadata({
 
 export default async function PublishedChapterPage({
   params,
+  searchParams,
 }: PageProps<"/[locale]/p/[nickname]/[folder]/[chapter]">) {
   await connection();
   after(() => retryDueCovers());
@@ -49,6 +72,17 @@ export default async function PublishedChapterPage({
   const gated = chapter.adult && !confirmed;
   const { cover } = chapter;
   const coverAlt = tCovers("alt", { name: chapter.folderName });
+  const viewer = await requireUser();
+  const reading =
+    viewer.ok && !gated
+      ? await tracker(
+          viewer.userId,
+          nickname,
+          folder,
+          slug,
+          (await searchParams)[CONTINUE_PARAM] !== undefined,
+        )
+      : null;
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10">
@@ -72,6 +106,9 @@ export default async function PublishedChapterPage({
         <AdultGate backPath={chapter.folderPath} />
       ) : (
         <MarkdownPreview content={stripComments(chapter.content)} />
+      )}
+      {reading && (
+        <ReadingTracker storyId={reading.storyId} resumeAt={reading.resumeAt} />
       )}
       <nav
         aria-label={t("chapters")}

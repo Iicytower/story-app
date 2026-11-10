@@ -11,6 +11,7 @@ import {
   listLibraryBooks,
   listShelves,
 } from "@/lib/library/queries";
+import { libraryReading, type BookReading } from "@/lib/reading/queries";
 import { cn } from "@/lib/utils";
 import { LibraryPicker } from "./library-picker";
 import { LibraryPublic } from "./library-public";
@@ -20,6 +21,36 @@ import { seedShelves } from "./starter";
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
   return { title: t("library") };
+}
+
+function BookProgress({
+  reading,
+  newLabel,
+  continueLabel,
+}: {
+  reading: BookReading | undefined;
+  newLabel: (count: number) => string;
+  continueLabel: (title: string) => string;
+}) {
+  const count = reading?.newChapterIds.length ?? 0;
+  if (!reading?.continueAt && count === 0) return null;
+  return (
+    <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm">
+      {count > 0 && (
+        <span className="bg-primary text-primary-foreground shrink-0 rounded-sm px-1.5 text-xs leading-5 font-medium">
+          {newLabel(count)}
+        </span>
+      )}
+      {reading?.continueAt && (
+        <Link
+          href={reading.continueAt.path}
+          className="min-w-0 [overflow-wrap:anywhere] underline underline-offset-4"
+        >
+          {continueLabel(reading.continueAt.title)}
+        </Link>
+      )}
+    </div>
+  );
 }
 
 export default async function LibraryPage({
@@ -35,6 +66,7 @@ export default async function LibraryPage({
     listLibraryBooks(user.userId, user.userId),
     isLibraryPublic(user.userId),
   ]);
+  const reading = await libraryReading(user.userId, books);
   const { shelf: shelfParam } = await searchParams;
   const shelf = shelves.find(({ id }) => id === shelfParam) ?? null;
   const shown = shelf
@@ -116,6 +148,11 @@ export default async function LibraryPage({
                 <p className="text-muted-foreground text-sm">
                   {tPublic("by", { nickname: book.nickname })}
                 </p>
+                <BookProgress
+                  reading={reading.get(book.folderId)}
+                  newLabel={(count) => t("newChapters", { count })}
+                  continueLabel={(title) => tPublic("continue", { title })}
+                />
               </div>
               <LibraryPicker
                 folderId={book.folderId}
