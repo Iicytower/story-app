@@ -6,12 +6,19 @@ import {
 } from "@/app/[locale]/(protected)/profile/actions";
 import { requireUser } from "@/lib/auth/session";
 import { MAX_BIO_LENGTH } from "@/lib/limits";
+import { Block } from "@/lib/models/block";
 import { Cover } from "@/lib/models/cover";
+import { Follow } from "@/lib/models/follow";
 import { Folder } from "@/lib/models/folder";
 import { Profile } from "@/lib/models/profile";
 import { Story } from "@/lib/models/story";
 import { User } from "@/lib/models/user";
-import { getPublicProfile, myProfilePath } from "@/lib/profiles/queries";
+import {
+  FOLLOWS_PAGE_SIZE,
+  getPublicProfile,
+  listFollows,
+  myProfilePath,
+} from "@/lib/profiles/queries";
 import { getPublishedFolder } from "@/lib/publish/queries";
 import en from "@/messages/en.json";
 import { setupTestDb } from "./test-db";
@@ -111,6 +118,18 @@ describe("getPublicProfile", () => {
     expect(folder?.chapters.map(({ title }) => title)).toEqual(["Księga! 1"]);
   });
 
+  it("moves a book named like a profile list off its address", async () => {
+    await seedBook("Followers");
+    const profile = await getPublicProfile("Alice", null);
+    expect(profile?.books.map(({ path }) => path)).toEqual([
+      "/p/Alice/followers-2",
+    ]);
+    expect(await getPublishedFolder("Alice", "followers")).toBeNull();
+    expect((await getPublishedFolder("Alice", "followers-2"))?.name).toBe(
+      "Followers",
+    );
+  });
+
   it("marks 18+ books and their 18+ covers", async () => {
     const folder = await seedBook("Night", { adult: true });
     const cover = await Cover.create({
@@ -176,6 +195,139 @@ describe("getPublicProfile", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(Date.now() + 2 * DAY);
     expect(await getPublicProfile("Alice", null)).not.toBeNull();
+  });
+});
+
+describe("followers and following", () => {
+  const nicknames = (list: { accounts: { nickname: string }[] }) =>
+    list.accounts.map(({ nickname }) => nickname);
+
+  async function follows(
+    followerId: Types.ObjectId,
+    followeeId: Types.ObjectId,
+    at: Date,
+  ) {
+    await Follow.collection.insertOne({
+      followerId,
+      followeeId,
+      createdAt: at,
+    });
+  }
+
+  it("counts and lists both sides, newest first, the same for guests and users", async () => {
+    const carol = (await User.create({ nickname: "Carol", passwordHash: "x" }))
+      ._id;
+    await follows(bob, alice, new Date("2026-11-01"));
+    await follows(carol, alice, new Date("2026-11-02"));
+    await follows(alice, bob, new Date("2026-11-03"));
+    await Profile.create({ userId: carol, avatarId: new Types.ObjectId() });
+
+    for (const viewer of [null, bob.toString()]) {
+      expect(await getPublicProfile("Alice", viewer)).toMatchObject({
+        followers: 2,
+        following: 1,
+      });
+      const followers = await listFollows(alice, "followers", viewer, 1);
+      expect(nicknames(followers)).toEqual(["Carol", "Bob"]);
+      expect(followers.hasMore).toBe(false);
+      expect(followers.accounts[0].avatar).toMatch(/^\/avatars\//);
+      expect(followers.accounts[1].avatar).toBeNull();
+      expect(
+        nicknames(await listFollows(alice, "following", viewer, 1)),
+      ).toEqual(["Bob"]);
+    }
+    expect(await getPublicProfile("Carol", null)).toMatchObject({
+      followers: 0,
+      following: 1,
+    });
+  });
+
+  it("tells a signed-in visitor whether they follow, and nobody else", async () => {
+    await follows(bob, alice, new Date());
+    expect((await getPublicProfile("Alice", bob.toString()))?.followed).toBe(
+      true,
+    );
+    expect((await getPublicProfile("Bob", alice.toString()))?.followed).toBe(
+      false,
+    );
+    expect((await getPublicProfile("Alice", null))?.followed).toBeNull();
+    expect(
+      (await getPublicProfile("Alice", alice.toString()))?.followed,
+    ).toBeNull();
+  });
+
+  it("leaves out accounts the viewer blocked and globally banned ones, in lists and counts", async () => {
+    const carol = (await User.create({ nickname: "Carol", passwordHash: "x" }))
+      ._id;
+    const dave = (await User.create({ nickname: "Dave", passwordHash: "x" }))
+      ._id;
+    await follows(bob, alice, new Date());
+    await follows(carol, alice, new Date());
+    await follows(alice, carol, new Date());
+    await follows(alice, dave, new Date());
+    await Block.create({ blockerId: dave, blockedId: carol });
+    await User.updateOne(
+      { _id: bob },
+      { globalBan: { until: null, reason: "spam", by: dave, at: new Date() } },
+    );
+
+    expect(await getPublicProfile("Alice", null)).toMatchObject({
+      followers: 1,
+      following: 2,
+    });
+    expect(nicknames(await listFollows(alice, "followers", null, 1))).toEqual([
+      "Carol",
+    ]);
+    expect(await getPublicProfile("Alice", dave.toString())).toMatchObject({
+      followers: 0,
+      following: 1,
+    });
+    expect(
+      nicknames(await listFollows(alice, "followers", dave.toString(), 1)),
+    ).toEqual([]);
+    expect(
+      nicknames(await listFollows(alice, "following", dave.toString(), 1)),
+    ).toEqual(["Dave"]);
+  });
+
+  it("skips an account that no longer exists", async () => {
+    await follows(new Types.ObjectId(), alice, new Date());
+    await follows(bob, alice, new Date());
+    expect(nicknames(await listFollows(alice, "followers", null, 1))).toEqual([
+      "Bob",
+    ]);
+  });
+
+  it("pages by 50", async () => {
+    const base = new Date("2026-11-01").getTime();
+    const { insertedIds } = await User.collection.insertMany(
+      Array.from({ length: FOLLOWS_PAGE_SIZE + 1 }, (_, i) => ({
+        nickname: `Reader${String(i).padStart(2, "0")}`,
+        passwordHash: "x",
+        createdAt: new Date(),
+      })),
+    );
+    await Follow.collection.insertMany(
+      Object.values(insertedIds).map((followerId, i) => ({
+        followerId,
+        followeeId: alice,
+        // Two follows share each second, so the order must not depend on the time alone.
+        createdAt: new Date(base + Math.floor(i / 2) * 1000),
+      })),
+    );
+    const first = await listFollows(alice, "followers", null, 1);
+    const second = await listFollows(alice, "followers", null, 2);
+    expect(first.accounts).toHaveLength(FOLLOWS_PAGE_SIZE);
+    expect(first.hasMore).toBe(true);
+    expect(nicknames(first)[0]).toBe("Reader50");
+    expect(nicknames(second)).toEqual(["Reader00"]);
+    expect(second.hasMore).toBe(false);
+    expect(new Set([...nicknames(first), ...nicknames(second)]).size).toBe(
+      FOLLOWS_PAGE_SIZE + 1,
+    );
+    expect((await getPublicProfile("Alice", null))?.followers).toBe(
+      FOLLOWS_PAGE_SIZE + 1,
+    );
   });
 });
 

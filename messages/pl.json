@@ -891,7 +891,22 @@
     "bio": "O mnie",
     "books": "Książki",
     "noBooks": "Brak opublikowanych książek.",
-    "coverAlt": "Okładka: {name}"
+    "coverAlt": "Okładka: {name}",
+    "follow": "Obserwuj",
+    "following": "Obserwujesz",
+    "unfollow": "Przestań obserwować",
+    "followersCount": "{count, plural, one {# obserwujący} few {# obserwujących} many {# obserwujących} other {# obserwującego}}",
+    "followingCount": "{count, plural, one {# obserwowany} few {# obserwowanych} many {# obserwowanych} other {# obserwowanego}}",
+    "followers": "Obserwujący",
+    "followedAccounts": "Obserwowani",
+    "followersTitle": "{nickname}: obserwujący – Story App",
+    "followingTitle": "{nickname}: obserwowani – Story App",
+    "noFollowers": "Nikt jeszcze nie obserwuje tego konta.",
+    "noFollowing": "To konto jeszcze nikogo nie obserwuje.",
+    "pages": "Strony",
+    "previousPage": "Poprzednia",
+    "nextPage": "Następna",
+    "pageNumber": "Strona {page, number}"
   },
   "avatar": {
     "title": "Avatar",

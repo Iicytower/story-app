@@ -23,6 +23,7 @@ import {
 import {
   CHAPTER_SLUG_FALLBACK,
   FOLDER_SLUG_FALLBACK,
+  RESERVED_FOLDER_SLUGS,
   slugsById,
 } from "./slugs";
 
@@ -30,6 +31,7 @@ export function folderSlugs(folders: { _id: Types.ObjectId; name: string }[]) {
   return slugsById(
     folders.map(({ _id, name }) => ({ id: _id.toString(), text: name })),
     FOLDER_SLUG_FALLBACK,
+    RESERVED_FOLDER_SLUGS,
   );
 }
 

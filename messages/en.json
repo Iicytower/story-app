@@ -891,7 +891,22 @@
     "bio": "About",
     "books": "Books",
     "noBooks": "No published books yet.",
-    "coverAlt": "Cover of {name}"
+    "coverAlt": "Cover of {name}",
+    "follow": "Follow",
+    "following": "Following",
+    "unfollow": "Unfollow",
+    "followersCount": "{count, plural, one {# follower} other {# followers}}",
+    "followingCount": "{count, plural, other {Following #}}",
+    "followers": "Followers",
+    "followedAccounts": "Following",
+    "followersTitle": "{nickname}: followers – Story App",
+    "followingTitle": "{nickname}: following – Story App",
+    "noFollowers": "No followers yet.",
+    "noFollowing": "Not following anyone yet.",
+    "pages": "Pages",
+    "previousPage": "Previous",
+    "nextPage": "Next",
+    "pageNumber": "Page {page, number}"
   },
   "avatar": {
     "title": "Avatar",

@@ -1,6 +1,7 @@
 import {
   CHAPTER_SLUG_FALLBACK,
   FOLDER_SLUG_FALLBACK,
+  RESERVED_FOLDER_SLUGS,
   slugsById,
 } from "./slugs";
 import { Folder } from "@/lib/models/folder";
@@ -81,6 +82,7 @@ export async function rememberFolderSlug(
       text: _id.toString() === id ? oldName : name,
     })),
     FOLDER_SLUG_FALLBACK,
+    RESERVED_FOLDER_SLUGS,
   );
   await Folder.updateOne(
     { _id: folderId },

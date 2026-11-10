@@ -6,6 +6,7 @@ Subtask 68, zależy od 82, 84 i 85. Podstawa: D80 (Role, bany, blokady – bloka
 
 - Akcje `blockUser(nick)` / `unblockUser(nick)` (nie siebie; limit `SOCIAL_LIMITS.block`, 60/min). Bez transakcji Mongo (standalone w testach): najpierw `insert` do `blocks` (od tej chwili `canInteract` odmawia), potem idempotentne `deleteMany` w `follows` (obie strony, 71) i `closedAt` rozmowy (85); ponowne `blockUser` dokańcza przerwane kroki. Blokada daje zablokowanemu ban w społeczności blokującego bez terminu (efekt przez `canInteract`, bez dokumentu w `communityBans`, więc odblokowanie go zdejmuje).
 - „Zablokuj” na profilu i w menu ⋮ komentarza; lista zablokowanych z odblokowaniem w dialogu ustawień. Odblokowanie zdejmuje `closedAt` rozmowy, jeśli żadna strona nie blokuje drugiej.
+- Ukryć przycisk Obserwuj przy blokadzie (71; dziś przycisk widoczny, odmawia akcja).
 - Przegląd wszystkich miejsc odczytu: komentarze, reakcje (lista nicków), feed, powiadomienia, podpowiedzi nicków, rankingi, listy obserwujących – zablokowani przez widza ukryci (`hiddenUserIdsFor`). Publiczna wyszukiwarka (39) dalej pokazuje teksty autorów zablokowanych przez widza: D80 pozwala B czytać A, a A nie musi ich ukrywać. Publiczne teksty blokującego dalej czytelne dla zablokowanego.
 - Test macierzowy: każda interakcja z D80 (komentarz, odpowiedź, reakcja, ocena, wzmianka, DM, obserwowanie, post forum – gdy 87 gotowe, dopisany tam) w obu kierunkach blokady.
 
