@@ -135,6 +135,7 @@ describe("takeUserAttempt", () => {
       "follow",
       "block",
       "suggest",
+      "library",
     ] as const) {
       expect(SOCIAL_LIMITS[name]).toMatchObject({ max: 60, windowMs: 60_000 });
     }

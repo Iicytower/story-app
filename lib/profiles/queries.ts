@@ -5,6 +5,7 @@ import { connectDB } from "@/lib/db";
 import { Follow } from "@/lib/models/follow";
 import { Profile } from "@/lib/models/profile";
 import { User } from "@/lib/models/user";
+import { listLibraryBooks, listShelves } from "@/lib/library/queries";
 import { listAuthorBooks } from "@/lib/publish/queries";
 import { hiddenUserIdsFor, isBanActive } from "@/lib/social/permissions";
 
@@ -44,7 +45,7 @@ export const getPublicProfile = cache(
     const hidden = await hiddenFor(viewerId);
     const [profile, books, followers, following, followed] = await Promise.all([
       Profile.findOne({ userId: user._id })
-        .select({ bio: 1, avatarId: 1 })
+        .select({ bio: 1, avatarId: 1, libraryPublic: 1 })
         .lean(),
       listAuthorBooks(user._id, user.nickname),
       Follow.countDocuments(followFilter(user._id, "followers", hidden)),
@@ -66,9 +67,33 @@ export const getPublicProfile = cache(
         ? avatarPath(profile.avatarId.toString())
         : null,
       books,
+      // A private library is not shown to anyone, the owner included.
+      libraryPublic: profile?.libraryPublic ?? true,
     };
   },
 );
+
+// Shelves in their order with the books on them; books on no shelf come last.
+// Only for a profile whose libraryPublic is true.
+export async function getPublicLibrary(
+  userId: Types.ObjectId,
+  viewerId: string | null,
+) {
+  const [shelves, books] = await Promise.all([
+    listShelves(userId),
+    listLibraryBooks(userId, viewerId),
+  ]);
+  const ids = new Set(shelves.map(({ id }) => id));
+  return {
+    shelves: shelves
+      .map((shelf) => ({
+        ...shelf,
+        books: books.filter(({ shelfIds }) => shelfIds.includes(shelf.id)),
+      }))
+      .filter(({ books }) => books.length > 0),
+    other: books.filter(({ shelfIds }) => !shelfIds.some((id) => ids.has(id))),
+  };
+}
 
 export async function myProfilePath(userId: string): Promise<string | null> {
   await connectDB();

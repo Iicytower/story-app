@@ -103,6 +103,8 @@ test("switches chapter sort modes and drags a chapter in manual mode", async ({
 
   await page.goto("/stories");
   await page.getByRole("link", { name: /^Book/ }).click();
+  // The folder list row has its own "Actions for Book" menu; wait for the folder page.
+  await expect(page).toHaveURL(/\/folders\//);
   const titles = page
     .getByRole("list", { name: "Chapters" })
     .getByRole("listitem")

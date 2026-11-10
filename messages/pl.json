@@ -179,7 +179,12 @@
     "avatarInvalid": "Nie udało się odczytać avatara. Wybierz obraz JPEG, PNG albo WebP.",
     "avatarTooLarge": "Ten avatar jest za duży.",
     "avatarLimitTotal": "Teraz nie ma miejsca na nowe avatary. Nadal możesz wymienić istniejący.",
-    "avatarAdult": "Ten obraz został oceniony jako 18+, więc nie może być avatarem. Wybierz inny."
+    "avatarAdult": "Ten obraz został oceniony jako 18+, więc nie może być avatarem. Wybierz inny.",
+    "shelfNotFound": "Ta półka nie istnieje albo została usunięta.",
+    "shelfNameRequired": "Nazwa półki jest wymagana.",
+    "tooManyShelves": "Możesz mieć najwyżej {max, number} półek. Usuń półkę, żeby dodać nową.",
+    "tooManyLibraryItems": "Możesz mieć w bibliotece najwyżej {max, number} książek. Usuń książkę, żeby dodać nową.",
+    "libraryBookNotFound": "Ta książka jest niedostępna albo nie ma jej w Twojej bibliotece."
   },
   "password": {
     "mustContain": "Hasło musi zawierać:",
@@ -338,7 +343,8 @@
     "home": "Story App – pisz i publikuj opowiadania",
     "folder": "Folder – Story App",
     "version": "Wersja – Story App",
-    "editor": "Edytor – Story App"
+    "editor": "Edytor – Story App",
+    "library": "Biblioteka – Story App"
   },
   "folders": {
     "title": "Foldery",
@@ -906,7 +912,12 @@
     "pages": "Strony",
     "previousPage": "Poprzednia",
     "nextPage": "Następna",
-    "pageNumber": "Strona {page, number}"
+    "pageNumber": "Strona {page, number}",
+    "library": "Biblioteka",
+    "libraryPrivate": "Twoja biblioteka jest prywatna.",
+    "libraryPrivateLink": "Przejdź do biblioteki",
+    "noLibraryBooks": "W bibliotece nie ma jeszcze książek.",
+    "notOnShelf": "Pozostałe książki"
   },
   "avatar": {
     "title": "Avatar",
@@ -922,5 +933,36 @@
     "remove": "Usuń avatar",
     "removed": "Avatar usunięty.",
     "inputInvalid": "Wybierz obraz JPEG, PNG albo WebP do 10 MB."
+  },
+  "library": {
+    "title": "Biblioteka",
+    "shelves": "Półki",
+    "all": "Wszystkie",
+    "tab": "{name} ({count, number})",
+    "empty": "Twoja biblioteka jest pusta. Dodawaj książki z ich spisów treści.",
+    "emptyShelf": "Na tej półce nie ma książek.",
+    "public": "Biblioteka publiczna",
+    "publicHint": "Odwiedzający Twój profil widzą książki z Twojej biblioteki.",
+    "manage": "Zarządzaj półkami",
+    "shelfCount": "Półki: {count, number} z {max, number}",
+    "newShelf": "Nowa półka",
+    "addShelf": "Dodaj półkę",
+    "nameOf": "Nazwa półki {name}",
+    "moveUp": "Przesuń {name} w górę",
+    "moveDown": "Przesuń {name} w dół",
+    "deleteShelf": "Usuń {name}",
+    "deleteTitle": "Usunąć półkę {name}?",
+    "deleteDescription": "Książki z tej półki zostaną w Twojej bibliotece.",
+    "noShelves": "Nie masz jeszcze półek.",
+    "add": "Do biblioteki",
+    "inLibrary": "W bibliotece",
+    "shelvesOf": "Półki książki {name}",
+    "saveWithoutShelf": "Zapisz bez półki",
+    "remove": "Usuń z biblioteki",
+    "starter": {
+      "reading": "Czytam",
+      "later": "Na później",
+      "read": "Przeczytane"
+    }
   }
 }

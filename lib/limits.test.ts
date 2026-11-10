@@ -81,5 +81,7 @@ describe("countError", () => {
     });
     expect(countError("tooManyFolders").values).toEqual({ max: 1000 });
     expect(countError("tooManyChapters").values).toEqual({ max: 500 });
+    expect(countError("tooManyShelves").values).toEqual({ max: 20 });
+    expect(countError("tooManyLibraryItems").values).toEqual({ max: 500 });
   });
 });

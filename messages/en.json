@@ -179,7 +179,12 @@
     "avatarInvalid": "This avatar could not be read. Choose a JPEG, PNG or WebP image.",
     "avatarTooLarge": "This avatar is too large.",
     "avatarLimitTotal": "There is no room for new avatars right now. You can still replace an existing one.",
-    "avatarAdult": "This image was rated 18+, so it cannot be an avatar. Choose another one."
+    "avatarAdult": "This image was rated 18+, so it cannot be an avatar. Choose another one.",
+    "shelfNotFound": "This shelf does not exist or has been deleted.",
+    "shelfNameRequired": "Shelf name is required.",
+    "tooManyShelves": "You can have at most {max, number} shelves. Delete a shelf to add a new one.",
+    "tooManyLibraryItems": "You can have at most {max, number} books in your library. Remove a book to add a new one.",
+    "libraryBookNotFound": "This book is not available or is not in your library."
   },
   "password": {
     "mustContain": "The password must contain:",
@@ -338,7 +343,8 @@
     "home": "Story App – write and publish stories",
     "folder": "Folder – Story App",
     "version": "Version – Story App",
-    "editor": "Editor – Story App"
+    "editor": "Editor – Story App",
+    "library": "Library – Story App"
   },
   "folders": {
     "title": "Folders",
@@ -906,7 +912,12 @@
     "pages": "Pages",
     "previousPage": "Previous",
     "nextPage": "Next",
-    "pageNumber": "Page {page, number}"
+    "pageNumber": "Page {page, number}",
+    "library": "Library",
+    "libraryPrivate": "Your library is private.",
+    "libraryPrivateLink": "Go to Library",
+    "noLibraryBooks": "No books in the library yet.",
+    "notOnShelf": "Other books"
   },
   "avatar": {
     "title": "Avatar",
@@ -922,5 +933,36 @@
     "remove": "Remove avatar",
     "removed": "The avatar is removed.",
     "inputInvalid": "Choose a JPEG, PNG or WebP image up to 10 MB."
+  },
+  "library": {
+    "title": "Library",
+    "shelves": "Shelves",
+    "all": "All",
+    "tab": "{name} ({count, number})",
+    "empty": "Your library is empty. Add books from their contents pages.",
+    "emptyShelf": "No books on this shelf.",
+    "public": "Public library",
+    "publicHint": "Visitors of your profile see the books in your library.",
+    "manage": "Manage shelves",
+    "shelfCount": "{count, number} of {max, number} shelves",
+    "newShelf": "New shelf",
+    "addShelf": "Add shelf",
+    "nameOf": "Name of the shelf {name}",
+    "moveUp": "Move {name} up",
+    "moveDown": "Move {name} down",
+    "deleteShelf": "Delete {name}",
+    "deleteTitle": "Delete the shelf {name}?",
+    "deleteDescription": "The books on it stay in your library.",
+    "noShelves": "No shelves yet.",
+    "add": "Add to library",
+    "inLibrary": "In library",
+    "shelvesOf": "Shelves of {name}",
+    "saveWithoutShelf": "Save without a shelf",
+    "remove": "Remove from library",
+    "starter": {
+      "reading": "Reading",
+      "later": "Read later",
+      "read": "Read"
+    }
   }
 }

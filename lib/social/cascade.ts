@@ -1,3 +1,5 @@
+import { LibraryItem } from "@/lib/models/library-item";
+
 export interface PurgedObjects {
   folderIds: string[];
   storyIds: string[];
@@ -5,7 +7,9 @@ export interface PurgedObjects {
 
 // Hard deletion of a chapter or folder deletes its social data (D80); soft delete only hides
 // it. Each social task adds the collections it owns.
-const PURGES: ((objects: PurgedObjects) => Promise<unknown>)[] = [];
+const PURGES: ((objects: PurgedObjects) => Promise<unknown>)[] = [
+  ({ folderIds }) => LibraryItem.deleteMany({ folderId: { $in: folderIds } }),
+];
 
 export async function purgeSocialData(objects: PurgedObjects): Promise<void> {
   await Promise.all(PURGES.map((purge) => purge(objects)));

@@ -13,7 +13,8 @@ import { requestOrigin } from "@/i18n/request-origin";
 import { languageAlternates } from "@/i18n/routing";
 import { requireUser } from "@/lib/auth/session";
 import { retryDueCovers } from "@/lib/covers/mutations";
-import { getPublicProfile } from "@/lib/profiles/queries";
+import { getPublicLibrary, getPublicProfile } from "@/lib/profiles/queries";
+import type { LibraryBook } from "@/lib/library/queries";
 import { FollowButton } from "./follow-button";
 
 async function viewerId(): Promise<string | null> {
@@ -52,6 +53,9 @@ export default async function ProfilePage({
       href: profilePath(profile.nickname),
       locale: await getLocale(),
     });
+  const library = profile.libraryPublic
+    ? await getPublicLibrary(profile.userId, viewer)
+    : null;
   const t = await getTranslations("profile");
 
   const content = (
@@ -111,19 +115,61 @@ export default async function ProfilePage({
                     reveal={profile.owner}
                   />
                 )}
-                <Link
-                  href={book.path}
-                  className="min-w-0 break-words hover:underline"
-                >
-                  {book.name}
-                </Link>
-                {book.adult && <AdultBadge />}
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <Link
+                    href={book.path}
+                    className="min-w-0 break-words hover:underline"
+                  >
+                    {book.name}
+                  </Link>
+                  {book.adult && <AdultBadge />}
+                </div>
               </li>
             ))}
           </ul>
         )}
       </section>
-      {/* The public library (72). */}
+      {profile.owner && !profile.libraryPublic && (
+        <p className="text-muted-foreground text-sm">
+          {t("libraryPrivate")}{" "}
+          <Link href="/library" className="text-foreground underline">
+            {t("libraryPrivateLink")}
+          </Link>
+        </p>
+      )}
+      {library && (
+        <section
+          aria-labelledby="profile-library"
+          className="flex flex-col gap-4"
+        >
+          <h2 id="profile-library" className="text-xl font-semibold">
+            {t("library")}
+          </h2>
+          {library.shelves.length === 0 && library.other.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              {t("noLibraryBooks")}
+            </p>
+          ) : (
+            <>
+              {library.shelves.map((shelf, i) => (
+                <LibraryShelf
+                  key={shelf.id}
+                  id={`shelf-${i}`}
+                  name={shelf.name}
+                  books={shelf.books}
+                />
+              ))}
+              {library.other.length > 0 && (
+                <LibraryShelf
+                  id="shelf-other"
+                  name={t("notOnShelf")}
+                  books={library.other}
+                />
+              )}
+            </>
+          )}
+        </section>
+      )}
     </div>
   );
 
@@ -131,5 +177,52 @@ export default async function ProfilePage({
     <AppShell userId={viewer}>{content}</AppShell>
   ) : (
     <main className="flex flex-1 flex-col">{content}</main>
+  );
+}
+
+async function LibraryShelf({
+  id,
+  name,
+  books,
+}: {
+  id: string;
+  name: string;
+  books: LibraryBook[];
+}) {
+  const t = await getTranslations("profile");
+  const tPublic = await getTranslations("public");
+  return (
+    <div className="flex flex-col gap-2">
+      <h3 id={id} className="font-medium break-words">
+        {name}
+      </h3>
+      <ul aria-labelledby={id} className="flex flex-col gap-3">
+        {books.map((book) => (
+          <li key={book.folderId} className="flex min-w-0 items-center gap-3">
+            {book.cover && (
+              <PublicCover
+                cover={book.cover}
+                alt={t("coverAlt", { name: book.name })}
+                size="sm"
+              />
+            )}
+            <div className="flex min-w-0 flex-col">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <Link
+                  href={book.path}
+                  className="min-w-0 break-words hover:underline"
+                >
+                  {book.name}
+                </Link>
+                {book.adult && <AdultBadge />}
+              </div>
+              <span className="text-muted-foreground text-sm">
+                {tPublic("by", { nickname: book.nickname })}
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

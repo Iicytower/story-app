@@ -11,6 +11,7 @@ Subtask 68, zależy od 80 i 87. Podstawa: D80 (Fora i panel admina – panel; Ro
   - Kategorie forum: dodanie, zmiana etykiet en/pl, kolejność, `adminOnly`, usunięcie (także startowych; wątki usuwanej kategorii ukryte, nie kasowane); moderatorzy kategorii (dodanie i usunięcie po nicku). Klucz nowej kategorii: angielska etykieta znormalizowana jak klucz tagu D79, kolizja → `INVALID_INPUT`.
   - Log: wpisy `moderationLog` globalne i wszystkich społeczności, stronicowane po 50, filtr po autorze.
   - Predefiniowane tagi (D79): lista, dodanie, zmiana etykiet, usunięcie z tą samą walidacją co skrypt (wspólna funkcja); `npm run tags` zostaje.
+- Ban globalny zamyka też dostęp pod bezpośrednim adresem: spis książki zbanowanego autora (72) i `/avatars/<id>` jego avatara (70) → 404 dla innych.
 - Każde działanie w `moderationLog` (`scope: global`). Pozycja „Admin” w sidebarze tylko dla admina.
 
 ## Kryteria akceptacji
