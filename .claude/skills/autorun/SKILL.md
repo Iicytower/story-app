@@ -11,14 +11,24 @@ Argument: numer taska zbiorczego (np. `68`) albo lista numerów. Ty (główna se
 
 - Nie pytaj użytkownika. Decyzja spoza `docs/decisions.md` i pliku taska: wybierz najprostsze rozwiązanie spójne z decyzjami i zleć `docs-keeper` dopisanie go do sekcji „Rozstrzygnięcia Claude'a do potwierdzenia” decyzji taska zbiorczego (dla 68: D80).
 - Bez pushów, PR-ów, merge do `staging`/`main` (deny i hook). Pakiety npm tylko z listy w decyzji.
-- Agenci piszący kod (`implementer`, `verifier`, `merger`, `docs-keeper`) pracują pojedynczo na jednym drzewie roboczym – nigdy dwóch naraz. Równolegle wolno puszczać tylko agentów bez zapisu (`researcher`, `reviewer`, `security-auditor`, `ui-checker`). Bez `isolation: worktree` (worktree powstaje z `main`).
+- Agentów wołaj na pierwszym planie (bez `run_in_background`), żeby hook Stop nie przerywał oczekiwania. Agenci piszący kod (`implementer`, `verifier`, `merger`, `docs-keeper`) pracują pojedynczo na jednym drzewie roboczym – nigdy dwóch naraz. Równolegle wolno puszczać tylko agentów bez zapisu (`researcher`, `reviewer`, `security-auditor`, `ui-checker`). Bez `isolation: worktree` (worktree powstaje z `main`).
 - Czerwone testy po 3 rundach implementer ↔ verifier: zostaw zmiany na branchu taska, zacommituj je jako `NN: WIP (blocked)`, zleć `docs-keeper` sekcję „Blokada”, status zostaje `[~]`, wróć na branch zbiorczy bez merge i przejdź do następnego taska, który od zablokowanego nie zależy (bezpośrednio ani pośrednio).
+
+## Tryb bez nadzoru (hooki)
+
+- Start: `echo <numer taska zbiorczego> > .claude/autorun.lock`. Dopóki plik istnieje, hooki odrzucają `AskUserQuestion` i instalację pakietów (`autorun-guard.sh`), po kompakcji przywracają stan z repo (`autorun-state.sh`), a zatrzymanie jest blokowane, dopóki zostały subtaski bez `[x]`, „Blokada” lub „Pominięty” (`autorun-continue.sh`; drugi stop bez nowego commita przechodzi).
+- Koniec (po raporcie końcowym): `rm -f .claude/autorun.lock .claude/autorun.last-stop`.
+
+## Skille dla agentów
+
+- `implementer` i `verifier` mają wczytany `test-patterns`.
+- W zleceniach dla `implementer`, `reviewer` i `security-auditor` przy taskach 69–91 dopisz: „Użyj skilla `social-checklist`”.
 
 ## Pętla
 
 1. Ustal kolejkę: wiersze tabeli `docs/tasks/README.md` dla podanych tasków, w kolejności tabeli, ze statusem `[ ]` albo `[~]` bez sekcji „Blokada”. Branch bazowy: branch zbiorczy z decyzji (dla 68: `feature/social`, utwórz z `develop`, jeśli go nie ma).
 2. Dla każdego taska:
-   1. Pomiń, jeśli zależy od zablokowanego lub niezrobionego taska.
+   1. Zależy od zablokowanego (bezpośrednio lub pośrednio) → `docs-keeper` dopisuje „Pominięty”, idź dalej.
    2. Co 4 taski (i przed pierwszym) zleć `merger`: `develop` → branch zbiorczy.
    3. Utwórz `feature/NN-<slug>` z brancha zbiorczego, ustaw `[~]` w tabeli.
    4. Gdy task wymaga rozpoznania (sekcja Zakres mówi o researchu albo nowym API), najpierw `researcher` z konkretnymi pytaniami; wynik przekaż implementerowi w zleceniu.

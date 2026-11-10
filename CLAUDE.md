@@ -55,5 +55,7 @@ Aplikacja webowa do pisania opowiadań (docelowo publiczna, D46) w markdown (Nex
 - Hook Stop: `tsc --noEmit`, gdy są zmienione pliki TS; błędy trzeba naprawić.
 - Hook PreToolUse: `protect-branches.sh` blokuje merge do `staging`/`main`, push na te branche i `gh pr merge` (D45).
 - Hook SubagentStop: ten sam `tsc --noEmit` po agentach `implementer`, `verifier`, `merger`.
+- Hooki trybu `/autorun` (aktywne tylko z plikiem `.claude/autorun.lock`): `autorun-guard.sh` odrzuca `AskUserQuestion` i instalację pakietów, `autorun-continue.sh` nie pozwala zakończyć przed domknięciem subtasków, `autorun-state.sh` przywraca stan po kompakcji.
+- Skille dla agentów: `test-patterns` (wczytany w `implementer` i `verifier`), `social-checklist` (taski 68–91).
 - Agenci (`.claude/agents/`): `researcher`, `implementer`, `verifier`, `reviewer`, `ui-checker`, `security-auditor`, `docs-keeper`, `merger`. Główna sesja steruje, pracę (research, kod, testy, przegląd) zleca agentom, żeby oszczędzać kontekst. Agenci zapisujący pliki pracują pojedynczo (jedno drzewo robocze).
 - Skill `/autorun <task zbiorczy>`: przebieg tasków bez udziału użytkownika (D80, „Przebieg i branche”).
