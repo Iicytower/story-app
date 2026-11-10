@@ -28,6 +28,7 @@ export const MAX_QUOTE_CONTEXT_LENGTH = 50;
 
 export const MAX_MENTIONS = 10;
 export const MAX_SHELVES = 20;
+export const MAX_LIBRARY_ITEMS = 500;
 export const MAX_MODERATORS = 10;
 // Bookmarks and reader notes together.
 export const MAX_MARKS_PER_CHAPTER = 200;
@@ -65,12 +66,19 @@ export function lengthError(
 }
 
 export function countError(
-  key: "tooManyFolders" | "tooManyChapters" | "tooManyVersions",
+  key:
+    | "tooManyFolders"
+    | "tooManyChapters"
+    | "tooManyVersions"
+    | "tooManyShelves"
+    | "tooManyLibraryItems",
 ): ValidationError {
   const max = {
     tooManyFolders: MAX_FOLDERS,
     tooManyChapters: MAX_CHAPTERS_PER_FOLDER,
     tooManyVersions: MAX_VERSIONS_PER_FOLDER,
+    tooManyShelves: MAX_SHELVES,
+    tooManyLibraryItems: MAX_LIBRARY_ITEMS,
   }[key];
   return { ok: false, error: "INVALID_INPUT", key, values: { max } };
 }

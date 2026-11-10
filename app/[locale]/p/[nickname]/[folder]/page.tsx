@@ -10,8 +10,24 @@ import { languageAlternates } from "@/i18n/routing";
 import { AdultBadge } from "@/components/adult";
 import { CoverImage } from "@/components/cover";
 import { ADULT_COOKIE } from "@/lib/adult/gate";
-import { getPublishedFolder } from "@/lib/publish/queries";
+import { requireUser } from "@/lib/auth/session";
+import { libraryEntry, listShelves } from "@/lib/library/queries";
+import { getPublishedFolder, publishedFolderId } from "@/lib/publish/queries";
+import { LibraryPicker } from "../../../(protected)/library/library-picker";
+import { seedShelves } from "../../../(protected)/library/starter";
 import { BlurredCover } from "./adult-cover";
+import { GuestLibraryButton } from "./guest-library-button";
+
+// The picker needs the reader's shelves, so its first opening of a book page creates them too.
+async function libraryPicker(userId: string, nickname: string, slug: string) {
+  const folderId = (await publishedFolderId(nickname, slug))!;
+  await seedShelves(userId);
+  const [shelves, shelfIds] = await Promise.all([
+    listShelves(userId),
+    libraryEntry(userId, folderId),
+  ]);
+  return { folderId, shelves, shelfIds };
+}
 
 export async function generateMetadata({
   params,
@@ -45,6 +61,10 @@ export default async function PublishedFolderPage({
   const confirmed = (await cookies()).get(ADULT_COOKIE)?.value === "1";
   const cover = folder.cover;
   const coverAlt = tCovers("alt", { name: folder.name });
+  const viewer = await requireUser();
+  const picker = viewer.ok
+    ? await libraryPicker(viewer.userId, nickname, slug)
+    : null;
 
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-10">
@@ -61,9 +81,20 @@ export default async function PublishedFolderPage({
         <h1 className="text-3xl font-bold">{folder.name}</h1>
         {folder.adult && <AdultBadge />}
       </div>
-      <p className="text-muted-foreground mb-8 text-sm">
+      <p className="text-muted-foreground mb-4 text-sm">
         {t("by", { nickname: folder.nickname })}
       </p>
+      <div className="mb-8">
+        {picker ? (
+          <LibraryPicker
+            folderId={picker.folderId}
+            shelves={picker.shelves}
+            shelfIds={picker.shelfIds}
+          />
+        ) : (
+          <GuestLibraryButton path={folder.path} />
+        )}
+      </div>
       <ol aria-label={t("chapters")} className="flex flex-col gap-2">
         {folder.chapters.map((chapter, index) => (
           <li key={chapter.path} className="flex items-center gap-2">

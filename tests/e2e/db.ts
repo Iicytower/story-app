@@ -30,6 +30,8 @@ export function clearStories(): Promise<void> {
     await connection.collection("avatars").deleteMany({});
     await connection.collection("profiles").deleteMany({});
     await connection.collection("follows").deleteMany({});
+    await connection.collection("shelves").deleteMany({});
+    await connection.collection("libraryItems").deleteMany({});
   });
 }
 
@@ -320,4 +322,24 @@ export function countFollows(): Promise<number> {
   return withE2EDb((connection) =>
     connection.collection("follows").countDocuments(),
   );
+}
+
+export function findLibraryItems(
+  user: UserName,
+): Promise<{ shelves: string[] }[]> {
+  return withE2EDb(async (connection) => {
+    const userIdValue = await userId(connection, user);
+    const items = await connection
+      .collection<{ shelfIds: mongoose.Types.ObjectId[] }>("libraryItems")
+      .find({ userId: userIdValue })
+      .toArray();
+    const shelves = await connection
+      .collection<{ name: string }>("shelves")
+      .find({ userId: userIdValue })
+      .toArray();
+    const names = new Map(shelves.map(({ _id, name }) => [String(_id), name]));
+    return items.map(({ shelfIds }) => ({
+      shelves: shelfIds.map((id) => names.get(String(id)) ?? "").sort(),
+    }));
+  });
 }

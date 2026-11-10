@@ -82,6 +82,8 @@ export const SOCIAL_LIMITS = {
   follow: { name: "follow", max: 60, windowMs: MINUTE },
   block: { name: "block", max: 60, windowMs: MINUTE },
   suggest: { name: "suggest", max: 60, windowMs: MINUTE },
+  // Adding, removing and moving books; the author is notified of an addition (task 81).
+  library: { name: "library", max: 60, windowMs: MINUTE },
   // Each one is a classifier call (task 70).
   avatarDay: { name: "avatar-day", max: 20, windowMs: DAY },
 } as const satisfies Record<string, RateLimitRule>;

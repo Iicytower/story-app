@@ -105,6 +105,7 @@ const findPublishedFolder = cache(
     if (visible.length === 0) return null;
     const covers = await coversOf([folder]);
     return {
+      id: folder._id.toString(),
       nickname: author.nickname,
       name: folder.name,
       adult: isAdult(folder.adult),
@@ -120,7 +121,11 @@ export const getPublishedFolder = cache(
     const folder = await findPublishedFolder(nickname, folderSlug);
     if (!folder) return null;
     return {
-      ...folder,
+      nickname: folder.nickname,
+      name: folder.name,
+      adult: folder.adult,
+      cover: folder.cover,
+      path: folder.path,
       chapters: folder.chapters.map(({ title, path, adult }) => ({
         title,
         path,
@@ -129,6 +134,14 @@ export const getPublishedFolder = cache(
     };
   },
 );
+
+// Only for a signed-in reader's library picker (task 72); public content carries no ids.
+export async function publishedFolderId(
+  nickname: string,
+  folderSlug: string,
+): Promise<string | null> {
+  return (await findPublishedFolder(nickname, folderSlug))?.id ?? null;
+}
 
 export const getPublishedChapter = cache(
   async (nickname: string, folderSlug: string, chapterSlug: string) => {
@@ -203,6 +216,88 @@ export async function listAuthorBooks(
     adult: isAdult(folder.adult),
     cover: covers.get(folder._id.toString()) ?? null,
   }));
+}
+
+export interface PublicBook extends AuthorBook {
+  nickname: string;
+}
+
+// Books of many authors at once (the library, task 72), with the visibility of the contents page
+// (D38): a published active folder with a public chapter, by an author with a nickname who is
+// not hidden from the viewer. Keyed by folder id; invisible folders are left out.
+export async function findPublicBooks(
+  folderIds: Types.ObjectId[],
+  hidden: Types.ObjectId[],
+): Promise<Map<string, PublicBook>> {
+  if (folderIds.length === 0) return new Map();
+  await connectDB();
+  const candidates = await Folder.find({
+    _id: { $in: folderIds },
+    userId: { $nin: hidden },
+    published: true,
+    deletedAt: null,
+  })
+    .select({ userId: 1, name: 1, adult: 1, coverId: 1 })
+    .lean();
+  if (candidates.length === 0) return new Map();
+  const [withPublic, authors] = await Promise.all([
+    // userId first, so the query uses the { userId, folderId, title } index.
+    Story.distinct("folderId", {
+      userId: { $in: candidates.map(({ userId }) => userId) },
+      folderId: { $in: candidates.map(({ _id }) => _id) },
+      publication: "public",
+      deletedAt: null,
+    }) as Promise<Types.ObjectId[]>,
+    User.find({
+      _id: { $in: candidates.map(({ userId }) => userId) },
+      nickname: { $type: "string" },
+    })
+      .select({ nickname: 1 })
+      .lean(),
+  ]);
+  const publicIds = new Set(withPublic.map(String));
+  const nicknames = new Map(
+    authors.map(({ _id, nickname }) => [_id.toString(), nickname!]),
+  );
+  const visible = candidates.filter(
+    ({ _id, userId }) =>
+      publicIds.has(_id.toString()) && nicknames.has(userId.toString()),
+  );
+  if (visible.length === 0) return new Map();
+  // Slugs come from every active folder of the author, as on the contents page.
+  const [siblings, covers] = await Promise.all([
+    Folder.find({
+      userId: { $in: [...new Set(visible.map(({ userId }) => userId))] },
+      deletedAt: null,
+    })
+      .select({ userId: 1, name: 1 })
+      .lean(),
+    coversOf(visible),
+  ]);
+  const byAuthor = Map.groupBy(siblings, ({ userId }) => userId.toString());
+  const slugs = new Map(
+    [...byAuthor].map(([authorId, folders]) => [
+      authorId,
+      folderSlugs(folders),
+    ]),
+  );
+  return new Map(
+    visible.map((folder) => {
+      const authorId = folder.userId.toString();
+      const nickname = nicknames.get(authorId)!;
+      const slug = slugs.get(authorId)!.get(folder._id.toString());
+      return [
+        folder._id.toString(),
+        {
+          name: folder.name,
+          nickname,
+          path: `/p/${nickname}/${slug}`,
+          adult: isAdult(folder.adult),
+          cover: covers.get(folder._id.toString()) ?? null,
+        },
+      ];
+    }),
+  );
 }
 
 export async function folderPublicPath(

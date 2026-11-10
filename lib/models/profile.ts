@@ -6,6 +6,8 @@ export interface ProfileFields {
   bio: string;
   avatarId?: Types.ObjectId;
   libraryPublic: boolean;
+  // Set once the starter shelves were created (task 72); only the request that sets it creates them.
+  shelvesSeededAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -16,6 +18,7 @@ const profileSchema = new Schema<ProfileFields>(
     bio: { type: String, default: "" },
     avatarId: { type: Schema.Types.ObjectId, ref: "Avatar" },
     libraryPublic: { type: Boolean, default: true },
+    shelvesSeededAt: { type: Date },
   },
   { timestamps: true },
 );

@@ -15,3 +15,5 @@ import "./community-moderator";
 import "./profile";
 import "./avatar";
 import "./follow";
+import "./shelf";
+import "./library-item";
