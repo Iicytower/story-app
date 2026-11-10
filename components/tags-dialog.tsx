@@ -56,7 +56,8 @@ export function TagsDialog({
   );
 }
 
-const CHIP = "rounded-full border px-2 py-0.5 text-xs";
+const CHIP =
+  "cursor-pointer rounded-full border px-2 py-0.5 text-xs disabled:cursor-default";
 const PRESSED = "bg-primary text-primary-foreground border-primary";
 
 function TagsForm({
