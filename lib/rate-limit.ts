@@ -35,6 +35,13 @@ export const SEARCH_LIMIT: RateLimitRule = {
   windowMs: 60 * 1000,
 };
 
+// Wrong current passwords per user (F4, D75).
+export const CHANGE_PASSWORD_LIMIT: RateLimitRule = {
+  name: "change-password",
+  max: 5,
+  windowMs: 15 * 60 * 1000,
+};
+
 // Per user, not per IP: one check keeps the tools server's CPU busy for seconds (D58).
 export const PROOFREAD_LIMIT: RateLimitRule = {
   name: "proofread",

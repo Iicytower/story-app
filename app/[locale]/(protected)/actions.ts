@@ -8,6 +8,7 @@ import { LOCALE_COOKIE, LOCALE_COOKIE_OPTIONS, routing } from "@/i18n/routing";
 import type { ActionResult } from "@/lib/action-result";
 import { hashPassword, verifyPassword } from "@/lib/accounts";
 import { requireUser } from "@/lib/auth/session";
+import { endOtherSessions } from "@/lib/auth/sessions";
 import { passwordError } from "@/lib/credentials";
 import { connectDB } from "@/lib/db";
 import { actionError } from "@/lib/i18n/action-error";
@@ -20,6 +21,11 @@ import {
   updateUserSettings,
 } from "@/lib/settings/queries";
 import { parseSettingsPatch } from "@/lib/settings/settings";
+import {
+  CHANGE_PASSWORD_LIMIT,
+  giveBackAttempt,
+  takeAttempt,
+} from "@/lib/rate-limit";
 
 export async function logout() {
   await signOut({ redirectTo: `/${await getLocale()}` });
@@ -112,16 +118,35 @@ export async function changePassword(
 
   await connectDB();
   const account = await User.findById(user.userId).lean();
-  if (
-    !account ||
-    !(await verifyPassword(currentPassword, account.passwordHash))
-  ) {
+  if (!account) return actionError("UNAUTHORIZED", "sessionExpired");
+  const weakForAccount = passwordError(newPassword, account.nickname);
+  if (weakForAccount) {
+    return actionError(
+      "INVALID_INPUT",
+      weakForAccount.key,
+      weakForAccount.values,
+    );
+  }
+  // Per user: a stolen session must not be able to guess the password (F4).
+  const attempt = await takeAttempt(CHANGE_PASSWORD_LIMIT, user.userId);
+  if (!attempt) return actionError("RATE_LIMITED", "tooManyAttempts");
+  if (!(await verifyPassword(currentPassword, account.passwordHash))) {
     return actionError("INVALID_INPUT", "currentPasswordIncorrect");
   }
+  await giveBackAttempt(attempt);
 
   await User.updateOne(
     { _id: account._id },
     { $set: { passwordHash: await hashPassword(newPassword) } },
   );
+  // Other devices may be someone who took over the account (F3); this one stays signed in.
+  await endOtherSessions(user.userId, user.sessionId ?? null);
+  return { ok: true };
+}
+
+export async function logOutOtherDevices(): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  await endOtherSessions(user.userId, user.sessionId ?? null);
   return { ok: true };
 }

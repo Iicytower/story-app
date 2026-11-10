@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { USERS } from "./env";
 import { expect, PASSWORD_REQUIREMENT_TEXTS, test } from "./helpers";
 
-const PASSWORD = "Dave-password-123456";
+const PASSWORD = "Willow-lantern-2468!";
 
 async function fillForm(
   page: Page,

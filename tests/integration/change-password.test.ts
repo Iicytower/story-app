@@ -17,7 +17,7 @@ setupTestDb();
 
 const PASSWORD = "Correct-horse-12345";
 const NEW_PASSWORD = "Battery-staple-12345";
-const BOB_PASSWORD = "Bob-password-1234567";
+const BOB_PASSWORD = "Granite-path-1357913";
 
 let alice: Types.ObjectId;
 let bob: Types.ObjectId;

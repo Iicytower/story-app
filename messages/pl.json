@@ -47,7 +47,12 @@
     "dictionaryCount": "{count, plural, =0 {Brak słów.} one {# słowo} few {# słowa} many {# słów} other {# słowa}}",
     "removeWord": "Usuń „{word}”",
     "dictionaryFailed": "Nie udało się wczytać ani zmienić listy. Odśwież stronę i spróbuj ponownie.",
-    "loadingDictionary": "Wczytywanie…"
+    "loadingDictionary": "Wczytywanie…",
+    "logOutOthers": "Wyloguj inne urządzenia",
+    "logOutOthersTitle": "Wylogować inne urządzenia?",
+    "logOutOthersDescription": "Każda inna przeglądarka i urządzenie zalogowane na to konto będą musiały zalogować się ponownie. To urządzenie pozostanie zalogowane.",
+    "logOutOthersConfirm": "Wyloguj inne urządzenia",
+    "logOutOthersDone": "Inne urządzenia zostały wylogowane."
   },
   "errors": {
     "nicknameRequirement": "Nick musi mieć 3–30 znaków: litery a-z, cyfry, _ i -.",
@@ -131,7 +136,10 @@
     "tooManyChapters": "Folder może mieć najwyżej {max, number} rozdziałów.",
     "tooManyVersions": "Folder może mieć najwyżej {max, number} wersji. Usuń starą wersję, żeby zapisać nową.",
     "importChapterTooLong": "Rozdział „{title}” jest za długi: rozdział może mieć najwyżej {max, number} znaków.",
-    "importNotesTooLong": "Notatki rozdziału „{title}” są za długie: notatki mogą mieć najwyżej {max, number} znaków."
+    "importNotesTooLong": "Notatki rozdziału „{title}” są za długie: notatki mogą mieć najwyżej {max, number} znaków.",
+    "passwordRepetitive": "Hasło za często powtarza jeden znak.",
+    "passwordSequence": "Hasło zawiera prosty ciąg {length} lub więcej znaków, np. abcdef, 123456 albo qwerty.",
+    "passwordContainsNickname": "Hasło nie może zawierać nicku."
   },
   "password": {
     "mustContain": "Hasło musi zawierać:",

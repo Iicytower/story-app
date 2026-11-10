@@ -59,7 +59,7 @@ export async function createOrUpdateUser(
   password: string,
 ): Promise<"created" | "updated"> {
   const trimmed = nickname.trim();
-  const error = nicknameError(trimmed) ?? passwordError(password);
+  const error = nicknameError(trimmed) ?? passwordError(password, trimmed);
   if (error) throw new Error(inEnglish(error));
 
   const result = await User.updateOne(

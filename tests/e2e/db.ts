@@ -66,6 +66,10 @@ export function restorePassword(user: UserName): Promise<void> {
         { nickname: USERS[user].nickname },
         { $set: { passwordHash: await hashPassword(USERS[user].password) } },
       );
+    // Wrong current passwords of earlier tests must not reach the limit (D75).
+    await connection
+      .collection<{ _id: string }>("rateLimits")
+      .deleteMany({ _id: /^change-password:/ });
   });
 }
 

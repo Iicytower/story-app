@@ -27,7 +27,7 @@ export async function register(
     return actionError("INVALID_INPUT", "detailsInvalid");
   }
   const trimmed = nickname.trim();
-  const invalid = nicknameError(trimmed) ?? passwordError(password);
+  const invalid = nicknameError(trimmed) ?? passwordError(password, trimmed);
   if (invalid) {
     return actionError("INVALID_INPUT", invalid.key, invalid.values);
   }

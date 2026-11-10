@@ -47,7 +47,12 @@
     "dictionaryCount": "{count, plural, =0 {No words yet.} one {# word} other {# words}}",
     "removeWord": "Remove “{word}”",
     "dictionaryFailed": "The list could not be loaded or changed. Reload the page and try again.",
-    "loadingDictionary": "Loading…"
+    "loadingDictionary": "Loading…",
+    "logOutOthers": "Log out other devices",
+    "logOutOthersTitle": "Log out other devices?",
+    "logOutOthersDescription": "Every other browser and device signed in to this account will have to sign in again. This one stays signed in.",
+    "logOutOthersConfirm": "Log out other devices",
+    "logOutOthersDone": "Other devices are logged out."
   },
   "errors": {
     "nicknameRequirement": "Nickname must be 3-30 characters: letters a-z, digits, _ and -.",
@@ -131,7 +136,10 @@
     "tooManyChapters": "A folder can have at most {max, number} chapters.",
     "tooManyVersions": "A folder can have at most {max, number} versions. Delete an old version to save a new one.",
     "importChapterTooLong": "Chapter “{title}” is too long: a chapter can have at most {max, number} characters.",
-    "importNotesTooLong": "The notes of chapter “{title}” are too long: notes can have at most {max, number} characters."
+    "importNotesTooLong": "The notes of chapter “{title}” are too long: notes can have at most {max, number} characters.",
+    "passwordRepetitive": "The password repeats one character too often.",
+    "passwordSequence": "The password contains a simple sequence of {length} or more characters, such as abcdef, 123456 or qwerty.",
+    "passwordContainsNickname": "The password must not contain your nickname."
   },
   "password": {
     "mustContain": "The password must contain:",

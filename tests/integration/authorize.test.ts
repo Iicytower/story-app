@@ -97,7 +97,7 @@ describe("authorizeCredentials", () => {
   });
 
   it("tells apart passwords differing only past 72 bytes", async () => {
-    const long = PASSWORD.padEnd(256, "x");
+    const long = PASSWORD.padEnd(256, "xy3Q");
     await createOrUpdateUser("alice", long);
     await expect(
       authorizeCredentials({ nickname: "alice", password: long }),
