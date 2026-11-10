@@ -58,7 +58,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 57 | [Zaufany adres klienta w limitach](done/57-trusted-client-ip.md) | – | [x] |
 | 58 | [Unieważnianie sesji](done/58-session-revocation.md) | – | [x] |
 | 59 | [Limity rozmiaru i liczby danych](done/59-data-limits.md) | – | [x] |
-| 60 | [Nagłówki bezpieczeństwa](60-security-headers.md) | – | [ ] |
+| 60 | [Nagłówki bezpieczeństwa](done/60-security-headers.md) | – | [x] |
 | 61 | [Typy argumentów Server Actions](done/61-action-input-types.md) | – | [x] |
 | 62 | [Zapis dużej treści rozdziału kończy się 500](done/62-large-content-save.md) | – | [x] |
 | 63 | [Kody odzyskiwania konta](done/63-recovery-codes.md) | – | [x] |

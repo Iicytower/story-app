@@ -3,9 +3,19 @@ import type { Page } from "@playwright/test";
 import { EXPORT_FORMATS } from "@/lib/export/formats";
 import { findFolder, seedStory } from "./db";
 import { storageStatePath } from "./env";
-import { editorAction, expect, markdownEditor, test } from "./helpers";
+import {
+  allowCspViolation,
+  editorAction,
+  expect,
+  markdownEditor,
+  test,
+} from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
+
+// The .docx reader bundles polyfills that probe Function() inside try/catch; the policy blocks
+// the probe and they fall back to the native code (D77).
+test.beforeEach(() => allowCspViolation("script-src eval"));
 
 const pick = (page: Page, name: string, data: Buffer | string) =>
   page.getByLabel("File", { exact: true }).setInputFiles({

@@ -13,7 +13,6 @@ const text = (length: number) =>
     .join("\n\n")
     .slice(0, length);
 
-
 test("saves a chapter of exactly 500,000 characters", async ({ page }) => {
   const id = await seedStory("alice", { title: "Long" });
   await page.goto(`/stories/${id}`);
