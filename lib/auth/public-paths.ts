@@ -9,7 +9,10 @@ const PUBLIC_PATHS = [
   /^\/api\/auth(\/|$)/,
   // The handler itself decides: the owner's or a published folder's cover (task 26).
   /^\/covers\/[^/]+$/,
-  new RegExp(`^/${LOCALE}/p/[^/]+/[^/]+(/[^/]+)?$`),
+  // Only a profile's current avatar (task 70).
+  /^\/avatars\/[^/]+$/,
+  // Profile, contents and chapter pages.
+  new RegExp(`^/${LOCALE}/p/[^/]+(/[^/]+){0,2}$`),
 ];
 
 export function isPublicPath(pathname: string): boolean {

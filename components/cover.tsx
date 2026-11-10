@@ -33,18 +33,30 @@ export function CoverImage({
   );
 }
 
-// Public lists never show an 18+ cover, only the badge in its place (D69).
+// Public lists never show an 18+ cover, only the badge in its place; its owner sees it
+// marked with the badge (D69).
 export function PublicCover({
   cover,
   alt,
   size,
+  reveal = false,
 }: {
   cover: CoverView;
   alt: string;
   size: CoverSize;
+  reveal?: boolean;
 }) {
   if (!cover.adult)
     return <CoverImage path={cover.path} alt={alt} size={size} />;
+  if (reveal)
+    return (
+      <span className="relative shrink-0">
+        <CoverImage path={cover.path} alt={alt} size={size} className="block" />
+        <span className="bg-background absolute right-0.5 bottom-0.5 rounded-sm">
+          <AdultBadge />
+        </span>
+      </span>
+    );
   return (
     <span
       style={SIZES[size]}

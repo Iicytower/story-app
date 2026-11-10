@@ -5,7 +5,7 @@ export const SOCIAL_NAV = {
   forums: false,
   messages: false,
   notifications: false,
-  profile: false,
+  profile: true,
   moderation: false,
   admin: false,
   stats: false,

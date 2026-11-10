@@ -1,3 +1,4 @@
+import { deflateSync } from "node:zlib";
 import {
   type Browser,
   expect,
@@ -13,7 +14,13 @@ import {
 } from "@/lib/credentials";
 import en from "@/messages/en.json";
 import { clearStories } from "./db";
-import { storageStatePath, USERS, type UserName } from "./env";
+import {
+  E2E_TOOLS_PORT,
+  E2E_TOOLS_SECRET,
+  storageStatePath,
+  USERS,
+  type UserName,
+} from "./env";
 
 const password = createTranslator({
   locale: "en",
@@ -243,4 +250,54 @@ export async function selectToLineStart(page: Page) {
   );
   await page.keyboard.press("Shift+Home");
   await changed;
+}
+
+// The verdict of the fake image filter (fake-tools.mjs) for the next uploads; tests that change
+// it set "safe" back afterwards.
+export async function classifier(mode: "safe" | "adult" | "down") {
+  await fetch(`http://127.0.0.1:${E2E_TOOLS_PORT}/classify/mode`, {
+    method: "POST",
+    headers: { "X-Tools-Secret": E2E_TOOLS_SECRET },
+    body: mode,
+  });
+}
+
+// A solid-colour PNG the browser can decode, crop and re-encode.
+export function png(
+  width: number,
+  height: number,
+  rgb: [number, number, number],
+) {
+  const crcTable = Array.from({ length: 256 }, (_, n) => {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    return c >>> 0;
+  });
+  const crc = (data: Buffer) => {
+    let c = 0xffffffff;
+    for (const byte of data) c = crcTable[(c ^ byte) & 0xff] ^ (c >>> 8);
+    return (c ^ 0xffffffff) >>> 0;
+  };
+  const chunk = (type: string, data: Buffer) => {
+    const body = Buffer.concat([Buffer.from(type), data]);
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(data.length);
+    const sum = Buffer.alloc(4);
+    sum.writeUInt32BE(crc(body));
+    return Buffer.concat([length, body, sum]);
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header.set([8, 2, 0, 0, 0], 8);
+  const row = Buffer.concat([
+    Buffer.from([0]),
+    Buffer.from(Array(width).fill(rgb).flat()),
+  ]);
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk("IHDR", header),
+    chunk("IDAT", deflateSync(Buffer.concat(Array(height).fill(row)))),
+    chunk("IEND", Buffer.alloc(0)),
+  ]);
 }

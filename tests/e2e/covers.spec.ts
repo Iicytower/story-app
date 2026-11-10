@@ -1,58 +1,21 @@
 import { readFile } from "node:fs/promises";
-import { deflateSync } from "node:zlib";
 import { strToU8, unzipSync, zipSync } from "fflate";
 import type { Page } from "@playwright/test";
 import { findFolder, seedStory } from "./db";
-import { E2E_TOOLS_PORT, E2E_TOOLS_SECRET, storageStatePath } from "./env";
-import { editorAction, expect, menuAction, openMenu, test } from "./helpers";
+import { storageStatePath } from "./env";
+import {
+  classifier,
+  editorAction,
+  expect,
+  menuAction,
+  openMenu,
+  png,
+  test,
+} from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
 const BADGE = "For adults only (18+)";
-
-// A solid-colour PNG the browser can decode, crop and re-encode.
-function png(width: number, height: number, rgb: [number, number, number]) {
-  const crcTable = Array.from({ length: 256 }, (_, n) => {
-    let c = n;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    return c >>> 0;
-  });
-  const crc = (data: Buffer) => {
-    let c = 0xffffffff;
-    for (const byte of data) c = crcTable[(c ^ byte) & 0xff] ^ (c >>> 8);
-    return (c ^ 0xffffffff) >>> 0;
-  };
-  const chunk = (type: string, data: Buffer) => {
-    const body = Buffer.concat([Buffer.from(type), data]);
-    const length = Buffer.alloc(4);
-    length.writeUInt32BE(data.length);
-    const sum = Buffer.alloc(4);
-    sum.writeUInt32BE(crc(body));
-    return Buffer.concat([length, body, sum]);
-  };
-  const header = Buffer.alloc(13);
-  header.writeUInt32BE(width, 0);
-  header.writeUInt32BE(height, 4);
-  header.set([8, 2, 0, 0, 0], 8);
-  const row = Buffer.concat([
-    Buffer.from([0]),
-    Buffer.from(Array(width).fill(rgb).flat()),
-  ]);
-  return Buffer.concat([
-    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    chunk("IHDR", header),
-    chunk("IDAT", deflateSync(Buffer.concat(Array(height).fill(row)))),
-    chunk("IEND", Buffer.alloc(0)),
-  ]);
-}
-
-async function classifier(mode: "safe" | "adult" | "down") {
-  await fetch(`http://127.0.0.1:${E2E_TOOLS_PORT}/classify/mode`, {
-    method: "POST",
-    headers: { "X-Tools-Secret": E2E_TOOLS_SECRET },
-    body: mode,
-  });
-}
 
 async function seedBook() {
   await seedStory("alice", { title: "Night", folder: "Book" });

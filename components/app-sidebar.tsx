@@ -191,8 +191,10 @@ function NavItems({
 
 export function AppSidebar({
   defaultCollapsed,
+  toolsAvailable,
 }: {
   defaultCollapsed: boolean;
+  toolsAvailable: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -263,7 +265,11 @@ export function AppSidebar({
         />
       </nav>
       {/* Outside the drawer, which unmounts its content when it closes. */}
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <SettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        toolsAvailable={toolsAvailable}
+      />
     </>
   );
 }

@@ -27,6 +27,8 @@
 2. Merge `staging` → `main` robi użytkownik (nigdy push na `main` z lokalnego repo), potem tag `vX.Y.Z` → deploy produkcji.
 3. Rollback: „Promote” poprzedniego deploymentu w Vercelu.
 
+- **Wydanie z taskiem 70 (avatary):** przed wydaniem przebuduj i ponownie wdróż stos narzędzi (lokalnie `npm run up`, na Mikrusie `npm run tools:remote`), bo klasyfikator z `docker/tools/compose.yml` musi przyjmować `?size=256x256`. Do tego czasu okładki działają, a upload avatara zwraca niedostępność narzędzi (`TOOL_UNAVAILABLE`).
+
 ## Migracje
 
 Mechanizm: `docs/decisions.md` D14. Migracje uruchamiają się w buildzie produkcji i stagingu (`vercel.json` → `buildCommand`), przed `next build`. Preview innych branchy je pomijają.
@@ -38,7 +40,7 @@ Mechanizm: `docs/decisions.md` D14. Migracje uruchamiają się w buildzie produk
   db.getCollection("stories_backup_002-folders").aggregate([{ $out: "stories" }]);
   db.migrations.deleteOne({ _id: "002-folders" }); // tylko jeśli migracja ma się wykonać ponownie
   ```
-  `$out` zastępuje zawartość `stories` i zachowuje istniejące indeksy kolekcji docelowej. Kopia tylko ostatniej migracji, bez `covers` (D68): `db.getCollectionNames().filter(n => n.includes("_backup_"))`. Okładki odtwarza się z backupu `scripts/backup.sh`, więc przed wydaniem z migracją warto go zrobić.
+  `$out` zastępuje zawartość `stories` i zachowuje istniejące indeksy kolekcji docelowej. Kopia tylko ostatniej migracji, bez `covers` i `avatars` (D68, task 70): `db.getCollectionNames().filter(n => n.includes("_backup_"))`. Okładki i avatary odtwarza się z backupu `scripts/backup.sh`, więc przed wydaniem z migracją warto go zrobić.
 - **Ręczne zdjęcie blokady**, gdy build padł w trakcie migracji, a nie chcesz czekać 15 min na jej przejęcie. Sprawdź najpierw, czy żaden build nie trwa: `db.migrations.deleteOne({ _id: "lock" })`.
 - **Okno builda:** stary deployment obsługuje ruch, dopóki nowy nie wejdzie. Po `002-folders` stary kod (v1.0) może utworzyć opowiadanie bez `folderId`. `002-folders` jest powtarzalna, więc kolejny deploy przypisze je do „Unsorted” (przy kolizji tytułu z sufiksem „ (2)”). Do tego czasu opowiadanie jest widoczne w wyszukiwaniu i w edytorze, ale nie na liście folderów. Sprawdzenie: `db.stories.countDocuments({ folderId: { $exists: false } })`. Podobnie `003-positions` (też powtarzalna) dopisuje przy kolejnym deployu `position` folderom i rozdziałom utworzonym w oknie builda.
 - **Pierwsze wydanie z `002-folders` (staging i produkcja):** v1.0 nie ma `autoIndex: false`, więc jego zimny start w trakcie builda odtwarza usunięty indeks `userId_1_title_1`. Nowy kod sam go nie usunie, a ten sam tytuł w dwóch folderach dostaje wtedy `DUPLICATE_TITLE`. Dlatego po wejściu nowego deploymentu trzeba zrobić jeden **Redeploy** (jego `syncIndexes()` usunie indeks, a działający kod już go nie odtworzy) i sprawdzić `db.stories.getIndexes()`: nie może być `userId_1_title_1`. To samo po rollbacku („Promote”) do v1.0 i ponownym wydaniu.

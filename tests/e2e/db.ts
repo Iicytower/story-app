@@ -27,6 +27,8 @@ export function clearStories(): Promise<void> {
     await connection.collection("folderVersions").deleteMany({});
     await connection.collection("chapterContents").deleteMany({});
     await connection.collection("covers").deleteMany({});
+    await connection.collection("avatars").deleteMany({});
+    await connection.collection("profiles").deleteMany({});
   });
 }
 
@@ -260,5 +262,42 @@ export function clearSettings(user: UserName): Promise<void> {
     await connection
       .collection("settings")
       .deleteOne({ userId: await userId(connection, user) });
+  });
+}
+
+// A published folder with chapters that are public or hidden (D38).
+export function seedPublished(
+  user: UserName,
+  folder: string,
+  chapters: { title: string; publication: "public" | "hidden" }[],
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const folderId = await ensureFolder(connection, user, folder);
+    await connection
+      .collection("folders")
+      .updateOne({ _id: folderId }, { $set: { published: true } });
+    for (const { title, publication } of chapters) {
+      const id = await seedStory(user, { title, folder });
+      await connection
+        .collection("stories")
+        .updateOne(
+          { _id: new mongoose.Types.ObjectId(id) },
+          { $set: { publication, publishedAt: new Date() } },
+        );
+    }
+  });
+}
+
+export function seedProfile(user: UserName, bio: string): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const now = new Date();
+    await connection.collection("profiles").updateOne(
+      { userId: await userId(connection, user) },
+      {
+        $set: { bio, updatedAt: now },
+        $setOnInsert: { libraryPublic: true, createdAt: now },
+      },
+      { upsert: true },
+    );
   });
 }

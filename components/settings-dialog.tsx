@@ -11,6 +11,11 @@ import {
   removeFromDictionary,
   saveSettings,
 } from "@/app/[locale]/(protected)/actions";
+import {
+  getMyProfile,
+  updateBio,
+} from "@/app/[locale]/(protected)/profile/actions";
+import { AvatarDialog } from "@/components/avatar-dialog";
 import { ChangePasswordForm } from "@/components/change-password-form";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
@@ -23,7 +28,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { usePathname, useRouter } from "@/i18n/navigation";
+import { Textarea } from "@/components/ui/textarea";
+import { UserAvatar } from "@/components/user-avatar";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { type Locale, LOCALE_NAMES, routing } from "@/i18n/routing";
 import { WithTooltip } from "@/components/ui/tooltip";
 import {
@@ -32,6 +39,7 @@ import {
   THEMES,
   type Theme,
 } from "@/lib/settings/settings";
+import { MAX_BIO_LENGTH } from "@/lib/limits";
 import { setAccent, setTheme } from "@/lib/theme";
 
 const SYSTEM = "system";
@@ -77,21 +85,28 @@ const SELECT = "border-input bg-background h-9 rounded-md border px-2 text-sm";
 export function SettingsDialog({
   open,
   onOpenChange,
+  toolsAvailable,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // Avatars need the classifier on the tools server (D56).
+  toolsAvailable: boolean;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/* Mounted only while open, so every opening starts from the saved values. */}
-      <DialogContent aria-describedby={undefined}>
-        <SettingsContent />
+      {/* The profile section made it taller than a laptop screen. */}
+      <DialogContent
+        aria-describedby={undefined}
+        className="max-h-[90dvh] overflow-y-auto"
+      >
+        <SettingsContent toolsAvailable={toolsAvailable} />
       </DialogContent>
     </Dialog>
   );
 }
 
-function SettingsContent() {
+function SettingsContent({ toolsAvailable }: { toolsAvailable: boolean }) {
   const t = useTranslations("settings");
   const tCommon = useTranslations("common");
   const locale = useLocale() as Locale;
@@ -221,6 +236,7 @@ function SettingsContent() {
         </select>
       </section>
       <DictionarySection />
+      <ProfileSection toolsAvailable={toolsAvailable} />
       <section aria-labelledby="settings-account" className="grid gap-2">
         <h3 id="settings-account" className="font-medium">
           {t("account")}
@@ -364,6 +380,153 @@ function DictionarySection() {
       {error && (
         <p role="alert" className="text-destructive text-sm">
           {error}
+        </p>
+      )}
+    </section>
+  );
+}
+
+// Read when the dialog opens; the bio and the avatar are saved on their own, not with Save.
+function ProfileSection({ toolsAvailable }: { toolsAvailable: boolean }) {
+  const t = useTranslations("settings");
+  const [profile, setProfile] = useState<{
+    nickname: string | null;
+    bio: string;
+    avatar: string | null;
+  } | null>(null);
+  const [bio, setBio] = useState("");
+  const [message, setMessage] = useState<{
+    text: string;
+    error: boolean;
+  } | null>(null);
+  const [avatarOpen, setAvatarOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    let open = true;
+    void getMyProfile()
+      .catch(() => null)
+      .then((result) => {
+        if (!open) return;
+        if (result?.ok) {
+          setProfile(result);
+          setBio(result.bio);
+        } else {
+          setMessage({
+            text: result?.message ?? t("profileFailed"),
+            error: true,
+          });
+        }
+      });
+    return () => {
+      open = false;
+    };
+  }, [t]);
+
+  function saveBio() {
+    setMessage(null);
+    startTransition(async () => {
+      const result = await updateBio(bio).catch(() => null);
+      if (!result?.ok) {
+        setMessage({
+          text: result?.message ?? t("profileFailed"),
+          error: true,
+        });
+        return;
+      }
+      setProfile((current) => current && { ...current, bio: result.bio });
+      setBio(result.bio);
+      setMessage({ text: t("bioSaved"), error: false });
+    });
+  }
+
+  return (
+    <section aria-labelledby="settings-profile" className="grid gap-2">
+      <h3 id="settings-profile" className="font-medium">
+        {t("profile")}
+      </h3>
+      {!profile ? (
+        !message && (
+          <p role="status" className="text-muted-foreground text-sm">
+            {t("loadingProfile")}
+          </p>
+        )
+      ) : (
+        <>
+          <Label htmlFor="settings-bio" className="font-normal">
+            {t("bio")}
+          </Label>
+          <Textarea
+            id="settings-bio"
+            aria-describedby="settings-bio-help"
+            value={bio}
+            maxLength={MAX_BIO_LENGTH}
+            rows={4}
+            onChange={(event) => setBio(event.target.value)}
+          />
+          <div
+            id="settings-bio-help"
+            className="text-muted-foreground flex justify-between gap-2 text-xs"
+          >
+            <span>{t("bioHelp")}</span>
+            <span className="shrink-0">
+              {t("bioLength", { length: bio.length, max: MAX_BIO_LENGTH })}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              disabled={pending || bio === profile.bio}
+              onClick={saveBio}
+            >
+              {t("saveBio")}
+            </Button>
+            {profile.nickname && (
+              <>
+                <UserAvatar
+                  nickname={profile.nickname}
+                  src={profile.avatar}
+                  alt=""
+                  size={36}
+                  className="ml-auto"
+                />
+                {toolsAvailable ? (
+                  <Button variant="outline" onClick={() => setAvatarOpen(true)}>
+                    {t("avatar")}
+                  </Button>
+                ) : (
+                  <span className="text-muted-foreground text-sm">
+                    {t("avatarsUnavailable")}
+                  </span>
+                )}
+                <DialogClose asChild>
+                  <Link
+                    href="/profile"
+                    className="text-sm underline-offset-4 hover:underline"
+                  >
+                    {t("viewProfile")}
+                  </Link>
+                </DialogClose>
+                <AvatarDialog
+                  open={avatarOpen}
+                  onOpenChange={setAvatarOpen}
+                  nickname={profile.nickname}
+                  avatar={profile.avatar}
+                  onChange={(avatar) =>
+                    setProfile((current) => current && { ...current, avatar })
+                  }
+                />
+              </>
+            )}
+          </div>
+        </>
+      )}
+      {message && (
+        <p
+          role={message.error ? "alert" : "status"}
+          className={message.error ? "text-destructive text-sm" : "text-sm"}
+        >
+          {message.text}
         </p>
       )}
     </section>

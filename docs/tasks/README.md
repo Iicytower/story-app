@@ -66,7 +66,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 53 | [Projekt systemu społecznościowego i plan tasków](done/53-social-system-plan.md) | – | [x] |
 | 68 | [System społecznościowy (zbiorczy)](68-social.md) | – | [ ] |
 | 69 | ↳ [Fundament społeczności](done/69-social-foundation.md) (subtask 68) | – | [x] |
-| 70 | ↳ [Profil użytkownika](70-profile.md) (subtask 68) | 69 | [ ] |
+| 70 | ↳ [Profil użytkownika](done/70-profile.md) (subtask 68) | 69 | [x] |
 | 71 | ↳ [Obserwowanie autorów](71-follow.md) (subtask 68) | 70 | [ ] |
 | 72 | ↳ [Biblioteka i półki](72-library.md) (subtask 68) | 70 | [ ] |
 | 73 | ↳ [Postęp czytania i nowe rozdziały](73-reading-progress.md) (subtask 68) | 72 | [ ] |

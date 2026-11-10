@@ -12,3 +12,5 @@ import "./predefined-tag";
 import "./block";
 import "./community-ban";
 import "./community-moderator";
+import "./profile";
+import "./avatar";
