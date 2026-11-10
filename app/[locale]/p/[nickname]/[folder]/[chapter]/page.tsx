@@ -13,13 +13,17 @@ import { MarkdownPreview } from "@/components/markdown-preview";
 import { ADULT_COOKIE } from "@/lib/adult/gate";
 import { requireUser } from "@/lib/auth/session";
 import { getPublishedChapter, publishedChapterId } from "@/lib/publish/queries";
+import { listChapterMarks, MARK_PARAM } from "@/lib/reading/marks";
 import { CONTINUE_PARAM, savedPosition } from "@/lib/reading/queries";
 import { stripComments } from "@/lib/stories/strip-comments";
 import { BlurredCover } from "../adult-cover";
 import { AdultGate } from "./adult-gate";
+import { GuestMarks } from "./guest-marks";
+import { ReaderMarks } from "./reader-marks";
 import { ReadingTracker } from "./reading-tracker";
 
-// Only a signed-in reader's position is saved; Continue reading also scrolls back to it.
+// Only a signed-in reader's position is saved; Continue reading also scrolls back to it. Their
+// bookmarks and notes are private (task 74).
 async function tracker(
   userId: string,
   nickname: string,
@@ -32,10 +36,11 @@ async function tracker(
     folder,
     slug,
   ))!;
-  const resumeAt = resume
-    ? await savedPosition(userId, folderId, storyId)
-    : null;
-  return { storyId, resumeAt };
+  const [resumeAt, marks] = await Promise.all([
+    resume ? savedPosition(userId, folderId, storyId) : null,
+    listChapterMarks(userId, storyId),
+  ]);
+  return { storyId, resumeAt, marks };
 }
 
 export async function generateMetadata({
@@ -73,6 +78,7 @@ export default async function PublishedChapterPage({
   const { cover } = chapter;
   const coverAlt = tCovers("alt", { name: chapter.folderName });
   const viewer = await requireUser();
+  const query = await searchParams;
   const reading =
     viewer.ok && !gated
       ? await tracker(
@@ -80,9 +86,11 @@ export default async function PublishedChapterPage({
           nickname,
           folder,
           slug,
-          (await searchParams)[CONTINUE_PARAM] !== undefined,
+          query[CONTINUE_PARAM] !== undefined,
         )
       : null;
+  const focusMark = query[MARK_PARAM];
+  const text = <MarkdownPreview content={stripComments(chapter.content)} />;
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10">
@@ -104,8 +112,23 @@ export default async function PublishedChapterPage({
         ))}
       {gated ? (
         <AdultGate backPath={chapter.folderPath} />
+      ) : reading ? (
+        <ReaderMarks
+          // Another chapter of the book starts with its own marks.
+          key={reading.storyId}
+          initialMarks={reading.marks}
+          storyId={reading.storyId}
+          focusId={typeof focusMark === "string" ? focusMark : null}
+        >
+          {text}
+        </ReaderMarks>
+      ) : viewer.ok ? (
+        text
       ) : (
-        <MarkdownPreview content={stripComments(chapter.content)} />
+        <>
+          {text}
+          <GuestMarks path={chapter.path} />
+        </>
       )}
       {reading && (
         <ReadingTracker storyId={reading.storyId} resumeAt={reading.resumeAt} />

@@ -11,7 +11,11 @@ import {
   listLibraryBooks,
   listShelves,
 } from "@/lib/library/queries";
-import { libraryReading, type BookReading } from "@/lib/reading/queries";
+import {
+  libraryReading,
+  type BookMark,
+  type BookReading,
+} from "@/lib/reading/queries";
 import { cn } from "@/lib/utils";
 import { LibraryPicker } from "./library-picker";
 import { LibraryPublic } from "./library-public";
@@ -53,6 +57,38 @@ function BookProgress({
   );
 }
 
+// The reader's bookmarks and notes in the book, newest first (task 74).
+function BookMarks({
+  marks,
+  summary,
+  label,
+}: {
+  marks: BookMark[];
+  summary: string;
+  label: (mark: BookMark) => string;
+}) {
+  if (marks.length === 0) return null;
+  return (
+    <details className="min-w-0 text-sm">
+      <summary className="cursor-pointer underline-offset-4 hover:underline">
+        {summary}
+      </summary>
+      <ul className="mt-2 flex flex-col gap-1.5 border-l-2 pl-3">
+        {marks.map((mark) => (
+          <li key={mark.id} className="min-w-0">
+            <Link
+              href={mark.path}
+              className="line-clamp-2 [overflow-wrap:anywhere] underline underline-offset-4"
+            >
+              {label(mark)}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
 export default async function LibraryPage({
   searchParams,
 }: PageProps<"/[locale]/library">) {
@@ -75,6 +111,7 @@ export default async function LibraryPage({
   const t = await getTranslations("library");
   const tPublic = await getTranslations("public");
   const tCovers = await getTranslations("covers");
+  const tMarks = await getTranslations("marks");
 
   const tabs = [
     { id: null, name: t("all"), count: books.length },
@@ -152,6 +189,23 @@ export default async function LibraryPage({
                   reading={reading.get(book.folderId)}
                   newLabel={(count) => t("newChapters", { count })}
                   continueLabel={(title) => tPublic("continue", { title })}
+                />
+                <BookMarks
+                  marks={reading.get(book.folderId)?.marks ?? []}
+                  summary={t("marks", {
+                    count: reading.get(book.folderId)?.marks.length ?? 0,
+                  })}
+                  label={(mark) =>
+                    t("markIn", {
+                      kind: tMarks(
+                        mark.kind === "bookmark" ? "bookmarkKind" : "noteKind",
+                      ),
+                      chapter: mark.chapter,
+                      mark:
+                        mark.label ||
+                        tMarks("bookmarkAt", { position: mark.position }),
+                    })
+                  }
                 />
               </div>
               <LibraryPicker

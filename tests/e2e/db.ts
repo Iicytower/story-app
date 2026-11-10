@@ -33,6 +33,7 @@ export function clearStories(): Promise<void> {
     await connection.collection("shelves").deleteMany({});
     await connection.collection("libraryItems").deleteMany({});
     await connection.collection("readingProgress").deleteMany({});
+    await connection.collection("readerMarks").deleteMany({});
   });
 }
 
@@ -411,5 +412,62 @@ export function clearReadingProgress(reader: UserName): Promise<void> {
     await connection
       .collection("readingProgress")
       .deleteMany({ userId: await userId(connection, reader) });
+  });
+}
+
+export function findReaderMarks(user: UserName): Promise<
+  {
+    kind: string;
+    position: number;
+    name?: string;
+    quote?: string;
+    text?: string;
+  }[]
+> {
+  return withE2EDb(async (connection) =>
+    connection
+      .collection<{
+        kind: string;
+        position: number;
+        name?: string;
+        quote?: string;
+        text?: string;
+      }>("readerMarks")
+      .find(
+        { userId: await userId(connection, user) },
+        {
+          projection: {
+            _id: 0,
+            kind: 1,
+            position: 1,
+            name: 1,
+            quote: 1,
+            text: 1,
+          },
+        },
+      )
+      .toArray(),
+  );
+}
+
+// The author edits a chapter, e.g. the passage of a reader's note.
+export function setStoryContent(
+  author: UserName,
+  folder: string,
+  title: string,
+  content: string,
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const owner = await userId(connection, author);
+    const folderDoc = await connection
+      .collection("folders")
+      .findOne({ userId: owner, name: folder, deletedAt: null });
+    const { matchedCount } = await connection
+      .collection("stories")
+      .updateOne(
+        { userId: owner, folderId: folderDoc?._id, title, deletedAt: null },
+        { $set: { content, updatedAt: new Date() } },
+      );
+    if (matchedCount !== 1) throw new Error(`No chapter ${title} in ${folder}`);
   });
 }
