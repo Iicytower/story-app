@@ -27,6 +27,7 @@ import { countError, lengthError } from "@/lib/limits";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
 import { rememberFolderSlug, stampPublishedAt } from "@/lib/publish/mutations";
+import { recordChaptersPublished } from "@/lib/social/activity";
 import { getUserSettings, updateUserSettings } from "@/lib/settings/queries";
 import { canonicalTags } from "@/lib/tags/predefined";
 import { listPredefinedTags } from "@/lib/tags/queries";
@@ -181,9 +182,7 @@ export async function setFolderTags(
   })
     .select({ title: 1, tags: 1 })
     .lean();
-  const over = chapters.find((chapter) =>
-    exceedsTagLimit(chapter.tags, tags),
-  );
+  const over = chapters.find((chapter) => exceedsTagLimit(chapter.tags, tags));
   if (over) {
     return actionError("INVALID_INPUT", "folderTagLimit", {
       title: over.title,
@@ -330,7 +329,11 @@ export async function setFolderPublished(
       { $set: { publication: "public" } },
       { timestamps: false },
     );
-    await stampPublishedAt(chapters);
+    await recordChaptersPublished(
+      user.userId,
+      id,
+      await stampPublishedAt(chapters),
+    );
   }
   await Folder.updateOne(
     owned,
@@ -356,7 +359,11 @@ export async function publishAllChapters(id: string): Promise<ActionResult> {
     { $set: { publication: "public" } },
     { timestamps: false },
   );
-  await stampPublishedAt(chapters);
+  await recordChaptersPublished(
+    user.userId,
+    id,
+    await stampPublishedAt(chapters),
+  );
 
   refresh();
   return { ok: true };

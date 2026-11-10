@@ -1,3 +1,4 @@
+import { Activity } from "@/lib/models/activity";
 import { LibraryItem } from "@/lib/models/library-item";
 import { ReaderMark } from "@/lib/models/reader-mark";
 import { ReadingProgress } from "@/lib/models/reading-progress";
@@ -26,6 +27,18 @@ const PURGES: ((objects: PurgedObjects) => Promise<unknown>)[] = [
     ),
   ({ folderIds }) => ReaderMark.deleteMany({ folderId: { $in: folderIds } }),
   ({ storyIds }) => ReaderMark.deleteMany({ storyId: { $in: storyIds } }),
+  ({ folderIds }) => Activity.deleteMany({ folderId: { $in: folderIds } }),
+  // Other chapters of the same publication keep the entry; one left with none goes (task 75).
+  async ({ storyIds }) => {
+    await Activity.updateMany(
+      { storyIds: { $in: storyIds } },
+      { $pull: { storyIds: { $in: storyIds } } },
+    );
+    await Activity.deleteMany({
+      type: "chapterPublished",
+      storyIds: { $size: 0 },
+    });
+  },
 ];
 
 export async function purgeSocialData(objects: PurgedObjects): Promise<void> {

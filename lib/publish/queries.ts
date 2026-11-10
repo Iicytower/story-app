@@ -435,7 +435,7 @@ export interface PublicSearchResult {
 }
 
 // Addresses come from the same slugs as the reader pages, which count private neighbours too.
-async function findChapterPaths(
+export async function findChapterPaths(
   chapters: {
     _id: Types.ObjectId;
     userId: Types.ObjectId;

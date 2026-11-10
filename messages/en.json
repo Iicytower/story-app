@@ -347,7 +347,8 @@
     "folder": "Folder – Story App",
     "version": "Version – Story App",
     "editor": "Editor – Story App",
-    "library": "Library – Story App"
+    "library": "Library – Story App",
+    "feed": "Feed – Story App"
   },
   "folders": {
     "title": "Folders",
@@ -999,5 +1000,17 @@
     "deleteDescription": "This cannot be undone.",
     "bookmarkKind": "Bookmark",
     "noteKind": "Note"
+  },
+  "feed": {
+    "title": "Feed",
+    "entries": "Activity of followed authors",
+    "empty": "Nothing here yet. Follow authors whose stories you like, and their new chapters will show up here.",
+    "emptyLink": "Find stories on the home page",
+    "older": "Older",
+    "newest": "Newest",
+    "chapterPublished": "<author>{nickname}</author> published a new chapter <chapter>{title}</chapter> in <book>{bookName}</book>",
+    "chaptersPublished": "<author>{nickname}</author> published {count, plural, one {# new chapter} other {# new chapters}} in <book>{bookName}</book>",
+    "pages": "Pages",
+    "noOlder": "No older entries."
   }
 }

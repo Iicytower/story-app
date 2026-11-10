@@ -347,7 +347,8 @@
     "folder": "Folder – Story App",
     "version": "Wersja – Story App",
     "editor": "Edytor – Story App",
-    "library": "Biblioteka – Story App"
+    "library": "Biblioteka – Story App",
+    "feed": "Feed – Story App"
   },
   "folders": {
     "title": "Foldery",
@@ -999,5 +1000,17 @@
     "deleteDescription": "Tego nie można cofnąć.",
     "bookmarkKind": "Zakładka",
     "noteKind": "Notatka"
+  },
+  "feed": {
+    "title": "Feed",
+    "entries": "Aktywność obserwowanych autorów",
+    "empty": "Na razie nic tu nie ma. Obserwuj autorów, których opowiadania lubisz, a ich nowe rozdziały pojawią się tutaj.",
+    "emptyLink": "Znajdź opowiadania na stronie głównej",
+    "older": "Starsze",
+    "newest": "Najnowsze",
+    "chapterPublished": "<author>{nickname}</author> publikuje nowy rozdział <chapter>{title}</chapter> w książce <book>{bookName}</book>",
+    "chaptersPublished": "<author>{nickname}</author> publikuje {count, plural, one {# nowy rozdział} few {# nowe rozdziały} many {# nowych rozdziałów} other {# nowego rozdziału}} w książce <book>{bookName}</book>",
+    "pages": "Strony",
+    "noOlder": "Brak starszych wpisów."
   }
 }
