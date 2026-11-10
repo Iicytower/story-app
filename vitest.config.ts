@@ -11,7 +11,11 @@ export default defineConfig({
     server: { deps: { inline: ["next-auth", "next-intl"] } },
     globalSetup: ["tests/global-setup.ts"],
     setupFiles: ["tests/setup/next-intl.ts"],
-    include: ["**/*.test.ts", "tests/integration/**/*.test.ts"],
+    include: [
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "tests/integration/**/*.test.ts",
+    ],
     exclude: ["node_modules/**", ".next/**", "tests/e2e/**"],
   },
 });

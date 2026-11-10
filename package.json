@@ -22,6 +22,7 @@
     "create-account": "tsx --env-file=.env.local scripts/create-account.ts",
     "migrate": "tsx --env-file=.env.local scripts/migrate.ts",
     "tags": "tsx --env-file=.env.local scripts/predefined-tags.ts",
+    "admin": "tsx --env-file=.env.local scripts/admin.ts",
     "backup": "bash scripts/backup.sh"
   },
   "dependencies": {

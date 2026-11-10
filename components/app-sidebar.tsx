@@ -1,12 +1,21 @@
 "use client";
 
 import {
+  BellIcon,
+  ChartColumnIcon,
   FolderIcon,
   HouseIcon,
+  LibraryIcon,
+  MailIcon,
   MenuIcon,
+  MessagesSquareIcon,
+  NewspaperIcon,
   PanelLeftCloseIcon,
   PanelLeftOpenIcon,
   SettingsIcon,
+  ShieldIcon,
+  ShieldUserIcon,
+  UserIcon,
 } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
@@ -20,9 +29,34 @@ import {
 import { Button } from "@/components/ui/button";
 import { WithTooltip } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { SOCIAL_NAV, type SocialNavItem } from "@/lib/social/nav";
 import { applyTheme } from "@/lib/theme";
 
 const ITEM = "w-full justify-start";
+
+// Order from D80: feed and library above Folders, the rest below.
+const SOCIAL_ABOVE_FOLDERS: SocialNavItem[] = ["feed", "library"];
+const SOCIAL_BELOW_FOLDERS: SocialNavItem[] = [
+  "forums",
+  "messages",
+  "notifications",
+  "profile",
+  "moderation",
+  "admin",
+  "stats",
+];
+
+const SOCIAL_LINKS: Record<SocialNavItem, { href: string; icon: ReactNode }> = {
+  feed: { href: "/feed", icon: <NewspaperIcon /> },
+  library: { href: "/library", icon: <LibraryIcon /> },
+  forums: { href: "/forums", icon: <MessagesSquareIcon /> },
+  messages: { href: "/messages", icon: <MailIcon /> },
+  notifications: { href: "/notifications", icon: <BellIcon /> },
+  profile: { href: "/profile", icon: <UserIcon /> },
+  moderation: { href: "/moderation", icon: <ShieldIcon /> },
+  admin: { href: "/admin", icon: <ShieldUserIcon /> },
+  stats: { href: "/stats", icon: <ChartColumnIcon /> },
+};
 
 function NavLink({
   href,
@@ -76,7 +110,12 @@ function ActionButton({
   onClick: () => void;
 }) {
   const button = (
-    <Button variant="ghost" aria-label={label} className={ITEM} onClick={onClick}>
+    <Button
+      variant="ghost"
+      aria-label={label}
+      className={ITEM}
+      onClick={onClick}
+    >
       {icon}
       {!compact && label}
     </Button>
@@ -101,6 +140,20 @@ function NavItems({
 }) {
   const pathname = usePathname();
   const t = useTranslations("sidebar");
+  const socialLinks = (items: SocialNavItem[]) =>
+    items
+      .filter((item) => SOCIAL_NAV[item])
+      .map((item) => (
+        <NavLink
+          key={item}
+          href={SOCIAL_LINKS[item].href}
+          label={t(item)}
+          icon={SOCIAL_LINKS[item].icon}
+          compact={compact}
+          current={pathname === SOCIAL_LINKS[item].href}
+          onClick={onDone}
+        />
+      ));
   return (
     <>
       <NavLink
@@ -114,6 +167,7 @@ function NavItems({
         prefetch={false}
         onClick={onDone}
       />
+      {socialLinks(SOCIAL_ABOVE_FOLDERS)}
       <NavLink
         href="/stories"
         label={t("folders")}
@@ -122,6 +176,7 @@ function NavItems({
         current={pathname === "/stories"}
         onClick={onDone}
       />
+      {socialLinks(SOCIAL_BELOW_FOLDERS)}
       <div className="mt-auto flex flex-col gap-1">
         <ActionButton
           label={t("settings")}

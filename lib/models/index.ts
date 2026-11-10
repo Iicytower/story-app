@@ -9,3 +9,6 @@ import "./rate-limit";
 import "./cover";
 import "./session";
 import "./predefined-tag";
+import "./block";
+import "./community-ban";
+import "./community-moderator";

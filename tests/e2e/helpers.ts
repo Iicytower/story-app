@@ -1,4 +1,5 @@
 import {
+  type Browser,
   expect,
   test as base,
   type Locator,
@@ -12,7 +13,7 @@ import {
 } from "@/lib/credentials";
 import en from "@/messages/en.json";
 import { clearStories } from "./db";
-import { USERS, type UserName } from "./env";
+import { storageStatePath, USERS, type UserName } from "./env";
 
 const password = createTranslator({
   locale: "en",
@@ -31,6 +32,15 @@ export async function login(page: Page, user: UserName) {
   await page.getByLabel("Password").fill(USERS[user].password);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL("/en");
+}
+
+// A second user in the same test: their own context with the saved session. The caller
+// closes the context; the CSP fixture does not watch it.
+export async function loginAs(browser: Browser, user: UserName) {
+  const context = await browser.newContext({
+    storageState: storageStatePath(user),
+  });
+  return { context, page: await context.newPage() };
 }
 
 export const test = base.extend<{ cleanStories: void }>({

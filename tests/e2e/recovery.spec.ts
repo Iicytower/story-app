@@ -25,7 +25,7 @@ async function saveCodes(page: Page): Promise<string[]> {
 
 async function signIn(page: Page, password: string) {
   const dialog = await openDialog(page);
-  await dialog.getByLabel("Nickname").fill("Erin");
+  await dialog.getByLabel("Nickname").fill("Grace");
   await dialog.getByLabel("Password").fill(password);
   await dialog.getByRole("button", { name: "Sign in" }).click();
 }
@@ -36,7 +36,7 @@ async function reset(page: Page, code: string, password = NEW_PASSWORD) {
   await expect(dialog.getByRole("heading")).toHaveText(
     "Reset password with a recovery code",
   );
-  await dialog.getByLabel("Nickname").fill("erin");
+  await dialog.getByLabel("Nickname").fill("grace");
   await dialog.getByLabel("Recovery code").fill(code);
   await dialog.getByLabel("New password", { exact: true }).fill(password);
   await dialog.getByLabel("Repeat new password").fill(password);
@@ -54,7 +54,7 @@ test("a forgotten password is reset with a recovery code, which then stops worki
 }) => {
   const dialog = await openDialog(page);
   await dialog.getByRole("button", { name: "Create one" }).click();
-  await dialog.getByLabel("Nickname").fill("Erin");
+  await dialog.getByLabel("Nickname").fill("Grace");
   await dialog.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await dialog.getByLabel("Repeat password").fill(PASSWORD);
   await dialog.getByRole("button", { name: "Create account" }).click();

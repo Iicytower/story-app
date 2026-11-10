@@ -18,7 +18,16 @@
     "mainNav": "Główna",
     "expand": "Rozwiń pasek boczny",
     "collapse": "Zwiń pasek boczny",
-    "settings": "Ustawienia"
+    "settings": "Ustawienia",
+    "feed": "Feed",
+    "library": "Biblioteka",
+    "forums": "Fora",
+    "messages": "Wiadomości",
+    "notifications": "Powiadomienia",
+    "profile": "Mój profil",
+    "moderation": "Moderacja",
+    "admin": "Admin",
+    "stats": "Statystyki"
   },
   "settings": {
     "title": "Ustawienia",
@@ -140,7 +149,21 @@
     "passwordRepetitive": "Hasło za często powtarza jeden znak.",
     "passwordSequence": "Hasło zawiera prosty ciąg {length} lub więcej znaków, np. abcdef, 123456 albo qwerty.",
     "passwordContainsNickname": "Hasło nie może zawierać nicku.",
-    "recoveryInvalid": "Nick albo kod odzyskiwania jest nieprawidłowy albo kod został już użyty."
+    "recoveryInvalid": "Nick albo kod odzyskiwania jest nieprawidłowy albo kod został już użyty.",
+    "interactionNotAllowed": "Nie możesz tego tutaj zrobić.",
+    "userNotFound": "To konto nie istnieje lub jest niedostępne.",
+    "commentTooLong": "Komentarz może mieć najwyżej {max, number} znaków.",
+    "postTooLong": "Post może mieć najwyżej {max, number} znaków.",
+    "dmTooLong": "Wiadomość może mieć najwyżej {max, number} znaków.",
+    "threadTitleTooLong": "Tytuł wątku może mieć najwyżej {max, number} znaków.",
+    "bioTooLong": "Bio może mieć najwyżej {max, number} znaków.",
+    "banReasonTooLong": "Powód bana może mieć najwyżej {max, number} znaków.",
+    "reportTooLong": "Zgłoszenie może mieć najwyżej {max, number} znaków.",
+    "readerNoteTooLong": "Notatka może mieć najwyżej {max, number} znaków.",
+    "quoteTooLong": "Cytat może mieć najwyżej {max, number} znaków.",
+    "shelfNameTooLong": "Nazwa półki może mieć najwyżej {max, number} znaków.",
+    "bookmarkNameTooLong": "Nazwa zakładki może mieć najwyżej {max, number} znaków.",
+    "quoteContextTooLong": "Kontekst cytatu może mieć najwyżej {max, number} znaków."
   },
   "password": {
     "mustContain": "Hasło musi zawierać:",
