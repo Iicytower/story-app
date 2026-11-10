@@ -201,10 +201,13 @@
     "fromFolder": "Z folderu",
     "tagsFor": "Tagi: {name}",
     "tags": "Tagi",
-    "current": "Obecne tagi",
-    "remove": "Usuń {tag}",
     "add": "Dodaj tag",
-    "addButton": "Dodaj"
+    "addButton": "Dodaj",
+    "predefined": "Kategoria",
+    "filterByCategory": "Filtruj po kategorii",
+    "categories": "Kategorie",
+    "ownTags": "Twoje tagi",
+    "suggestions": "Podpowiedzi"
   },
   "find": {
     "invalidRegex": "Nieprawidłowe wyrażenie regularne",

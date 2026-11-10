@@ -24,7 +24,7 @@ import {
 import { AdultDialog, AdultMenuItem } from "@/components/adult";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ExportDialog } from "@/components/export-dialog";
-import { TagsDialog } from "@/components/tags-dialog";
+import { type TagOptions, TagsDialog } from "@/components/tags-dialog";
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -64,7 +64,7 @@ type Dialog =
 export function FolderMenu({
   folder,
   folders,
-  userTags,
+  tagOptions,
   isPublic,
   adult,
   unpublishedCount,
@@ -79,7 +79,7 @@ export function FolderMenu({
     chapterCount: number;
   };
   folders: FolderOption[];
-  userTags: string[];
+  tagOptions: TagOptions;
   isPublic: boolean;
   adult: AdultState;
   unpublishedCount: number;
@@ -210,7 +210,7 @@ export function FolderMenu({
         {...dialogProps("tags")}
         name={folder.name}
         tags={folder.tags}
-        suggestions={userTags}
+        options={tagOptions}
         action={setFolderTags.bind(null, folder.id)}
       />
       <RenameFolderDialog

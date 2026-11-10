@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { createOrUpdateUser } from "@/lib/accounts";
 import { connectDB, disconnectDB } from "@/lib/db";
 import "@/lib/models";
+import { up as seedPredefinedTags } from "@/migrations/007-predefined-tags";
 import { E2E_MONGODB_URI, USERS } from "./env";
 
 export default async function globalSetup() {
@@ -13,6 +14,7 @@ export default async function globalSetup() {
   const { connection } = await connectDB();
   await connection.dropDatabase();
   await connection.syncIndexes();
+  await seedPredefinedTags(connection.db!);
   for (const { nickname, password } of Object.values(USERS)) {
     await createOrUpdateUser(nickname, password);
   }

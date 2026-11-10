@@ -13,7 +13,7 @@ import { useState } from "react";
 import { ActionMenu, PublicationIcon } from "@/components/action-menu";
 import { AdultDialog, AdultMenuItem } from "@/components/adult";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { TagsDialog } from "@/components/tags-dialog";
+import { type TagOptions, TagsDialog } from "@/components/tags-dialog";
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -29,7 +29,7 @@ export function FolderRowMenu({
   id,
   name,
   tags,
-  userTags,
+  tagOptions,
   isPublic,
   adult,
   chapterCount,
@@ -37,7 +37,7 @@ export function FolderRowMenu({
   id: string;
   name: string;
   tags: string[];
-  userTags: string[];
+  tagOptions: TagOptions;
   isPublic: boolean;
   adult: AdultState;
   chapterCount: number;
@@ -90,7 +90,7 @@ export function FolderRowMenu({
         {...dialogProps("tags")}
         name={name}
         tags={tags}
-        suggestions={userTags}
+        options={tagOptions}
         action={setFolderTags.bind(null, id)}
       />
       <RenameFolderDialog {...dialogProps("rename")} id={id} name={name} />

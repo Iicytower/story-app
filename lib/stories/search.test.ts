@@ -102,8 +102,18 @@ describe("buildStoryFilter", () => {
   });
 
   it("keeps the search next to the tag conditions", () => {
-    const filter = buildStoryFilter("u", "smok", ["a"], folders);
-    expect(filter.$or).toHaveLength(2);
+    const filter = buildStoryFilter("u", "smok", ["a"], folders, ["smok"]);
+    expect(filter.$or).toHaveLength(4);
     expect(filter.$and).toHaveLength(1);
+  });
+
+  it("finds whole tags the query stands for, on the chapter or its folder", () => {
+    const filter = buildStoryFilter("u", "B", [], folders, ["b", "a"]);
+    expect(filter.$or).toEqual([
+      { title: /B/i },
+      { content: /B/i },
+      { tags: { $in: ["b", "a"] } },
+      { folderId: { $in: ["f1", "f2"] } },
+    ]);
   });
 });

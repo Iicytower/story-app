@@ -5,6 +5,8 @@ import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
 import { chapterPublicPath } from "@/lib/publish/queries";
 import { serialize } from "@/lib/serialize";
+import { tagsForQuery } from "@/lib/tags/predefined";
+import { listPredefinedTags } from "@/lib/tags/queries";
 import { buildStoryFilter } from "./search";
 
 export async function listStories(
@@ -13,11 +15,20 @@ export async function listStories(
   tags: string[] = [],
 ) {
   await connectDB();
-  const folders = await Folder.find({ userId, deletedAt: null })
-    .select({ name: 1, tags: 1, adult: 1 })
-    .lean();
+  const [folders, predefined] = await Promise.all([
+    Folder.find({ userId, deletedAt: null })
+      .select({ name: 1, tags: 1, adult: 1 })
+      .lean(),
+    listPredefinedTags(),
+  ]);
   const stories = await Story.find(
-    buildStoryFilter(userId, query, tags, folders),
+    buildStoryFilter(
+      userId,
+      query,
+      tags,
+      folders,
+      tagsForQuery(query ?? "", predefined),
+    ),
   )
     .select({
       title: 1,

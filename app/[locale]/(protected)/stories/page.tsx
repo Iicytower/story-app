@@ -9,14 +9,16 @@ import { SortableList } from "@/components/sortable-list";
 import { AdultBadge } from "@/components/adult";
 import { CoverImage } from "@/components/cover";
 import { TagChips } from "@/components/tag-chips";
+import { TagFilter } from "@/components/tag-filter";
 import { Input } from "@/components/ui/input";
 import { requireUser } from "@/lib/auth/session";
 import { retryDueCovers } from "@/lib/covers/mutations";
 import { listFolders } from "@/lib/folders/queries";
 import { listStories } from "@/lib/stories/queries";
 import { buildSnippet } from "@/lib/stories/search";
+import { listPublicTags } from "@/lib/publish/queries";
 import { listUserTags } from "@/lib/tags/queries";
-import { parseTagFilter, tagFilterHref } from "@/lib/tags/tags";
+import { parseTagFilter } from "@/lib/tags/tags";
 import { moveFolder } from "../folders/actions";
 import { FolderRowMenu } from "../folders/folder-row-menu";
 import { StoriesMenu } from "./stories-menu";
@@ -36,12 +38,12 @@ export default async function StoriesPage({
   const { q, tag } = await searchParams;
   const query = typeof q === "string" ? q.trim() : "";
   const selectedTags = parseTagFilter(tag);
-  const [{ sort, folders }, userTags] = await Promise.all([
+  const [{ sort, folders }, userTags, publicTags] = await Promise.all([
     listFolders(user.userId),
     listUserTags(user.userId),
+    listPublicTags(),
   ]);
-  // A selected tag that no longer exists stays visible, so it can be turned off.
-  const filterTags = [...new Set([...userTags, ...selectedTags])];
+  const tagOptions = { own: userTags, known: publicTags };
   // The most recently active folder, whatever order the list is shown in.
   const defaultFolder = folders.reduce<(typeof folders)[number] | undefined>(
     (latest, folder) =>
@@ -80,27 +82,13 @@ export default async function StoriesPage({
           <input key={selected} type="hidden" name="tag" value={selected} />
         ))}
       </Form>
-      {filterTags.length > 0 && (
-        <nav aria-label={t("filterByTag")} className="flex flex-wrap gap-1">
-          {filterTags.map((filterTag) => {
-            const active = selectedTags.includes(filterTag);
-            return (
-              <Link
-                key={filterTag}
-                href={tagFilterHref(query, selectedTags, filterTag)}
-                aria-current={active ? "true" : undefined}
-                className={`rounded-full px-2 py-0.5 text-xs ${
-                  active
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted hover:bg-muted/70"
-                }`}
-              >
-                {filterTag}
-              </Link>
-            );
-          })}
-        </nav>
-      )}
+      <TagFilter
+        tags={userTags}
+        selected={selectedTags}
+        query={query}
+        path="/stories"
+        label={t("filterByTag")}
+      />
       {query || selectedTags.length > 0 ? (
         <SearchResults userId={user.userId} query={query} tags={selectedTags} />
       ) : folders.length === 0 ? (
@@ -144,7 +132,7 @@ export default async function StoriesPage({
                   id={folder.id}
                   name={folder.name}
                   tags={folder.tags ?? []}
-                  userTags={userTags}
+                  tagOptions={tagOptions}
                   isPublic={Boolean(folder.published)}
                   adult={folder.adult}
                   chapterCount={folder.chapterCount}
