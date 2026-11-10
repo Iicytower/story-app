@@ -694,3 +694,14 @@ Dialog, panel i „Accept” zastąpiła korekta w głównym edytorze (D66); spr
 - `'wasm-unsafe-eval'` tylko dla pdf.js w imporcie PDF (bez niego pdf.js przechodzi na wolniejszy JavaScript). `eval` jest zablokowany: polyfille w bundlu czytnika `.docx` próbują `Function()` w `try/catch` i bez tego działają.
 - Nagłówki stałe z `next.config.ts` dla każdej odpowiedzi: `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, `Permissions-Policy` (bez kamery, mikrofonu, lokalizacji, płatności, USB i Topics), `Strict-Transport-Security: max-age=63072000; includeSubDomains`. `poweredByHeader: false`.
 - Testy E2E: fixture `context` w `tests/e2e/helpers.ts` zapisuje każde zdarzenie `securitypolicyviolation` i oblewa test, jeśli jakieś wystąpiło. Wyjątki tylko jawnie przez `allowCspViolation` z uzasadnieniem: parsowanie wklejonego HTML w nieaktywnym dokumencie zgłasza `script-src-attr`, choć handler i bez CSP by się nie wykonał (sprawdzone w Chromium), oraz próba `Function()` w imporcie `.docx`.
+
+## D78 – Decyzje Claude'a z nocy 2026-11-09/10 do potwierdzenia
+
+D70–D77 łączą decyzje użytkownika (z pytań przed startem) z rozstrzygnięciami Claude'a, których użytkownik jeszcze nie potwierdził:
+
+- D74: zmienna `TRUSTED_IP_HEADER` (użytkownik wybrał tylko Vercela; zmienna służy testom E2E i ewentualnej przeprowadzce). Limit rejestracji liczy też zajęte nicki (skutek I1), 5 na godzinę z adresu; nowy tekst `tooManyAccounts`.
+- D72: przy limicie wersji blokowane jest też przywracanie wersji. Edytor treści nie blokuje wpisywania ponad 500 000 znaków (Tiptap nie ma `maxLength`), tylko pokazuje komunikat i nie zapisuje.
+- D75: cache sesji 10 s w pamięci procesu (opóźnienie unieważnienia na innych instancjach i w proxy), `sid` widoczny w `/api/auth/session`, próg ciągu w regułach haseł (6 znaków) i próg powtórzeń (połowa hasła). Zmienione hasła kont testowych E2E.
+- D76: ekran kodów nie daje się zamknąć bez zaznaczenia „Mam zapisane te kody”; nowy tekst `noRecovery` przy rejestracji.
+- D77: `'wasm-unsafe-eval'` dla pdf.js; `style-src 'unsafe-inline'`.
+- D70: TypeScript 6.0.3 zamiast 7 (blokuje `typescript-eslint`).
