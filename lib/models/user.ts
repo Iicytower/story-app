@@ -7,6 +7,8 @@ export const NICKNAME_COLLATION = { locale: "en", strength: 2 };
 export interface UserFields {
   nickname: string;
   passwordHash: string;
+  // Hashes only (D76). Missing on accounts from before task 63, which have none.
+  recoveryCodes?: { hash: string; usedAt: Date | null }[];
   createdAt: Date;
 }
 
@@ -14,6 +16,16 @@ const userSchema = new Schema<UserFields>(
   {
     nickname: { type: String, required: true, trim: true },
     passwordHash: { type: String, required: true },
+    recoveryCodes: {
+      type: [
+        {
+          _id: false,
+          hash: { type: String, required: true },
+          usedAt: { type: Date, default: null },
+        },
+      ],
+      default: undefined,
+    },
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 );

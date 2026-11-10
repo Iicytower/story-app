@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
@@ -52,7 +53,10 @@ export default async function LocaleLayout({
       suppressHydrationWarning
     >
       <head>
-        <InlineScript html={themeScript} />
+        <InlineScript
+          html={themeScript}
+          nonce={(await headers()).get("x-nonce") ?? undefined}
+        />
       </head>
       <body className="flex min-h-full flex-col">
         <NextIntlClientProvider>

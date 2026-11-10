@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { USERS } from "./env";
 import { expect, PASSWORD_REQUIREMENT_TEXTS, test } from "./helpers";
 
-const PASSWORD = "Dave-password-123456";
+const PASSWORD = "Willow-lantern-2468!";
 
 async function fillForm(
   page: Page,
@@ -36,9 +36,25 @@ test("the dialog switches between the two forms", async ({ page }) => {
   await expect(dialog.getByRole("heading")).toHaveText("Create account");
 });
 
-test("registering signs in and shows an empty account", async ({ page }) => {
+test("registering shows the recovery codes once, then signs in with an empty account", async ({
+  page,
+}) => {
   await fillForm(page, "Dave", PASSWORD);
   await submit(page);
+
+  const dialog = page.getByRole("dialog", { name: "Save your recovery codes" });
+  const codes = dialog.getByRole("list", { name: "Recovery codes" });
+  await expect(codes.getByRole("listitem")).toHaveCount(10);
+  await expect(codes.getByRole("listitem").first()).toHaveText(
+    /^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}$/,
+  );
+  // Only once: the dialog does not close until the codes are saved.
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeVisible();
+  const proceed = dialog.getByRole("button", { name: "Continue" });
+  await expect(proceed).toBeDisabled();
+  await dialog.getByLabel("I have saved these codes").check();
+  await proceed.click();
 
   await expect(page.getByRole("navigation", { name: "Main" })).toBeVisible();
   await page.goto("/stories");
@@ -99,6 +115,10 @@ test("a taken nickname gives a message in any case", async ({ page }) => {
   await expect(page).toHaveURL("/en");
 });
 
-test("the page says the password cannot be recovered", async ({ page }) => {
-  await expect(page.getByText("There is no password recovery.")).toBeVisible();
+test("the form says recovery codes come after registering", async ({
+  page,
+}) => {
+  await expect(
+    page.getByText("After creating the account you get recovery codes."),
+  ).toBeVisible();
 });

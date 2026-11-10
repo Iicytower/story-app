@@ -1,21 +1,17 @@
 "use server";
 
 import { headers } from "next/headers";
-import { getLocale } from "next-intl/server";
-import { redirect } from "@/i18n/navigation";
-import { AuthError } from "next-auth";
-import { signIn } from "@/auth";
+import { signInAfter } from "@/lib/auth/sign-in-after";
+import {
+  generateRecoveryCodes,
+  storeRecoveryCodes,
+} from "@/lib/auth/recovery-codes";
 import { createUser, userExists } from "@/lib/accounts";
 import type { ActionResult } from "@/lib/action-result";
 import { nicknameError, passwordError } from "@/lib/credentials";
 import { connectDB } from "@/lib/db";
 import { actionError } from "@/lib/i18n/action-error";
-import {
-  clientIp,
-  giveBackAttempt,
-  REGISTRATION_LIMIT,
-  takeAttempt,
-} from "@/lib/rate-limit";
+import { REGISTRATION_LIMIT, takeIpAttempt } from "@/lib/rate-limit";
 
 const NICKNAME_TAKEN = () => actionError("DUPLICATE_NAME", "nicknameTaken");
 
@@ -23,7 +19,7 @@ export async function register(
   nickname: unknown,
   password: unknown,
   repeatedPassword: unknown,
-): Promise<ActionResult> {
+): Promise<ActionResult<{ recoveryCodes: string[]; signedIn: boolean }>> {
   if (
     typeof nickname !== "string" ||
     typeof password !== "string" ||
@@ -32,7 +28,7 @@ export async function register(
     return actionError("INVALID_INPUT", "detailsInvalid");
   }
   const trimmed = nickname.trim();
-  const invalid = nicknameError(trimmed) ?? passwordError(password);
+  const invalid = nicknameError(trimmed) ?? passwordError(password, trimmed);
   if (invalid) {
     return actionError("INVALID_INPUT", invalid.key, invalid.values);
   }
@@ -41,32 +37,24 @@ export async function register(
   }
 
   await connectDB();
-  if (await userExists(trimmed)) return NICKNAME_TAKEN();
-
-  const attempt = await takeAttempt(
-    REGISTRATION_LIMIT,
-    clientIp(await headers()),
-  );
+  // Before the nickname check, so the limit also slows down probing which nicknames exist (I1).
+  const attempt = await takeIpAttempt(REGISTRATION_LIMIT, await headers());
   if (!attempt) {
     return actionError("RATE_LIMITED", "tooManyAccounts");
   }
-  if (!(await createUser(trimmed, password))) {
-    await giveBackAttempt(attempt);
+  if (await userExists(trimmed)) return NICKNAME_TAKEN();
+  // Shown once by the form; only their hashes are stored (D76).
+  const recoveryCodes = generateRecoveryCodes();
+  if (
+    !(await createUser(trimmed, password, storeRecoveryCodes(recoveryCodes)))
+  ) {
     return NICKNAME_TAKEN();
   }
 
-  const locale = await getLocale();
-  try {
-    await signIn("credentials", {
-      nickname: trimmed,
-      password,
-      redirectTo: `/${locale}`,
-    });
-  } catch (error) {
-    // The account exists; only the automatic sign-in hit the login limit.
-    if (error instanceof AuthError) redirect({ href: "/?auth=login", locale });
-    // signIn signals success by throwing Next.js's redirect, which must propagate.
-    throw error;
-  }
-  return { ok: true };
+  // The form shows the codes first, so this signs in without a redirect.
+  return {
+    ok: true,
+    recoveryCodes,
+    signedIn: await signInAfter(trimmed, password),
+  };
 }

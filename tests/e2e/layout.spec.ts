@@ -3,6 +3,7 @@ import { storageStatePath } from "./env";
 import {
   expect,
   expectSignedOut,
+  login,
   openSettings,
   saveTheme,
   sidebarAction,
@@ -102,9 +103,12 @@ test("Save is enabled only after a change, and Cancel discards it", async ({
 test("log out returns to the home page and protects /stories again", async ({
   page,
 }) => {
+  // A session of its own: logging out ends it, and the saved one is for other tests (D75).
+  await page.context().clearCookies();
+  await login(page, "alice");
   await page.goto("/stories");
   const dialog = await openSettings(page);
-  await dialog.getByRole("button", { name: "Log out" }).click();
+  await dialog.getByRole("button", { name: "Log out", exact: true }).click();
   await expect(page).toHaveURL("/en");
   await expectSignedOut(page);
 

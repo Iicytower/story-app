@@ -2,15 +2,18 @@ import type { Types } from "mongoose";
 import { isDuplicateKeyError } from "@/lib/db";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
+import { canAddFolder } from "./limits";
 
 // Matches names exactly like the unique index: case-sensitive, after trim() by the caller.
+// Null when the name is new and the user already has MAX_FOLDERS folders.
 export async function findOrCreateFolder(
   userId: string,
   name: string,
-): Promise<Types.ObjectId> {
+): Promise<Types.ObjectId | null> {
   const filter = { userId, name, deletedAt: null };
   const existing = await Folder.findOne(filter).select({ _id: 1 }).lean();
   if (existing) return existing._id;
+  if (!(await canAddFolder(userId))) return null;
   try {
     const position = await nextFolderPosition(userId);
     return (await Folder.create({ userId, name, position }))._id;

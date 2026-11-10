@@ -41,9 +41,45 @@ export const test = base.extend<{ cleanStories: void }>({
     },
     { auto: true },
   ],
+  // Any Content-Security-Policy violation on a page of the test's context fails the test
+  // (task 60, D77). Contexts a test opens itself are not covered.
+  // Not "use": the React Hooks lint rule takes it for the hook.
+  // A test lists violations it expects with allowCspViolation.
+  context: async ({ context }, run, testInfo) => {
+    const violations: string[] = [];
+    await context.exposeBinding("__reportCspViolation", (_, text: string) => {
+      violations.push(text);
+    });
+    await context.addInitScript(() => {
+      document.addEventListener("securitypolicyviolation", (event) => {
+        const report = (
+          window as unknown as {
+            __reportCspViolation: (text: string) => void;
+          }
+        ).__reportCspViolation;
+        report(`${event.effectiveDirective} ${event.blockedURI}`);
+      });
+    });
+    await run(context);
+    const allowed = testInfo.annotations
+      .filter(({ type }) => type === CSP_ALLOWED)
+      .map(({ description }) => description);
+    expect(
+      violations.filter((violation) => !allowed.includes(violation)),
+      "Content-Security-Policy violations",
+    ).toEqual([]);
+  },
 });
 
 export { expect };
+
+const CSP_ALLOWED = "csp-allowed";
+
+// For violations that are the policy doing its job, e.g. "script-src-attr inline". Each caller
+// says why the blocked code is harmless.
+export function allowCspViolation(violation: string) {
+  test.info().annotations.push({ type: CSP_ALLOWED, description: violation });
+}
 
 // A sign-out from "/" keeps the address, so the URL alone does not show that it finished.
 export async function expectSignedOut(page: Page) {

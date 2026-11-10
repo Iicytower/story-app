@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import bcrypt from "bcryptjs";
+import type { StoredRecoveryCode } from "@/lib/auth/recovery-codes";
 import { nicknameError, passwordError } from "@/lib/credentials";
 import { isDuplicateKeyError } from "@/lib/db";
 import { inEnglish } from "@/lib/i18n/english";
@@ -44,9 +45,14 @@ export async function userExists(nickname: string): Promise<boolean> {
 export async function createUser(
   nickname: string,
   password: string,
+  recoveryCodes?: StoredRecoveryCode[],
 ): Promise<boolean> {
   try {
-    await User.create({ nickname, passwordHash: await hashPassword(password) });
+    await User.create({
+      nickname,
+      passwordHash: await hashPassword(password),
+      recoveryCodes,
+    });
     return true;
   } catch (error) {
     if (isDuplicateKeyError(error)) return false;
@@ -59,7 +65,7 @@ export async function createOrUpdateUser(
   password: string,
 ): Promise<"created" | "updated"> {
   const trimmed = nickname.trim();
-  const error = nicknameError(trimmed) ?? passwordError(password);
+  const error = nicknameError(trimmed) ?? passwordError(password, trimmed);
   if (error) throw new Error(inEnglish(error));
 
   const result = await User.updateOne(

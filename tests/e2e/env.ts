@@ -8,10 +8,10 @@ export const E2E_TOOLS_SECRET = "e2e-tools-secret";
 export const E2E_MONGODB_URI = "mongodb://127.0.0.1:27017/story_app_e2e";
 
 export const USERS = {
-  alice: { nickname: "Alice", password: "Alice-password-12345" },
-  bob: { nickname: "Bob", password: "Bob-password-1234567" },
+  alice: { nickname: "Alice", password: "Silver-river-12345!" },
+  bob: { nickname: "Bob", password: "Granite-path-1357913" },
   // Only for changing the password: everyone else's must stay valid for other tests.
-  carol: { nickname: "Carol", password: "Carol-password-12345" },
+  carol: { nickname: "Carol", password: "Amber-meadow-12345" },
 } as const;
 
 export type UserName = keyof typeof USERS;
@@ -19,3 +19,5 @@ export type UserName = keyof typeof USERS;
 export function storageStatePath(user: UserName): string {
   return `tests/e2e/.auth/${user}.json`;
 }
+
+export const E2E_IP_HEADER = "x-e2e-client-ip";

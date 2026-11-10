@@ -1,12 +1,15 @@
 "use server";
 
-import { isObjectIdOrHexString, type Types } from "mongoose";
+import type { Types } from "mongoose";
 import { refresh } from "next/cache";
 import { getTranslations } from "next-intl/server";
+import { isId, isString } from "@/lib/action-input";
 import type { ActionResult, ValidationError } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import { connectDB } from "@/lib/db";
+import { canAddVersion } from "@/lib/folders/limits";
 import { actionError, translateError } from "@/lib/i18n/action-error";
+import { countError, MAX_CHAPTERS_PER_FOLDER } from "@/lib/limits";
 import { Folder } from "@/lib/models/folder";
 import {
   FolderVersion,
@@ -28,6 +31,8 @@ const NOT_FOUND = () => actionError("NOT_FOUND", "versionNotFound");
 const isVersionNumber = (number: unknown): number is number =>
   Number.isInteger(number) && (number as number) > 0;
 
+const TOO_MANY_VERSIONS = () => translateError(countError("tooManyVersions"));
+
 const activeFolder = (userId: string, folderId: string) =>
   Folder.exists({ _id: folderId, userId, deletedAt: null });
 
@@ -37,11 +42,20 @@ export async function createFolderVersion(
 ): Promise<ActionResult<{ number: number }>> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(folderId)) return FOLDER_NOT_FOUND();
+  if (!isId(folderId)) return FOLDER_NOT_FOUND();
+  if (!isString(name)) {
+    return actionError("INVALID_INPUT", "requestInvalid");
+  }
   const valid = validateVersionName(name);
   if (!valid.ok) return translateError(valid);
 
   await connectDB();
+  if (
+    (await activeFolder(user.userId, folderId)) &&
+    !(await canAddVersion(user.userId, folderId))
+  ) {
+    return TOO_MANY_VERSIONS();
+  }
   const number = await saveVersion(user.userId, folderId, valid.name);
   if (number === null) return FOLDER_NOT_FOUND();
 
@@ -69,7 +83,7 @@ async function restoreVersion(
 ): Promise<ActionResult<{ savedNumber: number }>> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(folderId)) return FOLDER_NOT_FOUND();
+  if (!isId(folderId)) return FOLDER_NOT_FOUND();
   if (!isVersionNumber(number)) return NOT_FOUND();
 
   await connectDB();
@@ -89,6 +103,18 @@ async function restoreVersion(
   }).distinct("_id");
   const changes = plan(version, current);
   if ("ok" in changes) return translateError(changes);
+  // The restore first saves the folder as a version, so it needs room for one too.
+  if (!(await canAddVersion(user.userId, folderId))) return TOO_MANY_VERSIONS();
+  const present = new Set(current.map((id) => id.toString()));
+  const added = changes.chapters.filter(
+    (chapter) => !present.has(chapter.storyId.toString()),
+  ).length;
+  if (
+    current.length - changes.remove.length + added >
+    MAX_CHAPTERS_PER_FOLDER
+  ) {
+    return translateError(countError("tooManyChapters"));
+  }
 
   const savedNumber = await saveVersion(
     user.userId,
@@ -151,7 +177,7 @@ export async function deleteFolderVersion(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(folderId)) return FOLDER_NOT_FOUND();
+  if (!isId(folderId)) return FOLDER_NOT_FOUND();
   if (!isVersionNumber(number)) return NOT_FOUND();
 
   await connectDB();

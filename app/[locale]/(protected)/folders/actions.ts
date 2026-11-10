@@ -1,7 +1,7 @@
 "use server";
 
-import { isObjectIdOrHexString } from "mongoose";
 import { refresh } from "next/cache";
+import { isBoolean, isId, isIsoDate, isString } from "@/lib/action-input";
 import type { ActionResult } from "@/lib/action-result";
 import { folderAdultState } from "@/lib/adult/adult";
 import { requireUser } from "@/lib/auth/session";
@@ -21,7 +21,9 @@ import {
   isFolderSort,
   isPositionIndex,
 } from "@/lib/folders/sort";
+import { canAddFolder } from "@/lib/folders/limits";
 import { isFolderLanguage } from "@/lib/languages";
+import { countError, lengthError } from "@/lib/limits";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
 import { rememberFolderSlug, stampPublishedAt } from "@/lib/publish/mutations";
@@ -36,15 +38,23 @@ const INVALID_INPUT = () => actionError("INVALID_INPUT", "optionUnavailable");
 
 const DUPLICATE_NAME = () => actionError("DUPLICATE_NAME", "duplicateFolder");
 
+const INVALID_REQUEST = () => actionError("INVALID_INPUT", "requestInvalid");
+
 export async function createFolder(
   name: string,
 ): Promise<ActionResult<{ id: string }>> {
   const user = await requireUser();
   if (!user.ok) return user;
+  if (!isString(name)) return INVALID_REQUEST();
   const trimmed = name.trim();
   if (!trimmed) return EMPTY_NAME();
+  const tooLong = lengthError("folderName", trimmed);
+  if (tooLong) return translateError(tooLong);
 
   await connectDB();
+  if (!(await canAddFolder(user.userId))) {
+    return translateError(countError("tooManyFolders"));
+  }
   try {
     const folder = await Folder.create({
       userId: user.userId,
@@ -64,9 +74,12 @@ export async function renameFolder(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isId(id)) return NOT_FOUND();
+  if (!isString(name)) return INVALID_REQUEST();
   const trimmed = name.trim();
   if (!trimmed) return EMPTY_NAME();
+  const tooLong = lengthError("folderName", trimmed);
+  if (tooLong) return translateError(tooLong);
 
   await connectDB();
   try {
@@ -92,7 +105,7 @@ export async function renameFolder(
 export async function deleteFolder(id: string): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isId(id)) return NOT_FOUND();
 
   await connectDB();
   const deletedAt = new Date();
@@ -119,7 +132,12 @@ export async function saveFolderNotes(
 ): Promise<ActionResult<{ notesUpdatedAt: string }>> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isId(id)) return NOT_FOUND();
+  if (!isString(notes) || !isIsoDate(expectedNotesUpdatedAt)) {
+    return INVALID_REQUEST();
+  }
+  const tooLong = lengthError("folderNotes", notes);
+  if (tooLong) return translateError(tooLong);
 
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };
@@ -145,7 +163,7 @@ export async function setFolderTags(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isId(id)) return NOT_FOUND();
   const normalized = normalizeTags(tags);
   if (!normalized.ok) return translateError(normalized);
 
@@ -210,7 +228,7 @@ export async function setChapterSort(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isId(id)) return NOT_FOUND();
   if (!isChapterSort(mode)) return INVALID_INPUT();
 
   await connectDB();
@@ -250,7 +268,7 @@ export async function setFolderLanguage(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isId(id)) return NOT_FOUND();
   if (!isFolderLanguage(language)) return INVALID_INPUT();
 
   await connectDB();
@@ -271,7 +289,7 @@ export async function moveFolder(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isId(id)) return NOT_FOUND();
   if (!isPositionIndex(index)) return INVALID_INPUT();
 
   await connectDB();
@@ -294,7 +312,8 @@ export async function setFolderPublished(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isId(id)) return NOT_FOUND();
+  if (!isBoolean(enabled)) return INVALID_REQUEST();
 
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };
@@ -322,7 +341,7 @@ export async function setFolderPublished(
 export async function publishAllChapters(id: string): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isId(id)) return NOT_FOUND();
 
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };
@@ -346,7 +365,8 @@ export async function setFolderAdult(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (!isObjectIdOrHexString(id)) return NOT_FOUND();
+  if (!isId(id)) return NOT_FOUND();
+  if (!isBoolean(adult)) return INVALID_REQUEST();
 
   await connectDB();
   const owned = { _id: id, userId: user.userId, deletedAt: null };
