@@ -1,10 +1,11 @@
 "use server";
 
 import { headers } from "next/headers";
-import { getLocale } from "next-intl/server";
-import { redirect } from "@/i18n/navigation";
-import { AuthError } from "next-auth";
-import { signIn } from "@/auth";
+import { signInAfter } from "@/lib/auth/sign-in-after";
+import {
+  generateRecoveryCodes,
+  storeRecoveryCodes,
+} from "@/lib/auth/recovery-codes";
 import { createUser, userExists } from "@/lib/accounts";
 import type { ActionResult } from "@/lib/action-result";
 import { nicknameError, passwordError } from "@/lib/credentials";
@@ -18,7 +19,7 @@ export async function register(
   nickname: unknown,
   password: unknown,
   repeatedPassword: unknown,
-): Promise<ActionResult> {
+): Promise<ActionResult<{ recoveryCodes: string[]; signedIn: boolean }>> {
   if (
     typeof nickname !== "string" ||
     typeof password !== "string" ||
@@ -42,20 +43,18 @@ export async function register(
     return actionError("RATE_LIMITED", "tooManyAccounts");
   }
   if (await userExists(trimmed)) return NICKNAME_TAKEN();
-  if (!(await createUser(trimmed, password))) return NICKNAME_TAKEN();
-
-  const locale = await getLocale();
-  try {
-    await signIn("credentials", {
-      nickname: trimmed,
-      password,
-      redirectTo: `/${locale}`,
-    });
-  } catch (error) {
-    // The account exists; only the automatic sign-in hit the login limit.
-    if (error instanceof AuthError) redirect({ href: "/?auth=login", locale });
-    // signIn signals success by throwing Next.js's redirect, which must propagate.
-    throw error;
+  // Shown once by the form; only their hashes are stored (D76).
+  const recoveryCodes = generateRecoveryCodes();
+  if (
+    !(await createUser(trimmed, password, storeRecoveryCodes(recoveryCodes)))
+  ) {
+    return NICKNAME_TAKEN();
   }
-  return { ok: true };
+
+  // The form shows the codes first, so this signs in without a redirect.
+  return {
+    ok: true,
+    recoveryCodes,
+    signedIn: await signInAfter(trimmed, password),
+  };
 }

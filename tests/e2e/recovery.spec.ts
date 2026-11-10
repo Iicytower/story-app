@@ -1,0 +1,88 @@
+import type { Page } from "@playwright/test";
+import { expect, expectSignedOut, openSettings, test } from "./helpers";
+
+const PASSWORD = "Willow-lantern-2468!";
+const NEW_PASSWORD = "Harbor-candle-9753!";
+
+async function openDialog(page: Page) {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Log in / Create account" }).click();
+  return page.getByRole("dialog");
+}
+
+async function saveCodes(page: Page): Promise<string[]> {
+  const dialog = page.getByRole("dialog", { name: "Save your recovery codes" });
+  const items = dialog
+    .getByRole("list", { name: "Recovery codes" })
+    .getByRole("listitem");
+  await expect(items).toHaveCount(10);
+  const codes = await items.allTextContents();
+  await dialog.getByLabel("I have saved these codes").check();
+  await dialog.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByRole("navigation", { name: "Main" })).toBeVisible();
+  return codes;
+}
+
+async function signIn(page: Page, password: string) {
+  const dialog = await openDialog(page);
+  await dialog.getByLabel("Nickname").fill("Erin");
+  await dialog.getByLabel("Password").fill(password);
+  await dialog.getByRole("button", { name: "Sign in" }).click();
+}
+
+async function reset(page: Page, code: string, password = NEW_PASSWORD) {
+  const dialog = await openDialog(page);
+  await dialog.getByRole("button", { name: "Forgot your password?" }).click();
+  await expect(dialog.getByRole("heading")).toHaveText(
+    "Reset password with a recovery code",
+  );
+  await dialog.getByLabel("Nickname").fill("erin");
+  await dialog.getByLabel("Recovery code").fill(code);
+  await dialog.getByLabel("New password", { exact: true }).fill(password);
+  await dialog.getByLabel("Repeat new password").fill(password);
+  await dialog.getByRole("button", { name: "Set new password" }).click();
+}
+
+async function logOut(page: Page) {
+  const settings = await openSettings(page);
+  await settings.getByRole("button", { name: "Log out", exact: true }).click();
+  await expectSignedOut(page);
+}
+
+test("a forgotten password is reset with a recovery code, which then stops working", async ({
+  page,
+}) => {
+  const dialog = await openDialog(page);
+  await dialog.getByRole("button", { name: "Create one" }).click();
+  await dialog.getByLabel("Nickname").fill("Erin");
+  await dialog.getByLabel("Password", { exact: true }).fill(PASSWORD);
+  await dialog.getByLabel("Repeat password").fill(PASSWORD);
+  await dialog.getByRole("button", { name: "Create account" }).click();
+  const codes = await saveCodes(page);
+  await logOut(page);
+
+  // Typed by hand: lower case and without dashes.
+  await reset(page, codes[4].toLowerCase().replace(/-/g, " "));
+  await expect(
+    page.getByText("Your password is changed and the code you used"),
+  ).toBeVisible();
+  const fresh = await saveCodes(page);
+  expect(fresh).toHaveLength(10);
+  expect(fresh).not.toContain(codes[4]);
+  await logOut(page);
+
+  await signIn(page, PASSWORD);
+  await expect(
+    page
+      .getByRole("alert")
+      .filter({ hasText: "Invalid nickname or password." }),
+  ).toBeVisible();
+  await signIn(page, NEW_PASSWORD);
+  await expect(page).toHaveURL("/en");
+  await logOut(page);
+
+  await reset(page, codes[4], PASSWORD);
+  await expect(
+    page.getByRole("alert").filter({ hasText: /recovery code is not valid/ }),
+  ).toBeVisible();
+});

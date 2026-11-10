@@ -139,7 +139,8 @@
     "importNotesTooLong": "The notes of chapter “{title}” are too long: notes can have at most {max, number} characters.",
     "passwordRepetitive": "The password repeats one character too often.",
     "passwordSequence": "The password contains a simple sequence of {length} or more characters, such as abcdef, 123456 or qwerty.",
-    "passwordContainsNickname": "The password must not contain your nickname."
+    "passwordContainsNickname": "The password must not contain your nickname.",
+    "recoveryInvalid": "The nickname or the recovery code is not valid, or the code was already used."
   },
   "password": {
     "mustContain": "The password must contain:",
@@ -165,7 +166,7 @@
     "passwordRequirements": "Password requirements",
     "met": "Met: ",
     "missing": "Missing: ",
-    "noRecovery": "There is no password recovery. If you forget your password, you lose access to your account and stories.",
+    "noRecovery": "After creating the account you get recovery codes. Keep them safe: without them a forgotten password cannot be recovered.",
     "creatingAccount": "Creating account…"
   },
   "changePassword": {
@@ -822,5 +823,24 @@
     "inputInvalid": "Choose a JPEG, PNG or WebP image up to 10 MB.",
     "alt": "Cover of {name}",
     "showAdult": "Show the cover (I am 18 or older)"
+  },
+  "recovery": {
+    "title": "Save your recovery codes",
+    "description": "Each code works once: with it you can set a new password if you forget yours. They are shown only now. Keep them somewhere safe, away from this device if you can.",
+    "replaced": "Your password is changed and the code you used no longer works. Here are 10 new codes; the earlier ones no longer work either.",
+    "list": "Recovery codes",
+    "copy": "Copy codes",
+    "copied": "Copied",
+    "saved": "I have saved these codes",
+    "continue": "Continue",
+    "forgot": "Forgot your password?",
+    "resetTitle": "Reset password with a recovery code",
+    "code": "Recovery code",
+    "codeHint": "One of the codes you got when you created the account, e.g. ABCD-EFGH-JKMN.",
+    "newPassword": "New password",
+    "repeatPassword": "Repeat new password",
+    "submit": "Set new password",
+    "submitting": "Setting password…",
+    "back": "Back to sign in"
   }
 }
