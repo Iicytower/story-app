@@ -43,16 +43,16 @@ beforeEach(() => {
 
 describe("register", () => {
   it("creates the account and signs in", async () => {
-    await expect(register(" Alice ", PASSWORD, PASSWORD)).resolves.toEqual({
-      ok: true,
-    });
+    await expect(
+      register(" Alice ", PASSWORD, PASSWORD),
+    ).resolves.toMatchObject({ ok: true });
 
     const user = await User.findOne({ nickname: "Alice" }).lean();
     expect(user?.createdAt).toBeInstanceOf(Date);
     expect(signIn).toHaveBeenCalledWith("credentials", {
       nickname: "Alice",
       password: PASSWORD,
-      redirectTo: "/en",
+      redirect: false,
     });
   });
 
@@ -157,9 +157,9 @@ describe("register", () => {
 
   it("refuses accounts over the limit without creating them", async () => {
     for (let i = 0; i < REGISTRATION_LIMIT.max; i++) {
-      await expect(register(`user-${i}`, PASSWORD, PASSWORD)).resolves.toEqual({
-        ok: true,
-      });
+      await expect(
+        register(`user-${i}`, PASSWORD, PASSWORD),
+      ).resolves.toMatchObject({ ok: true });
     }
 
     await expect(register("one-more", PASSWORD, PASSWORD)).resolves.toEqual({
@@ -170,9 +170,9 @@ describe("register", () => {
     await expect(User.countDocuments()).resolves.toBe(REGISTRATION_LIMIT.max);
 
     fromAddress("198.51.100.9");
-    await expect(register("one-more", PASSWORD, PASSWORD)).resolves.toEqual({
-      ok: true,
-    });
+    await expect(
+      register("one-more", PASSWORD, PASSWORD),
+    ).resolves.toMatchObject({ ok: true });
   });
 
   it("does not count registrations rejected by validation", async () => {
@@ -180,7 +180,7 @@ describe("register", () => {
       await register("Bob", "weak", "weak");
     }
 
-    await expect(register("Bob", PASSWORD, PASSWORD)).resolves.toEqual({
+    await expect(register("Bob", PASSWORD, PASSWORD)).resolves.toMatchObject({
       ok: true,
     });
   });
@@ -212,25 +212,19 @@ describe("register", () => {
   it("without a trusted address clients do not share one limit", async () => {
     vi.unstubAllEnvs();
     for (let i = 0; i < REGISTRATION_LIMIT.max + 2; i++) {
-      await expect(register(`user-${i}`, PASSWORD, PASSWORD)).resolves.toEqual({
-        ok: true,
-      });
+      await expect(
+        register(`user-${i}`, PASSWORD, PASSWORD),
+      ).resolves.toMatchObject({ ok: true });
     }
   });
 
-  it("sends a new account to sign in when the login limit blocks it", async () => {
+  it("tells the form to send the user to sign in when the login limit blocks it", async () => {
     vi.mocked(signIn).mockRejectedValue(new AuthError());
-    vi.mocked(redirect).mockImplementation(() => {
-      throw new Error("NEXT_REDIRECT");
-    });
 
-    await expect(register("Alice", PASSWORD, PASSWORD)).rejects.toThrow(
-      "NEXT_REDIRECT",
-    );
-
-    expect(redirect).toHaveBeenCalledWith({
-      href: "/?auth=login",
-      locale: "en",
+    await expect(register("Alice", PASSWORD, PASSWORD)).resolves.toMatchObject({
+      ok: true,
+      signedIn: false,
+      recoveryCodes: expect.any(Array),
     });
     await expect(User.countDocuments()).resolves.toBe(1);
   });

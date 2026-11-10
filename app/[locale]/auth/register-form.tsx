@@ -12,7 +12,11 @@ import {
 } from "@/lib/credentials";
 import { register } from "./register-actions";
 
-export function RegisterForm() {
+export function RegisterForm({
+  onRegistered,
+}: {
+  onRegistered: (codes: string[], signedIn: boolean) => void;
+}) {
   const [nickname, setNickname] = useState("");
   const [password, setPassword] = useState("");
   const [repeatedPassword, setRepeatedPassword] = useState("");
@@ -31,7 +35,8 @@ export function RegisterForm() {
     setError(null);
     startTransition(async () => {
       const result = await register(nickname, password, repeatedPassword);
-      if (!result.ok) setError(result.message);
+      if (result.ok) onRegistered(result.recoveryCodes, result.signedIn);
+      else setError(result.message);
     });
   }
 

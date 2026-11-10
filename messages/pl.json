@@ -139,7 +139,8 @@
     "importNotesTooLong": "Notatki rozdziału „{title}” są za długie: notatki mogą mieć najwyżej {max, number} znaków.",
     "passwordRepetitive": "Hasło za często powtarza jeden znak.",
     "passwordSequence": "Hasło zawiera prosty ciąg {length} lub więcej znaków, np. abcdef, 123456 albo qwerty.",
-    "passwordContainsNickname": "Hasło nie może zawierać nicku."
+    "passwordContainsNickname": "Hasło nie może zawierać nicku.",
+    "recoveryInvalid": "Nick albo kod odzyskiwania jest nieprawidłowy albo kod został już użyty."
   },
   "password": {
     "mustContain": "Hasło musi zawierać:",
@@ -165,7 +166,7 @@
     "passwordRequirements": "Wymagania hasła",
     "met": "Spełnione: ",
     "missing": "Brakuje: ",
-    "noRecovery": "Nie ma odzyskiwania hasła. Jeśli je zapomnisz, stracisz dostęp do konta i opowiadań.",
+    "noRecovery": "Po założeniu konta dostaniesz kody odzyskiwania. Zachowaj je: bez nich zapomnianego hasła nie da się odzyskać.",
     "creatingAccount": "Zakładanie konta…"
   },
   "changePassword": {
@@ -822,5 +823,24 @@
     "inputInvalid": "Wybierz obraz JPEG, PNG albo WebP do 10 MB.",
     "alt": "Okładka: {name}",
     "showAdult": "Pokaż okładkę (mam ukończone 18 lat)"
+  },
+  "recovery": {
+    "title": "Zapisz kody odzyskiwania",
+    "description": "Każdy kod działa raz: pozwala ustawić nowe hasło, jeśli zapomnisz obecnego. Widać je tylko teraz. Przechowuj je w bezpiecznym miejscu, najlepiej poza tym urządzeniem.",
+    "replaced": "Hasło jest zmienione, a użyty kod już nie działa. Oto 10 nowych kodów; wcześniejsze też już nie działają.",
+    "list": "Kody odzyskiwania",
+    "copy": "Kopiuj kody",
+    "copied": "Skopiowano",
+    "saved": "Mam zapisane te kody",
+    "continue": "Dalej",
+    "forgot": "Nie pamiętasz hasła?",
+    "resetTitle": "Nowe hasło z kodem odzyskiwania",
+    "code": "Kod odzyskiwania",
+    "codeHint": "Jeden z kodów otrzymanych przy zakładaniu konta, np. ABCD-EFGH-JKMN.",
+    "newPassword": "Nowe hasło",
+    "repeatPassword": "Powtórz nowe hasło",
+    "submit": "Ustaw nowe hasło",
+    "submitting": "Ustawianie hasła…",
+    "back": "Wróć do logowania"
   }
 }

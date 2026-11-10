@@ -35,6 +35,19 @@ export const SEARCH_LIMIT: RateLimitRule = {
   windowMs: 60 * 1000,
 };
 
+// Wrong recovery codes (D76): per address like signing in, and few per account.
+export const RECOVERY_LIMIT: RateLimitRule = {
+  name: "recover",
+  max: 20,
+  windowMs: 15 * 60 * 1000,
+};
+
+export const RECOVERY_ACCOUNT_LIMIT: RateLimitRule = {
+  name: "recover-account",
+  max: 5,
+  windowMs: 60 * 60 * 1000,
+};
+
 // Wrong current passwords per user (F4, D75).
 export const CHANGE_PASSWORD_LIMIT: RateLimitRule = {
   name: "change-password",
