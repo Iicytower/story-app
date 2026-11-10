@@ -24,7 +24,43 @@
       "Bash(npm run test:e2e*)",
       "Bash(npm run verify*)",
       "Bash(npx playwright test*)",
-      "Bash(npx playwright show-report*)"
+      "Bash(npx playwright show-report*)",
+      "Agent(researcher)",
+      "Agent(implementer)",
+      "Agent(verifier)",
+      "Agent(reviewer)",
+      "Agent(ui-checker)",
+      "Agent(security-auditor)",
+      "Agent(docs-keeper)",
+      "Agent(merger)",
+      "Bash(git merge*)",
+      "Bash(git switch*)",
+      "Bash(git branch*)",
+      "Bash(git mv*)",
+      "Bash(git rm*)",
+      "Bash(git show*)",
+      "Bash(git rev-parse*)",
+      "Bash(docker compose*)",
+      "Bash(docker ps*)",
+      "Bash(docker logs*)",
+      "Bash(docker exec*)",
+      "Bash(npm run up*)",
+      "Bash(npm run down*)",
+      "Bash(npm run db:up*)",
+      "Bash(npm run migrate*)",
+      "Bash(npx tsx*)",
+      "Bash(node *)",
+      "Bash(curl -s http://localhost*)",
+      "Bash(curl -s http://127.0.0.1*)",
+      "Bash(ssh -p 10022 *)",
+      "Bash(npm view*)",
+      "Bash(npm outdated*)",
+      "WebFetch",
+      "WebSearch"
+    ],
+    "deny": [
+      "Bash(npm run tools:remote*)",
+      "Bash(npm run dict:upload:remote*)"
     ],
     "ask": [
       "Bash(npm install*)",
@@ -43,6 +79,21 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/protect-branches.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/autorun-guard.sh",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/autorun-guard.sh",
             "timeout": 10
           }
         ]
@@ -67,6 +118,35 @@
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/typecheck.sh",
             "timeout": 120
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/autorun-continue.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "implementer|verifier|merger",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/typecheck.sh",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/autorun-state.sh",
+            "timeout": 10
           }
         ]
       }
