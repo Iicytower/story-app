@@ -27,7 +27,7 @@ Zrobione razem z zadaniem [aktualizacji zależności z 2026-11-09](dependency-up
 - `next` i `eslint-config-next` 16.3.8 → 16.4.6 (dokładne wersje), `react`/`react-dom` 19.3.1, `npm audit fix` bez `--force`.
 - Notatki 16.4 (`node_modules/next/dist/docs/`): bez zmian w proxy, Server Actions i `next-intl`, które dotyczą aplikacji; `experimental.appNewScrollHandler` usunięte w 16.4 (aplikacja go nie używa).
 - `npm audit --omit=dev`: przed 14 (1 critical, 6 high, 6 moderate, 1 low), po 6 (4 moderate, 2 low). Wszystkie pozostałe są w łańcuchu CLI `shadcn` (`@shadcn/registry` → `deepmerge`, `ts-morph` → `@ts-morph/common` → `minimatch`). Aplikacja importuje z `shadcn` tylko `shadcn/tailwind.css`, więc w runtime są nieosiągalne. Poprawka `minimatch` wymaga 11.x, a `@ts-morph/common` chce `^10`, więc bez `overrides` (zmiana major w cudzej zależności).
-- Próg F8 po aktualizacji: patrz [task 62](../62-large-content-save.md).
+- Próg F8 po aktualizacji: patrz [task 62](62-large-content-save.md).
 
 Mapowanie kryteriów:
 1. Brak critical/high w `next` – `manual`: `npm audit --omit=dev` (wyżej).
