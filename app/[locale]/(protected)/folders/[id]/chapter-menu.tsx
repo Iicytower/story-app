@@ -12,7 +12,7 @@ import { useState } from "react";
 import { ActionMenu, PublicationIcon } from "@/components/action-menu";
 import { AdultDialog, AdultMenuItem } from "@/components/adult";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { TagsDialog } from "@/components/tags-dialog";
+import { type TagOptions, TagsDialog } from "@/components/tags-dialog";
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -33,7 +33,7 @@ export function ChapterMenu({
   title,
   tags,
   folderTags,
-  userTags,
+  tagOptions,
   isPublic,
   adult,
   otherFolders,
@@ -42,7 +42,7 @@ export function ChapterMenu({
   title: string;
   tags: string[];
   folderTags: string[];
-  userTags: string[];
+  tagOptions: TagOptions;
   isPublic: boolean;
   adult: AdultState;
   otherFolders: { id: string; name: string }[];
@@ -88,7 +88,7 @@ export function ChapterMenu({
         name={title}
         tags={tags}
         folderTags={folderTags}
-        suggestions={userTags}
+        options={tagOptions}
         action={setStoryTags.bind(null, id)}
       />
       <MoveStoryDialog

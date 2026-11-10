@@ -3,6 +3,8 @@ import {
   canonicalTag,
   canonicalTags,
   labelOf,
+  matchingSuggestions,
+  MAX_SUGGESTIONS,
   predefinedTagError,
   tagsForQuery,
 } from "./predefined";
@@ -97,5 +99,31 @@ describe("predefinedTagError", () => {
         LIST,
       ),
     ).toMatch(/"sci-fi"/);
+  });
+});
+
+describe("matchingSuggestions", () => {
+  const choices = [
+    { tag: "sci-fi", text: "Science fiction" },
+    { tag: "flash fiction", text: "Flash fiction" },
+    { tag: "crime", text: "Kryminał" },
+    { tag: "fiction notes", text: "fiction notes" },
+  ];
+
+  it("keeps choices whose tag or label contains the text, in order", () => {
+    expect(
+      matchingSuggestions("  FICT ", choices).map(({ tag }) => tag),
+    ).toEqual(["sci-fi", "flash fiction", "fiction notes"]);
+    expect(matchingSuggestions("kryminał", choices)).toEqual([choices[2]]);
+    expect(matchingSuggestions("crim", choices)).toEqual([choices[2]]);
+  });
+
+  it("suggests nothing for empty input and caps the list", () => {
+    expect(matchingSuggestions(" ", choices)).toEqual([]);
+    const many = Array.from({ length: 20 }, (_, index) => ({
+      tag: `t${index}`,
+      text: `t${index}`,
+    }));
+    expect(matchingSuggestions("t", many)).toHaveLength(MAX_SUGGESTIONS);
   });
 });

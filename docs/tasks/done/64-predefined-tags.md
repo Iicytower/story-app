@@ -16,12 +16,12 @@ Dziś tagi są w pełni dowolne (task [24](24-tags.md), D36), więc te same poj�
 2. Migracja zasiewa poprawną listę z etykietami w obu językach i nie nadpisuje zmian przy ponownym uruchomieniu.
 3. Skrypt odrzuca nieznormalizowany klucz, brakujące lub za długie etykiety i pisownię zajętą przez inny klucz.
 4. Akcje tagów zapisują etykietę (w dowolnym języku) jako klucz, bez duplikatów; własne tagi bez zmian.
-5. Tag predefiniowany wyświetla się etykietą w języku interfejsu i w odróżnionym stylu; dialog podpowiada etykiety.
+5. Tag predefiniowany wyświetla się etykietą w języku interfejsu i w odróżnionym stylu. Dialog to lista przełączników (najpierw wszystkie predefiniowane, potem własne), a pole podpowiada predefiniowane i publiczne tagi zawierające wpisany tekst, bez prywatnych tagów innych autorów.
 6. `/stories` i publiczna wyszukiwarka mają osobną grupę filtrów kategorii; filtr używa klucza.
 7. `q` znajduje rozdziały po całym tagu (własnym lub folderu) i po etykiecie predefiniowanego, na `/stories` i publicznie.
 
 ## Testy
 
-- Unit: `lib/tags/predefined.test.ts` (kanonizacja, `tagsForQuery`, `labelOf`, walidacja wpisu), `lib/publish/search.test.ts`, `lib/stories/search.test.ts` (filtry z `queryTags`).
+- Unit: `lib/tags/predefined.test.ts` (kanonizacja, `tagsForQuery`, `labelOf`, walidacja wpisu, `matchingSuggestions`), `lib/publish/search.test.ts`, `lib/stories/search.test.ts` (filtry z `queryTags`).
 - Integracyjne: `migration-007.test.ts`, `tags.test.ts` (akcje, `listStories` z `q`), `public-search.test.ts` (etykieta w `q`).
-- E2E: `tags.spec.ts` (wybór po etykiecie, chip, kategoria na `/stories`, `q` po polsku), `search.spec.ts` (grupa kategorii i etykieta w publicznej wyszukiwarce).
+- E2E: `tags.spec.ts` (przełączniki, podpowiedzi z publicznych tagów bez prywatnych, wybór po etykiecie, chip, kategoria na `/stories`, `q` po polsku), `search.spec.ts` (grupa kategorii i etykieta w publicznej wyszukiwarce).

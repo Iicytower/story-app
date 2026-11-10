@@ -1,4 +1,4 @@
-import { seedFolder, seedStory } from "./db";
+import { findFolder, seedFolder, seedStory, withE2EDb } from "./db";
 import { storageStatePath } from "./env";
 import { expect, menuAction, test } from "./helpers";
 
@@ -29,7 +29,11 @@ test("tags a folder and a chapter, then filters /stories with search", async ({
   const folderDialog = page.getByRole("dialog", { name: "Tags for Saga" });
   await folderDialog.getByLabel("Add tag").fill("Mythic");
   await folderDialog.getByLabel("Add tag").press("Enter");
-  await expect(folderDialog.getByRole("listitem")).toHaveText("mythic");
+  await expect(
+    folderDialog
+      .getByRole("list", { name: "Your tags" })
+      .getByRole("button", { name: "mythic" }),
+  ).toHaveAttribute("aria-pressed", "true");
   await folderDialog.getByRole("button", { name: "Save" }).click();
   await expect(folderDialog).toBeHidden();
 
@@ -37,19 +41,24 @@ test("tags a folder and a chapter, then filters /stories with search", async ({
   const chapterDialog = page.getByRole("dialog", {
     name: "Tags for Dragon tale",
   });
-  await expect(chapterDialog.getByText("mythic")).toBeVisible();
-  await expect(
-    chapterDialog.getByRole("button", { name: "Remove mythic" }),
-  ).toHaveCount(0);
+  const inherited = chapterDialog.getByRole("button", { name: "mythic" });
+  await expect(inherited).toHaveAttribute("aria-pressed", "true");
+  await expect(inherited).toBeDisabled();
   await chapterDialog.getByLabel("Add tag").fill("draft, drop me");
   await chapterDialog.getByRole("button", { name: "Add", exact: true }).click();
-  await chapterDialog.getByRole("button", { name: "Remove drop me" }).click();
+  const dropMe = chapterDialog.getByRole("button", { name: "drop me" });
+  await expect(dropMe).toHaveAttribute("aria-pressed", "true");
+  await dropMe.click();
+  await expect(dropMe).toHaveAttribute("aria-pressed", "false");
   await chapterDialog.getByRole("button", { name: "Save" }).click();
   await expect(chapterDialog).toBeHidden();
   const row = page
     .getByRole("list", { name: "Chapters" })
     .getByRole("listitem");
   await expect(row.filter({ hasText: "Dragon tale" })).toContainText("draft");
+  await expect(row.filter({ hasText: "Dragon tale" })).not.toContainText(
+    "drop me",
+  );
 
   await page.goto("/stories");
   const filter = page.getByRole("navigation", { name: "Filter by tag" });
@@ -92,20 +101,61 @@ test("picks a predefined tag by its label and filters by it as a category", asyn
     tags: ["scifi"],
   });
 
+  await seedStory("bob", {
+    title: "Bob's public",
+    folder: "Bob's book",
+    tags: ["space opera"],
+  });
+  await seedStory("bob", {
+    title: "Bob's private",
+    folder: "Bob's notes",
+    tags: ["secret fiction"],
+  });
+  const bobsBook = await findFolder("Bob's book");
+  await withE2EDb(async (connection) => {
+    await connection
+      .collection("folders")
+      .updateOne({ _id: bobsBook!._id }, { $set: { published: true } });
+    await connection
+      .collection("stories")
+      .updateMany(
+        { folderId: bobsBook!._id },
+        { $set: { publication: "public" } },
+      );
+  });
+
   await page.goto(`/folders/${folderId}`);
   await menuAction(page, "Actions for Stars", "Tags");
   const dialog = page.getByRole("dialog", { name: "Tags for Stars" });
+  const categoryList = dialog.getByRole("list", { name: "Categories" });
+  await expect(categoryList.getByRole("button")).toHaveCount(23);
   await expect(
-    dialog.locator('datalist option[value="Science fiction"]'),
-  ).toHaveCount(1);
-  await dialog.getByLabel("Add tag").fill("science fiction");
-  await dialog.getByLabel("Add tag").press("Enter");
-  const chip = dialog.getByRole("listitem");
-  await expect(chip).toHaveText("Science fiction");
-  await expect(chip).toHaveAttribute("title", "Category");
+    dialog.getByRole("list", { name: "Your tags" }).getByRole("button"),
+  ).toHaveText(["scifi"]);
+  const horror = categoryList.getByRole("button", { name: "Horror" });
+  await horror.click();
+  await expect(horror).toHaveAttribute("aria-pressed", "true");
+  await horror.click();
+  await expect(horror).toHaveAttribute("aria-pressed", "false");
+
+  const field = dialog.getByLabel("Add tag");
+  const suggestions = dialog.getByRole("list", { name: "Suggestions" });
+  await field.fill("fict");
+  // Bob's private tag stays hidden, public tags of other authors are suggested.
+  await expect(suggestions.getByRole("button")).toHaveText([
+    "Fanfiction",
+    "Flash fiction",
+    "Nonfiction",
+    "Science fiction",
+  ]);
+  await field.fill("space");
+  await expect(suggestions.getByRole("button")).toHaveText(["space opera"]);
+  await field.fill("science");
+  await suggestions.getByRole("button", { name: "Science fiction" }).click();
+  await expect(field).toHaveValue("");
   await expect(
-    dialog.locator('datalist option[value="Science fiction"]'),
-  ).toHaveCount(0);
+    categoryList.getByRole("button", { name: "Science fiction" }),
+  ).toHaveAttribute("aria-pressed", "true");
   await dialog.getByRole("button", { name: "Save" }).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByTitle("Category")).toHaveText("Science fiction");
