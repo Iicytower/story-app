@@ -2,7 +2,7 @@
 
 Zgłoszenie użytkownika (2026-11-04), wcześniej w backlogu („System społecznościowy (do przemyślenia)”). Task projektowy: opracowanie systemu społecznościowego i rozpisanie go na taski, bez implementacji.
 
-**Zawieszony (2026-11-05, decyzja użytkownika).** Brainstorm zapisany niżej. Przy wznowieniu: rozstrzygnąć „Otwarte kwestie”, dopisać decyzję do `decisions.md`, rozpisać taski i dodać do `CLAUDE.md` (sekcja „Praca z taskami”) wyjątek dla branchy tasków społecznościowych (`feature/social` zamiast `develop`).
+**Wznowiony i zamknięty 2026-11-10:** otwarte kwestie rozstrzygnięte w D80, taski 68–91, agenci w `.claude/agents/`, przebieg skillem `/autorun 68`. Wcześniej zawieszony (2026-11-05, decyzja użytkownika). Brainstorm zapisany niżej. Przy wznowieniu: rozstrzygnąć „Otwarte kwestie”, dopisać decyzję do `decisions.md`, rozpisać taski i dodać do `CLAUDE.md` (sekcja „Praca z taskami”) wyjątek dla branchy tasków społecznościowych (`feature/social` zamiast `develop`).
 
 ## Zakres
 
@@ -85,7 +85,7 @@ Ustalenia z użytkownikiem, podstawa decyzji i tasków. Nowych tasków jeszcze n
 7. Fora autora i globalne, admin i moderatorzy kategorii.
 8. Realtime (rozpoznanie i wdrożenie).
 
-### Otwarte kwestie
+### Otwarte kwestie (rozstrzygnięte w D80)
 
 - Konkretny zestaw reakcji i długość okna edycji.
 - Usuwanie konta i los treści społecznościowych (dziś brak usuwania konta).

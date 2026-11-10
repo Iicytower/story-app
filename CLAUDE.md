@@ -16,7 +16,7 @@ Aplikacja webowa do pisania opowiadań (docelowo publiczna, D46) w markdown (Nex
 ## Praca z taskami
 
 1. Przed startem przeczytaj plik taska oraz wskazane sekcje spec i `decisions.md`.
-2. Utwórz branch `feature/NN-<slug>` z `develop` i ustaw status `[~]` w `docs/tasks/README.md`.
+2. Utwórz branch `feature/NN-<slug>` z `develop` i ustaw status `[~]` w `docs/tasks/README.md`. Wyjątek: taski systemu społecznościowego (68–91, D80) – branch z `feature/social` i merge do niego; `feature/social` do `develop` merguje użytkownik.
 3. Niejasności lub kilka sensownych rozwiązań → zapytaj, zanim zaimplementujesz.
 4. Napisz testy z sekcji „Testy” taska razem z kodem (nie na końcu). Każde kryterium akceptacji musi mieć test albo oznaczenie `manual`.
 5. `npm run verify` musi przechodzić. Nie zamykaj taska z czerwonymi lub pominiętymi testami.
@@ -54,3 +54,6 @@ Aplikacja webowa do pisania opowiadań (docelowo publiczna, D46) w markdown (Nex
 - Hook PostToolUse: ESLint `--fix` + Prettier na edytowanym pliku.
 - Hook Stop: `tsc --noEmit`, gdy są zmienione pliki TS; błędy trzeba naprawić.
 - Hook PreToolUse: `protect-branches.sh` blokuje merge do `staging`/`main`, push na te branche i `gh pr merge` (D45).
+- Hook SubagentStop: ten sam `tsc --noEmit` po agentach `implementer`, `verifier`, `merger`.
+- Agenci (`.claude/agents/`): `researcher`, `implementer`, `verifier`, `reviewer`, `ui-checker`, `security-auditor`, `docs-keeper`, `merger`. Główna sesja steruje, pracę (research, kod, testy, przegląd) zleca agentom, żeby oszczędzać kontekst. Agenci zapisujący pliki pracują pojedynczo (jedno drzewo robocze).
+- Skill `/autorun <task zbiorczy>`: przebieg tasków bez udziału użytkownika (D80, „Przebieg i branche”).

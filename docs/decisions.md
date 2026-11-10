@@ -717,3 +717,95 @@ D70–D77 łączą decyzje użytkownika (z pytań przed startem) z rozstrzygnię
 - Wyszukiwanie tekstowe: `q` pasuje też do całego tagu (rozdziału lub folderu), a etykieta predefiniowanego w dowolnym języku do jego klucza (`tagsForQuery`). Zmienia D36: na `/stories` `q` dotąd szukał tylko w tytule i treści.
 
 Rozstrzygnięcia Claude'a do potwierdzenia: nazwa kolekcji i model z `_id` jako kluczem; klucze angielskie i treść listy startowej (etykiety `contemporary` = „Obyczajowe”, `nonfiction` = „Literatura faktu”); lista czytana z bazy raz na żądanie (`React.cache`, w layoucie dla kontekstu klienta) bez cache między żądaniami; etykiety tylko pełne (bez dopasowania fragmentu); podpowiedzi w dialogu bez tagów własnych autora (są już na liście przełączników); migracja bez kopii zapasowej (nowa kolekcja); E2E zasiewa listę wywołaniem `up` migracji w `globalSetup`.
+
+## D80 – System społecznościowy (2026-11-10)
+
+Task 53, decyzje użytkownika (brainstorm 2026-11-05 i pytania 2026-11-10). Taski 68–91, zbiorczy 68. Obowiązuje cały branch `feature/social`; szczegóły techniczne w plikach tasków. Zmienia spec (brak funkcji społecznościowych), D1 (konto widzi cudze dane publiczne: profile, komentarze, fora), D37 (konto można usunąć), D42 (sidebar), D50 (nowe ustawienia), D67 (18+ admina) i D79 (tagi w panelu admina).
+
+### Zakres i zasady ogólne
+
+- W zakresie: profil, obserwowanie, biblioteka z półkami, postęp czytania, zakładki i notatki czytelnika, feed, komentarze, reakcje, oceny, moderacja autora, zgłoszenia, powiadomienia, wzmianki, statystyki autora, rankingi, DM, blokowanie, fora autora i globalne, panel admina, usuwanie konta, realtime.
+- Poza zakresem: współpraca przy pisaniu, komentarze do fragmentu widoczne dla innych, listy lektur, recenzje, konkursy, e-maile (D37).
+- Gość czyta i widzi liczniki, profile, komentarze i fora (indeksowane, bez `noindex`). Każdy udział (komentarz, reakcja, ocena, post, DM, obserwowanie, biblioteka, zgłoszenie) wymaga logowania; przycisk u gościa otwiera dialog logowania (D42).
+- Każdy zapis to Server Action z `requireUser()`, `userId` z sesji, wynik `{ ok, ... }` (bez wyjątków), guardy z D71. Cudzy lub niewidoczny obiekt → `NOT_FOUND`. Każdy tekst w `messages/en.json` i `pl.json`. Uprawnienia (ban, blokada, ban globalny, wyłączone komentarze) sprawdza jedna funkcja `lib/social/permissions.ts` (task 69), nigdy kod w komponencie.
+- Treść społecznościowa (komentarz, post, DM, bio) to markdown przez `react-markdown` z `allowedElements` (akapit, pogrubienie, kursywa, link, cytat, `br`) i `remark-breaks`, bez `rehype-raw` i bez obrazków. Linki `rel="nofollow ugc noopener"`, `target="_blank"`.
+- Widoczność: komentarze, reakcje i oceny rozdziału lub folderu są widoczne tylko, gdy obiekt jest publiczny (D38). Cofnięcie publikacji lub soft delete je ukrywa bez kasowania, ponowna publikacja przywraca; twarde usunięcie rozdziału lub folderu kasuje je razem z nim.
+- Pakiety (decyzja użytkownika, lista zamknięta): `recharts` (shadcn `chart`), `cmdk` (shadcn `command`), `sonner` (shadcn `sonner`, podpięty pod motyw z `lib/theme.ts`, bez `next-themes`). Instalowane raz na starcie `feature/social`. Pozostałe komponenty shadcn (`tabs`, `avatar`, `badge`, `switch`, `select`, `textarea`, `popover`, `sheet`) tylko gdy nie dodają zależności. Zadania okresowe bez crona: TTL albo leniwe przeliczenie w `after()` z atomowym przejęciem (jak D68).
+
+### Role, bany, blokady
+
+- Admin: `User.role: "admin"` (brak = zwykły). Skrypt `npm run admin -- list|add <nick>|remove <nick>` na bazie z `.env.local`, uruchamia użytkownik.
+- Moderatorzy autora: autor zaprasza czytelnika po nicku (najwyżej 10), zaproszony akceptuje w powiadomieniu; może zrezygnować, autor może odebrać. Moderator ukrywa treści i banuje w społeczności autora, nie moderuje autora ani innych moderatorów. Moderatorów kategorii forum wyznacza admin.
+- Ban w społeczności autora (autor lub moderator): 1, 7, 30 dni albo bezterminowo, **powód obowiązkowy** (do 500 znaków, widoczny dla zbanowanego). Zbanowany nie komentuje, nie reaguje, nie ocenia i nie pisze na forum autora; czyta dalej. Lista banów w panelu moderacji z możliwością zdjęcia.
+- Ban globalny (admin): tryb tylko do odczytu na 1, 7, 30 dni albo bezterminowo, z obowiązkowym powodem. Konto loguje się i pisze prywatnie, ale nie ma żadnego udziału społecznościowego, a jego publikacje, komentarze i posty są ukryte dla innych na czas bana.
+- Blokada (A blokuje B), pełne odcięcie: B nie pisze do A DM, nie odpowiada na komentarze i posty A, nie wspomina A (wzmianka nie linkuje i nie powiadamia), nie obserwuje A (blokada usuwa istniejącą obserwację w obie strony); gdy A jest autorem, B ma u niego ban bez terminu i powodu widocznego dla B. A nie widzi komentarzy i postów B nigdzie (filtr przy odczycie). B nadal czyta publiczne teksty A. Lista zablokowanych w ustawieniach.
+- Moderacja treści: tylko ukrycie („ukryte przez moderatora”, odpowiedzi zostają), z możliwością przywrócenia; ukryte znikają trwale po 30 dniach (TTL na `purgeAt`). Autor treści może ją sam usunąć zawsze. Log działań moderacji (kto, co, kiedy, powód) widoczny dla autora społeczności i admina.
+- Zgłoszenia: treść w społeczności autora → autor i jego moderatorzy; rozdział, książka, profil, autor i treści forów globalnych → admin. Zgłoszenie ma powód (lista + opis do 1000 znaków), stan `open | resolved | dismissed` i wynik widoczny dla zgłaszającego w powiadomieniu.
+- 18+ admina: admin ustawia i zdejmuje 18+ na okładce, folderze i rozdziale. Nowe pole `adult.admin: true | false` w `AdultMark` (D67): `true` blokuje zdjęcie przez autora (`ADULT_LOCKED`, jak `auto`), `false` nadpisuje `auto` i `manual` (nie 18+), ale autor może potem oznaczyć ponownie (`manual`). Brak pola = bez wpływu.
+
+### Profil, relacje, biblioteka
+
+- Profil `/p/<nick>` (dziś nieużywany adres; spisy książek zostają pod `/p/<nick>/<folder>`): avatar, bio (do 1000 znaków), lista opublikowanych książek, obserwujący i obserwowani (listy), publiczna biblioteka (gdy włączona), przyciski Obserwuj / Wiadomość / Zablokuj / Zgłoś. Bez licznika reakcji. Konto bez nicku (D37) nie ma profilu.
+- Avatar jak okładka (D68): upload z kadrem 1:1, WebP 256×256, ten sam klasyfikator; avatar 18+ jest odrzucany (nie rozmywany). Wspólny limit `COVERS_MAX_TOTAL_MB`. Bez serwera narzędzi upload jest wyłączony; brak avatara to inicjały na kolorze z nicku.
+- Obserwowanie autorów, jednostronne, bez akceptacji.
+- Biblioteka: zapisane książki (foldery) na półkach. Na start trzy półki „Czytam”, „Na później”, „Przeczytane”, które użytkownik może usuwać i zmieniać, oraz własne; najwyżej 20 półek, książka na wielu półkach. Przełącznik prywatności całej biblioteki (domyślnie publiczna).
+- Postęp: ostatnio otwarty rozdział i procent przewinięcia per książka; „Czytaj dalej” wraca w to miejsce. Rozdział przeczytany = przewinięty do końca. Książka w bibliotece pokazuje liczbę nowych (nieprzeczytanych, opublikowanych po zapisaniu) rozdziałów.
+- Zakładki: pozycja (procent przewinięcia) w rozdziale z opcjonalną nazwą. Notatki: przy zaznaczonym fragmencie, tekst do 2000 znaków, cytat do 500 znaków z kontekstem przed i po. Prywatne (widzi tylko czytelnik). Po zmianie tekstu przez autora notatka szuka cytatu (dokładnie, potem przybliżenie pakietem `diff`), a gdy go nie znajdzie, jest „osierocona” i widoczna na liście z zapisanym cytatem. Limity: 200 na rozdział i 5000 na konto (zakładki i notatki razem).
+- Feed (`/feed`): liczony przy odczycie z kolekcji `activity` (jeden wpis na zdarzenie, TTL 90 dni): nowe rozdziały obserwowanych autorów i ich aktywność w społeczności (nowy wątek na forum autora, odpowiedź autora na komentarz). Bez kopii zdarzeń u obserwujących. Treści 18+ ze znaczkiem (D67, D69).
+
+### Interakcje z tekstem
+
+- Komentarze pod publicznym rozdziałem i osobny wątek pod publicznym spisem książki; komentarz i jeden poziom odpowiedzi. Autor wyłącza komentarze per książka lub rozdział (istniejące zostają, ukryte).
+- Reakcje: ❤️ 😂 😮 😢 🔥 👏, jedna na obiekt od użytkownika (wybór innej nadpisuje, ponowny klik zdejmuje). Ten sam mechanizm dla rozdziału, komentarza i posta forum. Reakcje jawne: klik w licznik pokazuje listę nicków.
+- Oceny 1–5 osobno rozdziału i książki, jedna od użytkownika (zmiana nadpisuje, można usunąć). Anonimowe: widać średnią i liczbę, autor nie widzi, kto ocenił. Autor nie ocenia ani nie reaguje na swoje teksty.
+- Edycja własnego komentarza lub posta przez 15 minut („edytowano”), potem tylko usunięcie. Usunięty komentarz z odpowiedziami zostaje jako „komentarz usunięty”.
+- Wzmianki `@nick` w komentarzach, postach i DM: link do profilu i powiadomienie (nie przy blokadzie), podpowiedzi nicków przez `cmdk`.
+- Długości (w `lib/limits.ts`): komentarz 5000, post 20 000, DM 5000, tytuł wątku 200, bio 1000, powód bana i zgłoszenia 500/1000.
+- Antyspam po koncie (kolekcja `rateLimits`, D40, klucz `userId`): komentarze 10/min i 200/dobę, posty 5/min i 100/dobę, nowe wątki 10/dobę, DM 30/min, nowe rozmowy 10/dobę, zgłoszenia 20/dobę, reakcje i oceny 60/min. Konto młodsze niż 24 h ma połowę każdego limitu.
+
+### Powiadomienia, DM, realtime
+
+- Tylko w aplikacji: dzwonek w sidebarze z licznikiem i panel listy. Rodzaje: interakcje z moimi tekstami (komentarz, reakcja, ocena, nowy obserwujący, dodanie do biblioteki), rozmowy (odpowiedź, wzmianka, cytat, odpowiedź w obserwowanym wątku), nowe rozdziały (biblioteka i obserwowani), moderacja (zaproszenie, ban, ukrycie, nowe zgłoszenie, wynik zgłoszenia). Każdy rodzaj wyłączalny w ustawieniach (D50) przełącznikiem, pogrupowany w te cztery grupy; moderacji nie da się wyłączyć.
+- Grupowanie: reakcje i oceny tego samego obiektu w jedno powiadomienie („5 osób…”). TTL 90 dni, najwyżej 500 na użytkownika (najstarsze usuwane).
+- DM: rozmowa dwóch osób, bezterminowo. Ustawienie „kto może zacząć rozmowę”: wszyscy (domyślnie) / obserwowani przeze mnie / nikt; istniejące rozmowy działają. Blokada zamyka rozmowę w obie strony.
+- Polling bez realtime: licznik powiadomień i DM co 30 s, otwarta rozmowa co 5 s, wstrzymany, gdy karta jest w tle. Zostaje jako fallback.
+- Realtime: tylko własny serwis SSE w stosie narzędzi (`docker/tools/compose.yml`, Coolify; lokalnie `npm run up`, docelowo Mikrus z taska 28), Node bez zależności. Przeglądarka łączy się natywnym `EventSource` przez bramkę (ścieżka `/rt/*` bez `X-Tools-Secret`, z krótkim tokenem HMAC od aplikacji w zapytaniu), aplikacja publikuje zdarzenia przez bramkę z sekretem. Publiczny adres w zmiennej `REALTIME_PUBLIC_URL`, dopisany do `connect-src` CSP (D77). Bez zmiennej albo przy błędzie połączenia: polling. Wymaga serwera narzędzi na produkcji przed wydaniem.
+
+### Statystyki i odkrywanie
+
+- Statystyki autora (`/stats`): unikalni czytelnicy na dobę (zalogowany po koncie, gość po HMAC IP jak D40/D74, bez jawnego IP), reakcje, oceny, komentarze, obserwujący, dodania do bibliotek; per rozdział i w czasie (wykresy `recharts`). Wpisy „kto czytał” (rozdział, dzień, czytelnik) z unikalnym indeksem i TTL 30 dni; udany zapis nowego wpisu zwiększa dzienny licznik (rozdział, dzień), który zostaje na zawsze.
+- Strona główna (obok „Recently published”, D54): popularne tygodnia (unikalni czytelnicy z 7 dni), najwyżej oceniane (średnia bayesowska książek z co najmniej 5 ocenami), od obserwowanych (zalogowany), popularne w predefiniowanych kategoriach (D79). Wyniki w kolekcji `rankings`, przeliczane leniwie raz na godzinę. Treści 18+ ze znaczkiem.
+
+### Fora i panel admina
+
+- Fora: autora (moderuje autor i jego moderatorzy) i globalne kategorie (admin i moderatorzy kategorii). Kategoria → wątek → płaska lista postów z cytowaniem; reakcje na postach; obserwowanie wątku.
+- Kategorie globalne na start (migracja): Ogłoszenia (piszą tylko admini), Warsztat pisarski, Pomysły i feedback do aplikacji, Polecenia lektur, Hyde Park. Etykiety en/pl w dokumencie (jak D79). Admin dodaje, zmienia i usuwa kategorie, także startowe.
+- Panel `/admin` (tylko admin): kolejka zgłoszeń, ban globalny, 18+ admina, kategorie forum, moderatorzy kategorii, predefiniowane tagi (zastępuje edycję skryptem z D79; `npm run tags` zostaje).
+
+### Konto
+
+- Usuwanie konta w ustawieniach: hasło i wpisanie nicku. Znikają teksty, wersje, okładki, avatar, profil, obserwacje, biblioteka, zakładki, notatki, powiadomienia, oceny, reakcje i DM; komentarze i posty zostają jako „usunięty użytkownik” (treść zostaje, bez linku do profilu). Nick zostaje zablokowany na zawsze (tombstone w `users`), żeby nikt nie przejął adresów `/p/<nick>`. Wszystkie sesje kończą się (D75).
+
+### Nawigacja
+
+- Sidebar (D42): Home, Feed, Biblioteka, Foldery, Fora, Wiadomości (licznik), Powiadomienia (dzwonek z licznikiem, panel), Mój profil, Moderacja (autor z publikacjami lub moderator), Admin (tylko admin), Statystyki (autor z publikacjami), Ustawienia, Wyloguj. Na wąskim ekranie w szufladzie jak dziś.
+
+### Przebieg i branche
+
+- Branch zbiorczy `feature/social` z `develop`; branche tasków `feature/NN-<slug>` z niego i do niego. Nie jest pushowany; do `develop` merguje go użytkownik po przeglądzie (jak `security`, D70). Okresowo `develop` → `feature/social` (agent `merger`).
+- Przebieg bez nadzoru (skill `/autorun`): decyzja spoza D80 → Claude wybiera najprostsze rozwiązanie spójne z D80 i dopisuje je do sekcji „Rozstrzygnięcia Claude'a do potwierdzenia” w D80 (jak D78). Czerwone testy po kilku próbach naprawy → task zostaje `[~]` z notatką „Blokada” w pliku taska, przebieg idzie dalej taskami od niego niezależnymi. Bez powiadomień push. Brak pushów i PR-ów (deny w `.claude/settings.json`).
+
+### Rozstrzygnięcia Claude'a do potwierdzenia
+
+- Nazwy kolekcji i pól, szczegółowy podział tasków 69–91 i ich kryteria.
+- Rodzaje powiadomień wyłączalne pojedynczo (odpowiedź „konfigurowalne w ustawieniach” razem z „per grupa”).
+- Ban globalny ukrywa także komentarze i posty zbanowanego na czas bana.
+- Antyspam dla reakcji i ocen (60/min), limity powodów (500/1000), 10 moderatorów na autora, 20 półek.
+- Konto E2E `admin` (rola admin) obok `dave` i `erin` (task 69); `carol` zostaje dla testów haseł.
+- Blokada działa jak ban bez terminu przez `canInteract`, bez dokumentu w `communityBans`, więc odblokowanie go zdejmuje.
+- 18+ admina: ponowne `manual` od autora zdejmuje `admin: false`; okładka ma własne pole w `covers`.
+- Usunięcie konta kasuje też rozmowy DM z tym kontem u drugiej strony i `dailyStats` jego tekstów.
+- Profil w osobnej kolekcji albo w `settings` – wybiera implementer taska 70 i dopisuje tutaj.
+- Dodatkowe limity: nazwa półki 50, nazwa zakładki 100, kontekst cytatu 50 znaków, najwyżej 10 wzmianek na treść.
+- Usunięcie kategorii forum ukrywa jej wątki (bez kasowania); migracja `008-forum-categories`.
+- Realtime: token HMAC ważny 10 min, klucz wyprowadzony z `TOOLS_API_SECRET`, CORS serwisu przez zmienną `APP_ORIGIN`.

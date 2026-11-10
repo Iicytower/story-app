@@ -63,7 +63,31 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 62 | [Zapis dużej treści rozdziału kończy się 500](done/62-large-content-save.md) | – | [x] |
 | 63 | [Kody odzyskiwania konta](done/63-recovery-codes.md) | – | [x] |
 | 64 | [Predefiniowane tagi](done/64-predefined-tags.md) | 24 | [x] |
-| 53 | [Projekt systemu społecznościowego i plan tasków](53-social-system-plan.md) (zawieszony) | – | [ ] |
+| 53 | [Projekt systemu społecznościowego i plan tasków](done/53-social-system-plan.md) | – | [x] |
+| 68 | [System społecznościowy (zbiorczy)](68-social.md) | – | [ ] |
+| 69 | ↳ [Fundament społeczności](69-social-foundation.md) (subtask 68) | – | [ ] |
+| 70 | ↳ [Profil użytkownika](70-profile.md) (subtask 68) | 69 | [ ] |
+| 71 | ↳ [Obserwowanie autorów](71-follow.md) (subtask 68) | 70 | [ ] |
+| 72 | ↳ [Biblioteka i półki](72-library.md) (subtask 68) | 70 | [ ] |
+| 73 | ↳ [Postęp czytania i nowe rozdziały](73-reading-progress.md) (subtask 68) | 72 | [ ] |
+| 74 | ↳ [Zakładki i notatki czytelnika](74-reader-notes.md) (subtask 68) | 73 | [ ] |
+| 75 | ↳ [Feed aktywności](75-feed.md) (subtask 68) | 71, 72 | [ ] |
+| 76 | ↳ [Komentarze](76-comments.md) (subtask 68) | 69 | [ ] |
+| 77 | ↳ [Reakcje](77-reactions.md) (subtask 68) | 76 | [ ] |
+| 78 | ↳ [Oceny](78-ratings.md) (subtask 68) | 69 | [ ] |
+| 79 | ↳ [Moderacja autora](79-author-moderation.md) (subtask 68) | 76 | [ ] |
+| 80 | ↳ [Zgłoszenia](80-reports.md) (subtask 68) | 79 | [ ] |
+| 81 | ↳ [Powiadomienia](81-notifications.md) (subtask 68) | 71, 76, 79 | [ ] |
+| 82 | ↳ [Wzmianki @nick](82-mentions.md) (subtask 68) | 81 | [ ] |
+| 83 | ↳ [Statystyki autora](83-author-stats.md) (subtask 68) | 73, 77, 78 | [ ] |
+| 84 | ↳ [Rankingi na stronie głównej](84-rankings.md) (subtask 68) | 83 | [ ] |
+| 85 | ↳ [Wiadomości prywatne](85-direct-messages.md) (subtask 68) | 81 | [ ] |
+| 86 | ↳ [Blokowanie w pełnym zakresie](86-blocking.md) (subtask 68) | 85, 82 | [ ] |
+| 87 | ↳ [Fora autora i globalne](87-forums.md) (subtask 68) | 77, 80 | [ ] |
+| 88 | ↳ [Panel admina](88-admin-panel.md) (subtask 68) | 80, 87 | [ ] |
+| 89 | ↳ [Usuwanie konta](89-account-deletion.md) (subtask 68) | 85, 87 | [ ] |
+| 90 | ↳ [Realtime: serwis SSE w stosie narzędzi](90-realtime.md) (subtask 68) | 81, 85 | [ ] |
+| 91 | ↳ [Audyt bezpieczeństwa i E2E całości](91-social-audit.md) (subtask 68) | 69–90 | [ ] |
 
 ## Backlog
 
@@ -84,6 +108,7 @@ Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 - `develop` – integracja: tu trafiają zakończone taski.
 - `feature/NN-<slug>` – jeden branch na task, tworzony z `develop`.
 - `security` – lokalny branch zbiorczy poprawek bezpieczeństwa (taski 56–63 i aktualizacja zależności z 2026-11-09), z `develop`. Branche tasków z niego i merge do niego; do `develop` merguje użytkownik po przeglądzie.
+- `feature/social` – lokalny branch zbiorczy systemu społecznościowego (task 68, subtaski 69–91, D80), z `develop`. Branche subtasków z niego i merge do niego; nie jest pushowany, do `develop` merguje użytkownik po przeglądzie. `develop` mergujemy do niego okresowo.
 - Task zbiorczy (np. 66): jego branch z `develop`, a branch każdego subtasku z brancha zbiorczego; subtask merge'ujemy do brancha zbiorczego, a ten do `develop` dopiero po wszystkich subtaskach.
 
 ## Definicja „zrobione” (każdy task)
