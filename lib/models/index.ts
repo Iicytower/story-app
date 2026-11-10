@@ -17,3 +17,4 @@ import "./avatar";
 import "./follow";
 import "./shelf";
 import "./library-item";
+import "./reading-progress";

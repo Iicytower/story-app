@@ -140,3 +140,29 @@ export async function hiddenUserIdsFor(
   for (const { _id } of banned) ids.set(_id.toString(), _id);
   return [...ids.values()];
 }
+
+// One author against hiddenUserIdsFor, without listing every banned account; an author with
+// no nickname has no public pages, so is not visible either.
+export async function isAuthorVisibleTo(
+  viewerId: string,
+  authorId: string | Types.ObjectId,
+): Promise<boolean> {
+  const self = viewerId === authorId.toString();
+  const now = new Date();
+  const [author, block] = await Promise.all([
+    User.exists({
+      _id: authorId,
+      nickname: { $type: "string" },
+      ...(self
+        ? {}
+        : {
+            $nor: [
+              { "globalBan.until": null, globalBan: { $exists: true } },
+              { "globalBan.until": { $gt: now } },
+            ],
+          }),
+    }),
+    self ? null : Block.exists({ blockerId: viewerId, blockedId: authorId }),
+  ]);
+  return author !== null && block === null;
+}

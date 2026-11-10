@@ -724,7 +724,9 @@
     "by": "by {nickname}",
     "chapters": "Chapters",
     "folderBy": "{folder} by {nickname}",
-    "contents": "Contents"
+    "contents": "Contents",
+    "continue": "Continue reading: {title}",
+    "newChapter": "New"
   },
   "search": {
     "title": "Search stories",
@@ -963,6 +965,7 @@
       "reading": "Reading",
       "later": "Read later",
       "read": "Read"
-    }
+    },
+    "newChapters": "{count, plural, one {# new chapter} other {# new chapters}}"
   }
 }

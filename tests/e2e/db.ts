@@ -32,6 +32,7 @@ export function clearStories(): Promise<void> {
     await connection.collection("follows").deleteMany({});
     await connection.collection("shelves").deleteMany({});
     await connection.collection("libraryItems").deleteMany({});
+    await connection.collection("readingProgress").deleteMany({});
   });
 }
 
@@ -272,21 +273,30 @@ export function clearSettings(user: UserName): Promise<void> {
 export function seedPublished(
   user: UserName,
   folder: string,
-  chapters: { title: string; publication: "public" | "hidden" }[],
+  chapters: {
+    title: string;
+    publication: "public" | "hidden";
+    content?: string;
+    createdAt?: Date;
+  }[],
 ): Promise<void> {
   return withE2EDb(async (connection) => {
     const folderId = await ensureFolder(connection, user, folder);
     await connection
       .collection("folders")
       .updateOne({ _id: folderId }, { $set: { published: true } });
-    for (const { title, publication } of chapters) {
-      const id = await seedStory(user, { title, folder });
-      await connection
-        .collection("stories")
-        .updateOne(
-          { _id: new mongoose.Types.ObjectId(id) },
-          { $set: { publication, publishedAt: new Date() } },
-        );
+    for (const { title, publication, content, createdAt } of chapters) {
+      const id = await seedStory(user, { title, folder, content, createdAt });
+      // A chapter that has never been public has no publication date (D54).
+      await connection.collection("stories").updateOne(
+        { _id: new mongoose.Types.ObjectId(id) },
+        {
+          $set: {
+            publication,
+            ...(publication === "public" && { publishedAt: new Date() }),
+          },
+        },
+      );
     }
   });
 }
@@ -341,5 +351,65 @@ export function findLibraryItems(
     return items.map(({ shelfIds }) => ({
       shelves: shelfIds.map((id) => names.get(String(id)) ?? "").sort(),
     }));
+  });
+}
+
+export function seedLibraryItem(
+  reader: UserName,
+  author: UserName,
+  folder: string,
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    await connection.collection("libraryItems").insertOne({
+      userId: await userId(connection, reader),
+      folderId: await ensureFolder(connection, author, folder),
+      shelfIds: [],
+      addedAt: new Date(),
+    });
+  });
+}
+
+export function findReadingProgress(
+  user: UserName,
+): Promise<{ position?: number; read: number } | null> {
+  return withE2EDb(async (connection) => {
+    const entry = await connection
+      .collection<{ position?: number; readStoryIds: unknown[] }>(
+        "readingProgress",
+      )
+      .findOne({ userId: await userId(connection, user) });
+    return entry
+      ? { position: entry.position, read: entry.readStoryIds.length }
+      : null;
+  });
+}
+
+export function seedReadingProgress(
+  reader: UserName,
+  author: UserName,
+  folder: string,
+  chapter: string,
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const folderId = await ensureFolder(connection, author, folder);
+    const story = await connection
+      .collection("stories")
+      .findOne({ folderId, title: chapter, deletedAt: null });
+    await connection.collection("readingProgress").insertOne({
+      userId: await userId(connection, reader),
+      folderId,
+      lastStoryId: story!._id,
+      position: 0.5,
+      readStoryIds: [],
+      updatedAt: new Date(),
+    });
+  });
+}
+
+export function clearReadingProgress(reader: UserName): Promise<void> {
+  return withE2EDb(async (connection) => {
+    await connection
+      .collection("readingProgress")
+      .deleteMany({ userId: await userId(connection, reader) });
   });
 }

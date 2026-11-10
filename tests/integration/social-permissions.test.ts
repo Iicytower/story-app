@@ -8,6 +8,7 @@ import { purgeSocialData } from "@/lib/social/cascade";
 import {
   canInteract,
   hiddenUserIdsFor,
+  isAuthorVisibleTo,
   isModeratorOf,
 } from "@/lib/social/permissions";
 import { setupTestDb } from "./test-db";
@@ -204,6 +205,53 @@ describe("hiddenUserIdsFor", () => {
     const { reader } = await users();
     await globalBan(reader, null);
     await expect(hiddenUserIdsFor(reader)).resolves.toEqual([]);
+  });
+});
+
+describe("isAuthorVisibleTo", () => {
+  it("agrees with hiddenUserIdsFor for every viewer and author", async () => {
+    const { author, reader } = await users();
+    const blocked = await createUser("Blocked");
+    const blocker = await createUser("Blocker");
+    const banned = await createUser("Banned");
+    const expired = await createUser("Expired");
+    const temporary = await createUser("Temporary");
+    await Block.create({ blockerId: reader, blockedId: blocked });
+    await Block.create({ blockerId: blocker, blockedId: reader });
+    await globalBan(banned, null);
+    await globalBan(expired, new Date(Date.now() - HOUR));
+    await globalBan(temporary, new Date(Date.now() + HOUR));
+    const everyone = [
+      author,
+      reader,
+      blocked,
+      blocker,
+      banned,
+      expired,
+      temporary,
+    ];
+
+    for (const viewer of everyone) {
+      const hidden = new Set((await hiddenUserIdsFor(viewer)).map(String));
+      for (const target of everyone) {
+        expect(
+          await isAuthorVisibleTo(viewer, target),
+          `${viewer} -> ${target}`,
+        ).toBe(!hidden.has(target));
+      }
+    }
+    expect(await isAuthorVisibleTo(reader, blocker)).toBe(true);
+    expect(await isAuthorVisibleTo(banned, banned)).toBe(true);
+  });
+
+  it("does not show an author without a nickname", async () => {
+    const { reader } = await users();
+    // Accounts from before task 36 have no nickname.
+    const { insertedId } = await User.collection.insertOne({
+      passwordHash: "x",
+    });
+    expect(await isAuthorVisibleTo(reader, insertedId)).toBe(false);
+    expect(await isAuthorVisibleTo(reader, new Types.ObjectId())).toBe(false);
   });
 });
 

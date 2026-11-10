@@ -9,10 +9,16 @@ import { requestOrigin } from "@/i18n/request-origin";
 import { languageAlternates } from "@/i18n/routing";
 import { AdultBadge } from "@/components/adult";
 import { CoverImage } from "@/components/cover";
+import { Button } from "@/components/ui/button";
 import { ADULT_COOKIE } from "@/lib/adult/gate";
 import { requireUser } from "@/lib/auth/session";
 import { libraryEntry, listShelves } from "@/lib/library/queries";
-import { getPublishedFolder, publishedFolderId } from "@/lib/publish/queries";
+import {
+  getPublishedFolder,
+  publishedFolderId,
+  publishedReaderChapters,
+} from "@/lib/publish/queries";
+import { folderReading } from "@/lib/reading/queries";
 import { LibraryPicker } from "../../../(protected)/library/library-picker";
 import { seedShelves } from "../../../(protected)/library/starter";
 import { BlurredCover } from "./adult-cover";
@@ -27,6 +33,21 @@ async function libraryPicker(userId: string, nickname: string, slug: string) {
     libraryEntry(userId, folderId),
   ]);
   return { folderId, shelves, shelfIds };
+}
+
+async function readerState(userId: string, nickname: string, slug: string) {
+  const { folderId, chapters } = (await publishedReaderChapters(
+    nickname,
+    slug,
+  ))!;
+  const reading = await folderReading(userId, folderId, chapters);
+  const newIds = new Set(reading.newChapterIds);
+  return {
+    continueAt: reading.continueAt,
+    newPaths: new Set(
+      chapters.filter(({ id }) => newIds.has(id)).map(({ path }) => path),
+    ),
+  };
 }
 
 export async function generateMetadata({
@@ -62,9 +83,12 @@ export default async function PublishedFolderPage({
   const cover = folder.cover;
   const coverAlt = tCovers("alt", { name: folder.name });
   const viewer = await requireUser();
-  const picker = viewer.ok
-    ? await libraryPicker(viewer.userId, nickname, slug)
-    : null;
+  const [picker, reader] = viewer.ok
+    ? await Promise.all([
+        libraryPicker(viewer.userId, nickname, slug),
+        readerState(viewer.userId, nickname, slug),
+      ])
+    : [null, null];
 
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-10">
@@ -84,7 +108,7 @@ export default async function PublishedFolderPage({
       <p className="text-muted-foreground mb-4 text-sm">
         {t("by", { nickname: folder.nickname })}
       </p>
-      <div className="mb-8">
+      <div className="mb-8 flex flex-wrap items-center gap-3">
         {picker ? (
           <LibraryPicker
             folderId={picker.folderId}
@@ -94,14 +118,33 @@ export default async function PublishedFolderPage({
         ) : (
           <GuestLibraryButton path={folder.path} />
         )}
+        {reader?.continueAt && (
+          <Button
+            asChild
+            variant="outline"
+            className="h-auto max-w-full min-w-0 shrink py-2 [overflow-wrap:anywhere] whitespace-normal"
+          >
+            <Link href={reader.continueAt.path}>
+              {t("continue", { title: reader.continueAt.title })}
+            </Link>
+          </Button>
+        )}
       </div>
       <ol aria-label={t("chapters")} className="flex flex-col gap-2">
         {folder.chapters.map((chapter, index) => (
           <li key={chapter.path} className="flex items-center gap-2">
-            <Link href={chapter.path} className="hover:underline">
+            <Link
+              href={chapter.path}
+              className="min-w-0 [overflow-wrap:anywhere] hover:underline"
+            >
               {index + 1}. {chapter.title}
             </Link>
             {chapter.adult && !folder.adult && <AdultBadge />}
+            {reader?.newPaths.has(chapter.path) && (
+              <span className="bg-primary text-primary-foreground shrink-0 rounded-sm px-1.5 text-xs leading-5 font-medium">
+                {t("newChapter")}
+              </span>
+            )}
           </li>
         ))}
       </ol>

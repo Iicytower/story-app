@@ -724,7 +724,9 @@
     "by": "autor: {nickname}",
     "chapters": "Rozdziały",
     "folderBy": "{folder} – {nickname}",
-    "contents": "Spis treści"
+    "contents": "Spis treści",
+    "continue": "Czytaj dalej: {title}",
+    "newChapter": "Nowy"
   },
   "search": {
     "title": "Szukaj opowiadań",
@@ -963,6 +965,7 @@
       "reading": "Czytam",
       "later": "Na później",
       "read": "Przeczytane"
-    }
+    },
+    "newChapters": "{count, plural, one {# nowy rozdział} few {# nowe rozdziały} many {# nowych rozdziałów} other {# nowego rozdziału}}"
   }
 }

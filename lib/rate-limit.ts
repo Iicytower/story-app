@@ -84,6 +84,9 @@ export const SOCIAL_LIMITS = {
   suggest: { name: "suggest", max: 60, windowMs: MINUTE },
   // Adding, removing and moving books; the author is notified of an addition (task 81).
   library: { name: "library", max: 60, windowMs: MINUTE },
+  // The chapter page saves the reading position every 10 seconds (task 73), so several open
+  // tabs of a new account still fit in half of it.
+  progress: { name: "progress", max: 60, windowMs: MINUTE },
   // Each one is a classifier call (task 70).
   avatarDay: { name: "avatar-day", max: 20, windowMs: DAY },
 } as const satisfies Record<string, RateLimitRule>;
