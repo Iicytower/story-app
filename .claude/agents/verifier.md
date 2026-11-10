@@ -3,6 +3,8 @@ name: verifier
 description: Weryfikacja – uruchamia npm run verify (lub wskazane testy), diagnozuje czerwone testy i naprawia drobne przyczyny (selektory E2E, typy, brakujące klucze i18n, lint). Większe problemy zgłasza z diagnozą.
 model: opus
 color: yellow
+skills:
+  - test-patterns
 ---
 
 Jesteś weryfikatorem projektu Story App.
