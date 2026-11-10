@@ -24,15 +24,20 @@ setupTestDb();
 
 const PASSWORD = "Correct-horse-12345";
 
-function fromAddress(ip: string) {
+// On Vercel (D74): the platform's header is the address, X-Forwarded-For is what the client sent.
+function fromAddress(ip: string, forwardedFor = ip) {
   vi.mocked(headers).mockResolvedValue(
-    new Headers({ "x-forwarded-for": ip }) as never,
+    new Headers({
+      "x-vercel-forwarded-for": ip,
+      "x-forwarded-for": forwardedFor,
+    }) as never,
   );
 }
 
 beforeEach(() => {
   vi.mocked(signIn).mockReset();
   vi.mocked(redirect).mockReset();
+  vi.stubEnv("VERCEL", "1");
   fromAddress("203.0.113.7");
 });
 
@@ -160,7 +165,7 @@ describe("register", () => {
     await expect(register("one-more", PASSWORD, PASSWORD)).resolves.toEqual({
       ok: false,
       error: "RATE_LIMITED",
-      message: "Too many new accounts. Try again later.",
+      message: "Too many sign-up attempts. Try again later.",
     });
     await expect(User.countDocuments()).resolves.toBe(REGISTRATION_LIMIT.max);
 
@@ -170,16 +175,47 @@ describe("register", () => {
     });
   });
 
-  it("does not count rejected or duplicate registrations", async () => {
-    await createOrUpdateUser("Alice", PASSWORD);
+  it("does not count registrations rejected by validation", async () => {
     for (let i = 0; i < REGISTRATION_LIMIT.max + 1; i++) {
-      await register("Alice", PASSWORD, PASSWORD);
       await register("Bob", "weak", "weak");
     }
 
     await expect(register("Bob", PASSWORD, PASSWORD)).resolves.toEqual({
       ok: true,
     });
+  });
+
+  // I1: the limit comes before the nickname check, so probing nicknames is limited too.
+  it("counts a taken nickname against the limit", async () => {
+    await createOrUpdateUser("Alice", PASSWORD);
+    for (let i = 0; i < REGISTRATION_LIMIT.max; i++) {
+      await expect(
+        register("Alice", PASSWORD, PASSWORD),
+      ).resolves.toMatchObject({ error: "DUPLICATE_NAME" });
+    }
+    await expect(register("Alice", PASSWORD, PASSWORD)).resolves.toMatchObject({
+      error: "RATE_LIMITED",
+    });
+  });
+
+  it("a changed X-Forwarded-For does not get around the limit", async () => {
+    for (let i = 0; i < REGISTRATION_LIMIT.max; i++) {
+      fromAddress("203.0.113.7", `198.51.100.${i}`);
+      await register(`user-${i}`, PASSWORD, PASSWORD);
+    }
+    fromAddress("203.0.113.7", "192.0.2.1");
+    await expect(
+      register("one-more", PASSWORD, PASSWORD),
+    ).resolves.toMatchObject({ error: "RATE_LIMITED" });
+  });
+
+  it("without a trusted address clients do not share one limit", async () => {
+    vi.unstubAllEnvs();
+    for (let i = 0; i < REGISTRATION_LIMIT.max + 2; i++) {
+      await expect(register(`user-${i}`, PASSWORD, PASSWORD)).resolves.toEqual({
+        ok: true,
+      });
+    }
   });
 
   it("sends a new account to sign in when the login limit blocks it", async () => {

@@ -21,6 +21,14 @@ export const LOGIN_LIMIT: RateLimitRule = {
   windowMs: 15 * 60 * 1000,
 };
 
+// Per nickname, from any address (D74). It also blocks the right password until the window
+// ends, so the owner can be locked out for at most an hour.
+export const LOGIN_ACCOUNT_LIMIT: RateLimitRule = {
+  name: "login-account",
+  max: 20,
+  windowMs: 60 * 60 * 1000,
+};
+
 export const SEARCH_LIMIT: RateLimitRule = {
   name: "search",
   max: 30,
@@ -46,11 +54,39 @@ function ipv6Network(ip: string): string {
   return `${groups.map((group) => parseInt(group, 16).toString(16)).join(":")}::/64`;
 }
 
-export function clientIp(headers: Headers): string {
-  const forwarded = headers.get("x-forwarded-for")?.split(",")[0].trim();
-  if (!forwarded) return "unknown";
-  const ip = forwarded.replace(/^::ffff:(?=\d+\.)/i, "");
+// Only a header the platform sets and the client cannot (D74): X-Forwarded-For is whatever the
+// client sends unless a proxy rewrites it. TRUSTED_IP_HEADER names another such header (E2E tests,
+// a host other than Vercel).
+function trustedIpHeader(): string | null {
+  return (
+    process.env.TRUSTED_IP_HEADER ||
+    (process.env.VERCEL ? "x-vercel-forwarded-for" : null)
+  );
+}
+
+let warned = false;
+
+// Null without a trusted address: limits per address are then off, because one shared bucket
+// would let anyone block everyone.
+export function clientIp(headers: Headers): string | null {
+  const name = trustedIpHeader();
+  const value = name ? headers.get(name)?.split(",")[0].trim() : undefined;
+  if (!value) {
+    if (!warned && process.env.NODE_ENV === "production") {
+      warned = true;
+      console.warn(
+        "No trusted client address (VERCEL or TRUSTED_IP_HEADER): rate limits per address are off.",
+      );
+    }
+    return null;
+  }
+  const ip = value.replace(/^::ffff:(?=\d+\.)/i, "");
   return isIPv6(ip) ? ipv6Network(ip) : ip;
+}
+
+// Case-insensitive, like the nickname index (NICKNAME_COLLATION), so "Alice" and "alice" share it.
+export function accountKey(nickname: string): string {
+  return nickname.trim().toLowerCase();
 }
 
 function slotId(rule: RateLimitRule, ip: string, windowStart: number): string {
@@ -84,6 +120,18 @@ export async function takeAttempt(
   return slot.count <= rule.max ? id : null;
 }
 
-export async function giveBackAttempt(slot: string): Promise<void> {
+// A slot of null is an attempt that was not counted: there was no trusted address.
+export async function takeIpAttempt(
+  rule: RateLimitRule,
+  headers: Headers,
+): Promise<{ slot: string | null } | null> {
+  const ip = clientIp(headers);
+  if (ip === null) return { slot: null };
+  const slot = await takeAttempt(rule, ip);
+  return slot ? { slot } : null;
+}
+
+export async function giveBackAttempt(slot: string | null): Promise<void> {
+  if (slot === null) return;
   await RateLimit.updateOne({ _id: slot }, { $inc: { count: -1 } });
 }

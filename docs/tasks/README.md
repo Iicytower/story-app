@@ -55,7 +55,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 67 | [Pomiar limitu okładek i kalibracja progu 18+](67-covers-limits-calibration.md) | 28 | [ ] |
 | – | [Aktualizacja zależności (2026-11-09)](done/dependency-updates-2026-11-09.md) | – | [x] |
 | 56 | [Aktualizacja Next.js i podatnych zależności](done/56-dependency-updates.md) | – | [x] |
-| 57 | [Zaufany adres klienta w limitach](57-trusted-client-ip.md) | – | [ ] |
+| 57 | [Zaufany adres klienta w limitach](done/57-trusted-client-ip.md) | – | [x] |
 | 58 | [Unieważnianie sesji](58-session-revocation.md) | – | [ ] |
 | 59 | [Limity rozmiaru i liczby danych](done/59-data-limits.md) | – | [x] |
 | 60 | [Nagłówki bezpieczeństwa](60-security-headers.md) | – | [ ] |

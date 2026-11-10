@@ -30,12 +30,12 @@ export function clearStories(): Promise<void> {
   });
 }
 
-// Requires a counted attempt: the slot id holds a keyed hash of the address.
+// The limit per account (D74). Requires a counted attempt: the slot id holds a keyed hash.
 export function exhaustLoginLimit(): Promise<void> {
   return withE2EDb(async (connection) => {
     await connection
       .collection<{ _id: string }>("rateLimits")
-      .updateMany({ _id: /^login:/ }, { $set: { count: 1000 } });
+      .updateMany({ _id: /^login-account:/ }, { $set: { count: 1000 } });
   });
 }
 

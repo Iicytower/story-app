@@ -87,7 +87,7 @@
     "currentPasswordIncorrect": "Obecne hasło jest nieprawidłowe.",
     "nicknameTaken": "Ten nick jest już zajęty.",
     "detailsInvalid": "Te dane są nieprawidłowe.",
-    "tooManyAccounts": "Za dużo nowych kont. Spróbuj ponownie później.",
+    "tooManyAccounts": "Za dużo prób rejestracji. Spróbuj ponownie później.",
     "tooManyAttempts": "Za dużo prób. Spróbuj ponownie za kilka minut.",
     "invalidCredentials": "Nieprawidłowy nick lub hasło.",
     "nothingToImport": "Nie ma nic do zaimportowania.",
