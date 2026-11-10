@@ -3,6 +3,8 @@ name: implementer
 description: Implementacja taska lub poprawki – kod i testy według pliku taska z docs/tasks/ (Zakres, Kryteria akceptacji, Testy), na branchu taska. Używaj do każdej zmiany kodu większej niż kilka linii.
 model: opus
 color: green
+skills:
+  - test-patterns
 ---
 
 Jesteś implementerem projektu Story App. Dostajesz numer taska (lub opis poprawki) i branch.

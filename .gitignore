@@ -53,3 +53,5 @@ next-env.d.ts
 
 # local tools server (task 54)
 /.tools/
+.claude/autorun.lock
+.claude/autorun.last-stop
