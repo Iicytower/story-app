@@ -14,3 +14,4 @@ import "./community-ban";
 import "./community-moderator";
 import "./profile";
 import "./avatar";
+import "./follow";

@@ -14,6 +14,7 @@ import { languageAlternates } from "@/i18n/routing";
 import { requireUser } from "@/lib/auth/session";
 import { retryDueCovers } from "@/lib/covers/mutations";
 import { getPublicProfile } from "@/lib/profiles/queries";
+import { FollowButton } from "./follow-button";
 
 async function viewerId(): Promise<string | null> {
   const user = await requireUser();
@@ -55,15 +56,37 @@ export default async function ProfilePage({
 
   const content = (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10">
-      <header className="flex items-center gap-4">
+      <header className="flex flex-wrap items-center gap-4">
         <UserAvatar
           nickname={profile.nickname}
           src={profile.avatar}
           alt={t("avatarAlt", { nickname: profile.nickname })}
           size={96}
         />
-        <h1 className="text-3xl font-bold break-all">{profile.nickname}</h1>
-        {/* Follow (71), Message (83), Block (84) and Report (80) go here. */}
+        <div className="flex min-w-0 flex-col gap-2">
+          <h1 className="text-3xl font-bold break-all">{profile.nickname}</h1>
+          <p className="text-muted-foreground flex gap-4 text-sm">
+            <Link
+              href={`${profilePath(profile.nickname)}/followers`}
+              className="hover:underline"
+            >
+              {t("followersCount", { count: profile.followers })}
+            </Link>
+            <Link
+              href={`${profilePath(profile.nickname)}/following`}
+              className="hover:underline"
+            >
+              {t("followingCount", { count: profile.following })}
+            </Link>
+          </p>
+          {!profile.owner && (
+            <FollowButton
+              nickname={profile.nickname}
+              followed={profile.followed}
+            />
+          )}
+          {/* Message (83), Block (84) and Report (80) go here. */}
+        </div>
       </header>
       {profile.bio && (
         <section aria-label={t("bio")}>
@@ -100,7 +123,7 @@ export default async function ProfilePage({
           </ul>
         )}
       </section>
-      {/* Followers and following (71), then the public library (72). */}
+      {/* The public library (72). */}
     </div>
   );
 

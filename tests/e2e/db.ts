@@ -29,6 +29,7 @@ export function clearStories(): Promise<void> {
     await connection.collection("covers").deleteMany({});
     await connection.collection("avatars").deleteMany({});
     await connection.collection("profiles").deleteMany({});
+    await connection.collection("follows").deleteMany({});
   });
 }
 
@@ -300,4 +301,23 @@ export function seedProfile(user: UserName, bio: string): Promise<void> {
       { upsert: true },
     );
   });
+}
+
+export function seedFollow(
+  follower: UserName,
+  followee: UserName,
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    await connection.collection("follows").insertOne({
+      followerId: await userId(connection, follower),
+      followeeId: await userId(connection, followee),
+      createdAt: new Date(),
+    });
+  });
+}
+
+export function countFollows(): Promise<number> {
+  return withE2EDb((connection) =>
+    connection.collection("follows").countDocuments(),
+  );
 }
