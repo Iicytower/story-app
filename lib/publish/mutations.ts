@@ -31,17 +31,32 @@ export async function arrivalUpdate(folderId: Id) {
   };
 }
 
-// Call after chapters become public: only those never published before get a date.
+// Call after chapters become public: only those never published before get a date. Returns
+// them: they are the feed entry (task 75) and the "new chapter" notifications (task 81) of this
+// publication, one per book.
 export async function stampPublishedAt(
   filter: Record<string, unknown>,
-): Promise<void> {
-  // The chapters stamped here are the new ones of library readers (task 73): the "new chapter"
-  // notification (task 81) reads them before the update.
+): Promise<Types.ObjectId[]> {
+  const unpublished = {
+    publication: "public" as const,
+    publishedAt: { $exists: false },
+  };
+  const chapters = await Story.find({ ...filter, ...unpublished })
+    .select({ _id: 1 })
+    .lean();
+  if (chapters.length === 0) return [];
+  const ids = chapters.map(({ _id }) => _id);
+  const stamp = new Date();
   await Story.updateMany(
-    { ...filter, publication: "public", publishedAt: { $exists: false } },
-    { $set: { publishedAt: new Date() } },
+    { _id: { $in: ids }, ...unpublished },
+    { $set: { publishedAt: stamp } },
     { timestamps: false },
   );
+  // A concurrent publication may have dated some of them first: those are its own.
+  const stamped = await Story.find({ _id: { $in: ids }, publishedAt: stamp })
+    .select({ _id: 1 })
+    .lean();
+  return stamped.map(({ _id }) => _id);
 }
 
 // Call after a title change: siblings are read with the old title to get the old address back.

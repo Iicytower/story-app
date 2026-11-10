@@ -1,6 +1,6 @@
 // Sidebar entries of the social system (D80); each task turns on its own.
 export const SOCIAL_NAV = {
-  feed: false,
+  feed: true,
   library: true,
   forums: false,
   messages: false,

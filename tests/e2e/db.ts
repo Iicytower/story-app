@@ -34,6 +34,7 @@ export function clearStories(): Promise<void> {
     await connection.collection("libraryItems").deleteMany({});
     await connection.collection("readingProgress").deleteMany({});
     await connection.collection("readerMarks").deleteMany({});
+    await connection.collection("activity").deleteMany({});
   });
 }
 

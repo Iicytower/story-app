@@ -8,7 +8,7 @@ Subtask 68, zależy od 69, 70 i 75. Podstawa: D80 (Interakcje z tekstem; Zakres 
 - Akcje: `addComment`, `replyToComment` (odpowiedź na odpowiedź przypina się do rodzica), `editComment` (15 min od `createdAt`, potem `FORBIDDEN`), `deleteComment` (własny; z odpowiedziami → „komentarz usunięty”, bez → usunięty). Każda: `canInteract(kind: "comment")` wobec autora tekstu i, przy odpowiedzi, wobec autora komentarza-rodzica (blokada); limity `takeUserAttempt` (10/min, 200/dobę); `MAX_COMMENT_LENGTH`; obiekt musi być publiczny (D38), komentarze włączone.
 - Wyłączanie komentarzy: `folders.commentsDisabled`, `stories.commentsDisabled` (akcje autora w menu ⋮, `timestamps: false` jak D38); istniejące komentarze przy wyłączeniu ukryte.
 - UI: sekcja komentarzy pod publiczną stroną rozdziału i pod publicznym spisem książki (`SocialMarkdown`, `UserAvatar`, „edytowano”, daty względne), formularz textarea; gość widzi komentarze i przycisk logowania. Widz nie widzi komentarzy autorów, których zablokował (`hiddenUserIdsFor`), ani autorów z banem globalnym. Liczniki komentarzy na spisie.
-- `recordActivity(authorReply)` przy odpowiedzi autora tekstu. Hak dla powiadomień (81), wzmianek (82) i moderacji (79).
+- `recordActivity(authorReply)` przy odpowiedzi autora tekstu. Hak dla powiadomień (81), wzmianek (82) i moderacji (79). Feed (75) czyta dziś tylko `chapterPublished`: typ `authorReply` dopisać do zapytania i filtrów widoczności w `lib/social/feed.ts` oraz do renderowania na stronie `/feed`; zapis przez ogólne `recordActivity(event)` (`lib/social/activity.ts`).
 - Kolekcje taska dopisane do `purgeSocialData` (69); test: trwałe usunięcie rozdziału i folderu kasuje ich wpisy.
 
 ## Kryteria akceptacji

@@ -19,3 +19,4 @@ import "./shelf";
 import "./library-item";
 import "./reading-progress";
 import "./reader-mark";
+import "./activity";

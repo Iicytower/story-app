@@ -43,6 +43,7 @@ import {
   rememberChapterSlug,
 } from "@/lib/publish/mutations";
 import { chapterPublicPath } from "@/lib/publish/queries";
+import { recordChaptersPublished } from "@/lib/social/activity";
 import { canonicalTags } from "@/lib/tags/predefined";
 import { listPredefinedTags } from "@/lib/tags/queries";
 import {
@@ -612,7 +613,11 @@ export async function setChapterPublished(
     { $set: { publication: "public" } },
     { timestamps: false },
   );
-  await stampPublishedAt(owned);
+  await recordChaptersPublished(
+    user.userId,
+    folder._id,
+    await stampPublishedAt(owned),
+  );
   if (!folder.published) {
     await Folder.updateOne(
       { _id: folder._id },
