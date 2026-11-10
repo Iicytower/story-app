@@ -14,8 +14,9 @@ while IFS= read -r row; do
   left+=("$(cut -d'|' -f2 <<<"$row" | tr -d ' ')")
 done < <(grep -E "\(subtask $umbrella\)" docs/tasks/README.md)
 ((${#left[@]} == 0)) && exit 0
-# A second stop with no new commit since the last block means the run is stuck: let it stop.
-head=$(git rev-parse HEAD)
+# A second stop with the repo unchanged since the last block (same HEAD and working tree) means
+# the run is stuck: let it stop.
+head="$(git rev-parse HEAD) $(git status --porcelain | sha256sum | cut -c1-16)"
 seen="$CLAUDE_PROJECT_DIR/.claude/autorun.last-stop"
 if [[ $(jq -r '.stop_hook_active' <<<"$input") == "true" && -f $seen && $(cat "$seen") == "$head" ]]; then
   exit 0
