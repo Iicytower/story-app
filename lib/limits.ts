@@ -71,7 +71,9 @@ export function countError(
     | "tooManyChapters"
     | "tooManyVersions"
     | "tooManyShelves"
-    | "tooManyLibraryItems",
+    | "tooManyLibraryItems"
+    | "tooManyChapterMarks"
+    | "tooManyMarks",
 ): ValidationError {
   const max = {
     tooManyFolders: MAX_FOLDERS,
@@ -79,6 +81,8 @@ export function countError(
     tooManyVersions: MAX_VERSIONS_PER_FOLDER,
     tooManyShelves: MAX_SHELVES,
     tooManyLibraryItems: MAX_LIBRARY_ITEMS,
+    tooManyChapterMarks: MAX_MARKS_PER_CHAPTER,
+    tooManyMarks: MAX_MARKS_PER_ACCOUNT,
   }[key];
   return { ok: false, error: "INVALID_INPUT", key, values: { max } };
 }

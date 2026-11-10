@@ -184,7 +184,10 @@
     "shelfNameRequired": "Nazwa półki jest wymagana.",
     "tooManyShelves": "Możesz mieć najwyżej {max, number} półek. Usuń półkę, żeby dodać nową.",
     "tooManyLibraryItems": "Możesz mieć w bibliotece najwyżej {max, number} książek. Usuń książkę, żeby dodać nową.",
-    "libraryBookNotFound": "Ta książka jest niedostępna albo nie ma jej w Twojej bibliotece."
+    "libraryBookNotFound": "Ta książka jest niedostępna albo nie ma jej w Twojej bibliotece.",
+    "readerMarkNotFound": "Ta zakładka lub notatka nie istnieje albo została usunięta.",
+    "tooManyChapterMarks": "W rozdziale możesz mieć najwyżej {max, number} zakładek i notatek. Usuń którąś, żeby dodać nową.",
+    "tooManyMarks": "Możesz mieć najwyżej {max, number} zakładek i notatek. Usuń którąś, żeby dodać nową."
   },
   "password": {
     "mustContain": "Hasło musi zawierać:",
@@ -966,6 +969,35 @@
       "later": "Na później",
       "read": "Przeczytane"
     },
-    "newChapters": "{count, plural, one {# nowy rozdział} few {# nowe rozdziały} many {# nowych rozdziałów} other {# nowego rozdziału}}"
+    "newChapters": "{count, plural, one {# nowy rozdział} few {# nowe rozdziały} many {# nowych rozdziałów} other {# nowego rozdziału}}",
+    "marks": "{count, plural, one {# zakładka lub notatka} few {# zakładki i notatki} many {# zakładek i notatek} other {# zakładki i notatki}}",
+    "markIn": "{kind} – {chapter}: {mark}"
+  },
+  "marks": {
+    "toolbar": "Zakładki i notatki",
+    "addBookmark": "Zakładka",
+    "addNote": "Notatka",
+    "open": "Zakładki i notatki ({count, number})",
+    "panel": "Zakładki i notatki",
+    "empty": "Ten rozdział nie ma jeszcze zakładek ani notatek. Zaznacz fragment, żeby dodać notatkę.",
+    "newBookmark": "Dodaj zakładkę",
+    "newNote": "Dodaj notatkę",
+    "editBookmark": "Edytuj zakładkę",
+    "editNote": "Edytuj notatkę",
+    "name": "Nazwa (opcjonalnie)",
+    "text": "Notatka",
+    "passage": "Zaznaczony fragment",
+    "save": "Zapisz",
+    "saving": "Zapisywanie…",
+    "bookmarkAt": "Zakładka na {position, number, percent}",
+    "orphan": "Autor zmienił albo usunął ten fragment.",
+    "goTo": "Przejdź",
+    "edit": "Edytuj",
+    "delete": "Usuń",
+    "deleteBookmark": "Usunąć tę zakładkę?",
+    "deleteNote": "Usunąć tę notatkę?",
+    "deleteDescription": "Tego nie można cofnąć.",
+    "bookmarkKind": "Zakładka",
+    "noteKind": "Notatka"
   }
 }

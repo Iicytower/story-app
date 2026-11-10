@@ -87,6 +87,8 @@ export const SOCIAL_LIMITS = {
   // The chapter page saves the reading position every 10 seconds (task 73), so several open
   // tabs of a new account still fit in half of it.
   progress: { name: "progress", max: 60, windowMs: MINUTE },
+  // Adding, editing and deleting bookmarks and reader notes (task 74).
+  marks: { name: "marks", max: 60, windowMs: MINUTE },
   // Each one is a classifier call (task 70).
   avatarDay: { name: "avatar-day", max: 20, windowMs: DAY },
 } as const satisfies Record<string, RateLimitRule>;

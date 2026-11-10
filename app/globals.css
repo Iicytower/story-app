@@ -498,3 +498,11 @@
   --tw-prose-th-borders: var(--border);
   --tw-prose-td-borders: var(--border);
 }
+
+/* Reader notes on a chapter page (task 74), set by the CSS Custom Highlight API. */
+::highlight(reader-note) {
+  background-color: var(--highlight);
+  color: var(--foreground);
+  /* Tells a note apart from the selection, also in the dark theme. */
+  text-decoration: underline currentColor 2px;
+}

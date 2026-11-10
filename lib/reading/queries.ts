@@ -1,11 +1,14 @@
 import type { Types } from "mongoose";
 import { connectDB } from "@/lib/db";
 import { Folder } from "@/lib/models/folder";
+import { MAX_MARKS_PER_ACCOUNT } from "@/lib/limits";
 import { LibraryItem } from "@/lib/models/library-item";
+import { ReaderMark, type ReaderMarkKind } from "@/lib/models/reader-mark";
 import { ReadingProgress } from "@/lib/models/reading-progress";
 import { Story } from "@/lib/models/story";
 import { chapterSlugs, type ReaderChapter } from "@/lib/publish/queries";
 import { newChapterIds } from "@/lib/social/new-chapters";
+import { MARK_PARAM } from "./marks";
 
 // The query a chapter page reads to scroll back to the saved position.
 export const CONTINUE_PARAM = "continue";
@@ -15,6 +18,21 @@ export interface BookReading {
   continueAt: { title: string; path: string } | null;
   // Only for a book in the reader's library.
   newChapterIds: string[];
+}
+
+// A bookmark or note listed with its book in the library, in a chapter that is still public.
+export interface BookMark {
+  id: string;
+  kind: ReaderMarkKind;
+  // The bookmark's name or the note's quote; an unnamed bookmark shows its position.
+  label: string;
+  position: number;
+  chapter: string;
+  path: string;
+}
+
+export interface LibraryBookReading extends BookReading {
+  marks: BookMark[];
 }
 
 interface Progress {
@@ -78,16 +96,29 @@ export async function folderReading(
 export async function libraryReading(
   userId: string,
   books: { folderId: string; path: string }[],
-): Promise<Map<string, BookReading>> {
+): Promise<Map<string, LibraryBookReading>> {
   if (books.length === 0) return new Map();
   await connectDB();
   const folderIds = books.map(({ folderId }) => folderId);
-  const [{ progress, addedAt }, folders] = await Promise.all([
+  const [{ progress, addedAt }, folders, marks] = await Promise.all([
     progressAndItems(userId, folderIds),
     Folder.find({ _id: { $in: folderIds } })
       .select({ userId: 1 })
       .lean(),
+    ReaderMark.find({ userId, folderId: { $in: folderIds } })
+      .select({
+        storyId: 1,
+        folderId: 1,
+        kind: 1,
+        name: 1,
+        quote: 1,
+        position: 1,
+      })
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(MAX_MARKS_PER_ACCOUNT)
+      .lean(),
   ]);
+  const marksByFolder = Map.groupBy(marks, ({ folderId }) => String(folderId));
   // Hidden chapters count for the slugs, as on the contents page; userId first for the index.
   const chapters = await Story.find({
     userId: { $in: folders.map(({ userId }) => userId) },
@@ -109,9 +140,32 @@ export async function libraryReading(
           path: `${path}/${slugs.get(_id.toString())}`,
           publishedAt,
         }));
+      const byId = new Map(visible.map((chapter) => [chapter.id, chapter]));
+      const bookMarks = (marksByFolder.get(folderId) ?? []).flatMap((mark) => {
+        const chapter = byId.get(String(mark.storyId));
+        if (!chapter) return [];
+        const id = mark._id.toString();
+        return [
+          {
+            id,
+            kind: mark.kind,
+            label: (mark.kind === "bookmark" ? mark.name : mark.quote) ?? "",
+            position: mark.position,
+            chapter: chapter.title,
+            path: `${chapter.path}?${MARK_PARAM}=${id}`,
+          },
+        ];
+      });
       return [
         folderId,
-        bookReading(visible, progress.get(folderId), addedAt.get(folderId)),
+        {
+          ...bookReading(
+            visible,
+            progress.get(folderId),
+            addedAt.get(folderId),
+          ),
+          marks: bookMarks,
+        },
       ];
     }),
   );

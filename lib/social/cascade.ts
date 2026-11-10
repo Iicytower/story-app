@@ -1,4 +1,5 @@
 import { LibraryItem } from "@/lib/models/library-item";
+import { ReaderMark } from "@/lib/models/reader-mark";
 import { ReadingProgress } from "@/lib/models/reading-progress";
 
 export interface PurgedObjects {
@@ -23,6 +24,8 @@ const PURGES: ((objects: PurgedObjects) => Promise<unknown>)[] = [
       { lastStoryId: { $in: storyIds } },
       { $unset: { lastStoryId: 1, position: 1 } },
     ),
+  ({ folderIds }) => ReaderMark.deleteMany({ folderId: { $in: folderIds } }),
+  ({ storyIds }) => ReaderMark.deleteMany({ storyId: { $in: storyIds } }),
 ];
 
 export async function purgeSocialData(objects: PurgedObjects): Promise<void> {

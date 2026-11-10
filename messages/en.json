@@ -184,7 +184,10 @@
     "shelfNameRequired": "Shelf name is required.",
     "tooManyShelves": "You can have at most {max, number} shelves. Delete a shelf to add a new one.",
     "tooManyLibraryItems": "You can have at most {max, number} books in your library. Remove a book to add a new one.",
-    "libraryBookNotFound": "This book is not available or is not in your library."
+    "libraryBookNotFound": "This book is not available or is not in your library.",
+    "readerMarkNotFound": "This bookmark or note does not exist or has been deleted.",
+    "tooManyChapterMarks": "You can have at most {max, number} bookmarks and notes in a chapter. Delete one to add a new one.",
+    "tooManyMarks": "You can have at most {max, number} bookmarks and notes. Delete one to add a new one."
   },
   "password": {
     "mustContain": "The password must contain:",
@@ -966,6 +969,35 @@
       "later": "Read later",
       "read": "Read"
     },
-    "newChapters": "{count, plural, one {# new chapter} other {# new chapters}}"
+    "newChapters": "{count, plural, one {# new chapter} other {# new chapters}}",
+    "marks": "{count, plural, one {# bookmark or note} other {# bookmarks and notes}}",
+    "markIn": "{kind} – {chapter}: {mark}"
+  },
+  "marks": {
+    "toolbar": "Bookmarks and notes",
+    "addBookmark": "Bookmark",
+    "addNote": "Note",
+    "open": "Bookmarks and notes ({count, number})",
+    "panel": "Bookmarks and notes",
+    "empty": "No bookmarks or notes in this chapter yet. Select a passage to add a note.",
+    "newBookmark": "Add bookmark",
+    "newNote": "Add note",
+    "editBookmark": "Edit bookmark",
+    "editNote": "Edit note",
+    "name": "Name (optional)",
+    "text": "Note",
+    "passage": "Selected passage",
+    "save": "Save",
+    "saving": "Saving…",
+    "bookmarkAt": "Bookmark at {position, number, percent}",
+    "orphan": "The author changed or removed this passage.",
+    "goTo": "Go to",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteBookmark": "Delete this bookmark?",
+    "deleteNote": "Delete this note?",
+    "deleteDescription": "This cannot be undone.",
+    "bookmarkKind": "Bookmark",
+    "noteKind": "Note"
   }
 }
