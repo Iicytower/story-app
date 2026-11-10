@@ -28,6 +28,8 @@ import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
 import { rememberFolderSlug, stampPublishedAt } from "@/lib/publish/mutations";
 import { getUserSettings, updateUserSettings } from "@/lib/settings/queries";
+import { canonicalTags } from "@/lib/tags/predefined";
+import { listPredefinedTags } from "@/lib/tags/queries";
 import { exceedsTagLimit, MAX_TAGS, normalizeTags } from "@/lib/tags/tags";
 
 const NOT_FOUND = () => actionError("NOT_FOUND", "folderNotFound");
@@ -159,15 +161,17 @@ export async function saveFolderNotes(
 // Organizational change: keeps updatedAt, lastActivityAt and notesUpdatedAt (D36).
 export async function setFolderTags(
   id: string,
-  tags: string[],
+  input: string[],
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
   if (!isId(id)) return NOT_FOUND();
-  const normalized = normalizeTags(tags);
+  const normalized = normalizeTags(input);
   if (!normalized.ok) return translateError(normalized);
 
   await connectDB();
+  // A typed label is stored as its key (D79).
+  const tags = canonicalTags(normalized.tags, await listPredefinedTags());
   const owned = { _id: id, userId: user.userId, deletedAt: null };
   if (!(await Folder.exists(owned))) return NOT_FOUND();
   const chapters = await Story.find({
@@ -178,7 +182,7 @@ export async function setFolderTags(
     .select({ title: 1, tags: 1 })
     .lean();
   const over = chapters.find((chapter) =>
-    exceedsTagLimit(chapter.tags, normalized.tags),
+    exceedsTagLimit(chapter.tags, tags),
   );
   if (over) {
     return actionError("INVALID_INPUT", "folderTagLimit", {
@@ -188,7 +192,7 @@ export async function setFolderTags(
   }
   const { matchedCount } = await Folder.updateOne(
     owned,
-    { $set: { tags: normalized.tags } },
+    { $set: { tags } },
     { timestamps: false },
   );
   if (matchedCount === 0) return NOT_FOUND();

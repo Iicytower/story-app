@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Folder } from "@/lib/models/folder";
+import { PredefinedTag } from "@/lib/models/predefined-tag";
 import { Story } from "@/lib/models/story";
 import { User } from "@/lib/models/user";
 import {
@@ -56,6 +57,26 @@ describe("searchPublishedChapters", () => {
       expect(await titles(query)).toEqual(["Rozdział"]);
     }
     expect(await titles("nic takiego")).toEqual([]);
+  });
+
+  it("finds a predefined tag by its label in either language", async () => {
+    await PredefinedTag.create({
+      _id: "crime",
+      labels: { en: "Crime", pl: "Kryminał" },
+    });
+    const folder = await seedFolder({ tags: ["crime"] });
+    await seedChapter(folder, { title: "Z folderu" });
+    await seedChapter(await seedFolder({ name: "Inna" }), {
+      title: "Własny",
+      tags: ["crime"],
+    });
+    await seedChapter(await seedFolder({ name: "Trzecia" }), {
+      title: "Bez tagu",
+    });
+
+    for (const query of ["kryminał", "Crime"]) {
+      expect((await titles(query)).sort()).toEqual(["Własny", "Z folderu"]);
+    }
   });
 
   it("lists only the public chapters for a folder name", async () => {

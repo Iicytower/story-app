@@ -204,7 +204,9 @@
     "current": "Obecne tagi",
     "remove": "Usuń {tag}",
     "add": "Dodaj tag",
-    "addButton": "Dodaj"
+    "addButton": "Dodaj",
+    "predefined": "Kategoria",
+    "filterByCategory": "Filtruj po kategorii"
   },
   "find": {
     "invalidRegex": "Nieprawidłowe wyrażenie regularne",

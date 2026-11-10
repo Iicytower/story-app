@@ -67,7 +67,7 @@ npm run migrate    # collections and indexes (the app does not create indexes it
 npm run dev        # http://localhost:3000
 ```
 
-Create an account with "Log in / Create account" on the home page, or from the terminal with `npm run create-account`. Run `npm run migrate` again after pulling changes that touch schemas or `migrations/`.
+Create an account with "Log in / Create account" on the home page, or from the terminal with `npm run create-account`. Run `npm run migrate` again after pulling changes that touch schemas or `migrations/`. The list of predefined tags (genres and forms) comes with the migrations; `npm run tags -- list|set|remove` changes it.
 
 ### Everything at once, with the tools server
 

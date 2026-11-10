@@ -18,6 +18,7 @@ import type { ActionError } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import { getFolderForExport } from "@/lib/folders/queries";
 import { Folder } from "@/lib/models/folder";
+import { PredefinedTag } from "@/lib/models/predefined-tag";
 import { FolderVersion } from "@/lib/models/folder-version";
 import { Story } from "@/lib/models/story";
 import { getStoryForExport, listStories } from "@/lib/stories/queries";
@@ -83,6 +84,29 @@ const folderTags = async (id: string) =>
   (await Folder.findById(id).lean())?.tags;
 const titles = (stories: { title: string }[]) =>
   stories.map(({ title }) => title).sort();
+
+const seedPredefined = () =>
+  PredefinedTag.create({
+    _id: "sci-fi",
+    labels: { en: "Science fiction", pl: "Fantastyka naukowa" },
+  });
+
+describe("predefined tags in the tag actions", () => {
+  it("store a typed label as its key, once, and keep own tags", async () => {
+    await seedPredefined();
+    const folder = await seedFolder();
+    const story = await seedStory(folder, "A");
+
+    expect(
+      await setFolderTags(folder, ["Science Fiction", "sci-fi", "scifi"]),
+    ).toEqual({ ok: true });
+    expect(await folderTags(folder)).toEqual(["sci-fi", "scifi"]);
+    expect(await setStoryTags(story, ["fantastyka  naukowa"])).toEqual({
+      ok: true,
+    });
+    expect(await storyTags(story)).toEqual(["sci-fi"]);
+  });
+});
 
 describe("setFolderTags", () => {
   it("normalizes and replaces the tags", async () => {
@@ -261,6 +285,24 @@ describe("listStories with tags", () => {
     await seedStory(other, "C", { content: "dragon" });
 
     expect(titles(await list("dragon", ["fantasy"]))).toEqual(["A"]);
+  });
+
+  it("finds whole tags with the search, also by a predefined label", async () => {
+    await seedPredefined();
+    const saga = await seedFolder(["sci-fi"]);
+    const other = await seedFolder();
+    await seedStory(saga, "Inherited", { content: "x" });
+    await seedStory(other, "Own", { tags: ["sci-fi"], content: "x" });
+    await seedStory(other, "Draft", { tags: ["draft"], content: "x" });
+    await seedStory(other, "Part", { tags: ["drafts"], content: "x" });
+    await seedStory(other, "None", { content: "x" });
+
+    for (const query of ["Fantastyka naukowa", "science fiction", "SCI-FI"]) {
+      expect(titles(await list(query, []))).toEqual(["Inherited", "Own"]);
+    }
+    // A whole tag only: "draft" is not part of "drafts".
+    expect(titles(await list("Draft", []))).toEqual(["Draft"]);
+    expect(titles(await list("Drafts", []))).toEqual(["Part"]);
   });
 
   it("returns the folder's tags with each story", async () => {

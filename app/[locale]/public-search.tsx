@@ -1,7 +1,8 @@
 import Form from "next/form";
 import { headers } from "next/headers";
 import { getLocale, getTranslations } from "next-intl/server";
-import { getPathname, Link } from "@/i18n/navigation";
+import { getPathname } from "@/i18n/navigation";
+import { TagFilter } from "@/components/tag-filter";
 import { Input } from "@/components/ui/input";
 import { connectDB } from "@/lib/db";
 import {
@@ -11,7 +12,7 @@ import {
 } from "@/lib/publish/queries";
 import { MAX_QUERY_LENGTH } from "@/lib/publish/search";
 import { SEARCH_LIMIT, takeIpAttempt } from "@/lib/rate-limit";
-import { MAX_TAGS, parseTagFilter, tagFilterHref } from "@/lib/tags/tags";
+import { MAX_TAGS, parseTagFilter } from "@/lib/tags/tags";
 import { ChapterItem } from "./chapter-item";
 
 export async function PublicSearch({
@@ -34,7 +35,6 @@ export async function PublicSearch({
   // An empty form is free: only an actual search reads chapter text.
   const allowed =
     !searching || (await takeIpAttempt(SEARCH_LIMIT, await headers())) !== null;
-  const filterTags = [...new Set([...tags, ...selectedTags])];
 
   const searchPath = getPathname({ href: "/", locale: await getLocale() });
   const t = await getTranslations("search");
@@ -55,29 +55,15 @@ export async function PublicSearch({
           <input key={selected} type="hidden" name="tag" value={selected} />
         ))}
       </Form>
-      {filterTags.length > 0 && (
-        <nav aria-label={t("filterByTag")} className="flex flex-wrap gap-1">
-          {filterTags.map((filterTag) => {
-            const active = selectedTags.includes(filterTag);
-            return (
-              // A prefetched search would use up the visitor's limit.
-              <Link
-                key={filterTag}
-                prefetch={false}
-                href={tagFilterHref(query, selectedTags, filterTag, "/")}
-                aria-current={active ? "true" : undefined}
-                className={`rounded-full px-2 py-0.5 text-xs ${
-                  active
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted hover:bg-muted/70"
-                }`}
-              >
-                {filterTag}
-              </Link>
-            );
-          })}
-        </nav>
-      )}
+      {/* A prefetched search would use up the visitor's limit. */}
+      <TagFilter
+        tags={tags}
+        selected={selectedTags}
+        query={query}
+        path="/"
+        label={t("filterByTag")}
+        prefetch={false}
+      />
       {!allowed ? (
         <p role="alert" className="text-destructive">
           {t("tooMany")}

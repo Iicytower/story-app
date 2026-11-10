@@ -53,6 +53,7 @@ Mechanizm: `docs/decisions.md` D14. Migracje uruchamiają się w buildzie produk
 - Atlas M0 nie ma automatycznych backupów (dopiero Flex i wyżej). Backup: `scripts/backup.sh` (sekcja „Backup bazy”, D26).
 - Function Region w Vercelu (Settings → Functions) ustawić na region klastra Atlasa (np. `fra1` dla Frankfurtu). Domyślnie funkcje szły do `iad1` (Waszyngton).
 - Konto produkcyjne: `MONGODB_URI='mongodb+srv://...' npm run create-account` (pojedyncze cudzysłowy, bo zsh interpretuje `&` i `?`; plik `.env.local` musi istnieć).
+- Predefiniowane tagi (D79) na stagingu lub produkcji: `MONGODB_URI='mongodb+srv://...' npm run tags -- set <klucz> '<en>' '<pl>'` (także `list`, `remove <klucz>`). Zmienna z powłoki wygrywa z `.env.local`. Lista startowa przychodzi migracją `007` w buildzie.
 
 ## Lokalny serwer narzędzi (task 54, D56, D57, D58, D61)
 

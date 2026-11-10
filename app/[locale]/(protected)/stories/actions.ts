@@ -43,6 +43,8 @@ import {
   rememberChapterSlug,
 } from "@/lib/publish/mutations";
 import { chapterPublicPath } from "@/lib/publish/queries";
+import { canonicalTags } from "@/lib/tags/predefined";
+import { listPredefinedTags } from "@/lib/tags/queries";
 import {
   exceedsTagLimit,
   normalizeTags,
@@ -387,15 +389,17 @@ export async function moveStory(
 // Organizational change, like moveStory: an open editor must not get CONFLICT.
 export async function setStoryTags(
   id: string,
-  tags: string[],
+  input: string[],
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
   if (!isId(id)) return NOT_FOUND();
-  const normalized = normalizeTags(tags);
+  const normalized = normalizeTags(input);
   if (!normalized.ok) return translateError(normalized);
 
   await connectDB();
+  // A typed label is stored as its key (D79).
+  const tags = canonicalTags(normalized.tags, await listPredefinedTags());
   const owned = { _id: id, userId: user.userId, deletedAt: null };
   const story = await Story.findOne(owned).select({ folderId: 1 }).lean();
   if (!story) return NOT_FOUND();
@@ -405,12 +409,12 @@ export async function setStoryTags(
   })
     .select({ tags: 1 })
     .lean();
-  if (exceedsTagLimit(normalized.tags, folder?.tags)) {
+  if (exceedsTagLimit(tags, folder?.tags)) {
     return translateError(TAG_LIMIT_ERROR);
   }
   const { matchedCount } = await Story.updateOne(
     owned,
-    { $set: { tags: normalized.tags } },
+    { $set: { tags } },
     { timestamps: false },
   );
   if (matchedCount === 0) return NOT_FOUND();
