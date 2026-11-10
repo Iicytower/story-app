@@ -461,6 +461,7 @@ export function Editor({
           title={title}
           isPublic={Boolean(publicPath)}
           adult={story.adult}
+          commentsDisabled={story.commentsDisabled}
           beforeExport={saveForExport}
           togglePublished={togglePublished}
           onDeleted={() =>

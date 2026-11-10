@@ -31,6 +31,7 @@ describe("getStory", () => {
       folderName: null,
       publicPath: null,
       adult: { adult: false, lock: null },
+      commentsDisabled: false,
       updatedAt: story.updatedAt.toISOString(),
     });
   });

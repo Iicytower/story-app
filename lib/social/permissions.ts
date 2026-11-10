@@ -5,8 +5,17 @@ import { CommunityBan } from "@/lib/models/community-ban";
 import { CommunityModerator } from "@/lib/models/community-moderator";
 import { User } from "@/lib/models/user";
 
+// "reply" is checked against the author of the comment replied to, whose community it is not:
+// only bans and blocks of the whole site apply (task 76).
 export type InteractionKind =
-  "comment" | "react" | "rate" | "forumPost" | "dm" | "follow" | "mention";
+  | "comment"
+  | "reply"
+  | "react"
+  | "rate"
+  | "forumPost"
+  | "dm"
+  | "follow"
+  | "mention";
 
 // A community ban covers taking part in the author's community; the banned user still reads,
 // follows and writes direct messages (D80).

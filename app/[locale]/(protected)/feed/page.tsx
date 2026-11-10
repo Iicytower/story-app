@@ -59,7 +59,10 @@ export default async function FeedPage({
       ) : (
         <ul aria-label={t("entries")} className="flex flex-col gap-4">
           {entries.map((entry) => {
-            const [single] = entry.chapters;
+            const chapterPath =
+              entry.type === "chapterPublished"
+                ? entry.chapters[0].path
+                : (entry.chapter?.path ?? entry.book.path);
             const tags = {
               author: (chunks: ReactNode) => (
                 <Link href={profilePath(entry.nickname)} className={linkClass}>
@@ -67,7 +70,19 @@ export default async function FeedPage({
                 </Link>
               ),
               chapter: (chunks: ReactNode) => (
-                <Link href={single.path} className={linkClass}>
+                <Link href={chapterPath} className={linkClass}>
+                  {chunks}
+                </Link>
+              ),
+              comment: (chunks: ReactNode) => (
+                <Link
+                  href={
+                    entry.type === "authorReply"
+                      ? entry.commentPath
+                      : chapterPath
+                  }
+                  className={linkClass}
+                >
                   {chunks}
                 </Link>
               ),
@@ -91,19 +106,32 @@ export default async function FeedPage({
                 )}
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <p className="min-w-0 [overflow-wrap:anywhere]">
-                    {entry.chapters.length === 1
-                      ? t.rich("chapterPublished", {
-                          ...tags,
-                          nickname: entry.nickname,
-                          title: single.title,
-                          bookName: entry.book.name,
-                        })
-                      : t.rich("chaptersPublished", {
-                          ...tags,
-                          nickname: entry.nickname,
-                          count: entry.chapters.length,
-                          bookName: entry.book.name,
-                        })}
+                    {entry.type === "authorReply"
+                      ? entry.chapter
+                        ? t.rich("authorReplyChapter", {
+                            ...tags,
+                            nickname: entry.nickname,
+                            title: entry.chapter.title,
+                            bookName: entry.book.name,
+                          })
+                        : t.rich("authorReplyBook", {
+                            ...tags,
+                            nickname: entry.nickname,
+                            bookName: entry.book.name,
+                          })
+                      : entry.chapters.length === 1
+                        ? t.rich("chapterPublished", {
+                            ...tags,
+                            nickname: entry.nickname,
+                            title: entry.chapters[0].title,
+                            bookName: entry.book.name,
+                          })
+                        : t.rich("chaptersPublished", {
+                            ...tags,
+                            nickname: entry.nickname,
+                            count: entry.chapters.length,
+                            bookName: entry.book.name,
+                          })}
                     {entry.book.adult && (
                       <span className="ml-2 inline-block align-middle">
                         <AdultBadge />

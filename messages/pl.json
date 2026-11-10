@@ -187,7 +187,12 @@
     "libraryBookNotFound": "Ta książka jest niedostępna albo nie ma jej w Twojej bibliotece.",
     "readerMarkNotFound": "Ta zakładka lub notatka nie istnieje albo została usunięta.",
     "tooManyChapterMarks": "W rozdziale możesz mieć najwyżej {max, number} zakładek i notatek. Usuń którąś, żeby dodać nową.",
-    "tooManyMarks": "Możesz mieć najwyżej {max, number} zakładek i notatek. Usuń którąś, żeby dodać nową."
+    "tooManyMarks": "Możesz mieć najwyżej {max, number} zakładek i notatek. Usuń którąś, żeby dodać nową.",
+    "commentRequired": "Najpierw coś napisz.",
+    "commentNotFound": "Ten komentarz nie istnieje albo został usunięty.",
+    "commentTargetNotFound": "Ten rozdział lub ta książka nie jest publiczna albo została usunięta.",
+    "commentEditExpired": "Komentarz można edytować tylko przez 15 minut od dodania. Nadal możesz go usunąć.",
+    "commentsDisabled": "Autor wyłączył tu komentarze."
   },
   "password": {
     "mustContain": "Hasło musi zawierać:",
@@ -413,7 +418,9 @@
     "movedOver": "{name} jest teraz na pozycji {position} z {total}.",
     "dropped": "Upuszczono {name} na pozycji {position} z {total}.",
     "cancelled": "Anulowano przenoszenie {name}.",
-    "language": "Język"
+    "language": "Język",
+    "disableComments": "Wyłącz komentarze",
+    "enableComments": "Włącz komentarze"
   },
   "stories": {
     "newStory": "Nowe opowiadanie",
@@ -730,7 +737,8 @@
     "folderBy": "{folder} – {nickname}",
     "contents": "Spis treści",
     "continue": "Czytaj dalej: {title}",
-    "newChapter": "Nowy"
+    "newChapter": "Nowy",
+    "commentCount": "{count, plural, one {# komentarz} few {# komentarze} many {# komentarzy} other {# komentarza}}"
   },
   "search": {
     "title": "Szukaj opowiadań",
@@ -1011,6 +1019,34 @@
     "chapterPublished": "<author>{nickname}</author> publikuje nowy rozdział <chapter>{title}</chapter> w książce <book>{bookName}</book>",
     "chaptersPublished": "<author>{nickname}</author> publikuje {count, plural, one {# nowy rozdział} few {# nowe rozdziały} many {# nowych rozdziałów} other {# nowego rozdziału}} w książce <book>{bookName}</book>",
     "pages": "Strony",
-    "noOlder": "Brak starszych wpisów."
+    "noOlder": "Brak starszych wpisów.",
+    "authorReplyChapter": "<author>{nickname}</author> <comment>odpowiada na komentarz</comment> pod <chapter>{title}</chapter> w książce <book>{bookName}</book>",
+    "authorReplyBook": "<author>{nickname}</author> <comment>odpowiada na komentarz</comment> pod <book>{bookName}</book>"
+  },
+  "comments": {
+    "title": "{count, plural, =0 {Komentarze} one {# komentarz} few {# komentarze} many {# komentarzy} other {# komentarza}}",
+    "disabled": "Komentarze są wyłączone.",
+    "signIn": "Zaloguj się, aby komentować",
+    "placeholder": "Napisz komentarz…",
+    "replyPlaceholder": "Napisz odpowiedź…",
+    "newLabel": "Nowy komentarz",
+    "submit": "Skomentuj",
+    "editLabel": "Edytuj komentarz",
+    "edit": "Edytuj",
+    "reply": "Odpowiedz",
+    "replyTo": "Odpowiedz użytkownikowi {nickname}",
+    "submitReply": "Odpowiedz",
+    "deleteTitle": "Usunąć komentarz?",
+    "deleteDescription": "Komentarz zostanie usunięty. Jeśli ma odpowiedzi, zostaną pod „Komentarz usunięty”.",
+    "hidden": "Ukryte przez moderatora.",
+    "deleted": "Komentarz usunięty.",
+    "edited": "edytowano",
+    "empty": "Nie ma jeszcze komentarzy.",
+    "noOlder": "Nie ma starszych komentarzy.",
+    "list": "Komentarze",
+    "replies": "{count, plural, one {# odpowiedź} few {# odpowiedzi} many {# odpowiedzi} other {# odpowiedzi}}",
+    "pages": "Strony komentarzy",
+    "newest": "Najnowsze komentarze",
+    "older": "Starsze komentarze"
   }
 }

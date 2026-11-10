@@ -15,8 +15,10 @@ import { requireUser } from "@/lib/auth/session";
 import { getPublishedChapter, publishedChapterId } from "@/lib/publish/queries";
 import { listChapterMarks, MARK_PARAM } from "@/lib/reading/marks";
 import { CONTINUE_PARAM, savedPosition } from "@/lib/reading/queries";
+import { COMMENTS_PARAM } from "@/lib/social/comments";
 import { stripComments } from "@/lib/stories/strip-comments";
 import { BlurredCover } from "../adult-cover";
+import { Comments } from "../comments";
 import { AdultGate } from "./adult-gate";
 import { GuestMarks } from "./guest-marks";
 import { ReaderMarks } from "./reader-marks";
@@ -90,6 +92,8 @@ export default async function PublishedChapterPage({
         )
       : null;
   const focusMark = query[MARK_PARAM];
+  // Behind the 18+ gate the comments wait with the text.
+  const place = gated ? null : await publishedChapterId(nickname, folder, slug);
   const text = <MarkdownPreview content={stripComments(chapter.content)} />;
 
   return (
@@ -151,6 +155,14 @@ export default async function PublishedChapterPage({
           </Link>
         )}
       </nav>
+      {place && (
+        <Comments
+          viewerId={viewer.ok ? viewer.userId : null}
+          target={place}
+          path={chapter.path}
+          after={query[COMMENTS_PARAM]}
+        />
+      )}
     </main>
   );
 }

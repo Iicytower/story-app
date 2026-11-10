@@ -9,6 +9,8 @@ import {
   ImageIcon,
   LanguagesIcon,
   ListChecksIcon,
+  MessageSquareIcon,
+  MessageSquareOffIcon,
   PencilIcon,
   TagIcon,
   Trash2Icon,
@@ -35,6 +37,7 @@ import {
   publishAllChapters,
   setChapterSort,
   setFolderAdult,
+  setFolderCommentsDisabled,
   setFolderLanguage,
   setFolderPublished,
   setFolderTags,
@@ -68,6 +71,7 @@ export function FolderMenu({
   isPublic,
   adult,
   unpublishedCount,
+  commentsDisabled,
   cover,
 }: {
   folder: {
@@ -83,6 +87,7 @@ export function FolderMenu({
   isPublic: boolean;
   adult: AdultState;
   unpublishedCount: number;
+  commentsDisabled: boolean;
   // Missing while covers are off (no tools server, D56).
   cover?: { current: FolderCover | null; pending: boolean };
 }) {
@@ -120,6 +125,17 @@ export function FolderMenu({
     startTransition(async () => {
       setOptimisticLanguage(value);
       const result = await setFolderLanguage(folder.id, value);
+      if (!result.ok) setMenuError(result.message);
+    });
+  }
+
+  function toggleComments() {
+    setMenuError(null);
+    startTransition(async () => {
+      const result = await setFolderCommentsDisabled(
+        folder.id,
+        !commentsDisabled,
+      );
       if (!result.ok) setMenuError(result.message);
     });
   }
@@ -186,6 +202,10 @@ export function FolderMenu({
             {tFolders("publishAll")}
           </DropdownMenuItem>
         )}
+        <DropdownMenuItem onSelect={toggleComments}>
+          {commentsDisabled ? <MessageSquareIcon /> : <MessageSquareOffIcon />}
+          {commentsDisabled ? t("enableComments") : t("disableComments")}
+        </DropdownMenuItem>
         <AdultMenuItem state={adult} onSelect={() => setDialog("adult")} />
         <DropdownMenuSeparator />
         <DropdownMenuItem

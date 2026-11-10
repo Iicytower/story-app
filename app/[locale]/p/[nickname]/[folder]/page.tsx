@@ -21,7 +21,9 @@ import {
 import { folderReading } from "@/lib/reading/queries";
 import { LibraryPicker } from "../../../(protected)/library/library-picker";
 import { seedShelves } from "../../../(protected)/library/starter";
+import { countBookComments, COMMENTS_PARAM } from "@/lib/social/comments";
 import { BlurredCover } from "./adult-cover";
+import { Comments } from "./comments";
 import { GuestLibraryButton } from "./guest-library-button";
 
 // The picker needs the reader's shelves, so its first opening of a book page creates them too.
@@ -35,11 +37,14 @@ async function libraryPicker(userId: string, nickname: string, slug: string) {
   return { folderId, shelves, shelfIds };
 }
 
-async function readerState(userId: string, nickname: string, slug: string) {
-  const { folderId, chapters } = (await publishedReaderChapters(
-    nickname,
-    slug,
-  ))!;
+type BookChapters = NonNullable<
+  Awaited<ReturnType<typeof publishedReaderChapters>>
+>;
+
+async function readerState(
+  userId: string,
+  { folderId, chapters }: BookChapters,
+) {
   const reading = await folderReading(userId, folderId, chapters);
   const newIds = new Set(reading.newChapterIds);
   return {
@@ -48,6 +53,19 @@ async function readerState(userId: string, nickname: string, slug: string) {
       chapters.filter(({ id }) => newIds.has(id)).map(({ path }) => path),
     ),
   };
+}
+
+// Ids stay on the server: a guest's page carries only paths and counts.
+async function commentCounts(
+  viewerId: string | null,
+  { folderId, chapters }: BookChapters,
+) {
+  const counts = await countBookComments(
+    viewerId,
+    folderId,
+    chapters.map(({ id }) => id),
+  );
+  return new Map(chapters.map(({ id, path }) => [path, counts.get(id) ?? 0]));
 }
 
 export async function generateMetadata({
@@ -68,6 +86,7 @@ export async function generateMetadata({
 
 export default async function PublishedFolderPage({
   params,
+  searchParams,
 }: PageProps<"/[locale]/p/[nickname]/[folder]">) {
   // Without a request-time API the page could be cached and outlive "Unpublish".
   await connection();
@@ -83,12 +102,13 @@ export default async function PublishedFolderPage({
   const cover = folder.cover;
   const coverAlt = tCovers("alt", { name: folder.name });
   const viewer = await requireUser();
-  const [picker, reader] = viewer.ok
-    ? await Promise.all([
-        libraryPicker(viewer.userId, nickname, slug),
-        readerState(viewer.userId, nickname, slug),
-      ])
-    : [null, null];
+  const book = (await publishedReaderChapters(nickname, slug))!;
+  const [picker, reader, commentsByPath] = await Promise.all([
+    viewer.ok ? libraryPicker(viewer.userId, nickname, slug) : null,
+    viewer.ok ? readerState(viewer.userId, book) : null,
+    commentCounts(viewer.ok ? viewer.userId : null, book),
+  ]);
+  const query = await searchParams;
 
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-10">
@@ -131,23 +151,39 @@ export default async function PublishedFolderPage({
         )}
       </div>
       <ol aria-label={t("chapters")} className="flex flex-col gap-2">
-        {folder.chapters.map((chapter, index) => (
-          <li key={chapter.path} className="flex items-center gap-2">
-            <Link
-              href={chapter.path}
-              className="min-w-0 [overflow-wrap:anywhere] hover:underline"
-            >
-              {index + 1}. {chapter.title}
-            </Link>
-            {chapter.adult && !folder.adult && <AdultBadge />}
-            {reader?.newPaths.has(chapter.path) && (
-              <span className="bg-primary text-primary-foreground shrink-0 rounded-sm px-1.5 text-xs leading-5 font-medium">
-                {t("newChapter")}
-              </span>
-            )}
-          </li>
-        ))}
+        {folder.chapters.map((chapter, index) => {
+          const commentCount = commentsByPath.get(chapter.path) ?? 0;
+          return (
+            <li key={chapter.path} className="flex items-center gap-2">
+              <Link
+                href={chapter.path}
+                className="min-w-0 [overflow-wrap:anywhere] hover:underline"
+              >
+                {index + 1}. {chapter.title}
+              </Link>
+              {chapter.adult && !folder.adult && <AdultBadge />}
+              {commentCount > 0 && (
+                <span className="text-muted-foreground shrink-0 text-xs">
+                  {t("commentCount", { count: commentCount })}
+                </span>
+              )}
+              {reader?.newPaths.has(chapter.path) && (
+                <span className="bg-primary text-primary-foreground shrink-0 rounded-sm px-1.5 text-xs leading-5 font-medium">
+                  {t("newChapter")}
+                </span>
+              )}
+            </li>
+          );
+        })}
       </ol>
+      <div className="mt-10">
+        <Comments
+          viewerId={viewer.ok ? viewer.userId : null}
+          target={{ folderId: book.folderId, storyId: null }}
+          path={folder.path}
+          after={query[COMMENTS_PARAM]}
+        />
+      </div>
     </main>
   );
 }

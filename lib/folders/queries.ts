@@ -82,6 +82,7 @@ export async function getFolder(userId: string, id: string) {
       adult: 1,
       coverId: 1,
       coverRejectedAt: 1,
+      commentsDisabled: 1,
     })
     .lean();
   if (!folder) return null;
@@ -120,6 +121,7 @@ export async function getFolder(userId: string, id: string) {
     },
     coverPending: Boolean(pending),
     coverRejected: Boolean(folder.coverRejectedAt),
+    commentsDisabled: Boolean(folder.commentsDisabled),
     chapterSort,
     chapters: chapters.map((chapter) => ({
       ...serialize(chapter),

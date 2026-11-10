@@ -69,6 +69,7 @@ export async function getStory(userId: string, id: string) {
       updatedAt: 1,
       proofreading: 1,
       adult: 1,
+      commentsDisabled: 1,
     })
     .lean();
   if (!story) return null;
@@ -82,6 +83,7 @@ export async function getStory(userId: string, id: string) {
     ...serialize(story),
     folderName: folder ? folder.name : null,
     adult: chapterAdultState(story.adult, folder ? folder.adult : undefined),
+    commentsDisabled: Boolean(story.commentsDisabled),
     publicPath:
       folder && folder.published && story.publication === "public"
         ? await chapterPublicPath(userId, folder._id.toString(), id)

@@ -369,6 +369,28 @@ export async function publishAllChapters(id: string): Promise<ActionResult> {
   return { ok: true };
 }
 
+// Organizational change like publishing (D38). Existing comments stay and come back on enabling.
+export async function setFolderCommentsDisabled(
+  id: string,
+  disabled: boolean,
+): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!isId(id)) return NOT_FOUND();
+  if (!isBoolean(disabled)) return INVALID_REQUEST();
+
+  await connectDB();
+  const { matchedCount } = await Folder.updateOne(
+    { _id: id, userId: user.userId, deletedAt: null },
+    { $set: { commentsDisabled: disabled } },
+    { timestamps: false },
+  );
+  if (matchedCount === 0) return NOT_FOUND();
+
+  refresh();
+  return { ok: true };
+}
+
 // Organizational change like publishing: keeps updatedAt and lastActivityAt (D67).
 export async function setFolderAdult(
   id: string,

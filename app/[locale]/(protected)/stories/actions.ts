@@ -44,6 +44,7 @@ import {
 } from "@/lib/publish/mutations";
 import { chapterPublicPath } from "@/lib/publish/queries";
 import { recordChaptersPublished } from "@/lib/social/activity";
+import { moveChapterSocialData } from "@/lib/social/cascade";
 import { canonicalTags } from "@/lib/tags/predefined";
 import { listPredefinedTags } from "@/lib/tags/queries";
 import {
@@ -381,6 +382,9 @@ export async function moveStory(
     if (isDuplicateKeyError(error)) return DUPLICATE_TITLE();
     throw error;
   }
+  if (!story.folderId?.equals(folder._id)) {
+    await moveChapterSocialData(id, folderId);
+  }
   await touchFolder(folderId);
 
   refresh();
@@ -631,6 +635,28 @@ export async function setChapterPublished(
     ok: true,
     publicPath: await chapterPublicPath(user.userId, folder._id.toString(), id),
   };
+}
+
+// Never touches updatedAt, like publishing. Existing comments stay and come back on enabling.
+export async function setStoryCommentsDisabled(
+  id: string,
+  disabled: boolean,
+): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!isId(id)) return NOT_FOUND();
+  if (!isBoolean(disabled)) return INVALID_REQUEST();
+
+  await connectDB();
+  const { matchedCount } = await Story.updateOne(
+    { _id: id, userId: user.userId, deletedAt: null },
+    { $set: { commentsDisabled: disabled } },
+    { timestamps: false },
+  );
+  if (matchedCount === 0) return NOT_FOUND();
+
+  refresh();
+  return { ok: true };
 }
 
 // Never touches updatedAt, like publishing (D67).

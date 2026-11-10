@@ -8,6 +8,7 @@ Subtask 68, zależy od 81. Podstawa: D80 (Interakcje z tekstem – wzmianki). Br
 - Render: wtyczka remark w `SocialMarkdown` zamienia wzmiankę istniejącego, niezablokowanego użytkownika na `UserLink`; pozostałe zostają tekstem. Rozstrzygnięcie nicków jednym zapytaniem przy odczycie listy.
 - Powiadomienie `mention` (grupa rozmowy) przy dodaniu komentarza (76), posta (87) i DM (85, tylko gdy wspomniany jest stroną rozmowy – inaczej pomijane); edycja nie powiadamia drugi raz tych samych osób. `canInteract(kind: "mention")`: blokada → bez linku i bez powiadomienia.
 - Podpowiedzi nicków w textarea po wpisaniu `@` (`cmdk`, akcja `suggestNicknames(prefix)`: najwyżej 8, z collation D37, bez kont zablokowanych w obie strony i usuniętych, limit `SOCIAL_LIMITS.suggest`, 60/min).
+- Komentarze (76): wzmianki podpiąć w `addComment`, `replyToComment` i `editComment` (`app/[locale]/p/[nickname]/[folder]/comment-actions.ts`).
 
 ## Kryteria akceptacji
 
