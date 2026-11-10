@@ -11,6 +11,8 @@ import { Story } from "@/lib/models/story";
 import { User } from "@/lib/models/user";
 import { buildSnippet, type Snippet } from "@/lib/stories/search";
 import { stripComments } from "@/lib/stories/strip-comments";
+import { tagsForQuery } from "@/lib/tags/predefined";
+import { listPredefinedTags } from "@/lib/tags/queries";
 import { inheritedOnly } from "@/lib/tags/tags";
 import {
   buildPublicFilter,
@@ -285,13 +287,17 @@ export async function searchPublishedChapters(
   tags: string[],
 ): Promise<PublicSearchResult[]> {
   await connectDB();
-  const folders = await findSearchableFolders();
+  const [folders, predefined] = await Promise.all([
+    findSearchableFolders(),
+    listPredefinedTags(),
+  ]);
   const folderById = new Map(
     folders.map((folder) => [folder._id.toString(), folder]),
   );
+  const queryTags = tagsForQuery(query, predefined);
 
   const hits = [];
-  const cursor = Story.find(buildPublicFilter(query, tags, folders))
+  const cursor = Story.find(buildPublicFilter(query, tags, folders, queryTags))
     .select({
       userId: 1,
       folderId: 1,
@@ -309,12 +315,16 @@ export async function searchPublishedChapters(
     const own = chapter.tags ?? [];
     const folderTags = inheritedOnly(own, folder.tags);
     if (
-      matchesPublicText(query, {
-        title: chapter.title,
-        folderName: folder.name,
-        text,
-        tags: [...own, ...folderTags],
-      })
+      matchesPublicText(
+        query,
+        {
+          title: chapter.title,
+          folderName: folder.name,
+          text,
+          tags: [...own, ...folderTags],
+        },
+        queryTags,
+      )
     ) {
       hits.push({ chapter, folder, text, own, folderTags });
       if (hits.length === MAX_RESULTS) break;

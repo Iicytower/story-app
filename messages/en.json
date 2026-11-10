@@ -204,7 +204,9 @@
     "current": "Current tags",
     "remove": "Remove {tag}",
     "add": "Add tag",
-    "addButton": "Add"
+    "addButton": "Add",
+    "predefined": "Category",
+    "filterByCategory": "Filter by category"
   },
   "find": {
     "invalidRegex": "Invalid regular expression",

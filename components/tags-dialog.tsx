@@ -1,7 +1,7 @@
 "use client";
 
 import { XIcon } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useId, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,10 @@ import { Input } from "@/components/ui/input";
 import { WithTooltip } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
 import type { ActionResult } from "@/lib/action-result";
+import { PREDEFINED_CHIP } from "@/components/tag-chips";
+import { usePredefinedTags, useTagLabel } from "@/components/predefined-tags";
+import type { Locale } from "@/i18n/routing";
+import { canonicalTags } from "@/lib/tags/predefined";
 import { inheritedOnly, splitTagInput } from "@/lib/tags/tags";
 
 type TagsDialogProps = {
@@ -60,8 +64,23 @@ function TagsForm({
   const tCommon = useTranslations("common");
   const listId = useId();
   const inherited = inheritedOnly(tags, folderTags);
+  const predefined = usePredefinedTags();
+  const locale = useLocale() as Locale;
+  const labelOf = useTagLabel();
+  const unused = (tag: string) =>
+    !tags.includes(tag) && !folderTags.includes(tag);
+  // Predefined ones by their label, which addInput turns back into the key (D79).
+  const options = [
+    ...predefined
+      .filter(({ key }) => unused(key))
+      .map(({ labels }) => labels[locale])
+      .toSorted((a, b) => a.localeCompare(b)),
+    ...suggestions.filter((tag) => unused(tag) && labelOf(tag) === null),
+  ];
 
-  const withInput = () => [...new Set([...tags, ...splitTagInput(input)])];
+  const withInput = () => [
+    ...new Set([...tags, ...canonicalTags(splitTagInput(input), predefined)]),
+  ];
 
   function addInput() {
     setTags(withInput());
@@ -84,34 +103,42 @@ function TagsForm({
       </DialogHeader>
       {tags.length + inherited.length > 0 && (
         <ul aria-label={t("current")} className="flex flex-wrap gap-1">
-          {tags.map((tag) => (
-            <li
-              key={tag}
-              className="bg-muted flex items-center gap-1 rounded-full py-0.5 pr-1 pl-2 text-xs"
-            >
-              {tag}
-              <WithTooltip label={t("remove", { tag })}>
-                <button
-                  type="button"
-                  aria-label={t("remove", { tag })}
-                  onClick={() =>
-                    setTags(tags.filter((other) => other !== tag))
-                  }
-                >
-                  <XIcon className="size-3" />
-                </button>
-              </WithTooltip>
-            </li>
-          ))}
-          {inherited.map((tag) => (
-            <li
-              key={tag}
-              title={t("fromFolder")}
-              className="text-muted-foreground rounded-full border border-dashed px-2 py-0.5 text-xs"
-            >
-              {tag}
-            </li>
-          ))}
+          {tags.map((tag) => {
+            const label = labelOf(tag);
+            const text = label ?? tag;
+            return (
+              <li
+                key={tag}
+                title={label ? t("predefined") : undefined}
+                className={`${label ? PREDEFINED_CHIP : "bg-muted"} flex items-center gap-1 rounded-full py-0.5 pr-1 pl-2 text-xs`}
+              >
+                {text}
+                <WithTooltip label={t("remove", { tag: text })}>
+                  <button
+                    type="button"
+                    aria-label={t("remove", { tag: text })}
+                    onClick={() =>
+                      setTags(tags.filter((other) => other !== tag))
+                    }
+                  >
+                    <XIcon className="size-3" />
+                  </button>
+                </WithTooltip>
+              </li>
+            );
+          })}
+          {inherited.map((tag) => {
+            const label = labelOf(tag);
+            return (
+              <li
+                key={tag}
+                title={t("fromFolder")}
+                className={`${label ? "text-primary" : "text-muted-foreground"} rounded-full border border-dashed px-2 py-0.5 text-xs`}
+              >
+                {label ?? tag}
+              </li>
+            );
+          })}
         </ul>
       )}
       <div className="flex flex-col gap-2">
@@ -135,11 +162,9 @@ function TagsForm({
           </Button>
         </div>
         <datalist id={listId}>
-          {suggestions
-            .filter((tag) => !tags.includes(tag) && !folderTags.includes(tag))
-            .map((tag) => (
-              <option key={tag} value={tag} />
-            ))}
+          {options.map((option) => (
+            <option key={option} value={option} />
+          ))}
         </datalist>
       </div>
       {error && (

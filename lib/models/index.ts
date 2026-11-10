@@ -8,3 +8,4 @@ import "./chapter-content";
 import "./rate-limit";
 import "./cover";
 import "./session";
+import "./predefined-tag";

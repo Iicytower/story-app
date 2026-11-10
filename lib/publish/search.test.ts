@@ -16,12 +16,23 @@ describe("buildPublicFilter", () => {
   });
 
   it("searches title, content and tags, on the chapter or its folder", () => {
-    const { $or } = buildPublicFilter("Fantasy", [], FOLDERS) as {
+    const { $or } = buildPublicFilter("Fantasy", [], FOLDERS, ["fantasy"]) as {
       $or: Record<string, unknown>[];
     };
     expect($or.slice(2)).toEqual([
-      { tags: "fantasy" },
+      { tags: { $in: ["fantasy"] } },
       { folderId: { $in: ["a", "b"] } },
+    ]);
+  });
+
+  it("matches every tag the query stands for", () => {
+    const { $or } = buildPublicFilter("Baśń", [], FOLDERS, [
+      "baśń",
+      "fantasy",
+    ]) as { $or: Record<string, unknown>[] };
+    expect($or.slice(2)).toEqual([
+      { tags: { $in: ["baśń", "fantasy"] } },
+      { folderId: { $in: ["a"] } },
     ]);
   });
 
@@ -51,18 +62,22 @@ describe("matchesPublicText", () => {
   };
 
   it("accepts a hit in the title, folder name, text or a whole tag", () => {
-    expect(matchesPublicText("ŁĄKA", chapter)).toBe(true);
-    expect(matchesPublicText("trawa", chapter)).toBe(true);
-    expect(matchesPublicText("księga", chapter)).toBe(true);
-    expect(matchesPublicText("Złoty  Wiek", chapter)).toBe(true);
+    expect(matchesPublicText("ŁĄKA", chapter, [])).toBe(true);
+    expect(matchesPublicText("trawa", chapter, [])).toBe(true);
+    expect(matchesPublicText("księga", chapter, [])).toBe(true);
+    expect(matchesPublicText("Złoty  Wiek", chapter, ["złoty wiek"])).toBe(true);
   });
 
   it("refuses text found nowhere and part of a tag", () => {
-    expect(matchesPublicText("smok", chapter)).toBe(false);
-    expect(matchesPublicText("złoty", chapter)).toBe(false);
+    expect(matchesPublicText("smok", chapter, ["smok"])).toBe(false);
+    expect(matchesPublicText("złoty", chapter, ["złoty"])).toBe(false);
+  });
+
+  it("accepts a chapter with a tag the query stands for", () => {
+    expect(matchesPublicText("Era", chapter, ["era", "złoty wiek"])).toBe(true);
   });
 
   it("accepts anything without a query", () => {
-    expect(matchesPublicText("", chapter)).toBe(true);
+    expect(matchesPublicText("", chapter, [])).toBe(true);
   });
 });

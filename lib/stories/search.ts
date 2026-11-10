@@ -2,29 +2,39 @@ export function escapeRegex(phrase: string): string {
   return phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function foldersWithTag(
+  folders: { _id: unknown; tags?: string[] }[],
+  tags: string[],
+) {
+  return folders
+    .filter((folder) => folder.tags?.some((tag) => tags.includes(tag)))
+    .map(({ _id }) => _id);
+}
+
 // q and every tag must all hold; a tag matches on the chapter or on its folder.
+// queryTags are the whole tags q stands for (tagsForQuery, D79).
 export function buildStoryFilter(
   userId: string,
   query: string | undefined,
   tags: string[],
   folders: { _id: unknown; tags?: string[] }[],
+  queryTags: string[] = [],
 ): Record<string, unknown> {
   const filter: Record<string, unknown> = { userId, deletedAt: null };
   if (query) {
     const pattern = new RegExp(escapeRegex(query), "i");
-    filter.$or = [{ title: pattern }, { content: pattern }];
+    filter.$or = [
+      { title: pattern },
+      { content: pattern },
+      { tags: { $in: queryTags } },
+      { folderId: { $in: foldersWithTag(folders, queryTags) } },
+    ];
   }
   if (tags.length > 0) {
     filter.$and = tags.map((tag) => ({
       $or: [
         { tags: tag },
-        {
-          folderId: {
-            $in: folders
-              .filter((folder) => folder.tags?.includes(tag))
-              .map(({ _id }) => _id),
-          },
-        },
+        { folderId: { $in: foldersWithTag(folders, [tag]) } },
       ],
     }));
   }

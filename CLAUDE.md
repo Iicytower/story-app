@@ -33,6 +33,7 @@ Aplikacja webowa do pisania opowiadań (docelowo publiczna, D46) w markdown (Nex
 - `npm run tools:remote` / `dict:upload:remote` – serwer narzędzi na Mikrusie przez SSH (task 28, konfiguracja w `.tools/mikrus/remote.env`, instrukcja w `docs/deploy.md`).
 - `npm run migrate` – migracje bazy z `.env.local` (`migrations/`, D14). Na Vercelu uruchamiane automatycznie w buildzie produkcji i stagingu.
 - `npm run create-account` – interaktywny skrypt dodający konto (uruchamia użytkownik, nie Claude).
+- `npm run tags -- list|set <klucz> <en> <pl>|remove <klucz>` – lista predefiniowanych tagów w bazie z `.env.local` (D79; zmiany uruchamia użytkownik).
 - Package manager: npm. Instalacja pakietów tylko po zgodzie użytkownika.
 
 ## Zasady projektu

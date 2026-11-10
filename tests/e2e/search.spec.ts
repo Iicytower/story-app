@@ -121,6 +121,37 @@ test("clicked tags are required, and the text box keeps them", async ({
   await expect(results(visitor)).toHaveCount(2);
 });
 
+test("a visitor filters by a category and finds it by its label", async ({
+  browser,
+}) => {
+  await seedPublished();
+  const folder = await findFolder("Book");
+  await withE2EDb((connection) =>
+    connection
+      .collection("stories")
+      .updateMany({ folderId: folder!._id }, { $set: { tags: ["crime"] } }),
+  );
+  const visitor = await anonymous(browser);
+  await visitor.goto("/");
+
+  const categories = visitor.getByRole("navigation", {
+    name: "Filter by category",
+  });
+  await expect(categories.getByRole("link")).toHaveText(["Crime"]);
+  await expect(
+    visitor
+      .getByRole("navigation", { name: "Filter by tag" })
+      .getByRole("link"),
+  ).toHaveText(["epika"]);
+  await categories.getByRole("link", { name: "Crime" }).click();
+  await expect(visitor).toHaveURL(/tag=crime/);
+  await expect(results(visitor)).toHaveCount(1);
+
+  await search(visitor, "Kryminał");
+  await expect(results(visitor)).toHaveCount(1);
+  await expect(results(visitor)).toContainText("Crime");
+});
+
 test("unpublishing and deleting take a story out of the results", async ({
   page,
   browser,
