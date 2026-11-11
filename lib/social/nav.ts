@@ -8,7 +8,8 @@ export const SOCIAL_NAV = {
   profile: true,
   // Only for an author with a publication, a moderator or an invited account (AppShell).
   moderation: true,
-  admin: false,
+  // Only for an admin without an active global ban (AppShell).
+  admin: true,
   // Only for an author with a publication (AppShell).
   stats: true,
 };

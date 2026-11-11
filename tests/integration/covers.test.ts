@@ -151,6 +151,7 @@ describe("setFolderCover", () => {
       path: `/covers/${cover._id}`,
       manualAdult: false,
       autoAdult: false,
+      adminAdult: null,
     });
     // Organizational change: neither the folder nor its chapters move.
     expect(folder.updatedAt).toEqual(OLD);

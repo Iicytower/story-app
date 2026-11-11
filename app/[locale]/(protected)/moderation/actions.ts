@@ -9,7 +9,7 @@ import { connectDB } from "@/lib/db";
 import { actionError, translateError } from "@/lib/i18n/action-error";
 import { countError, lengthError, MAX_MODERATORS } from "@/lib/limits";
 import { Block } from "@/lib/models/block";
-import { Comment, HIDDEN_COMMENT_TTL_DAYS } from "@/lib/models/comment";
+import { Comment } from "@/lib/models/comment";
 import { CommunityBan } from "@/lib/models/community-ban";
 import { CommunityModerator } from "@/lib/models/community-moderator";
 import { Reaction } from "@/lib/models/reaction";
@@ -20,6 +20,7 @@ import {
   hideForumContent,
   restoreForumContent,
 } from "@/lib/social/forum-moderation";
+import { applyCommentHide } from "@/lib/social/comment-moderation";
 import { logModeration } from "@/lib/social/moderation";
 import { notifyLater } from "@/lib/social/notify";
 import {
@@ -116,50 +117,8 @@ export async function hideContent(
     action: "hide",
   });
   if (!permission.ok) return translateError(permission);
-  if (comment.hidden) return { ok: true };
-
-  const now = new Date();
-  const purgeAt = new Date(now.getTime() + HIDDEN_COMMENT_TTL_DAYS * DAY_MS);
-  const { modifiedCount } = await Comment.updateOne(
-    { _id: comment._id, deletedAt: null, hidden: { $exists: false } },
-    {
-      $set: {
-        hidden: { by: user.userId, at: now, ...(text && { reason: text }) },
-        purgeAt,
-      },
-    },
-  );
-  if (modifiedCount === 0) return { ok: true };
-  // Purged together, since the TTL index deletes the comment without its reactions.
-  await Reaction.updateMany(
-    { targetType: "comment", targetId: comment._id },
-    { $set: { purgeAt } },
-  );
-  // A reaction checked against the comment before it was hidden may land after the first pass.
-  await Reaction.updateMany(
-    {
-      targetType: "comment",
-      targetId: comment._id,
-      purgeAt: { $exists: false },
-    },
-    { $set: { purgeAt } },
-  );
-  await logModeration({
+  await applyCommentHide(user.userId, comment, text, {
     authorId: comment.authorId,
-    actorId: user.userId,
-    action: "hide",
-    targetType: "comment",
-    targetId: comment._id,
-    targetUserId: comment.userId,
-    ...(text && { reason: text }),
-  });
-  notifyLater(comment.userId, {
-    type: "hidden",
-    actorId: user.userId,
-    authorId: comment.authorId,
-    folderId: comment.folderId,
-    ...(comment.storyId && { storyIds: [comment.storyId] }),
-    commentId: comment._id,
   });
   refresh();
   return { ok: true };

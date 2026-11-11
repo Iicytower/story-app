@@ -20,7 +20,7 @@ export type ForumTarget = "post" | "thread";
 const notFound = (type: ForumTarget) =>
   actionError("NOT_FOUND", type === "post" ? "postNotFound" : "threadNotFound");
 
-interface Moderated {
+export interface Moderated {
   id: Types.ObjectId;
   threadId: Types.ObjectId;
   writerId: Types.ObjectId;
@@ -28,9 +28,12 @@ interface Moderated {
   place: ForumPlace;
 }
 
-// The forum is the content's own: an author's forum or a category, never the client's (task 79).
-// Outside the actor's role it is not found.
-async function findModerated(userId: string, type: ForumTarget, id: string) {
+// The content with its forum: an author's forum or a category, never the client's (task 79).
+export async function findForumContent(
+  userId: string | null,
+  type: ForumTarget,
+  id: string,
+): Promise<Moderated | null> {
   const content =
     type === "post"
       ? await ForumPost.findOne({ _id: id, deletedAt: null })
@@ -47,29 +50,38 @@ async function findModerated(userId: string, type: ForumTarget, id: string) {
   if (!thread) return null;
   const place = await placeOfThread(userId, thread);
   if (!place) return null;
-  const role = await forumRole(userId, place);
-  if (!role) return null;
-  const permission = await canModerateForum(
-    userId,
-    place,
-    role,
-    content.userId.toString(),
-    "hide",
-  );
-  const moderated: Moderated = {
+  return {
     id: content._id,
     threadId,
     writerId: content.userId,
     hidden: Boolean(content.hidden),
     place,
   };
+}
+
+// Outside the actor's role the content is not found.
+async function findModerated(userId: string, type: ForumTarget, id: string) {
+  const moderated = await findForumContent(userId, type, id);
+  if (!moderated) return null;
+  const role = await forumRole(userId, moderated.place);
+  if (!role) return null;
+  const permission = await canModerateForum(
+    userId,
+    moderated.place,
+    role,
+    moderated.writerId.toString(),
+    "hide",
+  );
   return { moderated, permission };
 }
 
-const community = (place: ForumPlace) =>
+export type LogScope =
+  { authorId: string | null; scope?: "global" };
+
+const community = (place: ForumPlace): LogScope =>
   place.scope === "author"
     ? { authorId: place.authorId }
-    : { authorId: null, scope: "global" as const };
+    : { authorId: null, scope: "global" };
 
 // Hiding a thread hides its posts with it: they expire together by the same purgeAt, so nothing
 // is left of a thread the TTL index removed (D80: gone for good after 30 days).
@@ -83,6 +95,17 @@ export async function hideForumContent(
   if (!found) return notFound(type);
   const { moderated, permission } = found;
   if (!permission.ok) return translateError(permission);
+  return applyForumHide(userId, type, moderated, reason, community(moderated.place));
+}
+
+// The admin logs it as a step of the whole site (task 88), a forum's moderator in its forum.
+export async function applyForumHide(
+  userId: string,
+  type: ForumTarget,
+  moderated: Moderated,
+  reason: string | undefined,
+  log: LogScope,
+): Promise<ActionResult> {
   if (moderated.hidden) return { ok: true };
 
   const now = new Date();
@@ -121,7 +144,7 @@ export async function hideForumContent(
     );
   }
   await logModeration({
-    ...community(moderated.place),
+    ...log,
     actorId: userId,
     action: "hide",
     targetType: type,

@@ -18,6 +18,9 @@ export async function withE2EDb<T>(
 export function clearStories(): Promise<void> {
   return withE2EDb(async (connection) => {
     await connection.collection("rateLimits").deleteMany({});
+    await connection
+      .collection("users")
+      .updateMany({}, { $unset: { globalBan: 1 } });
     await connection.collection("users").deleteMany({
       nickname: { $nin: Object.values(USERS).map((user) => user.nickname) },
     });
@@ -597,5 +600,27 @@ export function markAdultWithCover(
         },
       },
     );
+  });
+}
+
+// An open report of a chapter for the admins (task 88), as the report action writes it.
+export function seedChapterReport(
+  reporter: UserName,
+  title: string,
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const story = await connection.collection("stories").findOne({ title });
+    if (!story) throw new Error(`No chapter "${title}"`);
+    await connection.collection("reports").insertOne({
+      reporterId: await userId(connection, reporter),
+      targetType: "story",
+      targetId: story._id,
+      targetUserId: story.userId,
+      route: "admin",
+      reason: "unmarkedAdult",
+      details: "No warning",
+      state: "open",
+      createdAt: new Date(),
+    });
   });
 }

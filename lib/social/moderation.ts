@@ -47,7 +47,7 @@ type Id = Types.ObjectId | string;
 type Entry = Omit<
   ModerationLogFields,
   "createdAt" | "authorId" | "actorId" | "targetId" | "targetUserId"
-> & { authorId: Id | null; actorId: Id; targetId: Id; targetUserId?: Id };
+> & { authorId: Id | null; actorId: Id; targetId?: Id; targetUserId?: Id };
 
 export async function logModeration(entry: Entry): Promise<void> {
   await ModerationLog.create(entry);
@@ -487,7 +487,8 @@ export interface AdminReportView {
   createdAt: string;
 }
 
-// The admin's queue (task 88 shows it and checks the role): reports outside any community.
+// The admin's queue, only behind isActiveAdmin (lib/social/admin.ts): reports outside any
+// community, with the reporter.
 export async function listAdminReports(): Promise<AdminReportView[]> {
   await connectDB();
   const reports = await Report.find({

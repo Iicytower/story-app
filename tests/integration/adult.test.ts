@@ -9,7 +9,11 @@ import {
   moveStory,
   setStoryAdult,
 } from "@/app/[locale]/(protected)/stories/actions";
+import { setCoverAdult } from "@/app/[locale]/(protected)/folders/[id]/cover-actions";
+import { setAdminAdult } from "@/app/[locale]/(protected)/admin/actions";
 import { requireUser } from "@/lib/auth/session";
+import { coversOf } from "@/lib/covers/queries";
+import { Cover } from "@/lib/models/cover";
 import { getFolder, listFolders } from "@/lib/folders/queries";
 import { loadMigrations, runMigrations } from "@/lib/migrate";
 import { Folder } from "@/lib/models/folder";
@@ -182,6 +186,168 @@ describe("setStoryAdult", () => {
     });
     await setAuto("story", storyId, false);
     expect(await chapterState(storyId)).toEqual({ adult: false, lock: null });
+  });
+});
+
+// The admin's mark (task 88, D80): set through the admin action by the public address.
+describe("the admin's 18+ mark", () => {
+  let admin: Types.ObjectId;
+
+  beforeEach(async () => {
+    admin = (
+      await User.create({ nickname: "Root", passwordHash: "x", role: "admin" })
+    )._id;
+  });
+
+  async function asAdmin<T>(run: () => Promise<T>) {
+    signInAs(admin);
+    const result = await run();
+    signInAs(alice);
+    return result;
+  }
+
+  async function published() {
+    const ids = await seed();
+    await setFolderPublished(ids.folderId, true);
+    return ids;
+  }
+
+  it("true locks the chapter's mark against the author", async () => {
+    const { storyId } = await published();
+    expect(
+      await asAdmin(() => setAdminAdult("/en/p/Alice/ksiega/one", true)),
+    ).toEqual({ ok: true });
+    expect(await chapterState(storyId)).toEqual({ adult: true, lock: "admin" });
+    expect(await setStoryAdult(storyId, false)).toEqual({
+      ok: false,
+      error: "ADULT_LOCKED",
+      message: "The admin marked this as 18+, so the mark stays.",
+    });
+    expect(await getPublishedChapter("Alice", "ksiega", "one")).toMatchObject({
+      adult: true,
+    });
+    await asAdmin(() => setAdminAdult("/p/Alice/ksiega/one", null));
+    expect(await chapterState(storyId)).toEqual({ adult: false, lock: null });
+  });
+
+  it("true locks the folder's mark against the author", async () => {
+    const { folderId } = await published();
+    await asAdmin(() => setAdminAdult("http://x/pl/p/alice/ksiega", true));
+    expect(await setFolderAdult(folderId, false)).toMatchObject({
+      ok: false,
+      error: "ADULT_LOCKED",
+    });
+    expect((await getPublishedFolder("Alice", "ksiega"))!.adult).toBe(true);
+  });
+
+  it("false lifts the mark despite auto and manual; the author can mark again", async () => {
+    const { folderId, storyId } = await published();
+    await setAuto("story", storyId, true);
+    await setStoryAdult(storyId, true);
+    await asAdmin(() => setAdminAdult("/p/Alice/ksiega/one", false));
+    expect(await chapterState(storyId)).toEqual({ adult: false, lock: null });
+    expect(await getPublishedChapter("Alice", "ksiega", "one")).toMatchObject({
+      adult: false,
+    });
+
+    expect(await setStoryAdult(storyId, true)).toEqual({ ok: true });
+    const story = await Story.findById(storyId).lean();
+    expect(story!.adult).toEqual({ auto: true, manual: true });
+    expect(await chapterState(storyId)).toEqual({ adult: true, lock: "auto" });
+
+    await setAuto("folder", folderId, true);
+    await asAdmin(() => setAdminAdult("/p/Alice/ksiega", false));
+    expect((await getPublishedFolder("Alice", "ksiega"))!.adult).toBe(false);
+    expect(await setFolderAdult(folderId, true)).toEqual({ ok: true });
+    expect((await getPublishedFolder("Alice", "ksiega"))!.adult).toBe(true);
+  });
+
+  it("false on a folder still overrides a cover rated later", async () => {
+    const { folderId } = await published();
+    await asAdmin(() => setAdminAdult("/p/Alice/ksiega", false));
+    // A new cover rated 18+ sets the filter's mark as usual (D68).
+    await setAuto("folder", folderId, true);
+    expect(await folderState(folderId)).toEqual({ adult: false, lock: null });
+    expect((await getPublishedFolder("Alice", "ksiega"))!.adult).toBe(false);
+  });
+
+  it("false on a chapter does not lift its 18+ folder", async () => {
+    const { folderId, storyId } = await published();
+    await setFolderAdult(folderId, true);
+    await asAdmin(() => setAdminAdult("/p/Alice/ksiega/one", false));
+    expect(await chapterState(storyId)).toEqual({
+      adult: true,
+      lock: "folder",
+    });
+  });
+
+  it("works on a cover by its address", async () => {
+    const { folderId } = await published();
+    const cover = await Cover.create({
+      userId: alice,
+      folderId,
+      data: Buffer.from("x"),
+      size: 1,
+      state: "rated",
+      autoAdult: true,
+    });
+    await Folder.updateOne({ _id: folderId }, { coverId: cover._id });
+    const folder = await Folder.findById(folderId).lean();
+    const adultOf = async () =>
+      (await coversOf([folder!])).get(folderId)!.adult;
+
+    await setAuto("folder", folderId, true);
+    const folderLock = async () => (await folderState(folderId)).lock;
+
+    await asAdmin(() => setAdminAdult(`/covers/${cover._id}`, false));
+    expect(await adultOf()).toBe(false);
+    expect(await folderState(folderId)).toEqual({ adult: false, lock: null });
+    expect(await setCoverAdult(folderId, true)).toEqual({ ok: true });
+    expect(await adultOf()).toBe(true);
+    expect((await Cover.findById(cover._id).lean())!.adminAdult).toBeUndefined();
+    // Back to the filter's verdict: the folder is locked again.
+    expect(await folderLock()).toBe("auto");
+
+    await Cover.updateOne({ _id: cover._id }, { autoAdult: false });
+    await asAdmin(() => setAdminAdult(`/covers/${cover._id}`, null));
+    expect(await folderLock()).toBeNull();
+    await asAdmin(() => setAdminAdult(`/covers/${cover._id}`, true));
+    expect(await setCoverAdult(folderId, false)).toMatchObject({
+      ok: false,
+      error: "ADULT_LOCKED",
+    });
+    expect(await adultOf()).toBe(true);
+    expect(await folderLock()).toBe("auto");
+  });
+
+  it("finds only public addresses", async () => {
+    const { folderId } = await seed();
+    const notFound = {
+      ok: false,
+      error: "NOT_FOUND",
+      message: "No public folder, chapter or cover has this address.",
+    };
+    expect(
+      await asAdmin(() => setAdminAdult("/p/Alice/ksiega", true)),
+    ).toEqual(notFound);
+    await setFolderPublished(folderId, true);
+    expect(
+      await asAdmin(() => setAdminAdult("/p/Alice/ksiega/nope", true)),
+    ).toEqual(notFound);
+    expect(await asAdmin(() => setAdminAdult("/stories", true))).toEqual(
+      notFound,
+    );
+  });
+
+  it("keeps updatedAt and lastActivityAt", async () => {
+    const { folderId, storyId } = await published();
+    const before = await Folder.findById(folderId).lean();
+    await asAdmin(() => setAdminAdult("/p/Alice/ksiega", true));
+    await asAdmin(() => setAdminAdult("/p/Alice/ksiega/one", true));
+    const after = await Folder.findById(folderId).lean();
+    expect(after!.updatedAt).toEqual(before!.updatedAt);
+    expect(after!.lastActivityAt).toEqual(before!.lastActivityAt);
+    expect((await Story.findById(storyId).lean())!.updatedAt).toEqual(OLD);
   });
 });
 

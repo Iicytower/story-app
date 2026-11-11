@@ -405,14 +405,26 @@ export async function setFolderAdult(
   const owned = { _id: id, userId: user.userId, deletedAt: null };
   const folder = await Folder.findOne(owned).select({ adult: 1 }).lean();
   if (!folder) return NOT_FOUND();
-  if (!adult && folderAdultState(folder.adult).lock) {
-    return actionError("ADULT_LOCKED", "adultLockedByImage");
+  const { lock } = folderAdultState(folder.adult);
+  if (!adult && lock) {
+    return actionError(
+      "ADULT_LOCKED",
+      lock === "admin" ? "adultLockedByAdmin" : "adultLockedByImage",
+    );
   }
   await Folder.updateOne(
     owned,
     { $set: { "adult.manual": adult } },
     { timestamps: false },
   );
+  // Marking again takes back the admin's "not 18+" (D80), never the admin's 18+.
+  if (adult) {
+    await Folder.updateOne(
+      { ...owned, "adult.admin": false },
+      { $unset: { "adult.admin": 1 } },
+      { timestamps: false },
+    );
+  }
 
   refresh();
   return { ok: true };

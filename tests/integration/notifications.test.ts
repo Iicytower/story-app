@@ -289,10 +289,15 @@ describe("events (criterion 1)", () => {
       "report",
     ]);
     expect(await of(frank)).toEqual([]);
-    // No queue to link to before task 88, and the reporter is not in the key.
+    // The admins' queue (task 88); the reporter is not named.
     expect(await listNotifications(admin.toString())).toMatchObject([
-      { type: "report", community: false, href: null, actors: [] },
-      { type: "report", community: false, href: null },
+      {
+        type: "report",
+        community: false,
+        href: "/admin?tab=reports",
+        actors: [],
+      },
+      { type: "report", community: false, href: "/admin?tab=reports" },
     ]);
     expect(
       (await of(admin)).every(({ objectKey }) => objectKey === "report:admin"),

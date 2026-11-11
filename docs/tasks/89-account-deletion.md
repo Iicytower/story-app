@@ -22,6 +22,8 @@ Subtask 68, zależy od 69–88. Podstawa: D80 (Konto). Zmienia D37 (konta nie da
 - Blokady (86): `blocks` kasowane w obie strony (konto jako blokujący i zablokowany). `liftBlock` zdejmuje `closedAt` rozmowy bez sprawdzania przyczyny zamknięcia – jeśli usuwanie konta zamyka rozmowy przez `closedAt`, uwzględnić to w `liftBlock` (`conversationClosed` i tak sprawdza `Block.exists`).
 - Fora (87): `forumThreads`, `forumPosts` (z reakcjami) i `threadFollows` konta – obsłużyć posty usuniętego konta w cudzych wątkach (zaślepka lub „Usunięte konto”); cytaty jego postów pokazują zaślepkę „Cytowany post jest niedostępny” (`getThread` filtruje cytowany).
 
+- Panel admina (88): pole `User.globalBan` usuwanego konta zdjąć przy tombstone, `globalBan.by` wskazujące usuwane konto (admin) zostawić jako tombstone; `moderationLog` ze `scope: "global"` zostaje z tombstone w `actorId` i `authorId`; konto usuwać z `forumCategories.moderatorIds` (`$pull`).
+
 ## Kryteria akceptacji
 
 1. Usunięcie wymaga poprawnego hasła i nicku; błędne hasła liczą się do limitu.

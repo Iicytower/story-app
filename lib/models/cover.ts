@@ -22,6 +22,8 @@ export interface CoverFields {
   autoAdult?: boolean;
   // Set by the owner; it does not lock the folder.
   manualAdult?: boolean;
+  // Set by the admin (task 88): true locks the owner's mark, false overrides the other two.
+  adminAdult?: boolean;
   // Failed classifier calls so far.
   attempts: number;
   // Pending only: when the next try may start (D68 schedule, or a claim's lease).
@@ -46,6 +48,7 @@ const coverSchema = new Schema<CoverFields>(
     model: { type: String },
     autoAdult: { type: Boolean },
     manualAdult: { type: Boolean },
+    adminAdult: { type: Boolean },
     attempts: { type: Number, default: 0 },
     nextAttemptAt: { type: Date },
   },

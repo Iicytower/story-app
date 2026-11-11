@@ -194,6 +194,16 @@ export async function moderatorIdsOf(authorId: string): Promise<Set<string>> {
   return new Set(moderators.map(({ userId }) => userId.toString()));
 }
 
+// A filter on users for accounts without an active global ban.
+export function notGloballyBanned(now: Date) {
+  return {
+    $nor: [
+      { "globalBan.until": null, globalBan: { $exists: true } },
+      { "globalBan.until": { $gt: now } },
+    ],
+  };
+}
+
 export function isAdmin(user: { role?: string } | null | undefined): boolean {
   return user?.role === "admin";
 }
@@ -238,12 +248,7 @@ export async function isAuthorVisibleTo(
       nickname: { $type: "string" },
       ...(self
         ? {}
-        : {
-            $nor: [
-              { "globalBan.until": null, globalBan: { $exists: true } },
-              { "globalBan.until": { $gt: now } },
-            ],
-          }),
+        : notGloballyBanned(now)),
     }),
     self ? null : Block.exists({ blockerId: viewerId, blockedId: authorId }),
   ]);
