@@ -74,7 +74,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 75 | ↳ [Feed aktywności](done/75-feed.md) (subtask 68) | 71, 72 | [x] |
 | 76 | ↳ [Komentarze](done/76-comments.md) (subtask 68) | 69, 70, 75 | [x] |
 | 77 | ↳ [Reakcje](done/77-reactions.md) (subtask 68) | 76 | [x] |
-| 78 | ↳ [Oceny](78-ratings.md) (subtask 68) | 69 | [ ] |
+| 78 | ↳ [Oceny](done/78-ratings.md) (subtask 68) | 69 | [x] |
 | 79 | ↳ [Moderacja autora](79-author-moderation.md) (subtask 68) | 76 | [ ] |
 | 80 | ↳ [Zgłoszenia](80-reports.md) (subtask 68) | 79 | [ ] |
 | 81 | ↳ [Powiadomienia](81-notifications.md) (subtask 68) | 71, 72, 73, 76, 77, 78, 79, 80 | [ ] |

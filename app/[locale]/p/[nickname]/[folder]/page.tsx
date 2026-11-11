@@ -25,6 +25,7 @@ import { countBookComments, COMMENTS_PARAM } from "@/lib/social/comments";
 import { BlurredCover } from "./adult-cover";
 import { Comments } from "./comments";
 import { GuestLibraryButton } from "./guest-library-button";
+import { RatingSection } from "./ratings";
 
 // The picker needs the reader's shelves, so its first opening of a book page creates them too.
 async function libraryPicker(userId: string, nickname: string, slug: string) {
@@ -128,6 +129,13 @@ export default async function PublishedFolderPage({
       <p className="text-muted-foreground mb-4 text-sm">
         {t("by", { nickname: folder.nickname })}
       </p>
+      <div className="mb-4">
+        <RatingSection
+          viewerId={viewer.ok ? viewer.userId : null}
+          target={{ type: "folder", id: book.folderId }}
+          path={folder.path}
+        />
+      </div>
       <div className="mb-8 flex flex-wrap items-center gap-3">
         {picker ? (
           <LibraryPicker
