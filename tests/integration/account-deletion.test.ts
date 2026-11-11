@@ -231,13 +231,18 @@ describe("deleteAccount – the tombstone (criteria 2 and 4)", () => {
     );
   });
 
-  it("drops the global ban and the admin role", async () => {
+  it("drops the admin role and an expired global ban", async () => {
     await User.updateOne(
       { _id: alice },
       {
         $set: {
           role: "admin",
-          globalBan: { until: null, reason: "spam", by: bob, at: new Date() },
+          globalBan: {
+            until: new Date(Date.now() - DAY),
+            reason: "spam",
+            by: bob,
+            at: new Date(Date.now() - 2 * DAY),
+          },
         },
       },
     );
@@ -245,6 +250,54 @@ describe("deleteAccount – the tombstone (criteria 2 and 4)", () => {
     const tombstone = await User.findById(alice).lean();
     expect(tombstone!.role).toBeUndefined();
     expect(tombstone!.globalBan).toBeUndefined();
+  });
+
+  it("keeps an active global ban, so the content left behind stays hidden (task 91)", async () => {
+    await forum008.up(mongoose.connection.db!);
+    const bobs = await seedBook(bob);
+    await ok(addComment({ storyId: bobs.storyId.toString() }, "Spam"));
+    const thread = (
+      await ok(createThread({ category: "workshop" }, "Spam", "Spam"))
+    ).id;
+    await User.updateOne(
+      { _id: alice },
+      {
+        $set: {
+          globalBan: { until: null, reason: "spam", by: bob, at: new Date() },
+        },
+      },
+    );
+    await ok(deleteAccount(PASSWORD, "Alice"));
+    await flushAfter();
+
+    expect((await User.findById(alice).lean())!.globalBan).toMatchObject({
+      until: null,
+    });
+    const comments = await getCommentThread(
+      bob.toString(),
+      { folderId: bobs.folderId.toString(), storyId: bobs.storyId.toString() },
+      null,
+    );
+    expect(comments.comments).toEqual([]);
+    await expect(getThread(bob.toString(), thread)).resolves.toBeNull();
+  });
+
+  it("keeps others' blocks of the account, so its content stays hidden from them (task 91)", async () => {
+    const bobs = await seedBook(bob);
+    await ok(addComment({ storyId: bobs.storyId.toString() }, "Hello"));
+    await Block.create({ blockerId: bob, blockedId: alice });
+    await ok(deleteAccount(PASSWORD, "Alice"));
+    await flushAfter();
+
+    await expect(
+      Block.countDocuments({ blockerId: bob, blockedId: alice }),
+    ).resolves.toBe(1);
+    const comments = await getCommentThread(
+      bob.toString(),
+      { folderId: bobs.folderId.toString(), storyId: bobs.storyId.toString() },
+      null,
+    );
+    expect(comments.comments).toEqual([]);
   });
 });
 
@@ -526,9 +579,7 @@ describe("deleteAccount – the data (criterion 3)", () => {
       reactions: Reaction.countDocuments({
         $or: [{ userId: a }, { authorId: a }],
       }),
-      blocks: Block.countDocuments({
-        $or: [{ blockerId: a }, { blockedId: a }],
-      }),
+      blocks: Block.countDocuments({ blockerId: a }),
       bans: CommunityBan.countDocuments({
         $or: [{ authorId: a }, { userId: a }],
       }),
@@ -569,7 +620,9 @@ describe("deleteAccount – the data (criterion 3)", () => {
       Object.fromEntries(Object.keys(empty).map((key) => [key, 0])),
     );
 
-    // What stays: Bob's own data, the moderation log and reports of Alice's content.
+    // What stays: Bob's own data, others' blocks of Alice, the moderation log and reports of
+    // Alice's content.
+    await expect(Block.countDocuments({ blockedId: a })).resolves.toBe(1);
     await expect(Folder.countDocuments({ userId: bob })).resolves.toBe(1);
     await expect(LibraryItem.countDocuments()).resolves.toBe(0);
     await expect(

@@ -31,9 +31,11 @@ export type Permission =
 
 type Ban = { until: Date | null } | null | undefined;
 
+type Account = { globalBan?: Ban; deletedAt?: Date | null };
+
 export interface InteractionFacts {
-  actor: { globalBan?: Ban } | null;
-  author: { globalBan?: Ban } | null;
+  actor: Account | null;
+  author: Account | null;
   communityBan: Ban;
   blocked: boolean;
 }
@@ -61,7 +63,12 @@ export function decideInteraction(
 ): Permission {
   // A globally banned author's content is hidden from others, so it is not there to act on.
   if (!author || isBanActive(author.globalBan, now)) return NOT_FOUND;
-  if (!actor || isBanActive(actor.globalBan, now)) return FORBIDDEN;
+  // A deleted account's content stays and takes replies and reactions (task 89), but a message
+  // to it would only wait for the cleanup (task 91).
+  if (kind === "dm" && author.deletedAt) return NOT_FOUND;
+  if (!actor || actor.deletedAt || isBanActive(actor.globalBan, now)) {
+    return FORBIDDEN;
+  }
   if (blocked) return FORBIDDEN;
   if (COMMUNITY_KINDS.has(kind) && isBanActive(communityBan, now)) {
     return FORBIDDEN;
@@ -77,8 +84,8 @@ export async function canInteract(
   if (!isValidObjectId(authorId)) return NOT_FOUND;
   const self = actorId === authorId;
   const [actor, author, communityBan, block] = await Promise.all([
-    User.findById(actorId, { globalBan: 1 }).lean(),
-    self ? null : User.findById(authorId, { globalBan: 1 }).lean(),
+    User.findById(actorId, { globalBan: 1, deletedAt: 1 }).lean(),
+    self ? null : User.findById(authorId, { globalBan: 1, deletedAt: 1 }).lean(),
     self || !COMMUNITY_KINDS.has(kind)
       ? null
       : CommunityBan.findOne(

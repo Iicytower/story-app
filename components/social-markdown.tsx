@@ -97,3 +97,22 @@ export function SocialMarkdown({
     </div>
   );
 }
+
+// The text alone, for an excerpt such as a quoted post (task 91): every element but paragraphs,
+// breaks and list items keeps only its text, so formatting, links and quotes are dropped. A list
+// item is a line of its own, without a marker.
+export function PlainMarkdown({ content }: { content: string }) {
+  return (
+    <div className="flex flex-col gap-1 [overflow-wrap:anywhere]">
+      <Markdown
+        remarkPlugins={[remarkBreaks]}
+        allowedElements={["p", "br", "li"]}
+        components={{ li: ({ children }) => <p>{children}</p> }}
+        unwrapDisallowed
+        skipHtml
+      >
+        {content}
+      </Markdown>
+    </div>
+  );
+}

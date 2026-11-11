@@ -129,7 +129,9 @@ export default async function PublishedChapterPage({
         })}
       </p>
       <div className="-mt-6 flex items-center gap-3">
-        <h1 className="text-3xl font-bold">{chapter.title}</h1>
+        <h1 className="text-3xl font-bold [overflow-wrap:anywhere]">
+          {chapter.title}
+        </h1>
         {chapter.adult && <AdultBadge />}
       </div>
       {cover &&

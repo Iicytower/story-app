@@ -184,6 +184,22 @@ describe("follow and unfollow", () => {
 });
 
 describe("follow limit", () => {
+  it("counts unknown nicknames too, so accounts cannot be tried without a limit", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.now() - (Date.now() % 60_000) + 1000);
+    try {
+      for (let i = 0; i < 30; i++) {
+        expect(await follow(`Nobody${i}`)).toMatchObject({ error: "NOT_FOUND" });
+        expect(await unfollow(`Nobody${i}`)).toMatchObject({
+          error: "NOT_FOUND",
+        });
+      }
+      expect(await follow("Alice")).toMatchObject({ error: "RATE_LIMITED" });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("allows 60 follows and unfollows a minute, then refuses", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     const minute = Date.now() - (Date.now() % 60_000) + 1000;

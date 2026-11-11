@@ -5,22 +5,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import en from "@/messages/en.json";
 import pl from "@/messages/pl.json";
-import { AppSidebar } from "./app-sidebar";
-import type { SocialNavItem } from "@/lib/social/nav";
+import { AppSidebar, type SocialNavItem } from "./app-sidebar";
 
-const nav = vi.hoisted(() => ({
-  feed: false,
-  library: false,
-  forums: false,
-  messages: false,
-  notifications: false,
-  profile: false,
-  moderation: false,
-  admin: false,
-  stats: false,
-}));
+const location = vi.hoisted(() => ({ pathname: "/" }));
 
-vi.mock("@/lib/social/nav", () => ({ SOCIAL_NAV: nav }));
 vi.mock("@/i18n/navigation", () => ({
   Link: ({
     href,
@@ -34,7 +22,7 @@ vi.mock("@/i18n/navigation", () => ({
       {children}
     </a>
   ),
-  usePathname: () => "/",
+  usePathname: () => location.pathname,
   useRouter: () => ({ replace: vi.fn(), refresh: vi.fn() }),
 }));
 vi.mock("@/app/[locale]/(protected)/actions", () => ({
@@ -58,16 +46,29 @@ vi.mock("@/components/settings-dialog", () => ({
   settingsReopenRequested: () => false,
 }));
 
-const ITEMS = Object.keys(nav) as (keyof typeof nav)[];
+const ITEMS: SocialNavItem[] = [
+  "feed",
+  "library",
+  "forums",
+  "messages",
+  "notifications",
+  "profile",
+  "moderation",
+  "admin",
+  "stats",
+];
 
-function render(locale: "en" | "pl") {
+function render(
+  locale: "en" | "pl",
+  props: { hiddenItems?: SocialNavItem[]; profilePath?: string } = {},
+) {
   return renderToStaticMarkup(
     <NextIntlClientProvider
       locale={locale}
       messages={locale === "en" ? en : pl}
     >
       <TooltipProvider>
-        <AppSidebar defaultCollapsed={false} toolsAvailable />
+        <AppSidebar defaultCollapsed={false} toolsAvailable {...props} />
       </TooltipProvider>
     </NextIntlClientProvider>,
   );
@@ -78,34 +79,15 @@ const labels = (html: string) =>
 
 describe("AppSidebar", () => {
   beforeEach(() => {
-    for (const item of ITEMS) nav[item] = false;
+    location.pathname = "/";
   });
 
-  it("shows no social entries while their flags are off", () => {
-    expect(labels(render("en"))).toEqual([
-      "Menu",
-      "Main",
-      "Home",
-      "Folders",
-      "Settings",
-      "Collapse sidebar",
-    ]);
+  it.each(ITEMS)("shows %s in English and Polish", (item) => {
+    expect(labels(render("en"))).toContain(en.sidebar[item]);
+    expect(labels(render("pl"))).toContain(pl.sidebar[item]);
   });
-
-  it.each(ITEMS)(
-    "shows %s once its flag is on, in English and Polish",
-    (item) => {
-      nav[item] = true;
-      const enLabels = labels(render("en"));
-      const plLabels = labels(render("pl"));
-      expect(enLabels).toContain(en.sidebar[item]);
-      expect(plLabels).toContain(pl.sidebar[item]);
-      expect(enLabels).toHaveLength(7);
-    },
-  );
 
   it("orders the entries as in D80", () => {
-    for (const item of ITEMS) nav[item] = true;
     expect(labels(render("pl"))).toEqual([
       "Menu",
       "Główna",
@@ -126,7 +108,6 @@ describe("AppSidebar", () => {
   });
 
   it("leaves out an entry hidden for this account (moderation, task 79)", () => {
-    nav.moderation = true;
     const html = renderToStaticMarkup(
       <NextIntlClientProvider locale="en" messages={en}>
         <TooltipProvider>
@@ -142,7 +123,6 @@ describe("AppSidebar", () => {
   });
 
   it("leaves out Statistics for an account without a publication (task 83)", () => {
-    nav.stats = true;
     const html = (hiddenItems: SocialNavItem[]) =>
       renderToStaticMarkup(
         <NextIntlClientProvider locale="en" messages={en}>
@@ -160,7 +140,6 @@ describe("AppSidebar", () => {
   });
 
   it("shows the unread notifications on the bell (task 81)", () => {
-    nav.notifications = true;
     const html = renderToStaticMarkup(
       <NextIntlClientProvider locale="pl" messages={pl}>
         <TooltipProvider>
@@ -178,7 +157,6 @@ describe("AppSidebar", () => {
   });
 
   it("shows the unread conversations by Messages (task 85)", () => {
-    nav.messages = true;
     const html = renderToStaticMarkup(
       <NextIntlClientProvider locale="pl" messages={pl}>
         <TooltipProvider>
@@ -196,7 +174,17 @@ describe("AppSidebar", () => {
   });
 
   it("links each entry to its page", () => {
-    nav.library = true;
     expect(render("en")).toContain('href="/library"');
+  });
+
+  it("marks My profile as current on the account's own profile, in any case", () => {
+    const current = (html: string) =>
+      html.match(/aria-label="([^"]+)" aria-current="page"/)?.[1];
+    location.pathname = "/p/alice";
+    expect(current(render("en", { profilePath: "/p/Alice" }))).toBe(
+      en.sidebar.profile,
+    );
+    location.pathname = "/p/Bob";
+    expect(current(render("en", { profilePath: "/p/Alice" }))).toBeUndefined();
   });
 });

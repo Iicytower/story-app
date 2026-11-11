@@ -22,13 +22,14 @@ async function blockStep(
   if (!isString(nickname))
     return actionError("INVALID_INPUT", "requestInvalid");
   await connectDB();
+  // Before the lookup, so nicknames cannot be tried without a limit (task 91).
+  if (!(await takeUserAttempt(SOCIAL_LIMITS.block, user.userId))) {
+    return actionError("RATE_LIMITED", "tooManyAttempts");
+  }
   const other = await findUserByNickname(nickname);
   if (!other?.nickname) return actionError("NOT_FOUND", "userNotFound");
   if (other._id.equals(user.userId)) {
     return actionError("FORBIDDEN", "interactionNotAllowed");
-  }
-  if (!(await takeUserAttempt(SOCIAL_LIMITS.block, user.userId))) {
-    return actionError("RATE_LIMITED", "tooManyAttempts");
   }
   await (blocked ? applyBlock : liftBlock)(user.userId, other._id);
   refresh();

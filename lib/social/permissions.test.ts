@@ -110,6 +110,22 @@ describe("decideInteraction", () => {
     ).toEqual(NOT_FOUND);
   });
 
+  it("refuses every kind to a deleted actor", () => {
+    const facts = { ...NONE, actor: { deletedAt: PAST } };
+    for (const kind of ALL_KINDS) {
+      expect(decideInteraction(facts, kind, NOW)).toEqual(FORBIDDEN);
+    }
+  });
+
+  it("does not find a deleted author for a message, but allows the rest", () => {
+    const facts = { ...NONE, author: { deletedAt: PAST } };
+    for (const kind of ALL_KINDS) {
+      expect(decideInteraction(facts, kind, NOW)).toEqual(
+        kind === "dm" ? NOT_FOUND : ALLOWED,
+      );
+    }
+  });
+
   it("allows acting on one's own content", () => {
     const self = { ...NONE, author: {} };
     for (const kind of ALL_KINDS) {

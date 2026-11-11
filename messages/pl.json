@@ -840,7 +840,7 @@
     "tooMany": "Za dużo wyszukiwań. Spróbuj ponownie za minutę.",
     "none": "Nie znaleziono opowiadań.",
     "results": "Wyniki wyszukiwania",
-    "inFolderBy": "w folderze „{folder}”, autor: {nickname}"
+    "inFolderBy": "w książce „{folder}”, autor: {nickname}"
   },
   "home": {
     "heroTitle": "Twoje opowiadania od pierwszego zdania do pierwszego czytelnika",
@@ -1341,7 +1341,8 @@
     "ratings": "Oceny",
     "comments": "Komentarze",
     "library": "W bibliotekach",
-    "notApplicable": "Nie dotyczy"
+    "notApplicable": "Nie dotyczy",
+    "tableScrollHint": "Przewiń tabelę w bok, aby zobaczyć wszystkie kolumny."
   },
   "messages": {
     "title": "Wiadomości",

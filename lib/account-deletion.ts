@@ -32,6 +32,7 @@ import { Story } from "@/lib/models/story";
 import { ThreadFollow } from "@/lib/models/thread-follow";
 import { User } from "@/lib/models/user";
 import { purgeSocialData } from "@/lib/social/cascade";
+import { isBanActive } from "@/lib/social/permissions";
 
 // An interrupted cleanup is taken over by a later request after this long (task 89).
 export const CLEANUP_LEASE_MS = 10 * 60 * 1000;
@@ -46,10 +47,15 @@ export async function tombstoneAccount(userId: string): Promise<boolean> {
     {
       $set: { deletedAt: now, cleanupPendingAt: now },
       // The role goes too: admins get the reports of the admin route (task 81).
-      $unset: { passwordHash: 1, recoveryCodes: 1, globalBan: 1, role: 1 },
+      $unset: { passwordHash: 1, recoveryCodes: 1, role: 1 },
     },
   ).lean();
   if (!tombstone) return false;
+  // An active global ban stays: it keeps the comments and posts left behind hidden, and nobody
+  // can ban the tombstone again (task 91).
+  if (tombstone.globalBan && !isBanActive(tombstone.globalBan, now)) {
+    await User.updateOne({ _id: userId }, { $unset: { globalBan: 1 } });
+  }
   await endOtherSessions(userId, null);
   return true;
 }
@@ -117,7 +123,8 @@ export async function purgeAccountData(userId: string): Promise<void> {
     ReaderMark.deleteMany({ userId: id }),
     Rating.deleteMany({ userId: id }),
     Reaction.deleteMany({ userId: id }),
-    Block.deleteMany({ $or: [{ blockerId: id }, { blockedId: id }] }),
+    // Others' blocks of the account stay: they keep its comments and posts hidden (task 91).
+    Block.deleteMany({ blockerId: id }),
     CommunityBan.deleteMany({ $or: [{ authorId: id }, { userId: id }] }),
     CommunityModerator.deleteMany({ $or: [{ authorId: id }, { userId: id }] }),
     ThreadFollow.deleteMany({ userId: id }),

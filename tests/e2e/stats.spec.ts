@@ -115,4 +115,7 @@ test("on a narrow screen the table scrolls in its box, not the page", async ({
   });
   expect(widths.page).toBeLessThanOrEqual(widths.viewport);
   expect(widths.box).toBeGreaterThan(widths.boxVisible);
+  await expect(page.getByText(en.stats.tableScrollHint)).toBeVisible();
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect(page.getByText(en.stats.tableScrollHint)).toBeHidden();
 });

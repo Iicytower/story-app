@@ -10,7 +10,7 @@ import {
   RestoreButton,
 } from "@/components/forum/forum-forms";
 import { CommentMenu } from "@/components/moderation-controls";
-import { SocialMarkdown } from "@/components/social-markdown";
+import { PlainMarkdown, SocialMarkdown } from "@/components/social-markdown";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { UserLink } from "@/components/user-link";
@@ -230,9 +230,7 @@ async function PostItem({
               >
                 {t("inReplyTo", { nickname: post.quote.nickname })}
               </Link>
-              <p className="[overflow-wrap:anywhere] whitespace-pre-wrap">
-                {post.quote.excerpt}
-              </p>
+              <PlainMarkdown content={post.quote.excerpt} />
             </blockquote>
           ) : (
             <p className="text-muted-foreground border-l-2 pl-3 text-sm italic">

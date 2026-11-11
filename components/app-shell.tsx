@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
+import { myProfilePath } from "@/lib/profiles/queries";
 import { getUserSettings } from "@/lib/settings/queries";
 import { hasPublication } from "@/lib/social/author-stats";
 import { isActiveAdmin } from "@/lib/social/admin";
@@ -18,15 +19,23 @@ export async function AppShell({
 }) {
   // One publication check for both entries.
   const publication = hasPublication(userId);
-  const [{ appearance }, moderation, unread, unreadMessages, published, admin] =
-    await Promise.all([
-      getUserSettings(userId),
-      publication.then((value) => hasModerationAccess(userId, value)),
-      countUnread(userId),
-      countUnreadConversations(userId),
-      publication,
-      isActiveAdmin(userId),
-    ]);
+  const [
+    { appearance },
+    moderation,
+    unread,
+    unreadMessages,
+    published,
+    admin,
+    profilePath,
+  ] = await Promise.all([
+    getUserSettings(userId),
+    publication.then((value) => hasModerationAccess(userId, value)),
+    countUnread(userId),
+    countUnreadConversations(userId),
+    publication,
+    isActiveAdmin(userId),
+    myProfilePath(userId),
+  ]);
   const hiddenItems = [
     ...(moderation ? [] : ["moderation" as const]),
     ...(admin ? [] : ["admin" as const]),
@@ -38,6 +47,7 @@ export async function AppShell({
         defaultCollapsed={appearance.sidebarCollapsed}
         toolsAvailable={toolsConfig() !== null}
         hiddenItems={hiddenItems}
+        profilePath={profilePath}
         initialUnread={unread}
         initialUnreadMessages={unreadMessages}
         realtimeUrl={realtimeUrl()}

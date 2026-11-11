@@ -130,7 +130,9 @@ export default async function PublishedFolderPage({
         </div>
       )}
       <div className="flex items-center gap-3">
-        <h1 className="text-3xl font-bold">{folder.name}</h1>
+        <h1 className="text-3xl font-bold [overflow-wrap:anywhere]">
+          {folder.name}
+        </h1>
         {folder.adult && <AdultBadge />}
       </div>
       <p className="text-muted-foreground mb-4 text-sm">
