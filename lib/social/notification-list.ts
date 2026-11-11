@@ -31,6 +31,8 @@ export interface NotificationView {
   href: string | null;
   // About a comment rather than the text itself.
   onComment: boolean;
+  // A mention in a direct message rather than in a comment (task 85).
+  inMessage: boolean;
   // The author of a pending invitation (moderatorInvite), for Accept and Decline.
   inviteFrom: string | null;
 }
@@ -173,7 +175,9 @@ export async function listNotifications(
     if (page && entry.commentId) {
       href = `${page}#${commentAnchor(entry.commentId.toString())}`;
     }
-    if (entry.type === "follower") {
+    if (entry.conversationId) {
+      href = `/messages/${entry.conversationId.toString()}`;
+    } else if (entry.type === "follower") {
       href = actors[0] ? profilePath(actors[0]) : null;
     } else if (entry.type === "ban") {
       href = author ? profilePath(author) : null;
@@ -202,6 +206,7 @@ export async function listNotifications(
       title,
       href,
       onComment: Boolean(entry.commentId),
+      inMessage: Boolean(entry.conversationId),
       inviteFrom:
         entry.type === "moderatorInvite" &&
         entry.authorId &&

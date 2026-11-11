@@ -30,7 +30,8 @@
     "stats": "Statystyki",
     "notificationsUnread": "{count, plural, one {Powiadomienia, # nieprzeczytane} few {Powiadomienia, # nieprzeczytane} many {Powiadomienia, # nieprzeczytanych} other {Powiadomienia, # nieprzeczytanego}}",
     "menuUnread": "Menu, nieprzeczytane powiadomienia",
-    "toasts": "Komunikaty"
+    "toasts": "Komunikaty",
+    "messagesUnread": "{count, plural, one {Wiadomości, # nieprzeczytana rozmowa} few {Wiadomości, # nieprzeczytane rozmowy} many {Wiadomości, # nieprzeczytanych rozmów} other {Wiadomości, # nieprzeczytanej rozmowy}}"
   },
   "settings": {
     "title": "Ustawienia",
@@ -95,7 +96,16 @@
       "mention": "Wzmianki o mnie",
       "libraryChapter": "Książki z mojej biblioteki",
       "followedChapter": "Obserwowani autorzy"
-    }
+    },
+    "messages": "Wiadomości",
+    "dmFrom": "Kto może zacząć ze mną rozmowę",
+    "dmFromHelp": "Istniejące rozmowy trwają dalej niezależnie od wyboru.",
+    "dmFromOptions": {
+      "everyone": "Wszyscy",
+      "following": "Osoby, które obserwuję",
+      "nobody": "Nikt"
+    },
+    "messagesFailed": "Nie udało się wczytać ani zapisać ustawień wiadomości."
   },
   "errors": {
     "nicknameRequirement": "Nick musi mieć 3–30 znaków: litery a-z, cyfry, _ i -.",
@@ -229,7 +239,9 @@
     "reportTargetNotFound": "Ta treść już nie istnieje albo jest niedostępna.",
     "reportAlreadyOpen": "Już to zgłoszono. Twoje zgłoszenie czeka na decyzję.",
     "reportNotFound": "To zgłoszenie już nie istnieje albo zostało rozstrzygnięte.",
-    "notificationNotFound": "To powiadomienie nie istnieje."
+    "notificationNotFound": "To powiadomienie nie istnieje.",
+    "messageRequired": "Najpierw napisz wiadomość.",
+    "conversationNotFound": "Ta rozmowa nie istnieje."
   },
   "password": {
     "mustContain": "Hasło musi zawierać:",
@@ -392,7 +404,9 @@
     "library": "Biblioteka – Story App",
     "feed": "Feed – Story App",
     "moderation": "Moderacja – Story App",
-    "stats": "Statystyki – Story App"
+    "stats": "Statystyki – Story App",
+    "messages": "Wiadomości – Story App",
+    "conversation": "{nickname}: rozmowa – Story App"
   },
   "folders": {
     "title": "Foldery",
@@ -976,7 +990,9 @@
     "libraryPrivate": "Twoja biblioteka jest prywatna.",
     "libraryPrivateLink": "Przejdź do biblioteki",
     "noLibraryBooks": "W bibliotece nie ma jeszcze książek.",
-    "notOnShelf": "Pozostałe książki"
+    "notOnShelf": "Pozostałe książki",
+    "message": "Wiadomość",
+    "messageTo": "Wiadomość do {nickname}"
   },
   "avatar": {
     "title": "Avatar",
@@ -1236,6 +1252,7 @@
       "comment": "Komentarz od {actor}: {target}",
       "reply": "Odpowiedź od {actor} na Twój komentarz: {target}",
       "mention": "Wzmianka od {actor} w komentarzu: {target}",
+      "mentionMessage": "Wzmianka od {actor} w wiadomości",
       "reaction": "{others, plural, =0 {Reakcja od {actor}} one {Reakcje od {actor} i # innej osoby} few {Reakcje od {actor} i # innych osób} many {Reakcje od {actor} i # innych osób} other {Reakcje od {actor} i # innej osoby}}: {target}",
       "reactionComment": "{others, plural, =0 {Reakcja od {actor}} one {Reakcje od {actor} i # innej osoby} few {Reakcje od {actor} i # innych osób} many {Reakcje od {actor} i # innych osób} other {Reakcje od {actor} i # innej osoby}} na Twój komentarz: {target}",
       "rating": "{count, plural, one {Nowa ocena} few {# nowe oceny} many {# nowych ocen} other {# nowej oceny}}: {target}",
@@ -1274,5 +1291,25 @@
     "comments": "Komentarze",
     "library": "W bibliotekach",
     "notApplicable": "Nie dotyczy"
+  },
+  "messages": {
+    "title": "Wiadomości",
+    "empty": "Nie masz jeszcze rozmów. Zacznij ją przyciskiem Wiadomość na czyimś profilu.",
+    "list": "Rozmowy",
+    "unread": "Nieprzeczytana",
+    "closed": "Zamknięta",
+    "deletedAccount": "Usunięte konto",
+    "lastMessage": "Ostatnia wiadomość",
+    "back": "Wszystkie rozmowy",
+    "heading": "Rozmowa z <user>{nickname}</user>",
+    "thread": "Wiadomości",
+    "older": "Pokaż starsze wiadomości",
+    "you": "Ty",
+    "newLabel": "Wiadomość",
+    "placeholder": "Napisz wiadomość…",
+    "send": "Wyślij",
+    "closedNotice": "Ta rozmowa jest zamknięta. Żadne z was nie może wysyłać nowych wiadomości.",
+    "noMessages": "Nie ma jeszcze wiadomości.",
+    "failed": "Nie udało się wczytać wiadomości. Odśwież stronę i spróbuj ponownie."
   }
 }

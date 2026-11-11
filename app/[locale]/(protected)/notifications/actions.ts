@@ -7,6 +7,7 @@ import { connectDB } from "@/lib/db";
 import { actionError } from "@/lib/i18n/action-error";
 import { Notification } from "@/lib/models/notification";
 import { getUserSettings } from "@/lib/settings/queries";
+import { countUnreadConversations } from "@/lib/social/direct-messages";
 import type { UserSettings } from "@/lib/settings/settings";
 import {
   countUnread,
@@ -14,17 +15,17 @@ import {
   type NotificationView,
 } from "@/lib/social/notification-list";
 
-// The polled counter (D80): one count per kind, no list. Direct messages join in task 85.
+// The polled counters (D80): notifications and conversations with unread messages, no list.
 export async function unreadCounts(): Promise<
   ActionResult<{ notifications: number; messages: number }>
 > {
   const user = await requireUser();
   if (!user.ok) return user;
-  return {
-    ok: true,
-    notifications: await countUnread(user.userId),
-    messages: 0,
-  };
+  const [notifications, messages] = await Promise.all([
+    countUnread(user.userId),
+    countUnreadConversations(user.userId),
+  ]);
+  return { ok: true, notifications, messages };
 }
 
 export async function getNotifications(): Promise<

@@ -16,6 +16,7 @@ import { retryDueCovers } from "@/lib/covers/mutations";
 import { getPublicLibrary, getPublicProfile } from "@/lib/profiles/queries";
 import type { LibraryBook } from "@/lib/library/queries";
 import { FollowButton } from "./follow-button";
+import { MessageButton } from "./message-button";
 import { ReportButton } from "@/components/report-dialog";
 import { activeCommunityBan } from "@/lib/social/moderation";
 import { CommunityBanNotice } from "./[folder]/community-ban-notice";
@@ -94,6 +95,12 @@ export default async function ProfilePage({
             />
           )}
           {!profile.owner && (
+            <MessageButton
+              nickname={profile.nickname}
+              signedIn={viewer !== null}
+            />
+          )}
+          {!profile.owner && (
             <ReportButton
               target={viewer ? { type: "profile", id: profile.nickname } : null}
               label={tReports("reportProfile", { nickname: profile.nickname })}
@@ -101,7 +108,7 @@ export default async function ProfilePage({
               callbackUrl={`/${await getLocale()}${profilePath(profile.nickname)}`}
             />
           )}
-          {/* Message (83) and Block (84) go here. */}
+          {/* Block (86) goes here. */}
         </div>
       </header>
       {profile.bio && (

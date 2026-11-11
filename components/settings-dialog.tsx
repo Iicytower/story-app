@@ -11,6 +11,7 @@ import {
   removeFromDictionary,
   saveSettings,
 } from "@/app/[locale]/(protected)/actions";
+import { getMessageSettings } from "@/app/[locale]/(protected)/messages/actions";
 import { getNotificationSettings } from "@/app/[locale]/(protected)/notifications/actions";
 import {
   getMyProfile,
@@ -37,6 +38,8 @@ import { WithTooltip } from "@/components/ui/tooltip";
 import {
   type Accent,
   ACCENTS,
+  DM_FROM,
+  type DmFrom,
   THEMES,
   type Theme,
 } from "@/lib/settings/settings";
@@ -243,6 +246,7 @@ function SettingsContent({ toolsAvailable }: { toolsAvailable: boolean }) {
       </section>
       <DictionarySection />
       <NotificationsSection />
+      <MessagesSection />
       <ProfileSection toolsAvailable={toolsAvailable} />
       <section aria-labelledby="settings-account" className="grid gap-2">
         <h3 id="settings-account" className="font-medium">
@@ -465,6 +469,76 @@ function NotificationsSection() {
             </div>
           </fieldset>
         ))}
+      {error && (
+        <p role="alert" className="text-destructive text-sm">
+          {error}
+        </p>
+      )}
+    </section>
+  );
+}
+
+// Who may start a conversation (D80); saved at once like the notification switches.
+function MessagesSection() {
+  const t = useTranslations("settings");
+  const [dmFrom, setDmFrom] = useState<DmFrom | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let open = true;
+    void getMessageSettings()
+      .catch(() => null)
+      .then((result) => {
+        if (!open) return;
+        if (result?.ok) setDmFrom(result.dmFrom);
+        else setError(result?.message ?? t("messagesFailed"));
+      });
+    return () => {
+      open = false;
+    };
+  }, [t]);
+
+  async function choose(value: DmFrom) {
+    const previous = dmFrom;
+    setError(null);
+    setDmFrom(value);
+    const result = await saveSettings({ messages: { dmFrom: value } }).catch(
+      () => null,
+    );
+    if (!result?.ok) {
+      setDmFrom(previous);
+      setError(result?.message ?? t("messagesFailed"));
+    }
+  }
+
+  return (
+    <section aria-labelledby="settings-messages" className="grid gap-2">
+      <h3 id="settings-messages" className="font-medium">
+        {t("messages")}
+      </h3>
+      {dmFrom && (
+        <fieldset className="grid gap-1">
+          <legend className="text-sm">{t("dmFrom")}</legend>
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            {DM_FROM.map((value) => (
+              <label
+                key={value}
+                className="flex items-center gap-2 text-sm font-normal"
+              >
+                <input
+                  type="radio"
+                  name="dm-from"
+                  className="accent-primary size-4"
+                  checked={dmFrom === value}
+                  onChange={() => void choose(value)}
+                />
+                {t(`dmFromOptions.${value}`)}
+              </label>
+            ))}
+          </div>
+          <p className="text-muted-foreground text-sm">{t("dmFromHelp")}</p>
+        </fieldset>
+      )}
       {error && (
         <p role="alert" className="text-destructive text-sm">
           {error}

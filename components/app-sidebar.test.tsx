@@ -43,7 +43,11 @@ vi.mock("@/app/[locale]/(protected)/actions", () => ({
 vi.mock("@/lib/theme", () => ({ applyTheme: vi.fn() }));
 // The counter polls Server Actions; here it only shows the count it starts with.
 vi.mock("@/components/notifications", () => ({
-  useUnreadNotifications: (initial: number) => [initial, () => {}],
+  useUnreadNotifications: (
+    initial: number,
+    _onOpen: () => void,
+    messages: number,
+  ) => [initial, () => {}, messages],
   NotificationsPanel: () => null,
 }));
 vi.mock("@/components/ui/sonner", () => ({ Toaster: () => null }));
@@ -171,6 +175,24 @@ describe("AppSidebar", () => {
     expect(labels(html)).toContain("Powiadomienia, 5 nieprzeczytanych");
     expect(html).toContain(">5</span>");
     expect(html).not.toContain('href="/notifications"');
+  });
+
+  it("shows the unread conversations by Messages (task 85)", () => {
+    nav.messages = true;
+    const html = renderToStaticMarkup(
+      <NextIntlClientProvider locale="pl" messages={pl}>
+        <TooltipProvider>
+          <AppSidebar
+            defaultCollapsed={false}
+            toolsAvailable
+            initialUnreadMessages={3}
+          />
+        </TooltipProvider>
+      </NextIntlClientProvider>,
+    );
+    expect(labels(html)).toContain("Wiadomości, 3 nieprzeczytane rozmowy");
+    expect(html).toContain('href="/messages"');
+    expect(html).toContain(">3</span>");
   });
 
   it("links each entry to its page", () => {

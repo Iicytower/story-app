@@ -24,6 +24,7 @@ describe("DEFAULT_SETTINGS", () => {
       },
       folders: { sort: "updated", manualOrder: false },
       proofreading: { dictionary: [] },
+      messages: { dmFrom: "everyone" },
       notifications: ALL_NOTIFICATIONS,
     });
   });
@@ -50,6 +51,7 @@ describe("normalizeSettings", () => {
           dictionary: [" Ania ", "Ania", 3, "dwa słowa", "Kwak"],
         },
         notifications: { comment: false, rating: "no", ban: false },
+        messages: { dmFrom: "friends" },
         other: { a: 1 },
       }),
     ).toEqual({
@@ -68,6 +70,7 @@ describe("normalizeSettings", () => {
       },
       folders: { sort: "alpha", manualOrder: false },
       proofreading: { dictionary: ["Ania", "Kwak"] },
+      messages: { dmFrom: "everyone" },
       notifications: { ...ALL_NOTIFICATIONS, comment: false },
     });
     expect(
@@ -105,6 +108,10 @@ describe("parseSettingsPatch", () => {
     expect(parseSettingsPatch({ notifications: { reaction: false } })).toEqual({
       notifications: { reaction: false },
     });
+    expect(parseSettingsPatch({ messages: { dmFrom: "following" } })).toEqual({
+      messages: { dmFrom: "following" },
+    });
+    expect(parseSettingsPatch({ messages: { dmFrom: "friends" } })).toBeNull();
   });
 
   it("normalizes the layout like stored data", () => {

@@ -22,6 +22,10 @@ export type Accent = (typeof ACCENTS)[number];
 export const MOBILE_VIEWS = ["story", "notes", "chapters", "tools"] as const;
 export type MobileView = (typeof MOBILE_VIEWS)[number];
 
+// Who may start a conversation (D80): following means the accounts the recipient follows.
+export const DM_FROM = ["everyone", "following", "nobody"] as const;
+export type DmFrom = (typeof DM_FROM)[number];
+
 interface Field<T> {
   default: T;
   // undefined: not a valid value.
@@ -78,6 +82,9 @@ const SETTINGS = {
   proofreading: {
     // Spelling the user accepts (task 30); changed only by its own actions, one word at a time.
     dictionary: field<string[]>([], normalizeDictionary, false),
+  },
+  messages: {
+    dmFrom: field<DmFrom>("everyone", oneOf(DM_FROM)),
   },
   // One switch per kind (D80, task 81); moderation has none, so it cannot be turned off.
   notifications: Object.fromEntries(

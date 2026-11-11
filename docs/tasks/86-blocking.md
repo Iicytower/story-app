@@ -13,6 +13,7 @@ Subtask 68, zależy od 82, 84 i 85. Podstawa: D80 (Role, bany, blokady – bloka
 - Moderacja (79): blokada moderatora przez autora (i odwrotnie) dziś nie odbiera roli – rozstrzygnąć tutaj; blokada w dowolną stronę już uniemożliwia zaproszenie i przyjęcie. Ban globalny: `moderationLog.scope: global` (dziś wpisy tylko społeczności).
 - Powiadomienia (81): moderacja ignoruje blokady w powiadomieniach, więc blokada między autorem a moderatorem musi kończyć relację `CommunityModerator`.
 - Rankingi (84): blokady filtrowane przy odczycie w obie strony przez `feedHiddenUserIds` (jak feed 75) – sprawdzić spójność z pełną blokadą.
+- DM (85): przy blokadzie i odblokowaniu wołać `setConversationClosed(a, b, closed)` z `lib/social/direct-messages.ts`; przycisk Zablokuj na profilu w miejscu komentarza `Block (86) goes here.` w `app/[locale]/p/[nickname]/page.tsx`.
 
 ## Kryteria akceptacji
 

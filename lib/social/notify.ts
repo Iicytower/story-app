@@ -30,6 +30,7 @@ export interface NotifyEvent {
   folderId?: Id;
   storyIds?: Id[];
   commentId?: Id;
+  conversationId?: Id;
   count?: number;
 }
 
@@ -54,6 +55,9 @@ export function notificationFields(event: NotifyEvent) {
     ...(event.folderId && { folderId: toId(event.folderId) }),
     ...(event.storyIds?.length && { storyIds: event.storyIds.map(toId) }),
     ...(event.commentId && { commentId: toId(event.commentId) }),
+    ...(event.conversationId && {
+      conversationId: toId(event.conversationId),
+    }),
   };
 }
 

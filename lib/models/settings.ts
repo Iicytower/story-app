@@ -2,7 +2,12 @@ import mongoose, { Schema, type Model, type Types } from "mongoose";
 import { FOLDER_SORTS } from "@/lib/folders/sort";
 import { routing } from "@/i18n/routing";
 import { MAX_WORD_LENGTH } from "@/lib/proofreading/dictionary";
-import { ACCENTS, MOBILE_VIEWS, THEMES } from "@/lib/settings/settings";
+import {
+  ACCENTS,
+  DM_FROM,
+  MOBILE_VIEWS,
+  THEMES,
+} from "@/lib/settings/settings";
 import { OPTIONAL_NOTIFICATION_TYPES } from "@/lib/social/notifications";
 
 // Only values the user chose are stored, without defaults: getUserSettings fills in the
@@ -18,6 +23,7 @@ export interface SettingsFields {
   };
   folders?: { sort?: string; manualOrder?: boolean };
   proofreading?: { dictionary?: string[] };
+  messages?: { dmFrom?: string };
   notifications?: Record<string, boolean | undefined>;
   createdAt: Date;
   updatedAt: Date;
@@ -53,6 +59,7 @@ const settingsSchema = new Schema<SettingsFields>(
         default: undefined,
       },
     },
+    messages: { dmFrom: { type: String, enum: DM_FROM } },
     notifications: Object.fromEntries(
       OPTIONAL_NOTIFICATION_TYPES.map((type) => [type, { type: Boolean }]),
     ),
