@@ -64,7 +64,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 63 | [Kody odzyskiwania konta](done/63-recovery-codes.md) | – | [x] |
 | 64 | [Predefiniowane tagi](done/64-predefined-tags.md) | 24 | [x] |
 | 53 | [Projekt systemu społecznościowego i plan tasków](done/53-social-system-plan.md) | – | [x] |
-| 68 | [System społecznościowy (zbiorczy)](68-social.md) | – | [ ] |
+| 68 | [System społecznościowy (zbiorczy)](done/68-social.md) | – | [x] |
 | 69 | ↳ [Fundament społeczności](done/69-social-foundation.md) (subtask 68) | – | [x] |
 | 70 | ↳ [Profil użytkownika](done/70-profile.md) (subtask 68) | 69 | [x] |
 | 71 | ↳ [Obserwowanie autorów](done/71-follow.md) (subtask 68) | 70 | [x] |

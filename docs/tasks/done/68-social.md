@@ -1,6 +1,6 @@
 # 68 – System społecznościowy (zbiorczy)
 
-Task zbiorczy z taska [53](done/53-social-system-plan.md), decyzja D80 (cała). Subtaski 69–91 realizowane w kolejności tabeli w `README.md`, w przebiegu bez nadzoru (skill `/autorun`). Szczegóły, kryteria i testy w plikach subtasków.
+Task zbiorczy z taska [53](53-social-system-plan.md), decyzja D80 (cała). Subtaski 69–91 realizowane w kolejności tabeli w `README.md`, w przebiegu bez nadzoru (skill `/autorun`). Szczegóły, kryteria i testy w plikach subtasków.
 
 ## Zakres
 
@@ -25,3 +25,7 @@ Task zbiorczy z taska [53](done/53-social-system-plan.md), decyzja D80 (cała). 
 ## Testy
 
 Testy z plików subtasków. `manual`: kryterium 3 (raport audytu w tasku 91), 4 i 5 (przegląd użytkownika przed merge'em do `develop`).
+
+## Wynik (2026-11-11)
+
+Wszystkie subtaski 69–91 zrobione (`[x]`), bez blokad. Końcowy `npm run verify` na `feature/social` (d06fb5e) zielony: Vitest 4948, E2E 343. Końcowy audyt bezpieczeństwa w tasku 91: brak krytycznych uwag, wysokie i średnie poprawione. `feature/social` do `develop` merguje użytkownik po przeglądzie.

@@ -799,6 +799,8 @@ Task 53, decyzje użytkownika (brainstorm 2026-11-05 i pytania 2026-11-10). Task
 
 ### Rozstrzygnięcia Claude'a do potwierdzenia
 
+Przebieg 68 zakończony (2026-11-11); lista czeka na przegląd użytkownika przed merge'em `feature/social` do `develop`.
+
 - Nazwy kolekcji i pól, szczegółowy podział tasków 69–91 i ich kryteria.
 - Rodzaje powiadomień wyłączalne pojedynczo (odpowiedź „konfigurowalne w ustawieniach” razem z „per grupa”).
 - Ban globalny ukrywa także komentarze i posty zbanowanego na czas bana.
