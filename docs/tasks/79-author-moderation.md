@@ -11,6 +11,7 @@ Subtask 68, zależy od 76. Podstawa: D80 (Role, bany, blokady – moderatorzy au
 - Panel `/moderation` (autor z publikacjami lub moderator): społeczności, które moderuję; zakładki: treści ukryte, bany, moderatorzy (tylko autor), log, zgłoszenia (80). Pozycja „Moderacja” w sidebarze włączona warunkowo.
 - Akcje moderatora w menu ⋮ przy komentarzu (ukryj, zbanuj autora).
 - Komentarze (76): `hideContent` ustawia `comments.hidden` (`by`, `at`, `reason?`) i `purgeAt`; pola i TTL są w modelu, zaślepka „Ukryty przez moderatora” przy odczycie już działa (odpowiedzi zostają, treść i autor nie trafiają do klienta), `editComment` pomija ukryte. Wyłączenie komentarzy przez autora nie używa `hidden` (ukrywa przy odczycie).
+- Reakcje (77): usunięcie komentarza kasuje jego reakcje (`reactions` po `targetType: comment`, `targetId`); purge ukrytych komentarzy po `purgeAt` też musi je kasować – indeks TTL usuwa dokument bez kaskady, więc potrzebne sprzątanie reakcji (np. leniwie albo zamiast TTL), z testem.
 
 ## Kryteria akceptacji
 

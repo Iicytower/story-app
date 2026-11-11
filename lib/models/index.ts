@@ -21,3 +21,4 @@ import "./reading-progress";
 import "./reader-mark";
 import "./activity";
 import "./comment";
+import "./reaction";

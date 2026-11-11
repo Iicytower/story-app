@@ -36,6 +36,7 @@ export function clearStories(): Promise<void> {
     await connection.collection("readerMarks").deleteMany({});
     await connection.collection("activity").deleteMany({});
     await connection.collection("comments").deleteMany({});
+    await connection.collection("reactions").deleteMany({});
   });
 }
 

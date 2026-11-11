@@ -13,8 +13,11 @@ import {
   getCommentThread,
   parseCommentsCursor,
 } from "@/lib/social/comments";
+import { getReactionSummaries } from "@/lib/social/reaction-summary";
+import { EMPTY_SUMMARY, type ReactionSummary } from "@/lib/social/reactions";
 import { AuthDialog } from "../../../auth/auth-dialog";
 import { CommentControls, NewCommentForm } from "./comment-form";
+import { ReactionBar } from "./reaction-bar";
 
 const SECTION_ID = "comments";
 
@@ -22,12 +25,19 @@ async function CommentItem({
   comment,
   canReply,
   now,
+  reactions,
+  signedIn,
+  path,
 }: {
   comment: CommentView;
   canReply: boolean;
   now: Date;
+  reactions: ReactionSummary;
+  signedIn: boolean;
+  path: string;
 }) {
   const t = await getTranslations("comments");
+  const tReactions = await getTranslations("reactions");
   const locale = await getLocale();
   const created = new Date(comment.createdAt);
   const time = (
@@ -83,6 +93,13 @@ async function CommentItem({
         >
           <SocialMarkdown content={comment.body} />
         </CommentControls>
+        <ReactionBar
+          target={signedIn ? { type: "comment", id: comment.id } : null}
+          summary={reactions}
+          own={comment.own}
+          label={tReactions("comment", { nickname: comment.author.nickname })}
+          callbackUrl={`/${locale}${path}#${commentAnchor(comment.id)}`}
+        />
       </div>
     </div>
   );
@@ -107,6 +124,25 @@ export async function Comments({
   const locale = await getLocale();
   const now = new Date();
   const signedIn = viewerId !== null;
+  // Placeholders show no reactions.
+  const reactions = await getReactionSummaries(
+    viewerId,
+    "comment",
+    thread.comments
+      .flatMap((comment) => [comment, ...comment.replies])
+      .filter(({ state }) => state === "visible")
+      .map(({ id }) => id),
+  );
+  const item = (comment: CommentView, canReply: boolean) => (
+    <CommentItem
+      comment={comment}
+      canReply={canReply}
+      now={now}
+      reactions={reactions.get(comment.id) ?? EMPTY_SUMMARY}
+      signedIn={signedIn}
+      path={path}
+    />
+  );
 
   return (
     <section
@@ -151,11 +187,7 @@ export async function Comments({
                   id={commentAnchor(comment.id)}
                   className="target:bg-muted/60 flex min-w-0 scroll-mt-4 flex-col gap-3 target:rounded-md"
                 >
-                  <CommentItem
-                    comment={comment}
-                    canReply={signedIn && comment.state !== "hidden"}
-                    now={now}
-                  />
+                  {item(comment, signedIn && comment.state !== "hidden")}
                   {comment.replies.length > 0 && (
                     <ol
                       aria-label={t("replies", {
@@ -169,11 +201,7 @@ export async function Comments({
                           id={commentAnchor(reply.id)}
                           className="target:bg-muted/60 min-w-0 scroll-mt-4 target:rounded-md"
                         >
-                          <CommentItem
-                            comment={reply}
-                            canReply={signedIn}
-                            now={now}
-                          />
+                          {item(reply, signedIn)}
                         </li>
                       ))}
                     </ol>

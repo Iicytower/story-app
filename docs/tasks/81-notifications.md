@@ -12,6 +12,7 @@ Subtask 68, zależy od 71, 72, 73, 76, 77, 78, 79 i 80. Podstawa: D80 (Powiadomi
 - UI: dzwonek w sidebarze z licznikiem nieprzeczytanych, panel listy (sheet) z „Oznacz wszystkie jako przeczytane”, kliknięcie oznacza i przechodzi do celu. Polling: licznik co 30 s tylko przy widocznej karcie (`visibilitychange`), przez lekką akcję `unreadCounts` (zwraca też licznik DM dla 85). Toast `sonner` przy nowym powiadomieniu w czasie sesji.
 - Pozycja „Powiadomienia” w sidebarze włączona.
 - Komentarze (76): haki w `addComment`, `replyToComment` i `editComment` (`app/[locale]/p/[nickname]/[folder]/comment-actions.ts`).
+- Reakcje (77): hak w `react` (`app/[locale]/p/[nickname]/[folder]/reaction-actions.ts`) po upsercie; powiadomienie tylko o nowej reakcji, nie o zmianie – trzeba przechwycić wynik upsertu (`upsertedCount`), dziś nieprzechwytywany. Ta sama reakcja niczego nie zmienia (`react` idempotentne).
 
 ## Kryteria akceptacji
 
