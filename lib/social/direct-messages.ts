@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/db";
 import { Block } from "@/lib/models/block";
 import { Conversation } from "@/lib/models/conversation";
 import { Message } from "@/lib/models/message";
-import { User } from "@/lib/models/user";
+import { NOT_DELETED, User } from "@/lib/models/user";
 import { resolveMentions } from "@/lib/social/mentions";
 import { hiddenUserIdsFor } from "@/lib/social/permissions";
 
@@ -112,7 +112,11 @@ async function viewsOf(
     otherOf(participantIds, userId),
   );
   const [users, blocked, hidden] = await Promise.all([
-    User.find({ _id: { $in: others }, nickname: { $type: "string" } })
+    User.find({
+      _id: { $in: others },
+      nickname: { $type: "string" },
+      ...NOT_DELETED,
+    })
       .select({ nickname: 1 })
       .lean(),
     blockedAmong(userId, others),

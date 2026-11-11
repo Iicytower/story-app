@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 import { connectDB } from "@/lib/db";
 import { Reaction } from "@/lib/models/reaction";
 import { Story } from "@/lib/models/story";
-import { User } from "@/lib/models/user";
+import { NOT_DELETED, User } from "@/lib/models/user";
 import { hiddenUserIdsFor } from "@/lib/social/permissions";
 import {
   REACTIONS,
@@ -54,6 +54,7 @@ export async function getReactionSummaries(
   const users = await User.find({
     _id: { $in: groups.flatMap(({ userIds }) => userIds) },
     nickname: { $type: "string" },
+    ...NOT_DELETED,
   })
     .select({ nickname: 1 })
     .lean();

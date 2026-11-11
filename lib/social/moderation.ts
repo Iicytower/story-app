@@ -11,7 +11,7 @@ import {
   type ModerationLogFields,
 } from "@/lib/models/moderation-log";
 import { Story } from "@/lib/models/story";
-import { User } from "@/lib/models/user";
+import { NOT_DELETED, User } from "@/lib/models/user";
 import { chapterPublicPath, folderPublicPath } from "@/lib/publish/queries";
 import { commentAnchor, moderationFor } from "@/lib/social/comments";
 import { authorForumPath, postAnchor } from "@/lib/social/forums";
@@ -111,6 +111,7 @@ async function nicknamesOf(
   const users = await User.find({
     _id: { $in: unique },
     nickname: { $type: "string" },
+    ...NOT_DELETED,
   })
     .select({ nickname: 1 })
     .lean();

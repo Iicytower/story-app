@@ -36,6 +36,9 @@ communityBanSchema.index({ authorId: 1, userId: 1 }, { unique: true });
 // without end has no date, which TTL skips.
 communityBanSchema.index({ until: 1 }, { expireAfterSeconds: 0 });
 
+// A deleted account's bans in other communities (task 89).
+communityBanSchema.index({ userId: 1 });
+
 export const CommunityBan: Model<CommunityBanFields> =
   (mongoose.models.CommunityBan as Model<CommunityBanFields> | undefined) ??
   mongoose.model<CommunityBanFields>("CommunityBan", communityBanSchema);

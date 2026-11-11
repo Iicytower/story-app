@@ -1,10 +1,16 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { hasLocale } from "next-intl";
 import { getLocale } from "next-intl/server";
 import { signOut } from "@/auth";
 import { LOCALE_COOKIE, LOCALE_COOKIE_OPTIONS, routing } from "@/i18n/routing";
+import {
+  purgeAccountData,
+  resumeAccountCleanup,
+  tombstoneAccount,
+} from "@/lib/account-deletion";
 import type { ActionResult } from "@/lib/action-result";
 import { hashPassword, verifyPassword } from "@/lib/accounts";
 import { requireUser } from "@/lib/auth/session";
@@ -12,7 +18,7 @@ import { endOtherSessions } from "@/lib/auth/sessions";
 import { passwordError } from "@/lib/credentials";
 import { connectDB } from "@/lib/db";
 import { actionError } from "@/lib/i18n/action-error";
-import { User } from "@/lib/models/user";
+import { NICKNAME_COLLATION, User } from "@/lib/models/user";
 import { parseDictionaryWord } from "@/lib/proofreading/dictionary";
 import {
   addDictionaryWord,
@@ -148,5 +154,46 @@ export async function logOutOtherDevices(): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
   await endOtherSessions(user.userId, user.sessionId ?? null);
+  return { ok: true };
+}
+
+// Password and the nickname typed again (task 89). Wrong passwords count against the same
+// limit as changing it: both guess the same secret.
+export async function deleteAccount(
+  password: unknown,
+  nickname: unknown,
+): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (typeof password !== "string" || typeof nickname !== "string") {
+    return actionError("INVALID_INPUT", "deleteAccountInvalid");
+  }
+
+  await connectDB();
+  const account = await User.findById(user.userId).lean();
+  if (!account?.passwordHash) {
+    return actionError("UNAUTHORIZED", "sessionExpired");
+  }
+  const sameNickname =
+    nickname.trim().localeCompare(account.nickname, NICKNAME_COLLATION.locale, {
+      sensitivity: "accent",
+    }) === 0;
+  if (!sameNickname) {
+    return actionError("INVALID_INPUT", "deleteAccountNicknameMismatch");
+  }
+  const attempt = await takeAttempt(CHANGE_PASSWORD_LIMIT, user.userId);
+  if (!attempt) return actionError("RATE_LIMITED", "tooManyAttempts");
+  if (!(await verifyPassword(password, account.passwordHash))) {
+    return actionError("INVALID_INPUT", "currentPasswordIncorrect");
+  }
+  await giveBackAttempt(attempt);
+
+  if (await tombstoneAccount(user.userId)) {
+    after(async () => {
+      await purgeAccountData(user.userId);
+      await resumeAccountCleanup();
+    });
+  }
+  await signOut({ redirectTo: `/${await getLocale()}` });
   return { ok: true };
 }

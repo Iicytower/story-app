@@ -8,7 +8,7 @@ import { findChaptersInOrder } from "@/lib/folders/queries";
 import { chapterOrder, type ChapterSort } from "@/lib/folders/sort";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
-import { User } from "@/lib/models/user";
+import { NOT_DELETED, User } from "@/lib/models/user";
 import { requireUser } from "@/lib/auth/session";
 import { isBanActive, notGloballyBanned } from "@/lib/social/permissions";
 import { buildSnippet, type Snippet } from "@/lib/stories/search";
@@ -340,6 +340,7 @@ export async function findPublicBooks(
     User.find({
       _id: { $in: candidates.map(({ userId }) => userId) },
       nickname: { $type: "string" },
+      ...NOT_DELETED,
     })
       .select({ nickname: 1 })
       .lean(),
@@ -423,6 +424,7 @@ async function findSearchableFolders() {
   const authors = await User.find({
     _id: { $in: folders.map(({ userId }) => userId) },
     nickname: { $type: "string" },
+    ...NOT_DELETED,
     ...notGloballyBanned(new Date()),
   })
     .select({ nickname: 1 })

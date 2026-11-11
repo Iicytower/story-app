@@ -3,7 +3,7 @@ import type { ValidationError } from "@/lib/action-result";
 import { Block } from "@/lib/models/block";
 import { CommunityBan } from "@/lib/models/community-ban";
 import { CommunityModerator } from "@/lib/models/community-moderator";
-import { User } from "@/lib/models/user";
+import { NOT_DELETED, User } from "@/lib/models/user";
 
 // "reply" is checked against the author of the comment replied to, whose community it is not:
 // only bans and blocks of the whole site apply (task 76).
@@ -167,7 +167,12 @@ export function decideModeration(
 // Whether actorId, with role in authorId's community, may hide targetId's content or ban them.
 export async function canModerate(
   actorId: string,
-  { authorId, role, targetId, action }: {
+  {
+    authorId,
+    role,
+    targetId,
+    action,
+  }: {
     authorId: string;
     role: ModerationRole;
     targetId: string;
@@ -210,7 +215,7 @@ export function isAdmin(user: { role?: string } | null | undefined): boolean {
 
 // Authors whose social content the viewer must not see: blocked by the viewer and globally
 // banned accounts (D80). ObjectIds, so the list also works in aggregation pipelines.
-// Tombstones of deleted accounts join in task 89.
+// Deleted accounts are not listed: their comments and posts stay as a deleted user's (task 89).
 export async function hiddenUserIdsFor(
   viewerId: string | null,
 ): Promise<Types.ObjectId[]> {
@@ -246,9 +251,8 @@ export async function isAuthorVisibleTo(
     User.exists({
       _id: authorId,
       nickname: { $type: "string" },
-      ...(self
-        ? {}
-        : notGloballyBanned(now)),
+      ...NOT_DELETED,
+      ...(self ? {} : notGloballyBanned(now)),
     }),
     self ? null : Block.exists({ blockerId: viewerId, blockedId: authorId }),
   ]);

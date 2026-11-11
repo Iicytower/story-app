@@ -4,7 +4,7 @@ import type { StoredRecoveryCode } from "@/lib/auth/recovery-codes";
 import { nicknameError, passwordError } from "@/lib/credentials";
 import { isDuplicateKeyError } from "@/lib/db";
 import { inEnglish } from "@/lib/i18n/english";
-import { NICKNAME_COLLATION, User } from "@/lib/models/user";
+import { NICKNAME_COLLATION, NOT_DELETED, User } from "@/lib/models/user";
 
 // Hashes without the prefix are bcrypt of the raw password, from before task 36.
 const PREHASHED_PREFIX = "sha256$";
@@ -18,10 +18,11 @@ export async function hashPassword(password: string): Promise<string> {
   return PREHASHED_PREFIX + (await bcrypt.hash(prehash(password), 12));
 }
 
-export function verifyPassword(
+export async function verifyPassword(
   password: string,
-  passwordHash: string,
+  passwordHash: string | undefined,
 ): Promise<boolean> {
+  if (passwordHash === undefined) return false;
   return passwordHash.startsWith(PREHASHED_PREFIX)
     ? bcrypt.compare(
         prehash(password),
@@ -31,13 +32,17 @@ export function verifyPassword(
 }
 
 export function findUserByNickname(nickname: string) {
-  return User.findOne({ nickname: nickname.trim() })
+  return User.findOne({ nickname: nickname.trim(), ...NOT_DELETED })
     .collation(NICKNAME_COLLATION)
     .lean();
 }
 
+// A deleted account's nickname counts as taken (D37, task 89).
 export async function userExists(nickname: string): Promise<boolean> {
-  return (await findUserByNickname(nickname)) !== null;
+  const user = await User.exists({ nickname: nickname.trim() }).collation(
+    NICKNAME_COLLATION,
+  );
+  return user !== null;
 }
 
 // Insert only: unlike createOrUpdateUser it must never touch an existing account.
@@ -68,10 +73,16 @@ export async function createOrUpdateUser(
   const error = nicknameError(trimmed) ?? passwordError(password, trimmed);
   if (error) throw new Error(inEnglish(error));
 
+  // A deleted account's tombstone matches no filter, so the insert hits the unique index.
   const result = await User.updateOne(
-    { nickname: trimmed },
+    { nickname: trimmed, ...NOT_DELETED },
     { $set: { passwordHash: await hashPassword(password) } },
     { upsert: true, collation: NICKNAME_COLLATION },
-  );
+  ).catch((error: unknown) => {
+    if (isDuplicateKeyError(error)) {
+      throw new Error("This nickname belongs to a deleted account.");
+    }
+    throw error;
+  });
   return result.upsertedCount > 0 ? "created" : "updated";
 }

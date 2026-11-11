@@ -195,7 +195,14 @@ async function writePost(
   let quote: { _id: Types.ObjectId; userId: Types.ObjectId } | null = null;
   if (quotePostId) {
     const quoted = await findVisiblePost(userId, quotePostId);
-    if (!quoted || !quoted.threadId.equals(thread._id)) return postNotFound();
+    // A deleted account's post shows as unavailable when quoted (task 89).
+    if (
+      !quoted ||
+      quoted.writerDeleted ||
+      !quoted.threadId.equals(thread._id)
+    ) {
+      return postNotFound();
+    }
     quote = { _id: quoted._id, userId: quoted.writerId };
   }
   const refusal = await permissionError(userId, place, [

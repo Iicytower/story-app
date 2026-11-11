@@ -7,7 +7,7 @@ import { ForumThread } from "@/lib/models/forum-thread";
 import { Notification } from "@/lib/models/notification";
 import { Profile } from "@/lib/models/profile";
 import { Story } from "@/lib/models/story";
-import { User } from "@/lib/models/user";
+import { NOT_DELETED, User } from "@/lib/models/user";
 import { findChapterPaths, findPublicBooks } from "@/lib/publish/queries";
 import { commentAnchor } from "@/lib/social/comments";
 import { postAnchor, threadPath } from "@/lib/social/forums";
@@ -123,7 +123,11 @@ export async function listNotifications(
     .flatMap(({ authorId }) => authorId ?? []);
   const [users, privateLibraries, books, stories, invitations] =
     await Promise.all([
-      User.find({ _id: { $in: people }, nickname: { $type: "string" } })
+      User.find({
+        _id: { $in: people },
+        nickname: { $type: "string" },
+        ...NOT_DELETED,
+      })
         .select({ nickname: 1 })
         .lean(),
       Profile.find({ userId: { $in: people }, libraryPublic: false })

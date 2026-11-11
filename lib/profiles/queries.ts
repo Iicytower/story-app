@@ -5,7 +5,7 @@ import { connectDB } from "@/lib/db";
 import { Block } from "@/lib/models/block";
 import { Follow } from "@/lib/models/follow";
 import { Profile } from "@/lib/models/profile";
-import { User } from "@/lib/models/user";
+import { NOT_DELETED, User } from "@/lib/models/user";
 import { listLibraryBooks, listShelves } from "@/lib/library/queries";
 import { listAuthorBooks } from "@/lib/publish/queries";
 import { hiddenUserIdsFor, isBanActive } from "@/lib/social/permissions";
@@ -142,7 +142,11 @@ export async function listFollows(
     .slice(0, FOLLOWS_PAGE_SIZE)
     .map((row) => row[other] as Types.ObjectId);
   const [users, profiles] = await Promise.all([
-    User.find({ _id: { $in: ids }, nickname: { $type: "string" } })
+    User.find({
+      _id: { $in: ids },
+      nickname: { $type: "string" },
+      ...NOT_DELETED,
+    })
       .select({ nickname: 1 })
       .lean(),
     Profile.find({ userId: { $in: ids }, avatarId: { $exists: true } })

@@ -8,7 +8,7 @@ import { Comment } from "@/lib/models/comment";
 import { Folder } from "@/lib/models/folder";
 import { Follow } from "@/lib/models/follow";
 import { ForumThread } from "@/lib/models/forum-thread";
-import { User } from "@/lib/models/user";
+import { NOT_DELETED, User } from "@/lib/models/user";
 import { Story } from "@/lib/models/story";
 import { findChapterPaths, findPublicBooks } from "@/lib/publish/queries";
 import { commentAnchor } from "@/lib/social/comments";
@@ -167,7 +167,11 @@ async function shownThreads(raw: RawEntry[]) {
     ),
   ];
   const [users, forums] = await Promise.all([
-    User.find({ _id: { $in: authorIds }, nickname: { $type: "string" } })
+    User.find({
+      _id: { $in: authorIds },
+      nickname: { $type: "string" },
+      ...NOT_DELETED,
+    })
       .select({ nickname: 1 })
       .lean(),
     Promise.all(

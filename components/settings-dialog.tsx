@@ -23,6 +23,7 @@ import {
 } from "@/app/[locale]/(protected)/profile/actions";
 import { AvatarDialog } from "@/components/avatar-dialog";
 import { ChangePasswordForm } from "@/components/change-password-form";
+import { DeleteAccountForm } from "@/components/delete-account-form";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -126,6 +127,7 @@ function SettingsContent({ toolsAvailable }: { toolsAvailable: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const [changingPassword, setChangingPassword] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const [confirmLogOutOthers, setConfirmLogOutOthers] = useState(false);
   const [othersLoggedOut, setOthersLoggedOut] = useState(false);
   const [saved, setSaved] = useState(savedTheme);
@@ -140,6 +142,9 @@ function SettingsContent({ toolsAvailable }: { toolsAvailable: boolean }) {
 
   if (changingPassword) {
     return <ChangePasswordForm onDone={() => setChangingPassword(false)} />;
+  }
+  if (deletingAccount) {
+    return <DeleteAccountForm onDone={() => setDeletingAccount(false)} />;
   }
 
   function save() {
@@ -286,6 +291,22 @@ function SettingsContent({ toolsAvailable }: { toolsAvailable: boolean }) {
           action={logOutOtherDevices}
           onDone={() => setOthersLoggedOut(true)}
         />
+        <div className="mt-4 grid gap-2">
+          <p
+            id="settings-delete-account-help"
+            className="text-muted-foreground text-sm"
+          >
+            {t("deleteAccountHelp")}
+          </p>
+          <Button
+            variant="destructive"
+            className="justify-self-start"
+            aria-describedby="settings-delete-account-help"
+            onClick={() => setDeletingAccount(true)}
+          >
+            {t("deleteAccount")}
+          </Button>
+        </div>
       </section>
       {error && (
         <p role="alert" className="text-destructive text-sm">

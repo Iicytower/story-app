@@ -68,10 +68,13 @@ async function CommentItem({
       </p>
     );
   }
+  // A deleted account keeps its comments, signed without a link (task 89).
+  const deletedUser = comment.author.nickname === null;
+  const name = comment.author.nickname ?? t("deletedUser");
   return (
     <div className="flex min-w-0 gap-3">
       <UserAvatar
-        nickname={comment.author.nickname}
+        nickname={name}
         src={comment.author.avatar}
         alt=""
         size={32}
@@ -82,10 +85,11 @@ async function CommentItem({
             id={`${commentAnchor(comment.id)}-by`}
             className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-sm"
           >
-            <UserLink
-              nickname={comment.author.nickname}
-              className="[overflow-wrap:anywhere]"
-            />
+            {deletedUser ? (
+              <span className="text-muted-foreground font-medium">{name}</span>
+            ) : (
+              <UserLink nickname={name} className="[overflow-wrap:anywhere]" />
+            )}
             {time}
             {comment.edited && (
               <span className="text-muted-foreground text-xs">
@@ -95,13 +99,13 @@ async function CommentItem({
           </p>
           <CommentMenu
             commentId={comment.id}
-            nickname={comment.author.nickname}
+            nickname={name}
             date={formatPublishedAt(created, now, locale)}
             authorId={moderatedAuthorId}
             canHide={comment.canHide}
             canBan={comment.canBan}
             canReport={!comment.own && comment.state === "visible"}
-            canBlock={signedIn && !comment.own}
+            canBlock={signedIn && !comment.own && !deletedUser}
             signedIn={signedIn}
             callbackUrl={`/${locale}${path}#${commentAnchor(comment.id)}`}
           />
@@ -109,7 +113,7 @@ async function CommentItem({
         <CommentControls
           id={comment.id}
           body={comment.body}
-          nickname={comment.author.nickname}
+          nickname={name}
           headerId={`${commentAnchor(comment.id)}-by`}
           editable={comment.editableUntil !== null}
           own={comment.own}
@@ -122,7 +126,7 @@ async function CommentItem({
           summary={reactions}
           own={comment.own}
           locked={locked}
-          label={tReactions("comment", { nickname: comment.author.nickname })}
+          label={tReactions("comment", { nickname: name })}
           callbackUrl={`/${locale}${path}#${commentAnchor(comment.id)}`}
         />
       </div>

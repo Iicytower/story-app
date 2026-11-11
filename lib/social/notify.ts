@@ -72,7 +72,15 @@ async function recipientsOf(
   event: NotifyEvent,
 ): Promise<Types.ObjectId[]> {
   const actor = event.actorId?.toString();
-  const ids = userIds.filter((id) => id !== actor);
+  // A deleted account's tombstone gets nothing (task 89).
+  const deleted = new Set(
+    (
+      await User.find({ _id: { $in: userIds }, deletedAt: { $exists: true } })
+        .select({ _id: 1 })
+        .lean()
+    ).map(({ _id }) => _id.toString()),
+  );
+  const ids = userIds.filter((id) => id !== actor && !deleted.has(id));
   if (ids.length === 0 || groupOf(event.type) === "moderation") {
     return ids.map(toId);
   }

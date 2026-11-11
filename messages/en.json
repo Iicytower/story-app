@@ -112,7 +112,9 @@
     "blockedHelp": "Blocked accounts cannot message you, reply to you, mention you, follow you or take part in your community, and you do not see their comments.",
     "blockedCount": "{count, plural, =0 {You have not blocked anyone.} one {# blocked account} other {# blocked accounts}}",
     "loadingBlocked": "Loading blocked accounts…",
-    "blockedFailed": "The blocked accounts could not be loaded or changed."
+    "blockedFailed": "The blocked accounts could not be loaded or changed.",
+    "deleteAccount": "Delete account",
+    "deleteAccountHelp": "Deletes your texts and data for good; your comments and posts elsewhere stay, signed as a deleted user."
   },
   "errors": {
     "nicknameRequirement": "Nickname must be 3-30 characters: letters a-z, digits, _ and -.",
@@ -266,7 +268,9 @@
     "categoryLabelRequired": "Give the category a name in both languages.",
     "categoryLabelTooLong": "A category name can have at most {max, number} characters.",
     "adultTargetNotFound": "No public folder, chapter or cover has this address.",
-    "tagNotFound": "This tag is not on the list."
+    "tagNotFound": "This tag is not on the list.",
+    "deleteAccountInvalid": "These details are not valid.",
+    "deleteAccountNicknameMismatch": "The nickname does not match your account."
   },
   "password": {
     "mustContain": "The password must contain:",
@@ -301,6 +305,14 @@
     "current": "Current password",
     "new": "New password",
     "repeat": "Repeat new password"
+  },
+  "deleteAccount": {
+    "title": "Delete account",
+    "description": "Your texts with their versions, covers, comments and forum, as well as your profile, avatar, library, follows, notes, ratings, reactions, notifications, messages and settings are deleted for good. Your comments under other authors' texts and your posts in other forums stay, signed as a deleted user. Your nickname can never be used again. Every device will be logged out.",
+    "password": "Password",
+    "nickname": "Type your nickname to confirm",
+    "confirm": "Delete account",
+    "deleting": "Deleting…"
   },
   "export": {
     "loadFailed": "The export data could not be loaded.",
@@ -1139,7 +1151,8 @@
     "pages": "Comment pages",
     "newest": "Newest comments",
     "older": "Older comments",
-    "menuFor": "Actions for the comment by {nickname}, {date}"
+    "menuFor": "Actions for the comment by {nickname}, {date}",
+    "deletedUser": "Deleted user"
   },
   "mentions": {
     "suggestions": "Nickname suggestions",
@@ -1399,7 +1412,8 @@
     "menuFor": "Actions for the {kind, select, thread {thread} other {post}} by {nickname}, {date}",
     "moderateFor": "Moderate the {kind, select, thread {thread} other {post}} by {nickname}, {date}",
     "quoteUnavailable": "The quoted post is not available.",
-    "quoteOf": "Quote from {nickname}"
+    "quoteOf": "Quote from {nickname}",
+    "deletedUser": "Deleted user"
   },
   "admin": {
     "title": "Admin",
