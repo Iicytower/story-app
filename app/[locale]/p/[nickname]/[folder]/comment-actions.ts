@@ -10,6 +10,7 @@ import { actionError, translateError } from "@/lib/i18n/action-error";
 import { lengthError } from "@/lib/limits";
 import { Activity } from "@/lib/models/activity";
 import { Comment } from "@/lib/models/comment";
+import { Reaction } from "@/lib/models/reaction";
 import { User } from "@/lib/models/user";
 import {
   giveBackAttempt,
@@ -274,6 +275,8 @@ export async function deleteComment(commentId: string): Promise<ActionResult> {
   const replies =
     comment.parentId === null &&
     (await Comment.exists({ parentId: comment._id }));
+  // A placeholder has no text to react to, so its reactions go as well (task 77).
+  await Reaction.deleteMany({ targetType: "comment", targetId: comment._id });
   if (replies) {
     await Comment.updateOne(
       { _id: comment._id },

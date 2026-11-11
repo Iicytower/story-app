@@ -19,6 +19,7 @@ import { COMMENTS_PARAM } from "@/lib/social/comments";
 import { stripComments } from "@/lib/stories/strip-comments";
 import { BlurredCover } from "../adult-cover";
 import { Comments } from "../comments";
+import { ChapterReactions } from "../reactions";
 import { AdultGate } from "./adult-gate";
 import { GuestMarks } from "./guest-marks";
 import { ReaderMarks } from "./reader-marks";
@@ -92,7 +93,7 @@ export default async function PublishedChapterPage({
         )
       : null;
   const focusMark = query[MARK_PARAM];
-  // Behind the 18+ gate the comments wait with the text.
+  // Behind the 18+ gate the reactions and comments wait with the text.
   const place = gated ? null : await publishedChapterId(nickname, folder, slug);
   const text = <MarkdownPreview content={stripComments(chapter.content)} />;
 
@@ -133,6 +134,13 @@ export default async function PublishedChapterPage({
           {text}
           <GuestMarks path={chapter.path} />
         </>
+      )}
+      {place && (
+        <ChapterReactions
+          viewerId={viewer.ok ? viewer.userId : null}
+          storyId={place.storyId}
+          path={chapter.path}
+        />
       )}
       {reading && (
         <ReadingTracker storyId={reading.storyId} resumeAt={reading.resumeAt} />

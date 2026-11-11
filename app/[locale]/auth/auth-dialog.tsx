@@ -24,12 +24,16 @@ export function AuthDialog({
   callbackUrl,
   initialMode = "login",
   trigger,
+  open,
+  onOpenChange,
 }: {
   defaultOpen?: boolean;
   callbackUrl: string;
   initialMode?: Mode;
-  // Defaults to the "Log in / Create account" button.
-  trigger?: ReactNode;
+  // Defaults to the "Log in / Create account" button; null for a dialog opened through `open`.
+  trigger?: ReactNode | null;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const [mode, setMode] = useState<Mode>(initialMode);
   const [codes, setCodes] = useState<Codes | null>(null);
@@ -50,13 +54,17 @@ export function AuthDialog({
   return (
     <Dialog
       defaultOpen={defaultOpen}
-      onOpenChange={(open) => {
-        if (open) setMode(initialMode);
+      open={open}
+      onOpenChange={(next) => {
+        if (next) setMode(initialMode);
+        onOpenChange?.(next);
       }}
     >
-      <DialogTrigger asChild>
-        {trigger ?? <Button variant="outline">{t("openDialog")}</Button>}
-      </DialogTrigger>
+      {trigger !== null && (
+        <DialogTrigger asChild>
+          {trigger ?? <Button variant="outline">{t("openDialog")}</Button>}
+        </DialogTrigger>
+      )}
       <DialogContent
         aria-describedby={undefined}
         className="max-h-[calc(100dvh-2rem)] overflow-y-auto"

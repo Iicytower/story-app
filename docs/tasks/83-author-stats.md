@@ -9,6 +9,7 @@ Subtask 68, zależy od 71, 72, 73, 76, 77 i 78. Podstawa: D80 (Statystyki i odkr
 - Strona `/stats` (autor z publikacjami): wykresy `recharts` (shadcn `chart`, motyw z `lib/theme.ts`) unikalnych czytelników w czasie (7/30/90/365 dni, z `dailyStats`), tabela per rozdział i książka: czytelnicy, reakcje, średnia i liczba ocen, komentarze, dodania do bibliotek; liczba obserwujących. Tylko własne dane (`authorId` z sesji). Pozycja „Statystyki” w sidebarze włączona warunkowo.
 - Kolekcje taska dopisane do `purgeSocialData` (69); test: trwałe usunięcie rozdziału i folderu kasuje ich wpisy.
 - Komentarze (76): liczba komentarzy z `comments` po indeksie `{authorId, createdAt: -1}` (`authorId` = właściciel tekstu).
+- Reakcje (77): liczba reakcji z `reactions` po indeksie `{authorId, createdAt: -1}` (`authorId` = autor tekstu).
 
 ## Kryteria akceptacji
 

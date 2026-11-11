@@ -1,6 +1,7 @@
 import { Activity } from "@/lib/models/activity";
 import { Comment } from "@/lib/models/comment";
 import { LibraryItem } from "@/lib/models/library-item";
+import { Reaction } from "@/lib/models/reaction";
 import { ReaderMark } from "@/lib/models/reader-mark";
 import { ReadingProgress } from "@/lib/models/reading-progress";
 
@@ -30,6 +31,9 @@ const PURGES: ((objects: PurgedObjects) => Promise<unknown>)[] = [
   ({ storyIds }) => ReaderMark.deleteMany({ storyId: { $in: storyIds } }),
   ({ folderIds }) => Comment.deleteMany({ folderId: { $in: folderIds } }),
   ({ storyIds }) => Comment.deleteMany({ storyId: { $in: storyIds } }),
+  // Reactions to a chapter and to its comments carry their place (task 77).
+  ({ folderIds }) => Reaction.deleteMany({ folderId: { $in: folderIds } }),
+  ({ storyIds }) => Reaction.deleteMany({ storyId: { $in: storyIds } }),
   ({ folderIds }) => Activity.deleteMany({ folderId: { $in: folderIds } }),
   // Other chapters of the same publication keep the entry; one left with none goes (task 75).
   // An author's reply under a chapter goes with its chapter (task 76).
@@ -62,6 +66,7 @@ export async function moveChapterSocialData(
   await Promise.all([
     Comment.updateMany({ storyId }, { $set: { folderId } }),
     ReaderMark.updateMany({ storyId }, { $set: { folderId } }),
+    Reaction.updateMany({ storyId }, { $set: { folderId } }),
     Activity.updateMany(
       { type: "authorReply", storyIds: storyId },
       { $set: { folderId } },

@@ -54,6 +54,7 @@ Mechanizm: `docs/decisions.md` D14. Migracje uruchamiają się w buildzie produk
 - Atlas: Network Access `0.0.0.0/0`, użytkownik z silnym hasłem i rolą `readWrite`. W URI nazwa bazy przed `?` (`.../story_app?retryWrites=true&w=majority`), inaczej Mongoose użyje bazy `test`.
 - Atlas M0 nie ma automatycznych backupów (dopiero Flex i wyżej). Backup: `scripts/backup.sh` (sekcja „Backup bazy”, D26).
 - Function Region w Vercelu (Settings → Functions) ustawić na region klastra Atlasa (np. `fra1` dla Frankfurtu). Domyślnie funkcje szły do `iad1` (Waszyngton).
+- Wersja MongoDB: wymagana ≥ 5.2 (reakcje, task 77, używają `$firstN`). Lokalnie i w testach `mongo:8`; wersję klastra Atlas (produkcja i staging) sprawdzić w panelu Atlasa przed wydaniem.
 - Konto produkcyjne: `MONGODB_URI='mongodb+srv://...' npm run create-account` (pojedyncze cudzysłowy, bo zsh interpretuje `&` i `?`; plik `.env.local` musi istnieć).
 - Predefiniowane tagi (D79) na stagingu lub produkcji: `MONGODB_URI='mongodb+srv://...' npm run tags -- set <klucz> '<en>' '<pl>'` (także `list`, `remove <klucz>`). Zmienna z powłoki wygrywa z `.env.local`. Lista startowa przychodzi migracją `007` w buildzie.
 - Rola admina (D80, task 69) na stagingu lub produkcji: `MONGODB_URI='mongodb+srv://...' npm run admin -- add <nick>` (także `list`, `remove <nick>`). Zmienna z powłoki wygrywa z `.env.local`.
