@@ -173,7 +173,10 @@ const newestFirst = (a: Raw, b: Raw) =>
   b._id.toString().localeCompare(a._id.toString());
 
 // Who the viewer may hide and ban in authorId's community; nothing outside their own.
-async function moderationFor(viewerId: string | null, authorId: string | null) {
+export async function moderationFor(
+  viewerId: string | null,
+  authorId: string | null,
+) {
   const role =
     viewerId && authorId ? await moderationRole(viewerId, authorId) : null;
   if (!role || !authorId || !viewerId) return null;

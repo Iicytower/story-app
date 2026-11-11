@@ -16,7 +16,9 @@ import { getPublishedChapter, publishedChapterId } from "@/lib/publish/queries";
 import { listChapterMarks, MARK_PARAM } from "@/lib/reading/marks";
 import { CONTINUE_PARAM, savedPosition } from "@/lib/reading/queries";
 import { COMMENTS_PARAM } from "@/lib/social/comments";
+import { ownsPlace } from "@/lib/social/visibility";
 import { stripComments } from "@/lib/stories/strip-comments";
+import { ReportButton } from "@/components/report-dialog";
 import { BlurredCover } from "../adult-cover";
 import { Comments } from "../comments";
 import { ChapterReactions } from "../reactions";
@@ -97,6 +99,13 @@ export default async function PublishedChapterPage({
   // Behind the 18+ gate the reactions and comments wait with the text.
   const place = gated ? null : await publishedChapterId(nickname, folder, slug);
   const text = <MarkdownPreview content={stripComments(chapter.content)} />;
+  const own =
+    place !== null &&
+    (await ownsPlace(viewer.ok ? viewer.userId : null, {
+      type: "story",
+      id: place.storyId,
+    }));
+  const tReports = await getTranslations("reports");
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10">
@@ -148,6 +157,15 @@ export default async function PublishedChapterPage({
             storyId={place.storyId}
             path={chapter.path}
           />
+          {!own && (
+            <ReportButton
+              target={
+                viewer.ok ? { type: "story", id: place.storyId } : null
+              }
+              label={tReports("reportChapter")}
+              callbackUrl={`/${await getLocale()}${chapter.path}`}
+            />
+          )}
         </div>
       )}
       {reading && (

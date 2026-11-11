@@ -4,6 +4,7 @@ import { Comment } from "@/lib/models/comment";
 import { CommunityBan } from "@/lib/models/community-ban";
 import { CommunityModerator } from "@/lib/models/community-moderator";
 import { Folder } from "@/lib/models/folder";
+import { Report } from "@/lib/models/report";
 import {
   ModerationLog,
   type ModerationLogFields,
@@ -11,11 +12,23 @@ import {
 import { Story } from "@/lib/models/story";
 import { User } from "@/lib/models/user";
 import { chapterPublicPath, folderPublicPath } from "@/lib/publish/queries";
-import { commentAnchor } from "@/lib/social/comments";
-import { isBanActive, type ModerationRole } from "@/lib/social/permissions";
+import { commentAnchor, moderationFor } from "@/lib/social/comments";
+import {
+  isBanActive,
+  type ModerationRole,
+  moderationRole,
+  moderatorIdsOf,
+} from "@/lib/social/permissions";
+import type { ReportReason, ReportTarget } from "@/lib/social/reports";
 
 export const MODERATION_LIST_LIMIT = 100;
-export const MODERATION_TABS = ["hidden", "bans", "moderators", "log"] as const;
+export const MODERATION_TABS = [
+  "hidden",
+  "reports",
+  "bans",
+  "moderators",
+  "log",
+] as const;
 export type ModerationTab = (typeof MODERATION_TABS)[number];
 
 // Tabs only the author of the community sees: the log is for the author and the admin (D80).
@@ -32,7 +45,7 @@ type Id = Types.ObjectId | string;
 type Entry = Omit<
   ModerationLogFields,
   "createdAt" | "authorId" | "actorId" | "targetId" | "targetUserId"
-> & { authorId: Id; actorId: Id; targetId: Id; targetUserId?: Id };
+> & { authorId: Id | null; actorId: Id; targetId: Id; targetUserId?: Id };
 
 export async function logModeration(entry: Entry): Promise<void> {
   await ModerationLog.create(entry);
@@ -175,6 +188,23 @@ export async function getModerationOverview(
   };
 }
 
+// The public page of each comment's place, looked up once per chapter or book.
+function commentPlacePaths(authorId: string) {
+  const paths = new Map<string, Promise<string>>();
+  return (folderId: Types.ObjectId, storyId: Types.ObjectId | null) => {
+    const key = `${folderId.toString()}/${storyId?.toString() ?? ""}`;
+    if (!paths.has(key)) {
+      paths.set(
+        key,
+        storyId
+          ? chapterPublicPath(authorId, folderId.toString(), storyId.toString())
+          : folderPublicPath(authorId, folderId.toString()),
+      );
+    }
+    return paths.get(key)!;
+  };
+}
+
 export interface HiddenCommentView {
   id: string;
   writer: string | null;
@@ -209,19 +239,7 @@ export async function listHiddenComments(
   const nicknames = await nicknamesOf(
     comments.flatMap(({ userId, hidden }) => [userId, hidden?.by]),
   );
-  const paths = new Map<string, Promise<string>>();
-  const pathOf = (folderId: Types.ObjectId, storyId: Types.ObjectId | null) => {
-    const key = `${folderId.toString()}/${storyId?.toString() ?? ""}`;
-    if (!paths.has(key)) {
-      paths.set(
-        key,
-        storyId
-          ? chapterPublicPath(authorId, folderId.toString(), storyId.toString())
-          : folderPublicPath(authorId, folderId.toString()),
-      );
-    }
-    return paths.get(key)!;
-  };
+  const pathOf = commentPlacePaths(authorId);
   return Promise.all(
     comments.map(async (comment) => ({
       id: comment._id.toString(),
@@ -321,5 +339,142 @@ export async function listModerationLog(
       : null,
     reason: entry.reason ?? null,
     createdAt: entry.createdAt.toISOString(),
+  }));
+}
+
+export interface ReportedComment {
+  id: string;
+  body: string;
+  state: "visible" | "hidden";
+  path: string;
+  canHide: boolean;
+  canBan: boolean;
+}
+
+// The reporter is not shown to the community: only the admin sees who reported (task 80).
+export interface CommunityReportView {
+  id: string;
+  writer: string | null;
+  reason: ReportReason;
+  details: string;
+  createdAt: string;
+  // null once the comment is deleted or purged.
+  comment: ReportedComment | null;
+}
+
+// Open reports of comments in authorId's community, newest first. A moderator does not see
+// reports about themselves or another moderator (as canModerate); nobody else sees any.
+export async function listCommunityReports(
+  viewerId: string,
+  authorId: string,
+): Promise<CommunityReportView[]> {
+  await connectDB();
+  const role = await moderationRole(viewerId, authorId);
+  if (!role) return [];
+  const excluded =
+    role === "moderator" ? [viewerId, ...(await moderatorIdsOf(authorId))] : [];
+  const reports = await Report.find({
+    route: "author",
+    authorId,
+    state: "open",
+    ...(excluded.length > 0 && { targetUserId: { $nin: excluded } }),
+  })
+    .sort({ createdAt: -1 })
+    .limit(MODERATION_LIST_LIMIT)
+    .select({
+      targetId: 1,
+      targetUserId: 1,
+      reason: 1,
+      details: 1,
+      createdAt: 1,
+    })
+    .lean();
+  const [comments, nicknames, may] = await Promise.all([
+    Comment.find({
+      _id: { $in: reports.map(({ targetId }) => targetId) },
+      deletedAt: null,
+    })
+      .select({ body: 1, hidden: 1, folderId: 1, storyId: 1, userId: 1 })
+      .lean(),
+    nicknamesOf(reports.map(({ targetUserId }) => targetUserId)),
+    moderationFor(viewerId, authorId),
+  ]);
+  const byId = new Map(
+    comments.map((comment) => [comment._id.toString(), comment]),
+  );
+  const pathOf = commentPlacePaths(authorId);
+  return Promise.all(
+    reports.map(async (report) => {
+      const comment = byId.get(report.targetId.toString());
+      const writerId = report.targetUserId.toString();
+      return {
+        id: report._id.toString(),
+        writer: nicknames.get(writerId) ?? null,
+        reason: report.reason,
+        details: report.details,
+        createdAt: report.createdAt.toISOString(),
+        comment: comment
+          ? {
+              id: comment._id.toString(),
+              body: comment.body,
+              state: comment.hidden
+                ? ("hidden" as const)
+                : ("visible" as const),
+              path: `${await pathOf(comment.folderId, comment.storyId)}#${commentAnchor(comment._id.toString())}`,
+              canHide: !comment.hidden && !!may?.(writerId, "hide"),
+              canBan: !!may?.(writerId, "ban"),
+            }
+          : null,
+      };
+    }),
+  );
+}
+
+export interface AdminReportView {
+  id: string;
+  targetType: ReportTarget;
+  targetId: string;
+  target: string | null;
+  reporter: string | null;
+  reason: ReportReason;
+  details: string;
+  createdAt: string;
+}
+
+// The admin's queue (task 88 shows it and checks the role): reports outside any community.
+export async function listAdminReports(): Promise<AdminReportView[]> {
+  await connectDB();
+  const reports = await Report.find({
+    route: "admin",
+    authorId: null,
+    state: "open",
+  })
+    .sort({ createdAt: -1 })
+    .limit(MODERATION_LIST_LIMIT)
+    .select({
+      targetType: 1,
+      targetId: 1,
+      targetUserId: 1,
+      reporterId: 1,
+      reason: 1,
+      details: 1,
+      createdAt: 1,
+    })
+    .lean();
+  const nicknames = await nicknamesOf(
+    reports.flatMap(({ targetUserId, reporterId }) => [
+      targetUserId,
+      reporterId,
+    ]),
+  );
+  return reports.map((report) => ({
+    id: report._id.toString(),
+    targetType: report.targetType,
+    targetId: report.targetId.toString(),
+    target: nicknames.get(report.targetUserId.toString()) ?? null,
+    reporter: nicknames.get(report.reporterId.toString()) ?? null,
+    reason: report.reason,
+    details: report.details,
+    createdAt: report.createdAt.toISOString(),
   }));
 }

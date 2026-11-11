@@ -1,5 +1,5 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import { CommentModerationMenu } from "@/components/moderation-controls";
+import { CommentMenu } from "@/components/moderation-controls";
 import { SocialMarkdown } from "@/components/social-markdown";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
@@ -93,16 +93,17 @@ async function CommentItem({
               </span>
             )}
           </p>
-          {moderatedAuthorId && (comment.canHide || comment.canBan) && (
-            <CommentModerationMenu
-              commentId={comment.id}
-              nickname={comment.author.nickname}
-              date={formatPublishedAt(created, now, locale)}
-              authorId={moderatedAuthorId}
-              canHide={comment.canHide}
-              canBan={comment.canBan}
-            />
-          )}
+          <CommentMenu
+            commentId={comment.id}
+            nickname={comment.author.nickname}
+            date={formatPublishedAt(created, now, locale)}
+            authorId={moderatedAuthorId}
+            canHide={comment.canHide}
+            canBan={comment.canBan}
+            canReport={!comment.own && comment.state === "visible"}
+            signedIn={signedIn}
+            callbackUrl={`/${locale}${path}#${commentAnchor(comment.id)}`}
+          />
         </div>
         <CommentControls
           id={comment.id}

@@ -202,7 +202,10 @@
     "invitationNotFound": "To zaproszenie już nie istnieje.",
     "moderatorNotFound": "To konto nie jest tutaj moderatorem.",
     "tooManyModerators": "Społeczność może mieć najwyżej {max, number} moderatorów i zaproszeń.",
-    "hideReasonTooLong": "Powód może mieć najwyżej {max, number} znaków."
+    "hideReasonTooLong": "Powód może mieć najwyżej {max, number} znaków.",
+    "reportTargetNotFound": "Ta treść już nie istnieje albo jest niedostępna.",
+    "reportAlreadyOpen": "Już to zgłoszono. Twoje zgłoszenie czeka na decyzję.",
+    "reportNotFound": "To zgłoszenie już nie istnieje albo zostało rozstrzygnięte."
   },
   "password": {
     "mustContain": "Hasło musi zawierać:",
@@ -1058,7 +1061,8 @@
     "replies": "{count, plural, one {# odpowiedź} few {# odpowiedzi} many {# odpowiedzi} other {# odpowiedzi}}",
     "pages": "Strony komentarzy",
     "newest": "Najnowsze komentarze",
-    "older": "Starsze komentarze"
+    "older": "Starsze komentarze",
+    "menuFor": "Akcje komentarza {nickname}, {date}"
   },
   "reactions": {
     "chapter": "Reakcje na rozdział",
@@ -1098,7 +1102,7 @@
     "resignTitle": "Zrezygnować z moderowania?",
     "resignDescription": "Przestaniesz moderować społeczność {nickname}.",
     "tabs": "Sekcje moderacji",
-    "tab": "{tab, select, hidden {Ukryte treści} bans {Bany} moderators {Moderatorzy} other {Log}}",
+    "tab": "{tab, select, hidden {Ukryte treści} reports {Zgłoszenia} bans {Bany} moderators {Moderatorzy} other {Log}}",
     "noHidden": "Brak ukrytych treści.",
     "hiddenList": "Ukryte treści",
     "writtenBy": "Komentarz {nickname}",
@@ -1136,7 +1140,7 @@
     "removeFor": "Usuń {nickname}",
     "noLog": "Log jest pusty.",
     "logList": "Log moderacji",
-    "log": "{action, select, hide {{actor} ukrył(a) komentarz {target}} restore {{actor} przywrócił(a) komentarz {target}} ban {{actor} zbanował(a) {target}} unban {{actor} anulował(a) bana {target}} invite {{actor} zaprosił(a) {target} do moderowania} accept {{actor} zaakceptował(a) zaproszenie} decline {{actor} odrzucił(a) zaproszenie} resign {{actor} zrezygnował(a) z moderowania} other {{actor} odebrał(a) rolę moderatora {target}}}",
+    "log": "{action, select, hide {{actor} ukrył(a) komentarz {target}} restore {{actor} przywrócił(a) komentarz {target}} ban {{actor} zbanował(a) {target}} unban {{actor} anulował(a) bana {target}} invite {{actor} zaprosił(a) {target} do moderowania} accept {{actor} zaakceptował(a) zaproszenie} decline {{actor} odrzucił(a) zaproszenie} resign {{actor} zrezygnował(a) z moderowania} resolve {{actor} uznał(a) zgłoszenie wobec {target}} dismiss {{actor} odrzucił(a) zgłoszenie wobec {target}} other {{actor} odebrał(a) rolę moderatora {target}}}",
     "menuFor": "Moderuj komentarz {nickname}, {date}",
     "hide": "Ukryj",
     "hideTitle": "Ukryć komentarz?",
@@ -1148,6 +1152,34 @@
     "liftTitle": "Zdjąć bana {nickname}?",
     "liftDescription": "{nickname} znów będzie mógł(a) komentować, reagować i oceniać.",
     "removeTitle": "Usunąć {nickname}?",
-    "removeDescription": "{nickname} straci rolę moderatora albo zaproszenie."
+    "removeDescription": "{nickname} straci rolę moderatora albo zaproszenie.",
+    "reportList": "Otwarte zgłoszenia",
+    "noReports": "Brak otwartych zgłoszeń.",
+    "reportedComment": "Zgłoszony komentarz {nickname}",
+    "reportedAt": "Zgłoszono {date}",
+    "reportReason": "Powód: {reason, select, spam {spam} harassment {nękanie} illegal {treść nielegalna} unmarkedAdult {18+ bez oznaczenia} other {inne}}",
+    "reportDetails": "Opis: {details}",
+    "reportedHidden": "Ukryty przez moderatora.",
+    "reportedGone": "Komentarz został usunięty.",
+    "resolve": "Uznaj",
+    "dismiss": "Odrzuć",
+    "resolveFor": "Uznaj zgłoszenie z {date}",
+    "dismissFor": "Odrzuć zgłoszenie z {date}",
+    "hideFor": "Ukryj komentarz zgłoszony {date}",
+    "banFor": "Zbanuj {nickname} (zgłoszenie z {date})"
+  },
+  "reports": {
+    "report": "Zgłoś",
+    "reportChapter": "Zgłoś rozdział",
+    "reportBook": "Zgłoś książkę",
+    "reportProfile": "Zgłoś {nickname}",
+    "title": "{target, select, comment {Zgłoś komentarz} story {Zgłoś rozdział} folder {Zgłoś książkę} other {Zgłoś profil}}",
+    "description": "Zgłoszenie trafi do moderatorów autora albo do administracji. Zgłaszana osoba nie dowie się, kto ją zgłosił.",
+    "reason": "Powód",
+    "reasons": "{reason, select, spam {Spam} harassment {Nękanie} illegal {Treść nielegalna} unmarkedAdult {18+ bez oznaczenia} other {Inne}}",
+    "details": "Opis (opcjonalnie)",
+    "send": "Wyślij zgłoszenie",
+    "sent": "Dziękujemy. Zgłoszenie zostało wysłane.",
+    "choose": "Wybierz powód"
   }
 }

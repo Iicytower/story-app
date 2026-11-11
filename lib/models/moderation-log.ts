@@ -10,6 +10,8 @@ export const MODERATION_ACTIONS = [
   "decline",
   "resign",
   "remove",
+  "resolve",
+  "dismiss",
 ] as const;
 
 export type ModerationAction = (typeof MODERATION_ACTIONS)[number];
@@ -21,7 +23,7 @@ export interface ModerationLogFields {
   scope?: "global";
   actorId: Types.ObjectId;
   action: ModerationAction;
-  targetType: "comment" | "user";
+  targetType: "comment" | "user" | "report";
   targetId: Types.ObjectId;
   targetUserId?: Types.ObjectId;
   reason?: string;
@@ -34,7 +36,11 @@ const moderationLogSchema = new Schema<ModerationLogFields>(
     scope: { type: String, enum: ["global"] },
     actorId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     action: { type: String, enum: MODERATION_ACTIONS, required: true },
-    targetType: { type: String, enum: ["comment", "user"], required: true },
+    targetType: {
+      type: String,
+      enum: ["comment", "user", "report"],
+      required: true,
+    },
     targetId: { type: Schema.Types.ObjectId, required: true },
     targetUserId: { type: Schema.Types.ObjectId, ref: "User" },
     reason: { type: String },

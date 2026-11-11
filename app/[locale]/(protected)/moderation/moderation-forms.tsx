@@ -3,12 +3,8 @@
 import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import {
-  BanFields,
-  ErrorText,
-  useAction,
-  useBanState,
-} from "@/components/moderation-controls";
+import { ErrorText, useAction } from "@/components/action-form";
+import { BanFields, useBanState } from "@/components/moderation-controls";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +17,7 @@ import {
   liftCommunityBan,
   removeModerator,
   resignModerator,
+  resolveReport,
   restoreContent,
 } from "./actions";
 
@@ -36,7 +33,8 @@ export function ModerationButton({
     | { action: "restore"; commentId: string }
     | { action: "lift"; authorId: string; nickname: string }
     | { action: "remove"; nickname: string }
-    | { action: "accept" | "decline" | "resign"; authorId: string };
+    | { action: "accept" | "decline" | "resign"; authorId: string }
+    | { action: "resolved" | "dismissed"; reportId: string };
   label: string;
   ariaLabel?: string;
   confirm?: { title: string; description: string };
@@ -58,6 +56,9 @@ export function ModerationButton({
         return declineModeratorInvite(kind.authorId);
       case "resign":
         return resignModerator(kind.authorId);
+      case "resolved":
+      case "dismissed":
+        return resolveReport(kind.reportId, kind.action);
     }
   };
   return (
