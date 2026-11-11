@@ -95,7 +95,9 @@
       "reply": "Odpowiedzi na moje komentarze",
       "mention": "Wzmianki o mnie",
       "libraryChapter": "Książki z mojej biblioteki",
-      "followedChapter": "Obserwowani autorzy"
+      "followedChapter": "Obserwowani autorzy",
+      "quote": "Cytaty moich postów",
+      "threadReply": "Nowe posty w obserwowanych wątkach"
     },
     "messages": "Wiadomości",
     "dmFrom": "Kto może zacząć ze mną rozmowę",
@@ -246,7 +248,13 @@
     "reportNotFound": "To zgłoszenie już nie istnieje albo zostało rozstrzygnięte.",
     "notificationNotFound": "To powiadomienie nie istnieje.",
     "messageRequired": "Najpierw napisz wiadomość.",
-    "conversationNotFound": "Ta rozmowa nie istnieje."
+    "conversationNotFound": "Ta rozmowa nie istnieje.",
+    "forumNotFound": "To forum nie istnieje lub jest niedostępne.",
+    "threadNotFound": "Ten wątek nie istnieje lub jest niedostępny.",
+    "postNotFound": "Ten post nie istnieje lub jest niedostępny.",
+    "postRequired": "Najpierw coś napisz.",
+    "threadTitleRequired": "Nadaj wątkowi tytuł.",
+    "postEditExpired": "Post można edytować tylko przez 15 minut od napisania. Nadal można go usunąć."
   },
   "password": {
     "mustContain": "Hasło musi zawierać:",
@@ -411,7 +419,8 @@
     "moderation": "Moderacja – Story App",
     "stats": "Statystyki – Story App",
     "messages": "Wiadomości – Story App",
-    "conversation": "{nickname}: rozmowa – Story App"
+    "conversation": "{nickname}: rozmowa – Story App",
+    "forums": "Fora – Story App"
   },
   "folders": {
     "title": "Foldery",
@@ -1087,7 +1096,8 @@
     "pages": "Strony",
     "noOlder": "Brak starszych wpisów.",
     "authorReplyChapter": "<author>{nickname}</author> <comment>odpowiada na komentarz</comment> pod <chapter>{title}</chapter> w książce <book>{bookName}</book>",
-    "authorReplyBook": "<author>{nickname}</author> <comment>odpowiada na komentarz</comment> pod <book>{bookName}</book>"
+    "authorReplyBook": "<author>{nickname}</author> <comment>odpowiada na komentarz</comment> pod <book>{bookName}</book>",
+    "forumThread": "<author>{nickname}</author> zakłada wątek <thread>{title}</thread> na swoim forum"
   },
   "comments": {
     "title": "{count, plural, =0 {Komentarze} one {# komentarz} few {# komentarze} many {# komentarzy} other {# komentarza}}",
@@ -1196,7 +1206,7 @@
     "removeFor": "Usuń {nickname}",
     "noLog": "Log jest pusty.",
     "logList": "Log moderacji",
-    "log": "{action, select, hide {{actor} ukrył(a) komentarz {target}} restore {{actor} przywrócił(a) komentarz {target}} ban {{actor} zbanował(a) {target}} unban {{actor} anulował(a) bana {target}} invite {{actor} zaprosił(a) {target} do moderowania} accept {{actor} zaakceptował(a) zaproszenie} decline {{actor} odrzucił(a) zaproszenie} resign {{actor} zrezygnował(a) z moderowania} resolve {{actor} uznał(a) zgłoszenie wobec {target}} dismiss {{actor} odrzucił(a) zgłoszenie wobec {target}} other {{actor} odebrał(a) rolę moderatora {target}}}",
+    "log": "{action, select, hide {{actor} ukrył(a) {targetType, select, post {post} thread {wątek} other {komentarz}} {target}} restore {{actor} przywrócił(a) {targetType, select, post {post} thread {wątek} other {komentarz}} {target}} ban {{actor} zbanował(a) {target}} unban {{actor} anulował(a) bana {target}} invite {{actor} zaprosił(a) {target} do moderowania} accept {{actor} zaakceptował(a) zaproszenie} decline {{actor} odrzucił(a) zaproszenie} resign {{actor} zrezygnował(a) z moderowania} resolve {{actor} uznał(a) zgłoszenie wobec {target}} dismiss {{actor} odrzucił(a) zgłoszenie wobec {target}} other {{actor} odebrał(a) rolę moderatora {target}}}",
     "menuFor": "Moderuj komentarz {nickname}, {date}",
     "hide": "Ukryj",
     "hideTitle": "Ukryć komentarz?",
@@ -1222,14 +1232,16 @@
     "resolveFor": "Uznaj zgłoszenie z {date}",
     "dismissFor": "Odrzuć zgłoszenie z {date}",
     "hideFor": "Ukryj komentarz zgłoszony {date}",
-    "banFor": "Zbanuj {nickname} (zgłoszenie z {date})"
+    "banFor": "Zbanuj {nickname} (zgłoszenie z {date})",
+    "hideForumTitle": "Ukryć {kind, select, thread {wątek} other {post}}?",
+    "hideForumDescription": "{kind, select, thread {Wątek i jego posty znikną dla czytelników.} other {Będzie widoczny jako „Ukryty przez moderatora”.}} Przez 30 dni moderatorzy mogą go przywrócić na miejscu, potem zostanie usunięty."
   },
   "reports": {
     "report": "Zgłoś",
     "reportChapter": "Zgłoś rozdział",
     "reportBook": "Zgłoś książkę",
     "reportProfile": "Zgłoś {nickname}",
-    "title": "{target, select, comment {Zgłoś komentarz} story {Zgłoś rozdział} folder {Zgłoś książkę} other {Zgłoś profil}}",
+    "title": "{target, select, comment {Zgłoś komentarz} post {Zgłoś post} story {Zgłoś rozdział} folder {Zgłoś książkę} other {Zgłoś profil}}",
     "description": "Zgłoszenie trafi do moderatorów autora albo do administracji. Zgłaszana osoba nie dowie się, kto ją zgłosił.",
     "reason": "Powód",
     "reasons": "{reason, select, spam {Spam} harassment {Nękanie} illegal {Treść nielegalna} unmarkedAdult {18+ bez oznaczenia} other {Inne}}",
@@ -1275,7 +1287,13 @@
       "report": "Nowe zgłoszenie w Twojej społeczności",
       "reportAdmin": "Nowe zgłoszenie dla adminów",
       "reportResolved": "Twoje zgłoszenie zostało przyjęte",
-      "reportDismissed": "Twoje zgłoszenie zostało odrzucone"
+      "reportDismissed": "Twoje zgłoszenie zostało odrzucone",
+      "quote": "Cytat od {actor} z Twojego postu: {target}",
+      "threadReply": "Nowy post od {actor}: {target}",
+      "mentionPost": "Wzmianka od {actor} w poście: {target}",
+      "reactionPost": "{others, plural, =0 {Reakcja od {actor}} one {Reakcje od {actor} i # innej osoby} few {Reakcje od {actor} i # innych osób} many {Reakcje od {actor} i # innych osób} other {Reakcje od {actor} i # innej osoby}} na Twój post: {target}",
+      "hiddenPost": "Moderacja ukryła Twój post: {target}",
+      "hiddenThread": "Moderacja ukryła Twój wątek: {target}"
     }
   },
   "stats": {
@@ -1325,5 +1343,47 @@
     "confirmTitle": "Zablokować {nickname}?",
     "confirmDescription": "Konto {nickname} nie będzie mogło pisać do Ciebie wiadomości, odpowiadać Ci, wspominać Cię, obserwować Cię ani brać udziału w Twojej społeczności. Obserwacje między wami zostaną usunięte, a Ty przestaniesz widzieć komentarze tego konta. Twoje publiczne teksty nadal będą dla niego dostępne.",
     "blockingPending": "Blokowanie…"
+  },
+  "forums": {
+    "title": "Fora",
+    "categories": "Kategorie forum",
+    "breadcrumbs": "Nawigacja forum",
+    "pageTitle": "{title} – Story App",
+    "authorForum": "Forum {nickname}",
+    "signIn": "Zaloguj się, aby pisać",
+    "adminOnly": "Piszą tu tylko administratorzy.",
+    "threads": "Wątki",
+    "noThreads": "Nie ma jeszcze wątków.",
+    "startedBy": "Założony przez {nickname}",
+    "posts": "{count, plural, one {# post} few {# posty} many {# postów} other {# postu}}",
+    "lastPost": "Ostatni post",
+    "threadHidden": "Ukryty przez moderatora.",
+    "postHidden": "Ukryty przez moderatora.",
+    "postDeleted": "Post usunięty.",
+    "restorePost": "Przywróć post z {date}",
+    "restoreThread": "Przywróć wątek",
+    "edited": "edytowano",
+    "inReplyTo": "Cytuje {nickname}",
+    "reactionsTo": "Reakcje na post {nickname}",
+    "postList": "Posty",
+    "newPost": "Odpowiedz w wątku",
+    "submitPost": "Wyślij",
+    "placeholder": "Napisz post…",
+    "newThread": "Nowy wątek",
+    "threadTitle": "Tytuł",
+    "threadBody": "Treść",
+    "submitThread": "Załóż wątek",
+    "editLabel": "Edytuj post",
+    "edit": "Edytuj",
+    "quote": "Cytuj",
+    "quoteFrom": "Cytuj {nickname}",
+    "deleteTitle": "Usunąć post?",
+    "deleteDescription": "Post zostanie usunięty. Usunięcie pierwszego postu wątku z odpowiedziami zostawia „Post usunięty”; bez odpowiedzi znika cały wątek.",
+    "follow": "Obserwuj wątek",
+    "unfollow": "Przestań obserwować",
+    "menuFor": "Akcje {kind, select, thread {wątku} other {postu}} {nickname}, {date}",
+    "moderateFor": "Moderuj {kind, select, thread {wątek} other {post}} {nickname}, {date}",
+    "quoteUnavailable": "Cytowany post jest niedostępny.",
+    "quoteOf": "Cytat z postu {nickname}"
   }
 }

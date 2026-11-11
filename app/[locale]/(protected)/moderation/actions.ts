@@ -16,6 +16,10 @@ import { Reaction } from "@/lib/models/reaction";
 import { Report } from "@/lib/models/report";
 import { NICKNAME_COLLATION, User } from "@/lib/models/user";
 import { SOCIAL_LIMITS, takeUserAttempt } from "@/lib/rate-limit";
+import {
+  hideForumContent,
+  restoreForumContent,
+} from "@/lib/social/forum-moderation";
 import { logModeration } from "@/lib/social/moderation";
 import { notifyLater } from "@/lib/social/notify";
 import {
@@ -77,18 +81,31 @@ async function findModeratedComment(userId: string, commentId: string) {
   return role ? { comment, role } : null;
 }
 
+export type HideTarget = "comment" | "post" | "thread";
+
+const isForumTarget = (value: unknown): value is "post" | "thread" =>
+  value === "post" || value === "thread";
+
+// Forum posts and threads (task 87) by the forum's moderators; comments by the community's.
 export async function hideContent(
-  targetType: "comment",
+  targetType: HideTarget,
   id: string,
   reason?: string,
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (targetType !== "comment" || !isId(id)) return invalid();
+  if ((targetType !== "comment" && !isForumTarget(targetType)) || !isId(id)) {
+    return invalid();
+  }
   const text = await optionalReason(reason);
   if (typeof text === "object") return text;
   const limited = await limitError(user.userId);
   if (limited) return limited;
+  if (isForumTarget(targetType)) {
+    const result = await hideForumContent(user.userId, targetType, id, text);
+    if (result.ok) refresh();
+    return result;
+  }
   const found = await findModeratedComment(user.userId, id);
   if (!found) return commentNotFound();
   const { comment, role } = found;
@@ -149,14 +166,21 @@ export async function hideContent(
 }
 
 export async function restoreContent(
-  targetType: "comment",
+  targetType: HideTarget,
   id: string,
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  if (targetType !== "comment" || !isId(id)) return invalid();
+  if ((targetType !== "comment" && !isForumTarget(targetType)) || !isId(id)) {
+    return invalid();
+  }
   const limited = await limitError(user.userId);
   if (limited) return limited;
+  if (isForumTarget(targetType)) {
+    const result = await restoreForumContent(user.userId, targetType, id);
+    if (result.ok) refresh();
+    return result;
+  }
   const found = await findModeratedComment(user.userId, id);
   if (!found?.comment.hidden) return commentNotFound();
   const { comment, role } = found;

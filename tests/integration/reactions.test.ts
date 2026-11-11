@@ -214,7 +214,8 @@ describe("one reaction per object (criterion 1)", () => {
     expect(await react("folder" as never, book.folderId, "heart")).toEqual(
       INVALID,
     );
-    expect(await react("post", book.storyId, "heart")).toEqual(INVALID);
+    // A post's id that is no post (task 87).
+    expect(await react("post", book.storyId, "heart")).toEqual(NOT_FOUND);
     expect(
       await react("story", new Types.ObjectId().toString(), "heart"),
     ).toEqual(NOT_FOUND);

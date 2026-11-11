@@ -24,6 +24,9 @@ export interface NotificationFields {
   commentId?: Types.ObjectId;
   // A mention in a direct message (task 85).
   conversationId?: Types.ObjectId;
+  // A forum post and its thread (task 87).
+  threadId?: Types.ObjectId;
+  postId?: Types.ObjectId;
   readAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -46,6 +49,8 @@ const notificationSchema = new Schema<NotificationFields>(
     storyIds: { type: [Schema.Types.ObjectId], default: undefined },
     commentId: { type: Schema.Types.ObjectId },
     conversationId: { type: Schema.Types.ObjectId, ref: "Conversation" },
+    threadId: { type: Schema.Types.ObjectId, ref: "ForumThread" },
+    postId: { type: Schema.Types.ObjectId, ref: "ForumPost" },
     readAt: { type: Date, default: null },
   },
   { timestamps: true, versionKey: false },

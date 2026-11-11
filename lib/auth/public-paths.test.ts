@@ -13,6 +13,11 @@ describe("isPublicPath", () => {
     "/en/p/alice/book",
     "/en/p/alice/book/chapter",
     "/avatars/abc",
+    "/en/p/alice/forum",
+    "/pl/p/alice/forum/0123456789abcdef01234567",
+    "/en/forums",
+    "/en/forums/workshop",
+    "/pl/forums/t/0123456789abcdef01234567",
   ])("%s is public", (path) => expect(isPublicPath(path)).toBe(true));
 
   it.each([
@@ -30,5 +35,7 @@ describe("isPublicPath", () => {
     "/avatars/abc/x",
     "/en/p/alice/book/chapter/x",
     "/api/other",
+    "/forums",
+    "/en/forums/t/abc/x",
   ])("%s requires a session", (path) => expect(isPublicPath(path)).toBe(false));
 });

@@ -244,7 +244,7 @@ describe("hiding and restoring (criterion 1)", () => {
   it("checks input, session and the comment's state", async () => {
     const id = await comment(dave, "Text");
     signInAs(alice);
-    expect(await hideContent("post" as never, id)).toEqual(INVALID);
+    expect(await hideContent("story" as never, id)).toEqual(INVALID);
     expect(await hideContent("comment", "nope")).toEqual(INVALID);
     expect(await hideContent("comment", id, 5 as never)).toEqual(INVALID);
     expect(

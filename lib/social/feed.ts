@@ -7,9 +7,12 @@ import { Block } from "@/lib/models/block";
 import { Comment } from "@/lib/models/comment";
 import { Folder } from "@/lib/models/folder";
 import { Follow } from "@/lib/models/follow";
+import { ForumThread } from "@/lib/models/forum-thread";
+import { User } from "@/lib/models/user";
 import { Story } from "@/lib/models/story";
 import { findChapterPaths, findPublicBooks } from "@/lib/publish/queries";
 import { commentAnchor } from "@/lib/social/comments";
+import { hasPublicBook, threadPath } from "@/lib/social/forums";
 import { hiddenUserIdsFor } from "@/lib/social/permissions";
 
 export const FEED_PAGE_SIZE = 30;
@@ -37,24 +40,40 @@ export function parseFeedCursor(value: unknown): Cursor | null {
 const formatCursor = (createdAt: Date, id: Types.ObjectId | string) =>
   `${createdAt.getTime()}_${id.toString()}`;
 
-const FEED_TYPES: ActivityType[] = ["chapterPublished", "authorReply"];
+const FEED_TYPES: ActivityType[] = [
+  "chapterPublished",
+  "authorReply",
+  "forumThread",
+];
 
 interface FeedEntryBase {
   id: string;
   createdAt: Date;
   nickname: string;
-  book: { name: string; path: string; adult: boolean; cover: CoverView | null };
 }
+
+type Book = {
+  name: string;
+  path: string;
+  adult: boolean;
+  cover: CoverView | null;
+};
 
 export type FeedEntry = FeedEntryBase &
   (
     | {
+        type: "forumThread";
+        thread: { title: string; path: string };
+      }
+    | {
         type: "chapterPublished";
+        book: Book;
         // Chapters of the publication that are still public; a single one is linked by title.
         chapters: { title: string; path: string }[];
       }
     | {
         type: "authorReply";
+        book: Book;
         // null for the thread under the book's contents.
         chapter: { title: string; path: string } | null;
         commentPath: string;
@@ -68,6 +87,7 @@ interface RawEntry {
   folderId?: Types.ObjectId;
   storyIds?: Types.ObjectId[];
   commentId?: Types.ObjectId;
+  threadId?: Types.ObjectId;
   createdAt: Date;
 }
 
@@ -126,6 +146,62 @@ async function shownReplies(raw: RawEntry[], hidden: Types.ObjectId[]) {
   );
 }
 
+// A new thread of the author in their own forum (task 87), while it is there, not hidden and the
+// forum exists (a public book).
+async function shownThreads(raw: RawEntry[]) {
+  const entries = raw.filter(({ type }) => type === "forumThread");
+  if (entries.length === 0) return new Map<string, FeedEntry>();
+  const threads = await ForumThread.find({
+    _id: { $in: entries.flatMap(({ threadId }) => threadId ?? []) },
+    scope: "author",
+    deletedAt: null,
+    hidden: { $exists: false },
+  })
+    .select({ userId: 1, authorId: 1, title: 1 })
+    .lean();
+  const authorIds = [
+    ...new Set(
+      threads
+        .filter(({ userId, authorId }) => authorId?.equals(userId))
+        .map(({ userId }) => userId.toString()),
+    ),
+  ];
+  const [users, forums] = await Promise.all([
+    User.find({ _id: { $in: authorIds }, nickname: { $type: "string" } })
+      .select({ nickname: 1 })
+      .lean(),
+    Promise.all(
+      authorIds.map(async (id) => [id, await hasPublicBook(id)] as const),
+    ),
+  ]);
+  const open = new Set(forums.flatMap(([id, has]) => (has ? [id] : [])));
+  const nicknames = new Map(
+    users.map(({ _id, nickname }) => [_id.toString(), nickname]),
+  );
+  const byId = new Map(
+    threads.map((thread) => [thread._id.toString(), thread]),
+  );
+  const shown = new Map<string, FeedEntry>();
+  for (const entry of entries) {
+    const thread = entry.threadId && byId.get(entry.threadId.toString());
+    const actor = entry.actorId.toString();
+    const nickname = nicknames.get(actor);
+    if (!thread || !thread.userId.equals(entry.actorId) || !nickname) continue;
+    if (!open.has(actor)) continue;
+    shown.set(entry._id.toString(), {
+      id: entry._id.toString(),
+      createdAt: entry.createdAt,
+      nickname,
+      type: "forumThread",
+      thread: {
+        title: thread.title,
+        path: threadPath({ scope: "author", nickname }, thread._id.toString()),
+      },
+    });
+  }
+  return shown;
+}
+
 // D38 at read time: a published active book with chapters of this publication still public in it.
 async function visibleEntries(
   raw: RawEntry[],
@@ -152,7 +228,10 @@ async function visibleEntries(
       commentsDisabled: 1,
     })
     .lean();
-  const replies = await shownReplies(raw, hidden);
+  const [replies, threads] = await Promise.all([
+    shownReplies(raw, hidden),
+    shownThreads(raw),
+  ]);
   const paths = await findChapterPaths(
     stories,
     new Map(
@@ -165,8 +244,9 @@ async function visibleEntries(
   const storyById = new Map(
     stories.map((story) => [story._id.toString(), story]),
   );
-  const entries = new Map<string, FeedEntry>();
+  const entries = new Map<string, FeedEntry>(threads);
   for (const entry of raw) {
+    if (entry.type === "forumThread") continue;
     const book = entry.folderId && books.get(entry.folderId.toString());
     if (!book) continue;
     const chapters = (entry.storyIds ?? []).flatMap((id) => {
@@ -253,6 +333,7 @@ export async function getFeed(
         folderId: 1,
         storyIds: 1,
         commentId: 1,
+        threadId: 1,
         createdAt: 1,
       })
       .lean();

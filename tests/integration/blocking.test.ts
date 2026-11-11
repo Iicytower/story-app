@@ -8,6 +8,11 @@ import {
   acceptModeratorInvite,
   inviteModerator,
 } from "@/app/[locale]/(protected)/moderation/actions";
+import {
+  createPost,
+  createThread,
+  quotePost,
+} from "@/app/[locale]/forums/actions";
 import { suggestNicknames } from "@/app/[locale]/mention-actions";
 import { follow } from "@/app/[locale]/p/[nickname]/actions";
 import {
@@ -26,6 +31,7 @@ import { Block } from "@/lib/models/block";
 import { CommunityModerator } from "@/lib/models/community-moderator";
 import { Conversation } from "@/lib/models/conversation";
 import { Folder } from "@/lib/models/folder";
+import { ForumPost } from "@/lib/models/forum-post";
 import { Follow } from "@/lib/models/follow";
 import { ModerationLog } from "@/lib/models/moderation-log";
 import { Notification } from "@/lib/models/notification";
@@ -33,11 +39,14 @@ import { Story } from "@/lib/models/story";
 import { User } from "@/lib/models/user";
 import { getPublicProfile, listFollows } from "@/lib/profiles/queries";
 import { getCommentThread } from "@/lib/social/comments";
+import { getThread } from "@/lib/social/forums";
 import { pairKeyOf } from "@/lib/social/direct-messages";
 import { listNotifications } from "@/lib/social/notification-list";
 import { isAuthorVisibleTo, moderationRole } from "@/lib/social/permissions";
 import { getReactionSummaries } from "@/lib/social/reaction-summary";
 import en from "@/messages/en.json";
+import * as forum008 from "@/migrations/008-forum-categories";
+import mongoose from "mongoose";
 import { flushAfter } from "../setup/next-server";
 import { setupTestDb } from "./test-db";
 
@@ -100,6 +109,7 @@ async function ok<T extends { ok: boolean }>(promise: Promise<T>) {
 }
 
 beforeEach(async () => {
+  await forum008.up(mongoose.connection.db!);
   for (const name of ["Alice", "Dave", "Erin"] as const) {
     ids[name] = await createUser(name);
     books[name] = await seedBook(ids[name]);
@@ -120,6 +130,8 @@ describe.each([
     let targetComment: string;
     let erinReply: string;
     let conversationId: string;
+    let targetThread: string;
+    let targetPost: string;
 
     beforeEach(async () => {
       targetComment = (
@@ -133,6 +145,16 @@ describe.each([
       conversationId = (
         await ok(as(actor, () => startConversation(target, "before")))
       ).id;
+      targetThread = (
+        await ok(
+          as(target, () =>
+            createThread({ category: "workshop" }, "Thread", "first"),
+          ),
+        )
+      ).id;
+      targetPost = (await ForumPost.findOne({
+        threadId: targetThread,
+      }).lean())!._id.toString();
       await ok(as(blocker, () => blockUser(blocked)));
       signInAs(actor);
     });
@@ -159,6 +181,23 @@ describe.each([
       );
       expect(await react("comment", targetComment, "heart")).toEqual(
         actorBlocks ? error("NOT_FOUND", "reactionTargetNotFound") : REFUSED,
+      );
+    });
+
+    // Task 87: the blocker does not see the blocked account's thread and posts at all.
+    it("posts in the target's forum thread, quotes and reacts to the target's post", async () => {
+      const notFound = error("NOT_FOUND", "threadNotFound");
+      expect(await createPost(targetThread, "x")).toEqual(
+        actorBlocks ? notFound : REFUSED,
+      );
+      expect(await quotePost(targetPost, "x")).toEqual(
+        actorBlocks ? notFound : REFUSED,
+      );
+      expect(await react("post", targetPost, "heart")).toEqual(
+        actorBlocks ? error("NOT_FOUND", "reactionTargetNotFound") : REFUSED,
+      );
+      expect(await getThread(ids[blocker].toString(), targetThread)).toEqual(
+        actorBlocks ? null : expect.objectContaining({ id: targetThread }),
       );
     });
 

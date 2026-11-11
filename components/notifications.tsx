@@ -108,13 +108,20 @@ function Message({ item }: { item: NotificationView }) {
     target,
   };
   const key =
-    item.type === "reaction" && item.onComment
-      ? "reactionComment"
-      : item.type === "report" && !item.community
-        ? "reportAdmin"
-        : item.type === "mention" && item.inMessage
-          ? "mentionMessage"
-          : item.type;
+    item.type === "hidden" && item.onThread
+      ? "hiddenThread"
+      : item.onPost &&
+          (item.type === "reaction" ||
+            item.type === "mention" ||
+            item.type === "hidden")
+        ? (`${item.type}Post` as const)
+        : item.type === "reaction" && item.onComment
+          ? "reactionComment"
+          : item.type === "report" && !item.community
+            ? "reportAdmin"
+            : item.type === "mention" && item.inMessage
+              ? "mentionMessage"
+              : item.type;
   return <>{t(`types.${key}`, values)}</>;
 }
 

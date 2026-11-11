@@ -21,6 +21,7 @@ import {
   banFromCommunity,
   type BanDuration,
   hideContent,
+  type HideTarget,
 } from "@/app/[locale]/(protected)/moderation/actions";
 import { AuthDialog } from "@/app/[locale]/auth/auth-dialog";
 import { BlockDialog } from "@/components/block-dialog";
@@ -188,11 +189,14 @@ function HideDialog({
   open,
   onOpenChange,
   commentId,
+  kind = "comment",
   returnFocus,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   commentId: string;
+  // A forum post or thread (task 87).
+  kind?: HideTarget;
   returnFocus: RefObject<HTMLButtonElement | null>;
 }) {
   const t = useTranslations("moderation");
@@ -220,14 +224,22 @@ function HideDialog({
           onSubmit={(event) => {
             event.preventDefault();
             run(
-              () => hideContent("comment", commentId, reason),
+              () => hideContent(kind, commentId, reason),
               () => onOpenChange(false),
             );
           }}
         >
           <DialogHeader>
-            <DialogTitle>{t("hideTitle")}</DialogTitle>
-            <DialogDescription>{t("hideDescription")}</DialogDescription>
+            <DialogTitle>
+              {kind === "comment"
+                ? t("hideTitle")
+                : t("hideForumTitle", { kind })}
+            </DialogTitle>
+            <DialogDescription>
+              {kind === "comment"
+                ? t("hideDescription")
+                : t("hideForumDescription", { kind })}
+            </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2">
             <Label htmlFor={`${id}-reason`}>{t("hideReason")}</Label>
@@ -262,6 +274,8 @@ function HideDialog({
 // the community's author and moderators (task 79). Nothing to do, no menu.
 export function CommentMenu({
   commentId,
+  kind = "comment",
+  headingId = "comments-title",
   nickname,
   date,
   authorId,
@@ -273,6 +287,10 @@ export function CommentMenu({
   callbackUrl,
 }: {
   commentId: string;
+  // A forum post or thread uses the same menu (task 87).
+  kind?: HideTarget;
+  // Where the focus goes after a block removed the content from the page.
+  headingId?: string;
   nickname: string;
   // When it was written, so each comment's menu has its own name.
   date: string;
@@ -288,6 +306,7 @@ export function CommentMenu({
 }) {
   const t = useTranslations("moderation");
   const tComments = useTranslations("comments");
+  const tForums = useTranslations("forums");
   const tReports = useTranslations("reports");
   const tBlocking = useTranslations("blocking");
   const [dialog, setDialog] = useState<
@@ -297,15 +316,21 @@ export function CommentMenu({
   const setOpen =
     (kind: "hide" | "ban" | "report" | "block") => (open: boolean) =>
       setDialog(open ? kind : null);
-  const moderates = authorId !== null && (canHide || canBan);
+  // A global forum has no community to ban from (task 87): hiding only.
+  const banIn = canBan ? authorId : null;
+  const moderates = canHide || banIn !== null;
   if (!moderates && !canReport && !canBlock) return null;
   return (
     <>
       <ActionMenu
         label={
-          moderates
-            ? t("menuFor", { nickname, date })
-            : tComments("menuFor", { nickname, date })
+          kind !== "comment"
+            ? moderates
+              ? tForums("moderateFor", { kind, nickname, date })
+              : tForums("menuFor", { kind, nickname, date })
+            : moderates
+              ? t("menuFor", { nickname, date })
+              : tComments("menuFor", { nickname, date })
         }
         triggerRef={trigger}
       >
@@ -324,7 +349,7 @@ export function CommentMenu({
             {t("hide")}
           </DropdownMenuItem>
         )}
-        {moderates && canBan && (
+        {banIn !== null && (
           <DropdownMenuItem onSelect={() => setDialog("ban")}>
             {t("banUser", { nickname })}
           </DropdownMenuItem>
@@ -335,7 +360,7 @@ export function CommentMenu({
           <ReportDialog
             open={dialog === "report"}
             onOpenChange={setOpen("report")}
-            target={{ type: "comment", id: commentId }}
+            target={{ type: kind === "thread" ? "post" : kind, id: commentId }}
             returnFocus={trigger}
           />
         ) : (
@@ -355,7 +380,7 @@ export function CommentMenu({
           onOpenChange={setOpen("block")}
           nickname={nickname}
           // The comment is gone with the block: the focus goes to the section's heading.
-          returnFocus={() => document.getElementById("comments-title")}
+          returnFocus={() => document.getElementById(headingId)}
         />
       )}
       {moderates && (
@@ -364,15 +389,18 @@ export function CommentMenu({
             open={dialog === "hide"}
             onOpenChange={setOpen("hide")}
             commentId={commentId}
+            kind={kind}
             returnFocus={trigger}
           />
-          <BanDialog
-            open={dialog === "ban"}
-            onOpenChange={setOpen("ban")}
-            authorId={authorId}
-            nickname={nickname}
-            returnFocus={trigger}
-          />
+          {banIn !== null && (
+            <BanDialog
+              open={dialog === "ban"}
+              onOpenChange={setOpen("ban")}
+              authorId={banIn}
+              nickname={nickname}
+              returnFocus={trigger}
+            />
+          )}
         </>
       )}
     </>

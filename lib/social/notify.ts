@@ -31,6 +31,8 @@ export interface NotifyEvent {
   storyIds?: Id[];
   commentId?: Id;
   conversationId?: Id;
+  threadId?: Id;
+  postId?: Id;
   count?: number;
 }
 
@@ -58,6 +60,8 @@ export function notificationFields(event: NotifyEvent) {
     ...(event.conversationId && {
       conversationId: toId(event.conversationId),
     }),
+    ...(event.threadId && { threadId: toId(event.threadId) }),
+    ...(event.postId && { postId: toId(event.postId) }),
   };
 }
 

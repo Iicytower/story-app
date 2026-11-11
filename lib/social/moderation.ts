@@ -4,6 +4,7 @@ import { Comment } from "@/lib/models/comment";
 import { CommunityBan } from "@/lib/models/community-ban";
 import { CommunityModerator } from "@/lib/models/community-moderator";
 import { Folder } from "@/lib/models/folder";
+import { ForumPost } from "@/lib/models/forum-post";
 import { Report } from "@/lib/models/report";
 import {
   ModerationLog,
@@ -13,6 +14,7 @@ import { Story } from "@/lib/models/story";
 import { User } from "@/lib/models/user";
 import { chapterPublicPath, folderPublicPath } from "@/lib/publish/queries";
 import { commentAnchor, moderationFor } from "@/lib/social/comments";
+import { authorForumPath, postAnchor } from "@/lib/social/forums";
 import {
   isBanActive,
   type ModerationRole,
@@ -320,6 +322,7 @@ export async function listModerators(
 export interface LogEntryView {
   id: string;
   action: ModerationLogFields["action"];
+  targetType: ModerationLogFields["targetType"];
   actor: string | null;
   target: string | null;
   reason: string | null;
@@ -340,6 +343,7 @@ export async function listModerationLog(
   return entries.map((entry) => ({
     id: entry._id.toString(),
     action: entry.action,
+    targetType: entry.targetType,
     actor: nicknames.get(entry.actorId.toString()) ?? null,
     target: entry.targetUserId
       ? (nicknames.get(entry.targetUserId.toString()) ?? null)
@@ -389,6 +393,7 @@ export async function listCommunityReports(
     .sort({ createdAt: -1 })
     .limit(MODERATION_LIST_LIMIT)
     .select({
+      targetType: 1,
       targetId: 1,
       targetUserId: 1,
       reason: 1,
@@ -396,24 +401,58 @@ export async function listCommunityReports(
       createdAt: 1,
     })
     .lean();
-  const [comments, nicknames, may] = await Promise.all([
+  const postIds = reports
+    .filter(({ targetType }) => targetType === "post")
+    .map(({ targetId }) => targetId);
+  const [comments, posts, author, nicknames, may] = await Promise.all([
     Comment.find({
       _id: { $in: reports.map(({ targetId }) => targetId) },
       deletedAt: null,
     })
       .select({ body: 1, hidden: 1, folderId: 1, storyId: 1, userId: 1 })
       .lean(),
+    postIds.length === 0
+      ? []
+      : ForumPost.find({ _id: { $in: postIds }, deletedAt: null })
+          .select({ body: 1, hidden: 1, threadId: 1 })
+          .lean(),
+    User.findById(authorId).select({ nickname: 1 }).lean(),
     nicknamesOf(reports.map(({ targetUserId }) => targetUserId)),
     moderationFor(viewerId, authorId),
   ]);
   const byId = new Map(
     comments.map((comment) => [comment._id.toString(), comment]),
   );
+  const postById = new Map(posts.map((post) => [post._id.toString(), post]));
   const pathOf = commentPlacePaths(authorId);
   return Promise.all(
     reports.map(async (report) => {
-      const comment = byId.get(report.targetId.toString());
       const writerId = report.targetUserId.toString();
+      // A forum post is shown in its thread, where it is hidden from its menu (task 87).
+      if (report.targetType === "post") {
+        const post = postById.get(report.targetId.toString());
+        return {
+          id: report._id.toString(),
+          writer: nicknames.get(writerId) ?? null,
+          reason: report.reason,
+          details: report.details,
+          createdAt: report.createdAt.toISOString(),
+          comment:
+            post && author?.nickname
+              ? {
+                  id: post._id.toString(),
+                  body: post.body,
+                  state: post.hidden
+                    ? ("hidden" as const)
+                    : ("visible" as const),
+                  path: `${authorForumPath(author.nickname)}/${post.threadId.toString()}#${postAnchor(post._id.toString())}`,
+                  canHide: false,
+                  canBan: !!may?.(writerId, "ban"),
+                }
+              : null,
+        };
+      }
+      const comment = byId.get(report.targetId.toString());
       return {
         id: report._id.toString(),
         writer: nicknames.get(writerId) ?? null,

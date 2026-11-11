@@ -31,3 +31,7 @@ import "./daily-stat";
 import "./ranking";
 import "./conversation";
 import "./message";
+import "./forum-category";
+import "./forum-thread";
+import "./forum-post";
+import "./thread-follow";

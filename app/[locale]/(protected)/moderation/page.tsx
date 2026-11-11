@@ -213,9 +213,7 @@ export default async function ModerationPage({
                       })}
                     />
                     <Button asChild size="sm" variant="ghost">
-                      <Link href={report.comment.path}>
-                        {t("showInPlace")}
-                      </Link>
+                      <Link href={report.comment.path}>{t("showInPlace")}</Link>
                     </Button>
                   </>
                 )}
@@ -329,6 +327,7 @@ export default async function ModerationPage({
             <p className="[overflow-wrap:anywhere]">
               {t("log", {
                 action: entry.action,
+                targetType: entry.targetType,
                 actor: entry.actor ?? t("deletedAccount"),
                 target: entry.target ?? t("deletedAccount"),
               })}
