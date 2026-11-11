@@ -583,6 +583,21 @@ describe("notifications (6)", () => {
     await ok(as("Admin", () => hideContent("thread", id)));
     // Hidden: only its moderators, here Bob of the workshop.
     expect(await threadReplyRecipients(threadId, [])).toEqual([ids.Bob]);
+    // A global ban takes moderation away, and with it the hidden thread (task 91).
+    await User.updateOne(
+      { _id: ids.Bob },
+      {
+        $set: {
+          globalBan: {
+            until: null,
+            reason: "x",
+            by: ids.Admin,
+            at: new Date(),
+          },
+        },
+      },
+    );
+    expect(await threadReplyRecipients(threadId, [])).toEqual([]);
   });
 
   it("a reaction to a post notifies its writer, grouped per post", async () => {

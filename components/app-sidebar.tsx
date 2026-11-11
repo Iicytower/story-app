@@ -41,10 +41,20 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import { WithTooltip } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { SOCIAL_NAV, type SocialNavItem } from "@/lib/social/nav";
 import { applyTheme } from "@/lib/theme";
 
 const ITEM = "w-full justify-start";
+
+export type SocialNavItem =
+  | "feed"
+  | "library"
+  | "forums"
+  | "messages"
+  | "notifications"
+  | "profile"
+  | "moderation"
+  | "admin"
+  | "stats";
 
 // Order from D80: feed and library above Folders, the rest below.
 const SOCIAL_ABOVE_FOLDERS: SocialNavItem[] = ["feed", "library"];
@@ -183,6 +193,7 @@ function ActionButton({
 function NavItems({
   compact,
   hiddenItems,
+  profilePath,
   unread,
   unreadMessages,
   onDone,
@@ -191,6 +202,7 @@ function NavItems({
 }: {
   compact: boolean;
   hiddenItems: SocialNavItem[];
+  profilePath: string | null;
   unread: number;
   unreadMessages: number;
   onDone: () => void;
@@ -201,7 +213,7 @@ function NavItems({
   const t = useTranslations("sidebar");
   const socialLinks = (items: SocialNavItem[]) =>
     items
-      .filter((item) => SOCIAL_NAV[item] && !hiddenItems.includes(item))
+      .filter((item) => !hiddenItems.includes(item))
       .map((item) =>
         item === "notifications" ? (
           <ActionButton
@@ -223,7 +235,12 @@ function NavItems({
             label={t(item)}
             icon={SOCIAL_LINKS[item].icon}
             compact={compact}
-            current={pathname === SOCIAL_LINKS[item].href}
+            current={
+              pathname === SOCIAL_LINKS[item].href ||
+              (item === "profile" &&
+                profilePath !== null &&
+                pathname.toLowerCase() === profilePath.toLowerCase())
+            }
             onClick={onDone}
             {...(item === "messages" && {
               badge: unreadMessages,
@@ -274,6 +291,7 @@ export function AppSidebar({
   defaultCollapsed,
   toolsAvailable,
   hiddenItems = [],
+  profilePath = null,
   initialUnread = 0,
   initialUnreadMessages = 0,
   realtimeUrl = null,
@@ -284,8 +302,10 @@ export function AppSidebar({
   initialUnreadMessages?: number;
   // The realtime stream's address (task 90); without it the counters only poll.
   realtimeUrl?: string | null;
-  // Entries that are on but not for this account.
+  // Entries that are not for this account.
   hiddenItems?: SocialNavItem[];
+  // The account's own profile, where "My profile" shows as the current page.
+  profilePath?: string | null;
 }) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -353,6 +373,7 @@ export function AppSidebar({
             <NavItems
               compact={false}
               hiddenItems={hiddenItems}
+              profilePath={profilePath}
               unread={unread}
               unreadMessages={unreadMessages}
               onDone={() => setDrawerOpen(false)}
@@ -371,6 +392,7 @@ export function AppSidebar({
         <NavItems
           compact={collapsed}
           hiddenItems={hiddenItems}
+          profilePath={profilePath}
           unread={unread}
           unreadMessages={unreadMessages}
           onDone={() => {}}

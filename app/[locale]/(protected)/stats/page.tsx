@@ -116,6 +116,10 @@ export default async function StatsPage({
           {t("tableTitle")}
         </h2>
         <p className="text-muted-foreground text-sm">{t("tableNote")}</p>
+        {/* Below md the table is wider than its box (min-w-[44rem]). */}
+        <p className="text-muted-foreground text-xs md:hidden">
+          {t("tableScrollHint")}
+        </p>
         {/* A wide table scrolls in its own box, not the page (375 px); "relative" keeps the
             sr-only cells inside it. */}
         <div className="relative overflow-x-auto rounded-lg border">

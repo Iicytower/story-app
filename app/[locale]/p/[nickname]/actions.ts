@@ -26,6 +26,10 @@ export async function follow(nickname: string): Promise<FollowResult> {
   if (!isString(nickname))
     return actionError("INVALID_INPUT", "requestInvalid");
   await connectDB();
+  // Before the lookup, so nicknames cannot be tried without a limit (task 91).
+  if (!(await takeUserAttempt(SOCIAL_LIMITS.follow, user.userId))) {
+    return actionError("RATE_LIMITED", "tooManyAttempts");
+  }
   const followee = await findFollowee(nickname);
   if (!followee) return actionError("NOT_FOUND", "userNotFound");
   // canInteract lets anyone act on their own content, so following oneself is refused here.
@@ -37,9 +41,6 @@ export async function follow(nickname: string): Promise<FollowResult> {
     kind: "follow",
   });
   if (!permission.ok) return translateError(permission);
-  if (!(await takeUserAttempt(SOCIAL_LIMITS.follow, user.userId))) {
-    return actionError("RATE_LIMITED", "tooManyAttempts");
-  }
 
   const edge = { followerId: user.userId, followeeId: followee._id };
   const inserted = await Follow.updateOne(
@@ -81,11 +82,11 @@ export async function unfollow(nickname: string): Promise<FollowResult> {
   if (!isString(nickname))
     return actionError("INVALID_INPUT", "requestInvalid");
   await connectDB();
-  const followee = await findFollowee(nickname);
-  if (!followee) return actionError("NOT_FOUND", "userNotFound");
   if (!(await takeUserAttempt(SOCIAL_LIMITS.follow, user.userId))) {
     return actionError("RATE_LIMITED", "tooManyAttempts");
   }
+  const followee = await findFollowee(nickname);
+  if (!followee) return actionError("NOT_FOUND", "userNotFound");
   await Follow.deleteOne({ followerId: user.userId, followeeId: followee._id });
 
   refresh();

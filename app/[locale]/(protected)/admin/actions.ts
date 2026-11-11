@@ -206,7 +206,7 @@ export async function adminHide(
   if (tooLong) return translateError(tooLong);
 
   if (targetType === "post") {
-    const post = await findForumContent(null, "post", id);
+    const post = await findForumContent(null, "post", id, true);
     if (!post) return actionError("NOT_FOUND", "postNotFound");
     if (post.writerId.equals(user.userId)) return cannotModerate();
     const result = await applyForumHide(

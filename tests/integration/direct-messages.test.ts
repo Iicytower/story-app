@@ -354,19 +354,63 @@ describe("limits (4)", () => {
     expect(await as(dave, () => sendMessage(id, "m30"))).toEqual(RATE_LIMITED);
   });
 
-  it("allows 10 new conversations a day; going on in one is not a new one", async () => {
-    await Promise.all(
-      Array.from({ length: 11 }, (_, i) => createUser(`Reader${i}`)),
-    );
-    for (let i = 0; i < 10; i++) {
-      await start(dave, `Reader${i}`, "Hi");
+  it("counts unknown nicknames against the minute limit (task 91)", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.now() - (Date.now() % 60_000) + 1000);
+    try {
+      for (let i = 0; i < 30; i++) {
+        expect(
+          await as(dave, () => startConversation(`Nobody${i}`, "Hi")),
+        ).toEqual(error("NOT_FOUND", "userNotFound"));
+      }
+      expect(await as(dave, () => startConversation("Erin", "Hi"))).toEqual(
+        RATE_LIMITED,
+      );
+    } finally {
+      vi.useRealTimers();
     }
-    expect(await as(dave, () => startConversation("Reader10", "Hi"))).toEqual(
-      RATE_LIMITED,
+  });
+
+  it("does not deliver to a deleted account in a conversation not yet cleaned up", async () => {
+    const id = await start(dave, "Erin", "Hi");
+    await User.updateOne({ _id: erin }, { $set: { deletedAt: new Date() } });
+    expect(await as(dave, () => sendMessage(id, "Still there?"))).toEqual(
+      error("NOT_FOUND", "userNotFound"),
     );
-    expect(await start(dave, "Reader0", "Again")).toBeTruthy();
-    const day = await RateLimit.findOne({ _id: /^conversation-day:/ }).lean();
-    expect(day!.count).toBe(11);
+    expect(await as(erin, () => sendMessage(id, "Ghost"))).toEqual(
+      error("FORBIDDEN", "interactionNotAllowed"),
+    );
+    await expect(Message.countDocuments()).resolves.toBe(1);
+  });
+
+  it("allows 10 new conversations a day; going on in one is not a new one", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.now() - (Date.now() % 60_000) + 1000);
+    try {
+      await Promise.all(
+        Array.from({ length: 11 }, (_, i) => createUser(`Reader${i}`)),
+      );
+      for (let i = 0; i < 10; i++) {
+        await start(dave, `Reader${i}`, "Hi");
+      }
+      expect(
+        await as(dave, () => startConversation("Reader10", "Hi")),
+      ).toEqual(RATE_LIMITED);
+      const id = await start(dave, "Reader0", "Again");
+      const day = await RateLimit.findOne({ _id: /^conversation-day:/ }).lean();
+      expect(day!.count).toBe(11);
+      // The refusal gave the minute's attempt back: 11 of the 30 are taken.
+      for (let i = 0; i < 19; i++) {
+        expect(await as(dave, () => sendMessage(id, `m${i}`))).toEqual({
+          ok: true,
+        });
+      }
+      expect(await as(dave, () => sendMessage(id, "over"))).toEqual(
+        RATE_LIMITED,
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("gives an account younger than 24 hours half of the limits", async () => {

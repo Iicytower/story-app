@@ -26,6 +26,7 @@ import {
   moderationRole,
   moderatorIdsOf,
   type ModerationRole,
+  notGloballyBanned,
   type Permission,
 } from "@/lib/social/permissions";
 
@@ -153,11 +154,21 @@ export async function findAuthorForum(
   return user ? authorPlace(viewerId, user) : null;
 }
 
-async function authorForumById(viewerId: string | null, authorId: string) {
+// Unfiltered for the admin (task 91): the forum of a banned author or one without a public book
+// is hidden from everyone else, its content still moderated.
+async function authorForumById(
+  viewerId: string | null,
+  authorId: string,
+  unfiltered: boolean,
+) {
   const user = await User.findById(authorId)
     .select({ nickname: 1, globalBan: 1, deletedAt: 1 })
     .lean();
-  return user ? authorPlace(viewerId, user) : null;
+  if (!user) return null;
+  if (!unfiltered) return authorPlace(viewerId, user);
+  return user.nickname
+    ? { scope: "author" as const, authorId, nickname: user.nickname }
+    : null;
 }
 
 export type ForumRole = ModerationRole | "admin" | "categoryModerator";
@@ -263,13 +274,14 @@ const THREAD_SELECT = {
 export async function placeOfThread(
   viewerId: string | null,
   thread: Pick<ForumThreadFields, "scope" | "categoryId" | "authorId">,
+  unfiltered = false,
 ): Promise<ForumPlace | null> {
   if (thread.scope === "global") {
     // A deleted category hides its threads (D80).
     return thread.categoryId ? findCategoryPlace(thread.categoryId) : null;
   }
   return thread.authorId
-    ? authorForumById(viewerId, thread.authorId.toString())
+    ? authorForumById(viewerId, thread.authorId.toString(), unfiltered)
     : null;
 }
 
@@ -684,6 +696,18 @@ export async function threadReplyRecipients(
       for (const { _id } of admins) moderators.add(_id.toString());
     }
     ids = ids.filter((id) => moderators.has(id.toString()));
+    // A global ban takes moderation away (forumRole), so the hidden thread too; nor does a
+    // deleted account see it (task 91).
+    const allowed = new Set(
+      (
+        (await User.distinct("_id", {
+          _id: { $in: ids },
+          ...NOT_DELETED,
+          ...notGloballyBanned(new Date()),
+        })) as Types.ObjectId[]
+      ).map(String),
+    );
+    ids = ids.filter((id) => allowed.has(id.toString()));
   }
   if (ids.length === 0) return [];
   const owners = [thread.userId, ...(thread.authorId ? [thread.authorId] : [])];

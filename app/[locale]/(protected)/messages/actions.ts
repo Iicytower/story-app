@@ -114,16 +114,6 @@ async function acceptsNew(
   );
 }
 
-// Both limits count for a new conversation; a refusal of the minute one gives the day's attempt
-// back (D80, task 69).
-async function takeConversationAttempt(userId: string): Promise<boolean> {
-  const day = await takeUserAttempt(SOCIAL_LIMITS.conversationDay, userId);
-  if (!day) return false;
-  if (await takeUserAttempt(SOCIAL_LIMITS.dmMinute, userId)) return true;
-  await giveBackAttempt(day);
-  return false;
-}
-
 async function createConversation(
   userId: string,
   recipientId: Types.ObjectId,
@@ -156,15 +146,23 @@ export async function startConversation(
   const text = await messageBody(body);
   if (!isString(text)) return text;
   await connectDB();
+  // The minute limit before the lookup, so nicknames cannot be tried without a limit (task 91).
+  const minute = await takeUserAttempt(SOCIAL_LIMITS.dmMinute, user.userId);
+  if (!minute) return rateLimited();
   const recipient = await findUserByNickname(nickname);
   if (!recipient?.nickname) return actionError("NOT_FOUND", "userNotFound");
   if (recipient._id.equals(user.userId)) return refused();
   const existing = await findConversationBetween(user.userId, recipient._id);
   if (existing) {
-    const sent = await sendTo(user.userId, existing, text);
+    const sent = await sendTo(user.userId, existing, text, false);
     return sent.ok ? { ok: true, id: existing._id.toString() } : sent;
   }
-  if (!(await takeConversationAttempt(user.userId))) return rateLimited();
+  // Both limits count for a new conversation; a refusal of the day's one gives the minute's
+  // attempt back (D80, task 69).
+  if (!(await takeUserAttempt(SOCIAL_LIMITS.conversationDay, user.userId))) {
+    await giveBackAttempt(minute);
+    return rateLimited();
+  }
   const refusal = await sendError(user.userId, recipient._id);
   if (refusal) return refusal;
   if (!(await acceptsNew(user.userId, recipient._id))) return refused();
@@ -182,8 +180,9 @@ async function sendTo(
     closedAt: Date | null;
   },
   body: string,
+  limited = true,
 ): Promise<ActionResult> {
-  if (!(await takeUserAttempt(SOCIAL_LIMITS.dmMinute, userId))) {
+  if (limited && !(await takeUserAttempt(SOCIAL_LIMITS.dmMinute, userId))) {
     return rateLimited();
   }
   const other = otherOf(conversation.participantIds, userId);

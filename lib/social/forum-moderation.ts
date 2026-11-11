@@ -33,6 +33,7 @@ export async function findForumContent(
   userId: string | null,
   type: ForumTarget,
   id: string,
+  unfiltered = false,
 ): Promise<Moderated | null> {
   const content =
     type === "post"
@@ -48,7 +49,7 @@ export async function findForumContent(
     .select({ scope: 1, categoryId: 1, authorId: 1 })
     .lean();
   if (!thread) return null;
-  const place = await placeOfThread(userId, thread);
+  const place = await placeOfThread(userId, thread, unfiltered);
   if (!place) return null;
   return {
     id: content._id,

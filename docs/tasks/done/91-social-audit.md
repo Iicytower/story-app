@@ -25,3 +25,32 @@ Subtask 68, zależy od wszystkich subtasków 69–90. Podstawa: D80 (cała). Bra
 
 - E2E: `tests/e2e/social-journey.spec.ts` (2), testy regresji dopisane do poprawek z audytu (1).
 - `manual`: 1 (raport), 3 (zrzuty `ui-checker`), 4 (przegląd użytkownika).
+
+## Wyniki
+
+Audyt `security-auditor` (diff `develop...feature/social`): brak krytycznych; 1 wysokie, 2 średnie, 7 niskich. Bez uwag: izolacja, `canInteract` w zapisach, panel admina, moderacja, XSS, anonimowość ocen, D38, realtime i Caddy, tombstone, kompletność purge (poza 2).
+
+Wysokie:
+
+1. Usunięcie konta zdejmowało `globalBan` z tombstone'a → ukryte komentarze, posty i wątki wracały (admin nie zbanuje ponownie, `findUserByNick` pomija tombstone). **Poprawione**: aktywny ban zostaje na tombstonie.
+
+Średnie:
+
+2. Purge kasował blokady innych wobec usuwanego (`blockedId`) → treść wracała u blokujących. **Poprawione**: kasowane tylko blokady konta (`blockerId`).
+3. Zbanowany globalnie autor rozsyłał powiadomienia „nowy rozdział” (`recordChaptersPublished` bez sprawdzenia bana). **Poprawione**: przy aktywnym banie bez `recordActivity` i `notifyNewChapters`.
+
+Niskie:
+
+4. `canInteract` bez `NOT_DELETED` – DM do tombstone'a w oknie sprzątania. **Poprawione**: `decideInteraction` – usunięty aktor → `FORBIDDEN`, usunięty autor → `NOT_FOUND` dla `dm`.
+5. Token SSE niezwiązany z sesją (do 10 min po wylogowaniu, banie, usunięciu; zdarzenia bez treści). **Otwarte** (D80, wpis „Otwarte (91)”).
+6. Wyszukanie nicku przed limitem (`startConversation`, follow, unfollow, `blockStep`) – enumeracja bez limitu. **Poprawione**: limit przed wyszukaniem. **Otwarte**: `createThread` zużywa `threadDay` przed sprawdzeniem forum.
+7. Admin nie ukrywał posta w forum zbanowanego autora lub bez publicznej książki (`authorPlace` → `null`). **Poprawione**: `adminHide` rozwiązuje forum bez filtrów widoczności.
+8. `threadReplyRecipients` dla ukrytego wątku powiadamiał zbanowanych moderatorów kategorii i adminów. **Poprawione**: bez zbanowanych globalnie (także odbiorcy zgłoszeń społeczności).
+9. `getThread` bez stronicowania (500 × 20 KB). **Otwarte**.
+10. `hiddenUserIdsFor` bez limitu liczby blokad. **Otwarte**.
+
+Poprawki 1, 2, 3, 4, 6, 7, 8 z testami regresji (integracyjne i unit `permissions.test.ts`).
+
+Przegląd UI (`ui-checker`, 1280 i 375 px, jasny i ciemny, en i pl): brak braków w tłumaczeniach i elementów bez nazwy. Poprawione: poziome przewijanie przez h1 rozdziału i książki (`overflow-wrap`, też w `markdown-preview`), zawijanie linku bana w panelu admina, przycisk blokady (`min-h-8 self-start`), cytat w forum jako czysty tekst (`PlainMarkdown`), 404 poza locale w ciemnym motywie, pl „w książce” (`inFolderBy`), wskazówka przewijania tabeli statystyk poniżej `md`, podświetlenie „Mój profil” na własnym profilu. `SOCIAL_NAV` usunięty.
+
+`manual` realtime (D80 (90), „Luki”): lokalny stos, fałszywy Mikrus i produkcja na wykr.es – do wykonania przez użytkownika.

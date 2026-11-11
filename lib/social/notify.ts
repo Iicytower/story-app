@@ -7,8 +7,8 @@ import { Follow } from "@/lib/models/follow";
 import { LibraryItem } from "@/lib/models/library-item";
 import { Notification } from "@/lib/models/notification";
 import { Settings } from "@/lib/models/settings";
-import { User } from "@/lib/models/user";
-import { isBanActive } from "@/lib/social/permissions";
+import { NOT_DELETED, User } from "@/lib/models/user";
+import { isBanActive, notGloballyBanned } from "@/lib/social/permissions";
 import { publishRealtime } from "@/lib/social/realtime";
 import {
   ACTORS_KEPT,
@@ -280,8 +280,20 @@ export async function reportRecipients(report: {
   const reportedModerator = moderators.some(({ userId }) =>
     userId.equals(report.targetUserId),
   );
-  return [
+  const ids = [
     report.authorId,
     ...(reportedModerator ? [] : moderators.map(({ userId }) => userId)),
   ];
+  // A global ban takes moderation away (moderationRole), so the report too; nor does a deleted
+  // account get it (task 91).
+  const allowed = new Set(
+    (
+      (await User.distinct("_id", {
+        _id: { $in: ids },
+        ...NOT_DELETED,
+        ...notGloballyBanned(new Date()),
+      })) as Types.ObjectId[]
+    ).map(String),
+  );
+  return ids.filter((id) => allowed.has(id.toString()));
 }

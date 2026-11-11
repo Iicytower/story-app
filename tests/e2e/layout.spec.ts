@@ -213,3 +213,15 @@ test.describe("on a narrow screen", () => {
     await expect(page.getByRole("dialog")).toBeHidden();
   });
 });
+
+test("the 404 outside a locale follows the system theme", async ({ page }) => {
+  for (const colorScheme of ["dark", "light"] as const) {
+    await page.emulateMedia({ colorScheme });
+    const response = await page.goto("/missing.txt");
+    expect(response?.status()).toBe(404);
+    await expect(page.getByText("404 | This page could not be found.")).toBeVisible();
+    await expect(page.locator("html")).toHaveClass(
+      colorScheme === "dark" ? /\bdark\b/ : /^(?!.*\bdark\b)/,
+    );
+  }
+});

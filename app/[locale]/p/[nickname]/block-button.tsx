@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { unblockUser } from "./block-actions";
 
 const BUTTON_CLASS =
-  "h-auto max-w-full [overflow-wrap:anywhere] whitespace-normal";
+  "h-auto min-h-8 max-w-full self-start [overflow-wrap:anywhere] whitespace-normal";
 
 export function BlockButton({
   nickname,

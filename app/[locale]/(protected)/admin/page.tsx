@@ -159,7 +159,12 @@ export default async function AdminPage({
                     />
                   )}
                 {report.target && (
-                  <Button asChild size="sm" variant="ghost">
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="ghost"
+                    className="h-auto max-w-full whitespace-normal [overflow-wrap:anywhere]"
+                  >
                     <Link
                       href={`/admin?tab=bans&nickname=${encodeURIComponent(report.target)}`}
                     >

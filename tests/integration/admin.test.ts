@@ -27,7 +27,9 @@ import { Comment } from "@/lib/models/comment";
 import { Cover } from "@/lib/models/cover";
 import { Folder } from "@/lib/models/folder";
 import { Follow } from "@/lib/models/follow";
+import { CommunityModerator } from "@/lib/models/community-moderator";
 import { ForumCategory } from "@/lib/models/forum-category";
+import { ForumPost } from "@/lib/models/forum-post";
 import { ForumThread } from "@/lib/models/forum-thread";
 import { ModerationLog } from "@/lib/models/moderation-log";
 import { Notification } from "@/lib/models/notification";
@@ -58,7 +60,9 @@ import {
   getThread,
   listForumCategories,
 } from "@/lib/social/forums";
+import { recordChaptersPublished } from "@/lib/social/activity";
 import { listNotifications } from "@/lib/social/notification-list";
+import { reportRecipients } from "@/lib/social/notify";
 import { canInteract } from "@/lib/social/permissions";
 import { getHomeRankings } from "@/lib/social/ranking-queries";
 import { validatePredefinedTag } from "@/lib/tags/predefined";
@@ -835,5 +839,64 @@ describe("log (criterion 6)", () => {
       entries: [],
       more: false,
     });
+  });
+});
+
+describe("audit fixes (task 91)", () => {
+  it("hides a post in the forum of a banned author or one without a public book", async () => {
+    await forum008.up(mongoose.connection.db!);
+    const { folderId } = await seedBook(erin, "Erin book");
+    const thread = await as(dave, () =>
+      createThread({ nickname: "Erin" }, "In Erin's forum", "First"),
+    );
+    if (!thread.ok) throw new Error(thread.message);
+    const posts = await Promise.all(
+      ["One", "Two"].map((body) => as(dave, () => createPost(thread.id, body))),
+    );
+    const [banned, unpublished] = posts.map((post) => {
+      if (!post.ok) throw new Error(post.message);
+      return post.id;
+    });
+    await banErin(null);
+    expect(await as(root, () => adminHide("post", banned))).toEqual(OK);
+    await as(root, () => liftGlobalBan("Erin"));
+    await Folder.updateOne({ _id: folderId }, { $set: { published: false } });
+    expect(await as(root, () => adminHide("post", unpublished))).toEqual(OK);
+    await expect(
+      ForumPost.countDocuments({ hidden: { $exists: true } }),
+    ).resolves.toBe(2);
+  });
+
+  it("makes no feed entry nor notification of a banned author's new chapters", async () => {
+    const { folderId, storyId } = await seedBook(erin, "Erin book");
+    await Follow.create({ followerId: dave, followeeId: erin });
+    await banErin(null);
+    await recordChaptersPublished(erin, folderId, [storyId]);
+    await flushAfter();
+    await expect(Activity.countDocuments({ actorId: erin })).resolves.toBe(0);
+    await expect(Notification.countDocuments({ userId: dave })).resolves.toBe(
+      0,
+    );
+  });
+
+  it("does not send a report to a globally banned or deleted author or moderator", async () => {
+    await CommunityModerator.create([
+      { authorId: alice, userId: erin, state: "active" },
+      { authorId: alice, userId: other, state: "active" },
+    ]);
+    await User.updateOne({ _id: other }, { $set: { deletedAt: new Date() } });
+    await banErin(null);
+    expect(
+      (
+        await reportRecipients({ authorId: alice, targetUserId: dave })
+      ).map(String),
+    ).toEqual([alice.toString()]);
+    await User.updateOne(
+      { _id: alice },
+      { globalBan: { until: null, reason: "x", by: root, at: new Date() } },
+    );
+    expect(
+      await reportRecipients({ authorId: alice, targetUserId: dave }),
+    ).toEqual([]);
   });
 });

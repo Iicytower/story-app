@@ -361,6 +361,24 @@ describe("blockUser and unblockUser", () => {
     }
   });
 
+  it("counts unknown nicknames too, so accounts cannot be tried without a limit", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.now() - (Date.now() % 60_000) + 1000);
+    signInAs("Alice");
+    try {
+      for (let i = 0; i < 60; i++) {
+        expect(await blockUser(`Nobody${i}`)).toEqual(
+          error("NOT_FOUND", "userNotFound"),
+        );
+      }
+      expect(await blockUser("Dave")).toEqual(
+        error("RATE_LIMITED", "tooManyAttempts"),
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("lists the viewer's own blocks, newest first (5)", async () => {
     signInAs("Alice");
     await ok(blockUser("Dave"));

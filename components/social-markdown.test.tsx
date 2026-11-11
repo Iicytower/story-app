@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { SocialMarkdown } from "./social-markdown";
+import { PlainMarkdown, SocialMarkdown } from "./social-markdown";
 
 vi.mock("@/i18n/navigation", () => ({
   Link: ({ href, children, className }: React.ComponentProps<"a">) => (
@@ -79,5 +79,27 @@ describe("SocialMarkdown", () => {
 
   it("leaves every mention as text without resolved nicknames", () => {
     expect(render("Hi @Erin")).not.toContain("<a");
+  });
+});
+
+describe("PlainMarkdown", () => {
+  it("keeps only the text of a quoted excerpt", () => {
+    const html = renderToStaticMarkup(
+      <PlainMarkdown
+        content={"**bold** [link](https://example.com)\nnext\n\n> quoted <b>x</b>"}
+      />,
+    );
+    expect(html).not.toMatch(/<(strong|a|blockquote|b)[ >]/);
+    expect(html).not.toContain("example.com");
+    expect(html).toContain("bold link<br/>");
+    expect(html).toContain("quoted");
+  });
+
+  it("keeps list items apart", () => {
+    const html = renderToStaticMarkup(
+      <PlainMarkdown content={"- first\n- second"} />,
+    );
+    expect(html).not.toMatch(/<(ul|li)[ >]/);
+    expect(html).toMatch(/<p>first<\/p>\s*<p>second<\/p>/);
   });
 });
