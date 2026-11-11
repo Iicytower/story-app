@@ -1,7 +1,7 @@
-// Notification kinds (D80, task 81) by group. Forums and mentions join in tasks 82 and 87.
+// Notification kinds (D80, task 81) by group. Mentions came with task 82; forums join in 87.
 export const NOTIFICATION_GROUPS = {
   interactions: ["comment", "reaction", "rating", "follower", "library"],
-  conversations: ["reply"],
+  conversations: ["reply", "mention"],
   chapters: ["libraryChapter", "followedChapter"],
   moderation: [
     "moderatorInvite",

@@ -15,6 +15,7 @@ Subtask 68, zależy od 75, 77, 80, 81, 82 i 86. Podstawa: D80 (Fora i panel admi
 - Moderacja (79): ukrywanie postów forum przez `hideContent` (dziś tylko komentarze); zbanowany w społeczności autora bez pisania i z zablokowanymi reakcjami – `isBannedAt` z `lib/social/moderation.ts` i prop `locked`.
 - Zgłoszenia (80): `targetType: "post"` jest w `REPORT_TARGETS`, ale `report` (`app/[locale]/p/[nickname]/report-actions.ts`) go dziś wyklucza – dopisać widoczność posta i trasę (`author` z `authorId` dla forum autora, `admin` dla globalnych) z testem.
 - Powiadomienia (81): obserwowany wątek do wielu odbiorców partiami po 500 (`bulkWrite` w `after()`, jak nowe rozdziały); nowe rodzaje dopisać do ustawień powiadomień.
+- Wzmianki (82): posty jak komentarze (`notifyLater` z type `mention`); własny klucz tekstu powiadomienia (dziś „w komentarzu”); pole posta jako `MentionTextarea`; `resolveMentions` przy odczycie listy postów.
 
 ## Kryteria akceptacji
 

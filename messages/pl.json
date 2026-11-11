@@ -92,6 +92,7 @@
       "follower": "Nowi obserwujący",
       "library": "Dodania do bibliotek",
       "reply": "Odpowiedzi na moje komentarze",
+      "mention": "Wzmianki o mnie",
       "libraryChapter": "Książki z mojej biblioteki",
       "followedChapter": "Obserwowani autorzy"
     }
@@ -1087,6 +1088,10 @@
     "older": "Starsze komentarze",
     "menuFor": "Akcje komentarza {nickname}, {date}"
   },
+  "mentions": {
+    "suggestions": "Podpowiedzi nicków",
+    "count": "{count, plural, one {# podpowiedź nicku} few {# podpowiedzi nicków} many {# podpowiedzi nicków} other {# podpowiedzi nicków}}"
+  },
   "reactions": {
     "chapter": "Reakcje na rozdział",
     "comment": "Reakcje na komentarz użytkownika {nickname}",
@@ -1223,6 +1228,7 @@
     "types": {
       "comment": "Komentarz od {actor}: {target}",
       "reply": "Odpowiedź od {actor} na Twój komentarz: {target}",
+      "mention": "Wzmianka od {actor} w komentarzu: {target}",
       "reaction": "{others, plural, =0 {Reakcja od {actor}} one {Reakcje od {actor} i # innej osoby} few {Reakcje od {actor} i # innych osób} many {Reakcje od {actor} i # innych osób} other {Reakcje od {actor} i # innej osoby}}: {target}",
       "reactionComment": "{others, plural, =0 {Reakcja od {actor}} one {Reakcje od {actor} i # innej osoby} few {Reakcje od {actor} i # innych osób} many {Reakcje od {actor} i # innych osób} other {Reakcje od {actor} i # innej osoby}} na Twój komentarz: {target}",
       "rating": "{count, plural, one {Nowa ocena} few {# nowe oceny} many {# nowych ocen} other {# nowej oceny}}: {target}",

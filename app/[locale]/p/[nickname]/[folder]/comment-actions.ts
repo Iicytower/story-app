@@ -19,6 +19,7 @@ import {
 } from "@/lib/rate-limit";
 import { recordActivity } from "@/lib/social/activity";
 import { COMMENT_EDIT_MS } from "@/lib/social/comments";
+import { mentionRecipients } from "@/lib/social/mentions";
 import { notifyLater } from "@/lib/social/notify";
 import { canInteract, type Permission } from "@/lib/social/permissions";
 import { findVisibleFolder, findVisibleStory } from "@/lib/social/visibility";
@@ -154,7 +155,15 @@ export async function addComment(
     ...placeEvent(found),
     commentId: comment._id,
   });
-  // Task 82: mentions in the body.
+  notifyLater(
+    () => mentionRecipients(user.userId, text, { exclude: [found.authorId] }),
+    {
+      type: "mention",
+      actorId: user.userId,
+      ...placeEvent(found),
+      commentId: comment._id,
+    },
+  );
   refresh();
   return { ok: true, id: comment._id.toString() };
 }
@@ -231,7 +240,14 @@ export async function replyToComment(
   if (!writers.some((id) => id.equals(target.authorId))) {
     notifyLater(target.authorId, { ...event, type: "comment" });
   }
-  // Task 82: mentions.
+  // Who gets a reply or a comment of it is not notified of a mention too.
+  notifyLater(
+    () =>
+      mentionRecipients(user.userId, text, {
+        exclude: [...writers, target.authorId],
+      }),
+    { ...event, type: "mention" },
+  );
   refresh();
   return { ok: true, id: reply._id.toString() };
 }
@@ -251,7 +267,7 @@ export async function editComment(
     deletedAt: null,
     hidden: { $exists: false },
   })
-    .select({ createdAt: 1, folderId: 1, storyId: 1 })
+    .select({ createdAt: 1, folderId: 1, storyId: 1, body: 1 })
     .lean();
   if (!comment) return commentNotFound();
   if (Date.now() - comment.createdAt.getTime() > COMMENT_EDIT_MS) {
@@ -275,7 +291,22 @@ export async function editComment(
     { $set: { body: text, editedAt: new Date() } },
   );
   if (matchedCount === 0) return commentNotFound();
-  // Task 82: mentions added by the edit.
+  // Only mentions the edit adds, of those not notified of the comment yet (by a mention or a
+  // reply); the text's author as on adding.
+  notifyLater(
+    () =>
+      mentionRecipients(user.userId, text, {
+        previous: comment.body,
+        exclude: [target.authorId],
+        commentId: comment._id,
+      }),
+    {
+      type: "mention",
+      actorId: user.userId,
+      ...placeEvent(target),
+      commentId: comment._id,
+    },
+  );
   refresh();
   return { ok: true };
 }

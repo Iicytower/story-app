@@ -6,6 +6,7 @@ import { Profile } from "@/lib/models/profile";
 import { Story } from "@/lib/models/story";
 import { User } from "@/lib/models/user";
 import { avatarPath } from "@/lib/profiles/queries";
+import { resolveMentions } from "@/lib/social/mentions";
 import {
   decideModeration,
   hiddenUserIdsFor,
@@ -48,6 +49,8 @@ export interface CommentView {
   state: "visible" | "deleted" | "hidden";
   author: { nickname: string; avatar: string | null } | null;
   body: string | null;
+  // Nicknames whose mentions in the body link to the profile (task 82).
+  mentions: string[];
   createdAt: string;
   edited: boolean;
   own: boolean;
@@ -278,8 +281,19 @@ export async function getCommentThread(
       ),
     )
   ).flat();
-  const authors = await authorsOf(
-    [...page, ...replies].map(({ userId }) => userId),
+  const shownRaw = [...page, ...replies];
+  const visibleRaw = shownRaw.filter(
+    ({ deletedAt, hidden: hiddenBy }) => !deletedAt && !hiddenBy,
+  );
+  const [authors, resolved] = await Promise.all([
+    authorsOf(shownRaw.map(({ userId }) => userId)),
+    resolveMentions(
+      visibleRaw.map(({ userId, body }) => ({ writerId: userId, body })),
+      hidden,
+    ),
+  ]);
+  const mentionsOf = new Map(
+    visibleRaw.map(({ _id }, index) => [_id.toString(), resolved[index]]),
   );
   const now = Date.now();
   const view = (comment: Raw): CommentView | null => {
@@ -298,6 +312,8 @@ export async function getCommentThread(
       state,
       author: state === "visible" ? author! : null,
       body: state === "visible" ? comment.body : null,
+      mentions:
+        state === "visible" ? (mentionsOf.get(comment._id.toString()) ?? []) : [],
       createdAt: comment.createdAt.toISOString(),
       edited: state === "visible" && comment.editedAt !== undefined,
       own: own && state === "visible",

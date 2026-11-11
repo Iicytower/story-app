@@ -10,8 +10,8 @@ import {
   useTransition,
 } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { MentionTextarea } from "@/components/mention-textarea";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import type { ActionResult } from "@/lib/action-result";
 import { MAX_COMMENT_LENGTH } from "@/lib/limits";
 import {
@@ -65,10 +65,10 @@ function CommentEditor({
       <label htmlFor={fieldId} className="sr-only">
         {label}
       </label>
-      <Textarea
+      <MentionTextarea
         id={fieldId}
         value={body}
-        onChange={(event) => setBody(event.target.value)}
+        onValueChange={setBody}
         placeholder={placeholder}
         maxLength={MAX_COMMENT_LENGTH}
         autoFocus={autoFocus}

@@ -9,6 +9,7 @@ Subtask 68, zależy od 81. Podstawa: D80 (Powiadomienia, DM, realtime – DM i p
 - Strony `/messages` (lista rozmów z nieprzeczytanymi) i `/messages/<id>` (wątek, `SocialMarkdown`, stronicowanie wstecz po 50). Przycisk „Wiadomość” na profilu. Licznik nieprzeczytanych w sidebarze z akcji `unreadCounts` (81). Polling otwartej rozmowy co 5 s przy widocznej karcie.
 - Ustawienie „Kto może zacząć rozmowę” w dialogu ustawień. Pozycja „Wiadomości” w sidebarze włączona.
 - Powiadomienia (81): `unreadCounts.messages` zwraca dziś 0 – podpiąć liczbę nieprzeczytanych rozmów; rodzaje DM w grupie `conversations`.
+- Wzmianki (82): wzmianki w wiadomościach przez `mentionRecipients(..., { only })` ograniczone do stron rozmowy; własny klucz tekstu powiadomienia (dziś „w komentarzu”); pole wiadomości jako `MentionTextarea`.
 
 ## Kryteria akceptacji
 
