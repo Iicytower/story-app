@@ -40,6 +40,12 @@ vi.mock("@/app/[locale]/(protected)/actions", () => ({
   saveSettings: vi.fn(),
 }));
 vi.mock("@/lib/theme", () => ({ applyTheme: vi.fn() }));
+// The counter polls Server Actions; here it only shows the count it starts with.
+vi.mock("@/components/notifications", () => ({
+  useUnreadNotifications: (initial: number) => [initial, () => {}],
+  NotificationsPanel: () => null,
+}));
+vi.mock("@/components/ui/sonner", () => ({ Toaster: () => null }));
 // The dialog stays closed; its form pulls in Server Actions of its own.
 vi.mock("@/components/settings-dialog", () => ({
   SettingsDialog: () => null,
@@ -128,6 +134,24 @@ describe("AppSidebar", () => {
       </NextIntlClientProvider>,
     );
     expect(labels(html)).not.toContain(en.sidebar.moderation);
+  });
+
+  it("shows the unread notifications on the bell (task 81)", () => {
+    nav.notifications = true;
+    const html = renderToStaticMarkup(
+      <NextIntlClientProvider locale="pl" messages={pl}>
+        <TooltipProvider>
+          <AppSidebar
+            defaultCollapsed={false}
+            toolsAvailable
+            initialUnread={5}
+          />
+        </TooltipProvider>
+      </NextIntlClientProvider>,
+    );
+    expect(labels(html)).toContain("Powiadomienia, 5 nieprzeczytanych");
+    expect(html).toContain(">5</span>");
+    expect(html).not.toContain('href="/notifications"');
   });
 
   it("links each entry to its page", () => {

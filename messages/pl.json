@@ -27,7 +27,10 @@
     "profile": "Mój profil",
     "moderation": "Moderacja",
     "admin": "Admin",
-    "stats": "Statystyki"
+    "stats": "Statystyki",
+    "notificationsUnread": "{count, plural, one {Powiadomienia, # nieprzeczytane} few {Powiadomienia, # nieprzeczytane} many {Powiadomienia, # nieprzeczytanych} other {Powiadomienia, # nieprzeczytanego}}",
+    "menuUnread": "Menu, nieprzeczytane powiadomienia",
+    "toasts": "Komunikaty"
   },
   "settings": {
     "title": "Ustawienia",
@@ -72,7 +75,26 @@
     "avatarsUnavailable": "Avatary są teraz niedostępne.",
     "viewProfile": "Zobacz profil",
     "loadingProfile": "Wczytywanie…",
-    "profileFailed": "Nie udało się wczytać profilu. Odśwież stronę i spróbuj ponownie."
+    "profileFailed": "Nie udało się wczytać profilu. Odśwież stronę i spróbuj ponownie.",
+    "notifications": "Powiadomienia",
+    "notificationsHelp": "Wybierz, o czym chcesz dostawać powiadomienia. Powiadomienia moderacji są zawsze włączone.",
+    "notificationsFailed": "Nie udało się wczytać ustawień powiadomień.",
+    "loadingNotifications": "Wczytywanie ustawień powiadomień…",
+    "notificationGroups": {
+      "interactions": "Moje teksty",
+      "conversations": "Rozmowy",
+      "chapters": "Nowe rozdziały"
+    },
+    "notificationTypes": {
+      "comment": "Komentarze",
+      "reaction": "Reakcje",
+      "rating": "Oceny",
+      "follower": "Nowi obserwujący",
+      "library": "Dodania do bibliotek",
+      "reply": "Odpowiedzi na moje komentarze",
+      "libraryChapter": "Książki z mojej biblioteki",
+      "followedChapter": "Obserwowani autorzy"
+    }
   },
   "errors": {
     "nicknameRequirement": "Nick musi mieć 3–30 znaków: litery a-z, cyfry, _ i -.",
@@ -205,7 +227,8 @@
     "hideReasonTooLong": "Powód może mieć najwyżej {max, number} znaków.",
     "reportTargetNotFound": "Ta treść już nie istnieje albo jest niedostępna.",
     "reportAlreadyOpen": "Już to zgłoszono. Twoje zgłoszenie czeka na decyzję.",
-    "reportNotFound": "To zgłoszenie już nie istnieje albo zostało rozstrzygnięte."
+    "reportNotFound": "To zgłoszenie już nie istnieje albo zostało rozstrzygnięte.",
+    "notificationNotFound": "To powiadomienie nie istnieje."
   },
   "password": {
     "mustContain": "Hasło musi zawierać:",
@@ -1181,5 +1204,43 @@
     "send": "Wyślij zgłoszenie",
     "sent": "Dziękujemy. Zgłoszenie zostało wysłane.",
     "choose": "Wybierz powód"
+  },
+  "notifications": {
+    "title": "Powiadomienia",
+    "list": "Powiadomienia",
+    "markAllRead": "Oznacz wszystkie jako przeczytane",
+    "empty": "Nie masz jeszcze powiadomień.",
+    "loading": "Wczytywanie powiadomień…",
+    "failed": "Nie udało się wczytać powiadomień.",
+    "unread": "Nieprzeczytane",
+    "accept": "Przyjmij",
+    "decline": "Odrzuć",
+    "newToast": "{count, plural, one {Masz nowe powiadomienie} few {Masz # nowe powiadomienia} many {Masz # nowych powiadomień} other {Masz # nowego powiadomienia}}",
+    "open": "Otwórz",
+    "someone": "Ktoś",
+    "target": "„{title}”",
+    "unavailable": "tekst niedostępny",
+    "types": {
+      "comment": "Komentarz od {actor}: {target}",
+      "reply": "Odpowiedź od {actor} na Twój komentarz: {target}",
+      "reaction": "{others, plural, =0 {Reakcja od {actor}} one {Reakcje od {actor} i # innej osoby} few {Reakcje od {actor} i # innych osób} many {Reakcje od {actor} i # innych osób} other {Reakcje od {actor} i # innej osoby}}: {target}",
+      "reactionComment": "{others, plural, =0 {Reakcja od {actor}} one {Reakcje od {actor} i # innej osoby} few {Reakcje od {actor} i # innych osób} many {Reakcje od {actor} i # innych osób} other {Reakcje od {actor} i # innej osoby}} na Twój komentarz: {target}",
+      "rating": "{count, plural, one {Nowa ocena} few {# nowe oceny} many {# nowych ocen} other {# nowej oceny}}: {target}",
+      "follower": "Nowy obserwujący: {actor}",
+      "library": "Dodanie do biblioteki przez {actor}: {target}",
+      "libraryChapter": "{count, plural, one {Nowy rozdział} few {# nowe rozdziały} many {# nowych rozdziałów} other {# nowego rozdziału}} w książce z Twojej biblioteki: {target}",
+      "followedChapter": "{count, plural, one {Nowy rozdział} few {# nowe rozdziały} many {# nowych rozdziałów} other {# nowego rozdziału}} od {author}: {target}",
+      "moderatorInvite": "Zaproszenie od {author} do moderowania społeczności",
+      "moderatorAccepted": "Zaproszenie do moderowania przyjęte przez {actor}",
+      "moderatorDeclined": "Zaproszenie do moderowania odrzucone przez {actor}",
+      "moderatorResigned": "Rezygnacja z moderowania Twojej społeczności: {actor}",
+      "moderatorRemoved": "Odebrana rola moderatora w społeczności {author}",
+      "ban": "Ban w społeczności {author}",
+      "hidden": "Moderacja ukryła Twój komentarz: {target}",
+      "report": "Nowe zgłoszenie w Twojej społeczności",
+      "reportAdmin": "Nowe zgłoszenie dla adminów",
+      "reportResolved": "Twoje zgłoszenie zostało przyjęte",
+      "reportDismissed": "Twoje zgłoszenie zostało odrzucone"
+    }
   }
 }

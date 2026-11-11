@@ -70,6 +70,12 @@ userSchema.index(
   { partialFilterExpression: { globalBan: { $exists: true } } },
 );
 
+// The admins who get reports of the admin route (task 81), not every account.
+userSchema.index(
+  { role: 1 },
+  { partialFilterExpression: { role: { $exists: true } } },
+);
+
 export const User: Model<UserFields> =
   (mongoose.models.User as Model<UserFields> | undefined) ??
   mongoose.model<UserFields>("User", userSchema);

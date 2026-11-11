@@ -9,6 +9,7 @@ import { connectDB, isDuplicateKeyError } from "@/lib/db";
 import { actionError, translateError } from "@/lib/i18n/action-error";
 import { Follow } from "@/lib/models/follow";
 import { SOCIAL_LIMITS, takeUserAttempt } from "@/lib/rate-limit";
+import { notifyLater } from "@/lib/social/notify";
 import { canInteract } from "@/lib/social/permissions";
 
 type FollowResult = ActionResult<{ following: boolean }>;
@@ -40,13 +41,21 @@ export async function follow(nickname: string): Promise<FollowResult> {
   }
 
   const edge = { followerId: user.userId, followeeId: followee._id };
-  // The "new follower" notification (task 81) goes here, for a newly inserted follow.
-  await Follow.updateOne(edge, { $setOnInsert: edge }, { upsert: true }).catch(
+  const inserted = await Follow.updateOne(
+    edge,
+    { $setOnInsert: edge },
+    { upsert: true },
+  ).then(
+    ({ upsertedCount }) => upsertedCount === 1,
     (error: unknown) => {
       // Two clicks at once: the other request inserted the same follow.
       if (!isDuplicateKeyError(error)) throw error;
+      return false;
     },
   );
+  if (inserted) {
+    notifyLater(followee._id, { type: "follower", actorId: user.userId });
+  }
 
   refresh();
   return { ok: true, following: true };

@@ -158,7 +158,10 @@ export function countActionRequests(page: Page) {
 
 // Views and the settings live in the sidebar, a drawer on narrow screens.
 export async function sidebarAction(page: Page, name: string) {
-  const menu = page.getByRole("button", { name: "Menu", exact: true });
+  // With unread notifications its label says so (task 81).
+  const menu = page.getByRole("button", {
+    name: /^Menu(, unread notifications)?$/,
+  });
   // The drawer of a previous action may still be animating away.
   await expect(page.getByRole("dialog")).toBeHidden();
   if (await menu.isVisible()) await menu.click();

@@ -16,6 +16,7 @@ Zasady ogólne: `docs/testing.md`. Wzory do skopiowania (czytaj zamiast zgadywa�
 - Każda akcja na cudzych danych: test `NOT_FOUND` (D1). Limity: `tests/integration/rate-limit.test.ts`.
 - Migracje: wzór `tests/integration/migration-007.test.ts`.
 - Czas: `vi.useFakeTimers()` / `vi.setSystemTime()` dla okien edycji, banów i TTL-i liczonych w kodzie.
+- `after()` z `next/server` jest zmockowany globalnie (`tests/setup/next-server.ts`): zadania czekają w kolejce. Przed sprawdzeniem odroczonych zapisów (np. powiadomień) wołaj `await flushAfter()`; resztę dopłukuje globalny `afterEach`.
 
 ## E2E (`tests/e2e/*.spec.ts`)
 

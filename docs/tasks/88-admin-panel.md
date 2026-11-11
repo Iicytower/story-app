@@ -15,6 +15,7 @@ Subtask 68, zależy od 80 i 87. Podstawa: D80 (Fora i panel admina – panel; Ro
 - Każde działanie w `moderationLog` (`scope: global`). Pozycja „Admin” w sidebarze tylko dla admina.
 - Moderacja (79): log globalny – `moderationLog` z `scope: global` (86), widok w panelu admina; dziś log społeczności widzi tylko autor w `/moderation`.
 - Zgłoszenia (80): kolejka na `listAdminReports` (`lib/social/moderation.ts`) – dziś bez kontroli roli i zwraca nick zgłaszającego, więc wywołanie tylko za guardem roli admina; rozstrzyganie trasy `admin` przez istniejące `resolveReport` (`app/[locale]/(protected)/moderation/actions.ts`, sprawdza rolę).
+- Powiadomienia (81): powiadomienia zgłoszeń trasy `admin` mają dziś `href: null` – dopisać link do kolejki w panelu admina.
 
 ## Kryteria akceptacji
 

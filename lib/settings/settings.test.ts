@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_LAYOUT } from "@/lib/editor-layout";
+import { OPTIONAL_NOTIFICATION_TYPES } from "@/lib/social/notifications";
 import {
   DEFAULT_SETTINGS,
   normalizeSettings,
   parseSettingsPatch,
   settingsUpdate,
 } from "./settings";
+
+const ALL_NOTIFICATIONS = Object.fromEntries(
+  OPTIONAL_NOTIFICATION_TYPES.map((type) => [type, true]),
+);
 
 describe("DEFAULT_SETTINGS", () => {
   it("groups the defaults", () => {
@@ -19,6 +24,7 @@ describe("DEFAULT_SETTINGS", () => {
       },
       folders: { sort: "updated", manualOrder: false },
       proofreading: { dictionary: [] },
+      notifications: ALL_NOTIFICATIONS,
     });
   });
 });
@@ -43,6 +49,7 @@ describe("normalizeSettings", () => {
         proofreading: {
           dictionary: [" Ania ", "Ania", 3, "dwa słowa", "Kwak"],
         },
+        notifications: { comment: false, rating: "no", ban: false },
         other: { a: 1 },
       }),
     ).toEqual({
@@ -61,6 +68,7 @@ describe("normalizeSettings", () => {
       },
       folders: { sort: "alpha", manualOrder: false },
       proofreading: { dictionary: ["Ania", "Kwak"] },
+      notifications: { ...ALL_NOTIFICATIONS, comment: false },
     });
     expect(
       normalizeSettings({
@@ -94,6 +102,9 @@ describe("parseSettingsPatch", () => {
     expect(parseSettingsPatch({ editor: { mobileView: "tools" } })).toEqual({
       editor: { mobileView: "tools" },
     });
+    expect(parseSettingsPatch({ notifications: { reaction: false } })).toEqual({
+      notifications: { reaction: false },
+    });
   });
 
   it("normalizes the layout like stored data", () => {
@@ -115,6 +126,9 @@ describe("parseSettingsPatch", () => {
       { folders: { manualOrder: true } },
       { proofreading: { dictionary: ["Ania"] } },
       { editor: { toString: "x" } },
+      // Moderation notifications have no switch (D80).
+      { notifications: { ban: false } },
+      { notifications: { comment: "off" } },
       {},
       { editor: {} },
       null,

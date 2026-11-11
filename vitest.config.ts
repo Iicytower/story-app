@@ -10,7 +10,7 @@ export default defineConfig({
     // next-auth and next-intl import "next/server" without an extension, which plain Node ESM cannot resolve.
     server: { deps: { inline: ["next-auth", "next-intl"] } },
     globalSetup: ["tests/global-setup.ts"],
-    setupFiles: ["tests/setup/next-intl.ts"],
+    setupFiles: ["tests/setup/next-intl.ts", "tests/setup/next-server.ts"],
     include: [
       "**/*.test.ts",
       "**/*.test.tsx",

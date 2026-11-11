@@ -1,5 +1,6 @@
 import type { Types } from "mongoose";
 import { Activity, type ActivityType } from "@/lib/models/activity";
+import { notifyNewChapters } from "@/lib/social/notify";
 
 type Id = string | Types.ObjectId;
 
@@ -18,7 +19,7 @@ export async function recordActivity(event: ActivityEvent): Promise<void> {
 }
 
 // One entry per book however many chapters a publication stamped; none when it stamped nothing,
-// so publishing again never repeats an entry.
+// so publishing again never repeats an entry. The same goes for the "new chapter" notifications.
 export async function recordChaptersPublished(
   actorId: Id,
   folderId: Id,
@@ -31,4 +32,5 @@ export async function recordChaptersPublished(
     folderId,
     storyIds,
   });
+  notifyNewChapters(actorId, folderId, storyIds);
 }

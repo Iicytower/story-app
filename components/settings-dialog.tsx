@@ -11,6 +11,7 @@ import {
   removeFromDictionary,
   saveSettings,
 } from "@/app/[locale]/(protected)/actions";
+import { getNotificationSettings } from "@/app/[locale]/(protected)/notifications/actions";
 import {
   getMyProfile,
   updateBio,
@@ -40,6 +41,11 @@ import {
   type Theme,
 } from "@/lib/settings/settings";
 import { MAX_BIO_LENGTH } from "@/lib/limits";
+import {
+  NOTIFICATION_GROUPS,
+  OPTIONAL_GROUPS,
+  type OptionalNotificationType,
+} from "@/lib/social/notifications";
 import { setAccent, setTheme } from "@/lib/theme";
 
 const SYSTEM = "system";
@@ -236,6 +242,7 @@ function SettingsContent({ toolsAvailable }: { toolsAvailable: boolean }) {
         </select>
       </section>
       <DictionarySection />
+      <NotificationsSection />
       <ProfileSection toolsAvailable={toolsAvailable} />
       <section aria-labelledby="settings-account" className="grid gap-2">
         <h3 id="settings-account" className="font-medium">
@@ -377,6 +384,87 @@ function DictionarySection() {
           ))}
         </ul>
       )}
+      {error && (
+        <p role="alert" className="text-destructive text-sm">
+          {error}
+        </p>
+      )}
+    </section>
+  );
+}
+
+// One switch per kind in its group (D80); each change is saved at once, moderation has none.
+function NotificationsSection() {
+  const t = useTranslations("settings");
+  const [settings, setSettings] = useState<Record<
+    OptionalNotificationType,
+    boolean
+  > | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let open = true;
+    void getNotificationSettings()
+      .catch(() => null)
+      .then((result) => {
+        if (!open) return;
+        if (result?.ok) setSettings(result.settings);
+        else setError(result?.message ?? t("notificationsFailed"));
+      });
+    return () => {
+      open = false;
+    };
+  }, [t]);
+
+  async function toggle(type: OptionalNotificationType, on: boolean) {
+    setError(null);
+    setSettings((current) => current && { ...current, [type]: on });
+    const result = await saveSettings({ notifications: { [type]: on } }).catch(
+      () => null,
+    );
+    if (!result?.ok) {
+      setSettings((current) => current && { ...current, [type]: !on });
+      setError(result?.message ?? t("notificationsFailed"));
+    }
+  }
+
+  return (
+    <section aria-labelledby="settings-notifications" className="grid gap-2">
+      <h3 id="settings-notifications" className="font-medium">
+        {t("notifications")}
+      </h3>
+      <p className="text-muted-foreground text-sm">{t("notificationsHelp")}</p>
+      {!settings && !error && (
+        <p role="status" className="text-muted-foreground text-sm">
+          {t("loadingNotifications")}
+        </p>
+      )}
+      {settings &&
+        OPTIONAL_GROUPS.map((group) => (
+          <fieldset key={group} className="grid gap-1">
+            <legend className="text-sm">
+              {t(`notificationGroups.${group}`)}
+            </legend>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              {NOTIFICATION_GROUPS[group].map((type) => (
+                <label
+                  key={type}
+                  className="flex items-center gap-2 text-sm font-normal"
+                >
+                  <input
+                    type="checkbox"
+                    className="accent-primary size-4"
+                    checked={settings[type]}
+                    onChange={(event) =>
+                      void toggle(type, event.target.checked)
+                    }
+                  />
+                  {t(`notificationTypes.${type}`)}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ))}
       {error && (
         <p role="alert" className="text-destructive text-sm">
           {error}

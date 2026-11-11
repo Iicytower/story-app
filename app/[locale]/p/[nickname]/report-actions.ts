@@ -10,6 +10,7 @@ import { lengthError } from "@/lib/limits";
 import { Report } from "@/lib/models/report";
 import { NICKNAME_COLLATION, User } from "@/lib/models/user";
 import { SOCIAL_LIMITS, takeUserAttempt } from "@/lib/rate-limit";
+import { notifyLater, reportRecipients } from "@/lib/social/notify";
 import { isAuthorVisibleTo } from "@/lib/social/permissions";
 import {
   isReportReason,
@@ -127,6 +128,18 @@ export async function report(
     if (!isDuplicateKeyError(error)) throw error;
     return actionError("INVALID_INPUT", "reportAlreadyOpen");
   }
-  // Task 81: notify the author and the community's moderators, or the admins (route admin).
+  // The reporter stays anonymous to the community (task 80).
+  notifyLater(
+    () =>
+      reportRecipients({
+        ...(found.authorId && { authorId: found.authorId }),
+        targetUserId: found.userId,
+      }),
+    {
+      type: "report",
+      actorId: user.userId,
+      ...(found.authorId && { authorId: found.authorId }),
+    },
+  );
   return { ok: true };
 }

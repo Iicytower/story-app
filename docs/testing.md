@@ -15,6 +15,7 @@ Obowiązuje dla każdego taska. Cel: kryteria akceptacji sprawdzane automatyczni
 
 - **Każde kryterium akceptacji ma przypisany test** (sekcja „Testy” w pliku taska). Gdy testu nie da się sensownie napisać, kryterium oznaczone jest `manual` z opisem, jak je sprawdzić; wynik ręcznej weryfikacji zgłaszam przy zamknięciu taska.
 - Testy integracyjne wywołują Server Actions bezpośrednio jako funkcje; sesja jest mockowana (`vi.mock` modułu z `requireUser()`), żeby testować różnych użytkowników i brak sesji.
+- `after()` z `next/server`: globalny mock w `tests/setup/next-server.ts` kolejkuje zadania; test czytający odroczone zapisy (np. powiadomienia, task 81) woła `flushAfter()`, resztę dopłukuje globalny `afterEach`.
 - Każdy plik testów integracyjnych dostaje czystą bazę (drop przed testem); indeksy budowane przez `syncIndexes()`, żeby testy wykrywały błędne definicje indeksów.
 - Baza testowa: kontener `mongo` z `docker-compose.yml`, uruchamiany automatycznie w `globalSetup` (`docker compose up -d --wait mongo`). Każdy worker Vitest ma osobną bazę `story_app_test_<worker>` (helper `tests/integration/test-db.ts`).
 - E2E: test, który się wylogowuje, zmienia hasło albo wylogowuje inne urządzenia, loguje się najpierw od nowa (albo używa konta `carol`). Wylogowanie kasuje sesję w bazie (D75), więc unieważniłoby sesję z `storageState` używaną przez inne testy.

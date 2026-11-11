@@ -11,6 +11,7 @@ import { Comment } from "@/lib/models/comment";
 import { Reaction } from "@/lib/models/reaction";
 import { User } from "@/lib/models/user";
 import { SOCIAL_LIMITS, takeUserAttempt } from "@/lib/rate-limit";
+import { notifyLater } from "@/lib/social/notify";
 import { canInteract } from "@/lib/social/permissions";
 import {
   isReaction,
@@ -132,8 +133,10 @@ export async function react(
       createdAt: new Date(),
     },
   };
+  let inserted = false;
   try {
-    await Reaction.updateOne(changed, update, { upsert: true });
+    const result = await Reaction.updateOne(changed, update, { upsert: true });
+    inserted = result.upsertedCount === 1;
   } catch (error) {
     // The reader already has this reaction, or a parallel request inserted another one first.
     if (!isDuplicateKeyError(error)) throw error;
@@ -151,9 +154,18 @@ export async function react(
     await Reaction.deleteOne(key);
     return notFound();
   }
-  // Task 81: notify the text's or comment's author, grouped per object (a new reaction is the
-  // upsert's upsertedCount, a changed one is not). Task 83: the author's statistics count
-  // reactions by authorId and createdAt.
+  // Only a new reaction, not a changed one; grouped per object.
+  if (inserted) {
+    notifyLater(own, {
+      type: "reaction",
+      actorId: user.userId,
+      authorId: target.authorId,
+      folderId: target.folderId,
+      ...(target.storyId && { storyIds: [target.storyId] }),
+      ...(targetType === "comment" && { commentId: targetId }),
+    });
+  }
+  // Task 83: the author's statistics count reactions by authorId and createdAt.
   refresh();
   return { ok: true, reaction };
 }

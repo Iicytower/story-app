@@ -4,7 +4,7 @@ export const SOCIAL_NAV = {
   library: true,
   forums: false,
   messages: false,
-  notifications: false,
+  notifications: true,
   profile: true,
   // Only for an author with a publication, a moderator or an invited account (AppShell).
   moderation: true,

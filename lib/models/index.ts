@@ -25,3 +25,4 @@ import "./reaction";
 import "./rating";
 import "./moderation-log";
 import "./report";
+import "./notification";
