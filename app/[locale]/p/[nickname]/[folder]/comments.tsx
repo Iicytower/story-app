@@ -101,6 +101,7 @@ async function CommentItem({
             canHide={comment.canHide}
             canBan={comment.canBan}
             canReport={!comment.own && comment.state === "visible"}
+            canBlock={signedIn && !comment.own}
             signedIn={signedIn}
             callbackUrl={`/${locale}${path}#${commentAnchor(comment.id)}`}
           />
@@ -114,10 +115,7 @@ async function CommentItem({
           own={comment.own}
           canReply={canReply}
         >
-          <SocialMarkdown
-            content={comment.body}
-            mentions={comment.mentions}
-          />
+          <SocialMarkdown content={comment.body} mentions={comment.mentions} />
         </CommentControls>
         <ReactionBar
           target={signedIn ? { type: "comment", id: comment.id } : null}
@@ -182,7 +180,11 @@ export async function Comments({
       aria-labelledby="comments-title"
       className="flex min-w-0 scroll-mt-4 flex-col gap-4 border-t pt-6"
     >
-      <h2 id="comments-title" className="text-xl font-semibold">
+      <h2
+        id="comments-title"
+        tabIndex={-1}
+        className="text-xl font-semibold outline-none"
+      >
         {t("title", { count: thread.total })}
       </h2>
       <CommunityBanNotice ban={ban} />

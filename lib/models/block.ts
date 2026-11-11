@@ -18,6 +18,8 @@ const blockSchema = new Schema<BlockFields>(
 blockSchema.index({ blockerId: 1, blockedId: 1 }, { unique: true });
 // Accounts that blocked the viewer, left out of the feed (task 75).
 blockSchema.index({ blockedId: 1 });
+// The newest blocks of an account in the settings (task 86).
+blockSchema.index({ blockerId: 1, createdAt: -1 });
 
 export const Block: Model<BlockFields> =
   (mongoose.models.Block as Model<BlockFields> | undefined) ??

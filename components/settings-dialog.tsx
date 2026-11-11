@@ -12,6 +12,10 @@ import {
   saveSettings,
 } from "@/app/[locale]/(protected)/actions";
 import { getMessageSettings } from "@/app/[locale]/(protected)/messages/actions";
+import {
+  listBlockedUsers,
+  unblockUser,
+} from "@/app/[locale]/p/[nickname]/block-actions";
 import { getNotificationSettings } from "@/app/[locale]/(protected)/notifications/actions";
 import {
   getMyProfile,
@@ -247,6 +251,7 @@ function SettingsContent({ toolsAvailable }: { toolsAvailable: boolean }) {
       <DictionarySection />
       <NotificationsSection />
       <MessagesSection />
+      <BlockedSection />
       <ProfileSection toolsAvailable={toolsAvailable} />
       <section aria-labelledby="settings-account" className="grid gap-2">
         <h3 id="settings-account" className="font-medium">
@@ -538,6 +543,116 @@ function MessagesSection() {
           </div>
           <p className="text-muted-foreground text-sm">{t("dmFromHelp")}</p>
         </fieldset>
+      )}
+      {error && (
+        <p role="alert" className="text-destructive text-sm">
+          {error}
+        </p>
+      )}
+    </section>
+  );
+}
+
+// Read when the dialog opens; an unblock is saved at once (task 86).
+function BlockedSection() {
+  const t = useTranslations("settings");
+  const tBlocking = useTranslations("blocking");
+  const [blocked, setBlocked] = useState<{
+    nicknames: string[];
+    total: number;
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  // Several rows may be unblocked at once.
+  const [removing, setRemoving] = useState<ReadonlySet<string>>(new Set());
+  const heading = useRef<HTMLHeadingElement>(null);
+  const list = useRef<HTMLUListElement>(null);
+  const focusAfter = useRef<number | null>(null);
+
+  useEffect(() => {
+    let open = true;
+    void listBlockedUsers()
+      .catch(() => null)
+      .then((result) => {
+        if (!open) return;
+        if (result?.ok) setBlocked(result);
+        else setError(result?.message ?? t("blockedFailed"));
+      });
+    return () => {
+      open = false;
+    };
+  }, [t]);
+
+  // The removed row's button had the focus: it moves to the next one (or the heading).
+  useEffect(() => {
+    if (focusAfter.current === null) return;
+    const buttons = list.current?.querySelectorAll("button") ?? [];
+    const next = buttons[Math.min(focusAfter.current, buttons.length - 1)];
+    (next ?? heading.current)?.focus();
+    focusAfter.current = null;
+  }, [blocked]);
+
+  async function unblock(nickname: string, index: number) {
+    setError(null);
+    setRemoving((current) => new Set(current).add(nickname));
+    const result = await unblockUser(nickname).catch(() => null);
+    setRemoving((current) => {
+      const next = new Set(current);
+      next.delete(nickname);
+      return next;
+    });
+    if (!result?.ok) return setError(result?.message ?? t("blockedFailed"));
+    focusAfter.current = index;
+    setBlocked(
+      (current) =>
+        current && {
+          nicknames: current.nicknames.filter((n) => n !== nickname),
+          total: current.total - 1,
+        },
+    );
+  }
+
+  return (
+    <section aria-labelledby="settings-blocked" className="grid gap-2">
+      <h3
+        id="settings-blocked"
+        ref={heading}
+        tabIndex={-1}
+        className="font-medium outline-none"
+      >
+        {t("blocked")}
+      </h3>
+      <p className="text-muted-foreground text-sm">{t("blockedHelp")}</p>
+      <p role="status" className="text-sm">
+        {blocked
+          ? t("blockedCount", { count: blocked.total })
+          : !error && t("loadingBlocked")}
+      </p>
+      {blocked && blocked.nicknames.length > 0 && (
+        <ul
+          ref={list}
+          aria-labelledby="settings-blocked"
+          className="flex max-h-40 flex-col gap-1 overflow-y-auto"
+        >
+          {blocked.nicknames.map((nickname, index) => (
+            <li
+              key={nickname}
+              className="flex min-w-0 items-center justify-between gap-2 text-sm"
+            >
+              <span className="min-w-0 [overflow-wrap:anywhere]">
+                {nickname}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label={tBlocking("unblockUser", { nickname })}
+                disabled={removing.has(nickname)}
+                onClick={() => void unblock(nickname, index)}
+              >
+                {tBlocking("unblock")}
+              </Button>
+            </li>
+          ))}
+        </ul>
       )}
       {error && (
         <p role="alert" className="text-destructive text-sm">
