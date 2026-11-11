@@ -102,7 +102,9 @@ test("Cancel goes back to the settings and clears what was typed", async ({
   await page.getByLabel("Current password").fill("typed");
   await page.getByRole("button", { name: "Cancel" }).click();
   const settings = page.getByRole("dialog", { name: "Settings" });
-  await expect(settings.getByRole("region", { name: "Account" })).toBeVisible();
+  await expect(
+    settings.getByRole("region", { name: "Account", exact: true }),
+  ).toBeVisible();
 
   await settings.getByRole("button", { name: "Change password" }).click();
   await expect(page.getByLabel("Current password")).toHaveValue("");
@@ -111,5 +113,7 @@ test("Cancel goes back to the settings and clears what was typed", async ({
   await page.getByLabel("Current password").fill("typed");
   await page.keyboard.press("Escape");
   await openSettings(page);
-  await expect(settings.getByRole("region", { name: "Account" })).toBeVisible();
+  await expect(
+    settings.getByRole("region", { name: "Account", exact: true }),
+  ).toBeVisible();
 });

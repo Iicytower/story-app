@@ -27,7 +27,9 @@ test("the sidebar keeps the views and opens the settings", async ({ page }) => {
 
   const dialog = page.getByRole("dialog", { name: "Settings" });
   for (const name of ["Appearance", "Language", "Account"])
-    await expect(dialog.getByRole("region", { name })).toBeVisible();
+    await expect(
+      dialog.getByRole("region", { name, exact: true }),
+    ).toBeVisible();
   await page.mouse.click(5, 5);
   await expect(dialog).toBeHidden();
   await nav.getByRole("button", { name: "Expand sidebar" }).click();
