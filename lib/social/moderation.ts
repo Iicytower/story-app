@@ -53,15 +53,22 @@ export async function logModeration(entry: Entry): Promise<void> {
 
 // An author with a publication, a moderator and an invited account see the panel (D80).
 // An active global ban makes the account read-only, without moderation (D80).
-export async function hasModerationAccess(userId: string): Promise<boolean> {
+// A caller that already knows whether the account has a publication passes it (AppShell).
+export async function hasModerationAccess(
+  userId: string,
+  hasPublication?: boolean,
+): Promise<boolean> {
   await connectDB();
   const [user, published, moderator] = await Promise.all([
     User.findById(userId).select({ globalBan: 1 }).lean(),
-    Folder.exists({ userId, published: true, deletedAt: null }),
+    hasPublication ??
+      Folder.exists({ userId, published: true, deletedAt: null }).then(
+        (folder) => folder !== null,
+      ),
     CommunityModerator.exists({ userId }),
   ]);
   if (!user || isBanActive(user.globalBan, new Date())) return false;
-  return published !== null || moderator !== null;
+  return published || moderator !== null;
 }
 
 export interface BanNotice {

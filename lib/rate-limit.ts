@@ -144,11 +144,15 @@ export function accountKey(nickname: string): string {
   return nickname.trim().toLowerCase();
 }
 
-function slotId(rule: RateLimitRule, ip: string, windowStart: number): string {
-  const client = createHmac("sha256", process.env.AUTH_SECRET!)
-    .update(ip)
+// A keyed hash, so a stored address or account cannot be read back (D40, D74).
+export function clientHash(client: string): string {
+  return createHmac("sha256", process.env.AUTH_SECRET!)
+    .update(client)
     .digest("hex");
-  return `${rule.name}:${client}:${windowStart}`;
+}
+
+function slotId(rule: RateLimitRule, ip: string, windowStart: number): string {
+  return `${rule.name}:${clientHash(ip)}:${windowStart}`;
 }
 
 function increment(id: string, expiresAt: Date) {

@@ -26,3 +26,5 @@ import "./rating";
 import "./moderation-log";
 import "./report";
 import "./notification";
+import "./read-event";
+import "./daily-stat";

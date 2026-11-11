@@ -9,7 +9,8 @@ export const SOCIAL_NAV = {
   // Only for an author with a publication, a moderator or an invited account (AppShell).
   moderation: true,
   admin: false,
-  stats: false,
+  // Only for an author with a publication (AppShell).
+  stats: true,
 };
 
 export type SocialNavItem = keyof typeof SOCIAL_NAV;

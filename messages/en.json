@@ -391,7 +391,8 @@
     "editor": "Editor – Story App",
     "library": "Library – Story App",
     "feed": "Feed – Story App",
-    "moderation": "Moderation – Story App"
+    "moderation": "Moderation – Story App",
+    "stats": "Statistics – Story App"
   },
   "folders": {
     "title": "Folders",
@@ -1248,5 +1249,24 @@
       "reportResolved": "Your report was accepted",
       "reportDismissed": "Your report was dismissed"
     }
+  },
+  "stats": {
+    "title": "Statistics",
+    "followers": "{count, plural, one {# follower} other {# followers}}",
+    "range": "Period",
+    "days": "{count, plural, one {# day} other {# days}}",
+    "chartTitle": "Unique readers per day",
+    "chartLabel": "Chart of unique readers per day over the last {days, plural, one {# day} other {# days}}: {count, plural, one {# reader} other {# readers}} in total",
+    "chartTotal": "{count, plural, one {# reader in this period} other {# readers in this period}}, counted once per chapter and day",
+    "tableTitle": "Books and chapters",
+    "tableNote": "Readers in the chosen period are the sum of each day's unique readers, so someone who reads on several days counts once per day. Reactions, ratings, comments and library additions are totals.",
+    "text": "Book or chapter",
+    "readers": "Readers",
+    "reactions": "Reactions",
+    "averageRating": "Average rating",
+    "ratings": "Ratings",
+    "comments": "Comments",
+    "library": "In libraries",
+    "notApplicable": "Not applicable"
   }
 }

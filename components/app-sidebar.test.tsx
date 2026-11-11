@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import en from "@/messages/en.json";
 import pl from "@/messages/pl.json";
 import { AppSidebar } from "./app-sidebar";
+import type { SocialNavItem } from "@/lib/social/nav";
 
 const nav = vi.hoisted(() => ({
   feed: false,
@@ -134,6 +135,24 @@ describe("AppSidebar", () => {
       </NextIntlClientProvider>,
     );
     expect(labels(html)).not.toContain(en.sidebar.moderation);
+  });
+
+  it("leaves out Statistics for an account without a publication (task 83)", () => {
+    nav.stats = true;
+    const html = (hiddenItems: SocialNavItem[]) =>
+      renderToStaticMarkup(
+        <NextIntlClientProvider locale="en" messages={en}>
+          <TooltipProvider>
+            <AppSidebar
+              defaultCollapsed={false}
+              toolsAvailable
+              hiddenItems={hiddenItems}
+            />
+          </TooltipProvider>
+        </NextIntlClientProvider>,
+      );
+    expect(labels(html(["stats"]))).not.toContain(en.sidebar.stats);
+    expect(html([])).toContain('href="/stats"');
   });
 
   it("shows the unread notifications on the bell (task 81)", () => {

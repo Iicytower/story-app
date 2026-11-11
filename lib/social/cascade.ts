@@ -1,8 +1,10 @@
 import { Activity } from "@/lib/models/activity";
 import { Comment } from "@/lib/models/comment";
+import { DailyStat } from "@/lib/models/daily-stat";
 import { LibraryItem } from "@/lib/models/library-item";
 import { Rating } from "@/lib/models/rating";
 import { Reaction } from "@/lib/models/reaction";
+import { ReadEvent } from "@/lib/models/read-event";
 import { ReaderMark } from "@/lib/models/reader-mark";
 import { ReadingProgress } from "@/lib/models/reading-progress";
 
@@ -38,6 +40,11 @@ const PURGES: ((objects: PurgedObjects) => Promise<unknown>)[] = [
   // A book's ratings and its chapters' ones carry the book (task 78).
   ({ folderIds }) => Rating.deleteMany({ folderId: { $in: folderIds } }),
   ({ storyIds }) => Rating.deleteMany({ storyId: { $in: storyIds } }),
+  // Reads and their daily counts (task 83).
+  ({ folderIds }) => ReadEvent.deleteMany({ folderId: { $in: folderIds } }),
+  ({ storyIds }) => ReadEvent.deleteMany({ storyId: { $in: storyIds } }),
+  ({ folderIds }) => DailyStat.deleteMany({ folderId: { $in: folderIds } }),
+  ({ storyIds }) => DailyStat.deleteMany({ storyId: { $in: storyIds } }),
   ({ folderIds }) => Activity.deleteMany({ folderId: { $in: folderIds } }),
   // Other chapters of the same publication keep the entry; one left with none goes (task 75).
   // An author's reply under a chapter goes with its chapter (task 76).
@@ -72,6 +79,9 @@ export async function moveChapterSocialData(
     ReaderMark.updateMany({ storyId }, { $set: { folderId } }),
     Reaction.updateMany({ storyId }, { $set: { folderId } }),
     Rating.updateMany({ storyId }, { $set: { folderId } }),
+    // The chapter's readers count for the book it is in now (statistics and rankings, 83/84).
+    ReadEvent.updateMany({ storyId }, { $set: { folderId } }),
+    DailyStat.updateMany({ storyId }, { $set: { folderId } }),
     Activity.updateMany(
       { type: "authorReply", storyIds: storyId },
       { $set: { folderId } },
