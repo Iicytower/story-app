@@ -2,6 +2,7 @@ import type { Types } from "mongoose";
 import { cache } from "react";
 import { findUserByNickname } from "@/lib/accounts";
 import { connectDB } from "@/lib/db";
+import { Block } from "@/lib/models/block";
 import { Follow } from "@/lib/models/follow";
 import { Profile } from "@/lib/models/profile";
 import { User } from "@/lib/models/user";
@@ -43,17 +44,30 @@ export const getPublicProfile = cache(
     const owner = viewerId !== null && user._id.equals(viewerId);
     if (!owner && isBanActive(user.globalBan, new Date())) return null;
     const hidden = await hiddenFor(viewerId);
-    const [profile, books, followers, following, followed] = await Promise.all([
-      Profile.findOne({ userId: user._id })
-        .select({ bio: 1, avatarId: 1, libraryPublic: 1 })
-        .lean(),
-      listAuthorBooks(user._id, user.nickname),
-      Follow.countDocuments(followFilter(user._id, "followers", hidden)),
-      Follow.countDocuments(followFilter(user._id, "following", hidden)),
-      viewerId && !owner
-        ? Follow.exists({ followerId: viewerId, followeeId: user._id })
-        : null,
-    ]);
+    const other = viewerId !== null && !owner;
+    const [profile, books, followers, following, followed, blocks] =
+      await Promise.all([
+        Profile.findOne({ userId: user._id })
+          .select({ bio: 1, avatarId: 1, libraryPublic: 1 })
+          .lean(),
+        listAuthorBooks(user._id, user.nickname),
+        Follow.countDocuments(followFilter(user._id, "followers", hidden)),
+        Follow.countDocuments(followFilter(user._id, "following", hidden)),
+        other
+          ? Follow.exists({ followerId: viewerId, followeeId: user._id })
+          : null,
+        other
+          ? Block.find(
+              {
+                $or: [
+                  { blockerId: viewerId, blockedId: user._id },
+                  { blockerId: user._id, blockedId: viewerId },
+                ],
+              },
+              { _id: 0, blockerId: 1 },
+            ).lean()
+          : [],
+      ]);
     return {
       userId: user._id,
       nickname: user.nickname,
@@ -61,7 +75,13 @@ export const getPublicProfile = cache(
       followers,
       following,
       // null for a guest and the owner, who get no Follow button to switch.
-      followed: viewerId && !owner ? followed !== null : null,
+      followed: other ? followed !== null : null,
+      // null for a guest and the owner, who get no Block button.
+      blocking: other
+        ? blocks.some(({ blockerId }) => blockerId.toString() === viewerId)
+        : null,
+      // A block either way hides Follow (task 86).
+      blockedEitherWay: blocks.length > 0,
       bio: profile?.bio ?? "",
       avatar: profile?.avatarId
         ? avatarPath(profile.avatarId.toString())

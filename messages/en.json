@@ -105,7 +105,12 @@
       "following": "People I follow",
       "nobody": "Nobody"
     },
-    "messagesFailed": "The message settings could not be loaded or saved."
+    "messagesFailed": "The message settings could not be loaded or saved.",
+    "blocked": "Blocked accounts",
+    "blockedHelp": "Blocked accounts cannot message you, reply to you, mention you, follow you or take part in your community, and you do not see their comments.",
+    "blockedCount": "{count, plural, =0 {You have not blocked anyone.} one {# blocked account} other {# blocked accounts}}",
+    "loadingBlocked": "Loading blocked accounts…",
+    "blockedFailed": "The blocked accounts could not be loaded or changed."
   },
   "errors": {
     "nicknameRequirement": "Nickname must be 3-30 characters: letters a-z, digits, _ and -.",
@@ -1311,5 +1316,14 @@
     "closedNotice": "This conversation is closed. Neither of you can send new messages.",
     "noMessages": "No messages yet.",
     "failed": "The messages could not be loaded. Reload the page and try again."
+  },
+  "blocking": {
+    "block": "Block",
+    "unblock": "Unblock",
+    "blockUser": "Block {nickname}",
+    "unblockUser": "Unblock {nickname}",
+    "confirmTitle": "Block {nickname}?",
+    "confirmDescription": "{nickname} will not be able to message you, reply to you, mention you, follow you or take part in your community. Follows between you are removed and you will no longer see their comments. They can still read your public texts.",
+    "blockingPending": "Blocking…"
   }
 }

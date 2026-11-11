@@ -7,6 +7,7 @@ import type { ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import { connectDB, isDuplicateKeyError } from "@/lib/db";
 import { actionError, translateError } from "@/lib/i18n/action-error";
+import { Block } from "@/lib/models/block";
 import { Follow } from "@/lib/models/follow";
 import { SOCIAL_LIMITS, takeUserAttempt } from "@/lib/rate-limit";
 import { notifyLater } from "@/lib/social/notify";
@@ -53,6 +54,18 @@ export async function follow(nickname: string): Promise<FollowResult> {
       return false;
     },
   );
+  // A block saved after canInteract: blockUser's cleanup may have run before this insert.
+  if (
+    await Block.exists({
+      $or: [
+        { blockerId: user.userId, blockedId: followee._id },
+        { blockerId: followee._id, blockedId: user.userId },
+      ],
+    })
+  ) {
+    await Follow.deleteOne(edge);
+    return actionError("FORBIDDEN", "interactionNotAllowed");
+  }
   if (inserted) {
     notifyLater(followee._id, { type: "follower", actorId: user.userId });
   }

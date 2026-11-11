@@ -15,6 +15,7 @@ import { requireUser } from "@/lib/auth/session";
 import { retryDueCovers } from "@/lib/covers/mutations";
 import { getPublicLibrary, getPublicProfile } from "@/lib/profiles/queries";
 import type { LibraryBook } from "@/lib/library/queries";
+import { BlockButton } from "./block-button";
 import { FollowButton } from "./follow-button";
 import { MessageButton } from "./message-button";
 import { ReportButton } from "@/components/report-dialog";
@@ -88,7 +89,7 @@ export default async function ProfilePage({
               {t("followingCount", { count: profile.following })}
             </Link>
           </p>
-          {!profile.owner && (
+          {!profile.owner && !profile.blockedEitherWay && (
             <FollowButton
               nickname={profile.nickname}
               followed={profile.followed}
@@ -108,7 +109,12 @@ export default async function ProfilePage({
               callbackUrl={`/${await getLocale()}${profilePath(profile.nickname)}`}
             />
           )}
-          {/* Block (86) goes here. */}
+          {profile.blocking !== null && (
+            <BlockButton
+              nickname={profile.nickname}
+              blocking={profile.blocking}
+            />
+          )}
         </div>
       </header>
       {profile.bio && (

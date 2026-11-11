@@ -23,6 +23,7 @@ import {
   hideContent,
 } from "@/app/[locale]/(protected)/moderation/actions";
 import { AuthDialog } from "@/app/[locale]/auth/auth-dialog";
+import { BlockDialog } from "@/components/block-dialog";
 import { ReportDialog } from "@/components/report-dialog";
 
 const DURATION_VALUES = ["1", "7", "30", "forever"] as const;
@@ -267,6 +268,7 @@ export function CommentMenu({
   canHide,
   canBan,
   canReport,
+  canBlock,
   signedIn,
   callbackUrl,
 }: {
@@ -279,20 +281,24 @@ export function CommentMenu({
   canHide: boolean;
   canBan: boolean;
   canReport: boolean;
+  // Another signed-in reader's comment (task 86).
+  canBlock: boolean;
   signedIn: boolean;
   callbackUrl: string;
 }) {
   const t = useTranslations("moderation");
   const tComments = useTranslations("comments");
   const tReports = useTranslations("reports");
-  const [dialog, setDialog] = useState<"hide" | "ban" | "report" | null>(
-    null,
-  );
+  const tBlocking = useTranslations("blocking");
+  const [dialog, setDialog] = useState<
+    "hide" | "ban" | "report" | "block" | null
+  >(null);
   const trigger = useRef<HTMLButtonElement>(null);
-  const setOpen = (kind: "hide" | "ban" | "report") => (open: boolean) =>
-    setDialog(open ? kind : null);
+  const setOpen =
+    (kind: "hide" | "ban" | "report" | "block") => (open: boolean) =>
+      setDialog(open ? kind : null);
   const moderates = authorId !== null && (canHide || canBan);
-  if (!moderates && !canReport) return null;
+  if (!moderates && !canReport && !canBlock) return null;
   return (
     <>
       <ActionMenu
@@ -306,6 +312,11 @@ export function CommentMenu({
         {canReport && (
           <DropdownMenuItem onSelect={() => setDialog("report")}>
             {tReports("report")}
+          </DropdownMenuItem>
+        )}
+        {canBlock && (
+          <DropdownMenuItem onSelect={() => setDialog("block")}>
+            {tBlocking("blockUser", { nickname })}
           </DropdownMenuItem>
         )}
         {moderates && canHide && (
@@ -338,6 +349,15 @@ export function CommentMenu({
             }}
           />
         ))}
+      {canBlock && (
+        <BlockDialog
+          open={dialog === "block"}
+          onOpenChange={setOpen("block")}
+          nickname={nickname}
+          // The comment is gone with the block: the focus goes to the section's heading.
+          returnFocus={() => document.getElementById("comments-title")}
+        />
+      )}
       {moderates && (
         <>
           <HideDialog

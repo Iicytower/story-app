@@ -386,6 +386,15 @@ export async function inviteModerator(nickname: string): Promise<ActionResult> {
     if ((error as { code?: number }).code !== 11000) throw error;
     return { ok: true };
   }
+  // A block saved meanwhile: blockUser's cleanup may have run before this insert.
+  if (await roleBar(user.userId, target._id)) {
+    await CommunityModerator.deleteOne({
+      authorId: user.userId,
+      userId: target._id,
+      state: "invited",
+    });
+    return refused();
+  }
   await logModeration({
     authorId: user.userId,
     actorId: user.userId,
@@ -440,6 +449,11 @@ async function ownRole(
       "NOT_FOUND",
       from === "invited" ? "invitationNotFound" : "moderatorNotFound",
     );
+  }
+  // A block saved meanwhile: blockUser's cleanup may have run before this update.
+  if (action === "accept" && (await roleBar(authorId, user.userId))) {
+    await CommunityModerator.deleteOne({ authorId, userId: user.userId });
+    return refused();
   }
   await logModeration({
     authorId,

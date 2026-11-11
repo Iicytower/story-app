@@ -17,6 +17,7 @@ Subtask 68, zależy od 80 i 87. Podstawa: D80 (Fora i panel admina – panel; Ro
 - Zgłoszenia (80): kolejka na `listAdminReports` (`lib/social/moderation.ts`) – dziś bez kontroli roli i zwraca nick zgłaszającego, więc wywołanie tylko za guardem roli admina; rozstrzyganie trasy `admin` przez istniejące `resolveReport` (`app/[locale]/(protected)/moderation/actions.ts`, sprawdza rolę).
 - Powiadomienia (81): powiadomienia zgłoszeń trasy `admin` mają dziś `href: null` – dopisać link do kolejki w panelu admina.
 - Rankingi (84): ban globalny autora ukrywa go w rankingach od razu (filtr przy renderze), czytelnicy i oceniający zbanowani po przeliczeniu liczą się do następnego przeliczenia (≤ 1 h).
+- Moderacja (86): `moderationLog.scope: "global"` przy banie globalnym (przeniesione z 86; dziś wpisy tylko społeczności).
 
 ## Kryteria akceptacji
 

@@ -17,7 +17,7 @@ export const MODERATION_ACTIONS = [
 export type ModerationAction = (typeof MODERATION_ACTIONS)[number];
 
 // Every moderation step in an author's community, or of the whole site with scope "global"
-// (D80, task 79; the admin's in task 86). Entries outlive the accounts they name (task 89).
+// (D80, task 79; the admin's in task 88). Entries outlive the accounts they name (task 89).
 export interface ModerationLogFields {
   authorId: Types.ObjectId | null;
   scope?: "global";

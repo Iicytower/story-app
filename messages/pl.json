@@ -105,7 +105,12 @@
       "following": "Osoby, które obserwuję",
       "nobody": "Nikt"
     },
-    "messagesFailed": "Nie udało się wczytać ani zapisać ustawień wiadomości."
+    "messagesFailed": "Nie udało się wczytać ani zapisać ustawień wiadomości.",
+    "blocked": "Zablokowane konta",
+    "blockedHelp": "Zablokowane konta nie mogą pisać do Ciebie wiadomości, odpowiadać Ci, wspominać Cię, obserwować Cię ani brać udziału w Twojej społeczności, a Ty nie widzisz ich komentarzy.",
+    "blockedCount": "{count, plural, =0 {Nikogo nie blokujesz.} one {# zablokowane konto} few {# zablokowane konta} many {# zablokowanych kont} other {# zablokowanego konta}}",
+    "loadingBlocked": "Wczytywanie zablokowanych kont…",
+    "blockedFailed": "Nie udało się wczytać ani zmienić zablokowanych kont."
   },
   "errors": {
     "nicknameRequirement": "Nick musi mieć 3–30 znaków: litery a-z, cyfry, _ i -.",
@@ -1311,5 +1316,14 @@
     "closedNotice": "Ta rozmowa jest zamknięta. Żadne z was nie może wysyłać nowych wiadomości.",
     "noMessages": "Nie ma jeszcze wiadomości.",
     "failed": "Nie udało się wczytać wiadomości. Odśwież stronę i spróbuj ponownie."
+  },
+  "blocking": {
+    "block": "Zablokuj",
+    "unblock": "Odblokuj",
+    "blockUser": "Zablokuj {nickname}",
+    "unblockUser": "Odblokuj {nickname}",
+    "confirmTitle": "Zablokować {nickname}?",
+    "confirmDescription": "Konto {nickname} nie będzie mogło pisać do Ciebie wiadomości, odpowiadać Ci, wspominać Cię, obserwować Cię ani brać udziału w Twojej społeczności. Obserwacje między wami zostaną usunięte, a Ty przestaniesz widzieć komentarze tego konta. Twoje publiczne teksty nadal będą dla niego dostępne.",
+    "blockingPending": "Blokowanie…"
   }
 }
