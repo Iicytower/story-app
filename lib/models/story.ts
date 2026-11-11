@@ -59,6 +59,17 @@ storySchema.index(
 );
 storySchema.index({ userId: 1, updatedAt: -1 });
 storySchema.index({ publication: 1, publishedAt: -1 });
+// Latest chapters of followed authors on the home page (task 84). The filter matches the query
+// as written: `deletedAt: null` would not imply `$type: "null"`, so deletedAt stays out.
+storySchema.index(
+  { userId: 1, publishedAt: -1 },
+  {
+    partialFilterExpression: {
+      publication: "public",
+      publishedAt: { $type: "date" },
+    },
+  },
+);
 
 export const Story: Model<StoryFields> =
   (mongoose.models.Story as Model<StoryFields> | undefined) ??

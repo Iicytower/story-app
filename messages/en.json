@@ -796,7 +796,13 @@
     "logIn": "Log in",
     "recent": "Recently published",
     "showMore": "Show more",
-    "recentNone": "Nothing has been published yet."
+    "recentNone": "Nothing has been published yet.",
+    "weekly": "Popular this week",
+    "topRated": "Top rated",
+    "followed": "From authors you follow",
+    "categories": "Popular in categories",
+    "byAuthor": "by {nickname}",
+    "chapterIn": "{book} by {nickname}"
   },
   "notFound": {
     "text": "404 | This page could not be found."

@@ -2,6 +2,7 @@ import { Activity } from "@/lib/models/activity";
 import { Comment } from "@/lib/models/comment";
 import { DailyStat } from "@/lib/models/daily-stat";
 import { LibraryItem } from "@/lib/models/library-item";
+import { Ranking } from "@/lib/models/ranking";
 import { Rating } from "@/lib/models/rating";
 import { Reaction } from "@/lib/models/reaction";
 import { ReadEvent } from "@/lib/models/read-event";
@@ -62,6 +63,12 @@ const PURGES: ((objects: PurgedObjects) => Promise<unknown>)[] = [
       storyIds: { $size: 0 },
     });
   },
+  // Rankings name books; the next computation would drop them too (task 84).
+  ({ folderIds }) =>
+    Ranking.updateMany(
+      { "items.folderId": { $in: folderIds } },
+      { $pull: { items: { folderId: { $in: folderIds } } } },
+    ),
 ];
 
 export async function purgeSocialData(objects: PurgedObjects): Promise<void> {
