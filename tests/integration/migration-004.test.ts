@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { runMigrations } from "@/lib/migrate";
 import { DEFAULT_LAYOUT } from "@/lib/editor-layout";
 import { getUserSettings } from "@/lib/settings/queries";
+import { OPTIONAL_NOTIFICATION_TYPES } from "@/lib/social/notifications";
 import * as folders002 from "@/migrations/002-folders";
 import * as positions003 from "@/migrations/003-positions";
 import * as settings004 from "@/migrations/004-settings";
@@ -84,6 +85,9 @@ describe("004-settings", () => {
       },
       folders: { sort: "alpha", manualOrder: false },
       proofreading: { dictionary: [] },
+      notifications: Object.fromEntries(
+        OPTIONAL_NOTIFICATION_TYPES.map((type) => [type, true]),
+      ),
     });
   });
 

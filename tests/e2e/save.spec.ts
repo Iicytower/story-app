@@ -1,15 +1,19 @@
 import type { Page } from "@playwright/test";
 import { findStoryById, seedStory } from "./db";
 import { storageStatePath } from "./env";
-import {
-  countActionRequests,
-  expect,
-  hideTab,
-  runAutosaveDelay,
-  test,
-} from "./helpers";
+import { expect, hideTab, runAutosaveDelay, test } from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
+
+// Saves only; the notification poll (task 81) is an action without arguments.
+function countSaveRequests(page: Page) {
+  const requests: string[] = [];
+  page.on("request", (request) => {
+    if (request.headers()["next-action"] && request.postData() !== "[]")
+      requests.push(request.url());
+  });
+  return requests;
+}
 
 function editor(page: Page) {
   return {
@@ -48,7 +52,7 @@ test("typing with pauses shorter than 20 seconds does not save", async ({
   await page.clock.install();
   await page.goto(`/stories/${id}`);
   const { content, status } = editor(page);
-  const requests = countActionRequests(page);
+  const requests = countSaveRequests(page);
 
   await content.click();
   for (const word of ["One", " two", " three", " four"]) {
@@ -70,7 +74,7 @@ test("hiding the tab saves at once, and only when something changed", async ({
   await page.clock.install();
   await page.goto(`/stories/${id}`);
   const { content, status } = editor(page);
-  const requests = countActionRequests(page);
+  const requests = countSaveRequests(page);
 
   await hideTab(page);
   await expect(content).toBeVisible();
