@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { getUserSettings } from "@/lib/settings/queries";
 import { hasPublication } from "@/lib/social/author-stats";
 import { hasModerationAccess } from "@/lib/social/moderation";
+import { countUnreadConversations } from "@/lib/social/direct-messages";
 import { countUnread } from "@/lib/social/notification-list";
 import { toolsConfig } from "@/lib/tools/client";
 
@@ -15,12 +16,14 @@ export async function AppShell({
 }) {
   // One publication check for both entries.
   const publication = hasPublication(userId);
-  const [{ appearance }, moderation, unread, published] = await Promise.all([
-    getUserSettings(userId),
-    publication.then((value) => hasModerationAccess(userId, value)),
-    countUnread(userId),
-    publication,
-  ]);
+  const [{ appearance }, moderation, unread, unreadMessages, published] =
+    await Promise.all([
+      getUserSettings(userId),
+      publication.then((value) => hasModerationAccess(userId, value)),
+      countUnread(userId),
+      countUnreadConversations(userId),
+      publication,
+    ]);
   const hiddenItems = [
     ...(moderation ? [] : ["moderation" as const]),
     ...(published ? [] : ["stats" as const]),
@@ -32,6 +35,7 @@ export async function AppShell({
         toolsAvailable={toolsConfig() !== null}
         hiddenItems={hiddenItems}
         initialUnread={unread}
+        initialUnreadMessages={unreadMessages}
       />
       <main className="flex min-w-0 flex-1 flex-col">{children}</main>
     </div>

@@ -18,6 +18,7 @@ Subtask 68, zależy od 69–88. Podstawa: D80 (Konto). Zmienia D37 (konta nie da
 - Wzmianki (82): „usunięte konta” w podpowiedziach `suggestNicknames` – wykluczyć konta usunięte (tombstone), dziś takie nie istnieją.
 - Statystyki (83): `readEvents.reader` w formie `u:<userId>` usunąć lub zanonimizować; `dailyStats` konta jako autora kasować po `authorId`.
 - Rankingi (84): `rankings.items` – usunąć `folderId` usuniętych książek konta (`PURGES` robi `$pull` z `rankings.items`).
+- DM (85): `conversations` i `messages`, w których konto jest uczestnikiem, obsłużyć przy usuwaniu (poza `PURGES`); rozmowa z usuniętym kontem pokazuje drugiej stronie „Usunięte konto”.
 
 ## Kryteria akceptacji
 

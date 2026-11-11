@@ -63,6 +63,8 @@ export const ACTORS_KEPT = 5;
 export const NOTIFICATIONS_SHOWN = 50;
 export const NOTIFY_BATCH = 500;
 export const POLL_MS = 30_000;
+// The open conversation (task 85).
+export const THREAD_POLL_MS = 5_000;
 
 type Id = { toString(): string };
 
@@ -72,16 +74,27 @@ export interface NotificationSubject {
   folderId?: Id;
   storyIds?: Id[];
   commentId?: Id;
+  // A mention in a direct message (task 85).
+  conversationId?: Id;
 }
 
 // What groups notifications about one object, e.g. reaction:story:<id>: the most specific id.
 export function objectKey(
   type: NotificationType,
-  { actorId, authorId, folderId, storyIds, commentId }: NotificationSubject,
+  {
+    actorId,
+    authorId,
+    folderId,
+    storyIds,
+    commentId,
+    conversationId,
+  }: NotificationSubject,
 ): string {
   // An admin-route report has no community; the reporter must not split or name it.
   if (type === "report" && !authorId) return "report:admin";
-  const subject = commentId
+  const subject = conversationId
+    ? `conversation:${conversationId.toString()}`
+    : commentId
     ? `comment:${commentId.toString()}`
     : storyIds?.length
       ? `story:${storyIds.map(String).join(",")}`

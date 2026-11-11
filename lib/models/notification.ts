@@ -22,6 +22,8 @@ export interface NotificationFields {
   folderId?: Types.ObjectId;
   storyIds?: Types.ObjectId[];
   commentId?: Types.ObjectId;
+  // A mention in a direct message (task 85).
+  conversationId?: Types.ObjectId;
   readAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -43,6 +45,7 @@ const notificationSchema = new Schema<NotificationFields>(
     folderId: { type: Schema.Types.ObjectId, ref: "Folder" },
     storyIds: { type: [Schema.Types.ObjectId], default: undefined },
     commentId: { type: Schema.Types.ObjectId },
+    conversationId: { type: Schema.Types.ObjectId, ref: "Conversation" },
     readAt: { type: Date, default: null },
   },
   { timestamps: true, versionKey: false },

@@ -73,6 +73,24 @@ const SOCIAL_LINKS: Record<
   stats: { href: "/stats", icon: <ChartColumnIcon /> },
 };
 
+// A count shown next to the label, or as a dot on the icon when compact.
+function Badge({ count, compact }: { count: number; compact: boolean }) {
+  if (count <= 0) return null;
+  return compact ? (
+    <span
+      aria-hidden
+      className="bg-primary absolute top-1.5 right-1.5 size-2 rounded-full"
+    />
+  ) : (
+    <span
+      aria-hidden
+      className="bg-primary text-primary-foreground ml-auto rounded-full px-1.5 text-xs leading-5 font-medium"
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
 function NavLink({
   href,
   label,
@@ -81,6 +99,8 @@ function NavLink({
   current,
   prefetch,
   onClick,
+  accessibleLabel = label,
+  badge = 0,
 }: {
   href: string;
   label: string;
@@ -89,18 +109,25 @@ function NavLink({
   current?: boolean;
   prefetch?: false;
   onClick: () => void;
+  accessibleLabel?: string;
+  badge?: number;
 }) {
   const link = (
-    <Button variant={current ? "secondary" : "ghost"} asChild className={ITEM}>
+    <Button
+      variant={current ? "secondary" : "ghost"}
+      asChild
+      className={`${ITEM} relative`}
+    >
       <Link
         href={href}
-        aria-label={label}
+        aria-label={accessibleLabel}
         aria-current={current ? "page" : undefined}
         prefetch={prefetch}
         onClick={onClick}
       >
         {icon}
         {!compact && label}
+        <Badge count={badge} compact={compact} />
       </Link>
     </Button>
   );
@@ -127,7 +154,6 @@ function ActionButton({
   compact: boolean;
   onClick: () => void;
   accessibleLabel?: string;
-  // A count shown next to the label, or as a dot on the icon when compact.
   badge?: number;
   // The notifications button, which gets the focus back when the panel closes.
   bell?: boolean;
@@ -142,20 +168,7 @@ function ActionButton({
     >
       {icon}
       {!compact && label}
-      {badge > 0 &&
-        (compact ? (
-          <span
-            aria-hidden
-            className="bg-primary absolute top-1.5 right-1.5 size-2 rounded-full"
-          />
-        ) : (
-          <span
-            aria-hidden
-            className="bg-primary text-primary-foreground ml-auto rounded-full px-1.5 text-xs leading-5 font-medium"
-          >
-            {badge > 99 ? "99+" : badge}
-          </span>
-        ))}
+      <Badge count={badge} compact={compact} />
     </Button>
   );
   return compact ? (
@@ -171,6 +184,7 @@ function NavItems({
   compact,
   hiddenItems,
   unread,
+  unreadMessages,
   onDone,
   onSettings,
   onNotifications,
@@ -178,6 +192,7 @@ function NavItems({
   compact: boolean;
   hiddenItems: SocialNavItem[];
   unread: number;
+  unreadMessages: number;
   onDone: () => void;
   onSettings: () => void;
   onNotifications: () => void;
@@ -210,6 +225,13 @@ function NavItems({
             compact={compact}
             current={pathname === SOCIAL_LINKS[item].href}
             onClick={onDone}
+            {...(item === "messages" && {
+              badge: unreadMessages,
+              accessibleLabel:
+                unreadMessages > 0
+                  ? t("messagesUnread", { count: unreadMessages })
+                  : t(item),
+            })}
           />
         ),
       );
@@ -253,10 +275,12 @@ export function AppSidebar({
   toolsAvailable,
   hiddenItems = [],
   initialUnread = 0,
+  initialUnreadMessages = 0,
 }: {
   defaultCollapsed: boolean;
   toolsAvailable: boolean;
   initialUnread?: number;
+  initialUnreadMessages?: number;
   // Entries that are on but not for this account.
   hiddenItems?: SocialNavItem[];
 }) {
@@ -271,9 +295,10 @@ export function AppSidebar({
     setDrawerOpen(false);
     setNotificationsOpen(true);
   }, []);
-  const [unread, setUnread] = useUnreadNotifications(
+  const [unread, setUnread, unreadMessages] = useUnreadNotifications(
     initialUnread,
     openNotifications,
+    initialUnreadMessages,
   );
 
   // React's dev-mode remount resets <html> attributes set by the inline script, and a
@@ -325,6 +350,7 @@ export function AppSidebar({
               compact={false}
               hiddenItems={hiddenItems}
               unread={unread}
+              unreadMessages={unreadMessages}
               onDone={() => setDrawerOpen(false)}
               onSettings={openSettings}
               onNotifications={openNotifications}
@@ -342,6 +368,7 @@ export function AppSidebar({
           compact={collapsed}
           hiddenItems={hiddenItems}
           unread={unread}
+          unreadMessages={unreadMessages}
           onDone={() => {}}
           onSettings={openSettings}
           onNotifications={openNotifications}

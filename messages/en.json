@@ -30,7 +30,8 @@
     "stats": "Statistics",
     "notificationsUnread": "{count, plural, one {Notifications, # unread} other {Notifications, # unread}}",
     "menuUnread": "Menu, unread notifications",
-    "toasts": "Alerts"
+    "toasts": "Alerts",
+    "messagesUnread": "{count, plural, one {Messages, # unread conversation} other {Messages, # unread conversations}}"
   },
   "settings": {
     "title": "Settings",
@@ -95,7 +96,16 @@
       "mention": "Mentions of me",
       "libraryChapter": "Books in my library",
       "followedChapter": "Authors I follow"
-    }
+    },
+    "messages": "Messages",
+    "dmFrom": "Who can start a conversation with me",
+    "dmFromHelp": "Conversations you already have go on whatever you choose.",
+    "dmFromOptions": {
+      "everyone": "Everyone",
+      "following": "People I follow",
+      "nobody": "Nobody"
+    },
+    "messagesFailed": "The message settings could not be loaded or saved."
   },
   "errors": {
     "nicknameRequirement": "Nickname must be 3-30 characters: letters a-z, digits, _ and -.",
@@ -229,7 +239,9 @@
     "reportTargetNotFound": "This content no longer exists or is not available.",
     "reportAlreadyOpen": "You have already reported this. Your report is waiting for a decision.",
     "reportNotFound": "This report no longer exists or has already been decided.",
-    "notificationNotFound": "This notification does not exist."
+    "notificationNotFound": "This notification does not exist.",
+    "messageRequired": "Write a message first.",
+    "conversationNotFound": "This conversation does not exist."
   },
   "password": {
     "mustContain": "The password must contain:",
@@ -392,7 +404,9 @@
     "library": "Library – Story App",
     "feed": "Feed – Story App",
     "moderation": "Moderation – Story App",
-    "stats": "Statistics – Story App"
+    "stats": "Statistics – Story App",
+    "messages": "Messages – Story App",
+    "conversation": "{nickname}: conversation – Story App"
   },
   "folders": {
     "title": "Folders",
@@ -976,7 +990,9 @@
     "libraryPrivate": "Your library is private.",
     "libraryPrivateLink": "Go to Library",
     "noLibraryBooks": "No books in the library yet.",
-    "notOnShelf": "Other books"
+    "notOnShelf": "Other books",
+    "message": "Message",
+    "messageTo": "Message to {nickname}"
   },
   "avatar": {
     "title": "Avatar",
@@ -1236,6 +1252,7 @@
       "comment": "{actor} commented on {target}",
       "reply": "{actor} replied to your comment on {target}",
       "mention": "{actor} mentioned you in a comment on {target}",
+      "mentionMessage": "{actor} mentioned you in a message",
       "reaction": "{actor} {others, plural, =0 {reacted} one {and # other person reacted} other {and # other people reacted}} to {target}",
       "reactionComment": "{actor} {others, plural, =0 {reacted} one {and # other person reacted} other {and # other people reacted}} to your comment on {target}",
       "rating": "{count, plural, one {Someone rated} other {# people rated}} {target}",
@@ -1274,5 +1291,25 @@
     "comments": "Comments",
     "library": "In libraries",
     "notApplicable": "Not applicable"
+  },
+  "messages": {
+    "title": "Messages",
+    "empty": "No conversations yet. Use Message on someone’s profile to start one.",
+    "list": "Conversations",
+    "unread": "Unread",
+    "closed": "Closed",
+    "deletedAccount": "Deleted account",
+    "lastMessage": "Last message",
+    "back": "All conversations",
+    "heading": "Conversation with <user>{nickname}</user>",
+    "thread": "Messages",
+    "older": "Show older messages",
+    "you": "You",
+    "newLabel": "Message",
+    "placeholder": "Write a message…",
+    "send": "Send",
+    "closedNotice": "This conversation is closed. Neither of you can send new messages.",
+    "noMessages": "No messages yet.",
+    "failed": "The messages could not be loaded. Reload the page and try again."
   }
 }

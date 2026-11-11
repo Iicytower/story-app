@@ -11,6 +11,7 @@ Subtask 68, zależy od 81 i 85. Podstawa: D80 (Powiadomienia, DM, realtime – r
 - Klient: `EventSource` przy widocznej karcie; zdarzenie odświeża licznik i otwartą rozmowę. Przy błędzie lub braku zmiennej – polling z 81/85 (30 s / 5 s). Przy działającym SSE polling wstrzymany.
 - E2E: `tests/e2e/fake-tools.mjs` dostaje `/rt/stream` i `/publish` (atrapa SSE). Lokalnie usługa w `npm run up`, zgodna z `npm run tools:remote` (task 28) bez zmian skryptu poza listą usług; `docs/deploy.md`: zmienne, ścieżka `/rt/*`, wymaganie przed wydaniem.
 - Powiadomienia (81): polling `unreadCounts` co 30 s zastąpić SSE (polling zostaje jako fallback).
+- DM (85): polling wątku co 5 s (`THREAD_POLL_MS` w `lib/social/notifications.ts`, Server Action `getMessages`) i liczników (`unreadCounts.messages`) zastąpić SSE (polling jako fallback).
 
 ## Kryteria akceptacji
 

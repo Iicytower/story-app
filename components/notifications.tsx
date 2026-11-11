@@ -23,13 +23,23 @@ import { cn } from "@/lib/utils";
 
 export type UnreadUpdate = number | ((current: number) => number);
 
-// The unread counter, polled every POLL_MS only while the tab is visible (D80); coming back to
-// the tab asks at once. A rise during the session shows a toast.
+const COUNTS_CHANGED = "unread-counts-changed";
+
+// E.g. after a conversation is read: the counters ask again at once instead of at the next poll.
+export function refreshUnreadCounts() {
+  window.dispatchEvent(new Event(COUNTS_CHANGED));
+}
+
+// The unread counters (notifications and conversations), polled every POLL_MS only while the tab
+// is visible (D80); coming back to the tab asks at once. A rise of notifications during the
+// session shows a toast; messages have their own counter by the Messages entry.
 export function useUnreadNotifications(
   initial: number,
   onOpen: () => void,
-): [number, (update: UnreadUpdate) => void] {
+  initialMessages = 0,
+): [number, (update: UnreadUpdate) => void, number] {
   const [count, setCount] = useState(initial);
+  const [messages, setMessages] = useState(initialMessages);
   const last = useRef(initial);
   const t = useTranslations("notifications");
   const open = useRef(onOpen);
@@ -56,6 +66,7 @@ export function useUnreadNotifications(
         });
       }
       update(result.notifications);
+      setMessages(result.messages);
     }
     function start() {
       if (timer === null) timer = setInterval(() => void poll(), POLL_MS);
@@ -69,16 +80,19 @@ export function useUnreadNotifications(
       void poll();
       start();
     }
+    const onChanged = () => void poll();
     if (document.visibilityState !== "hidden") start();
     document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener(COUNTS_CHANGED, onChanged);
     return () => {
       active = false;
       stop();
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener(COUNTS_CHANGED, onChanged);
     };
   }, [t, update]);
 
-  return [count, update];
+  return [count, update, messages];
 }
 
 function Message({ item }: { item: NotificationView }) {
@@ -98,7 +112,9 @@ function Message({ item }: { item: NotificationView }) {
       ? "reactionComment"
       : item.type === "report" && !item.community
         ? "reportAdmin"
-        : item.type;
+        : item.type === "mention" && item.inMessage
+          ? "mentionMessage"
+          : item.type;
   return <>{t(`types.${key}`, values)}</>;
 }
 
