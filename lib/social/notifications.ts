@@ -65,6 +65,8 @@ export const NOTIFY_BATCH = 500;
 export const POLL_MS = 30_000;
 // The open conversation (task 85).
 export const THREAD_POLL_MS = 5_000;
+// While the realtime stream is up (task 90): in case an event was lost.
+export const SAFETY_POLL_MS = 5 * 60_000;
 
 type Id = { toString(): string };
 

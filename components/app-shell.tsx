@@ -6,6 +6,7 @@ import { isActiveAdmin } from "@/lib/social/admin";
 import { hasModerationAccess } from "@/lib/social/moderation";
 import { countUnreadConversations } from "@/lib/social/direct-messages";
 import { countUnread } from "@/lib/social/notification-list";
+import { realtimeUrl } from "@/lib/social/realtime";
 import { toolsConfig } from "@/lib/tools/client";
 
 export async function AppShell({
@@ -39,6 +40,7 @@ export async function AppShell({
         hiddenItems={hiddenItems}
         initialUnread={unread}
         initialUnreadMessages={unreadMessages}
+        realtimeUrl={realtimeUrl()}
       />
       <main className="flex min-w-0 flex-1 flex-col">{children}</main>
     </div>

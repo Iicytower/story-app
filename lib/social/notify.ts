@@ -9,6 +9,7 @@ import { Notification } from "@/lib/models/notification";
 import { Settings } from "@/lib/models/settings";
 import { User } from "@/lib/models/user";
 import { isBanActive } from "@/lib/social/permissions";
+import { publishRealtime } from "@/lib/social/realtime";
 import {
   ACTORS_KEPT,
   GROUPED_TYPES,
@@ -166,6 +167,7 @@ export async function notify(
   ];
   if (ids.length === 0) return;
   await connectDB();
+  const notified: string[] = [];
   for (const batch of chunks(ids)) {
     const recipients = await recipientsOf(batch, event);
     if (recipients.length === 0) continue;
@@ -194,7 +196,10 @@ export async function notify(
       );
     }
     if (added.length > 0) await trim(added);
+    notified.push(...added.map(String));
   }
+  // Open pages ask for their counter at once (task 90); a joined group changes no counter.
+  await publishRealtime(notified, { type: "notification" });
 }
 
 // After the response (D80): a notification never slows an action down nor fails it, an error

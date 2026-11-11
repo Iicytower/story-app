@@ -8,6 +8,9 @@ import { actionError } from "@/lib/i18n/action-error";
 import { Notification } from "@/lib/models/notification";
 import { getUserSettings } from "@/lib/settings/queries";
 import { countUnreadConversations } from "@/lib/social/direct-messages";
+import { publishRead, realtimeUrl } from "@/lib/social/realtime";
+import { createRealtimeToken } from "@/lib/social/realtime-token";
+import { toolsConfig } from "@/lib/tools/client";
 import type { UserSettings } from "@/lib/settings/settings";
 import {
   countUnread,
@@ -26,6 +29,20 @@ export async function unreadCounts(): Promise<
     countUnreadConversations(user.userId),
   ]);
   return { ok: true, notifications, messages };
+}
+
+// The token of the realtime stream for the session's account (task 90, D80), renewed by the
+// page before it expires.
+export async function realtimeToken(): Promise<
+  ActionResult<{ token: string; expiresAt: number }>
+> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  const config = toolsConfig();
+  if (!config || !realtimeUrl()) {
+    return actionError("TOOL_UNAVAILABLE", "toolUnavailable");
+  }
+  return { ok: true, ...createRealtimeToken(user.userId, config.secret) };
 }
 
 export async function getNotifications(): Promise<
@@ -53,6 +70,7 @@ export async function markNotificationRead(id: string): Promise<ActionResult> {
     { $set: { readAt: new Date() } },
     { timestamps: false },
   );
+  if (matchedCount > 0) publishRead(user.userId);
   const found = matchedCount > 0 || (await Notification.exists(owned));
   if (!found) return actionError("NOT_FOUND", "notificationNotFound");
   return { ok: true };
@@ -62,11 +80,12 @@ export async function markAllNotificationsRead(): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
   await connectDB();
-  await Notification.updateMany(
+  const { modifiedCount } = await Notification.updateMany(
     { userId: user.userId, readAt: null },
     { $set: { readAt: new Date() } },
     { timestamps: false },
   );
+  if (modifiedCount > 0) publishRead(user.userId);
   return { ok: true };
 }
 

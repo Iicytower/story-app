@@ -5,11 +5,16 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { LocalDate } from "@/components/local-date";
 import { MentionTextarea } from "@/components/mention-textarea";
 import { refreshUnreadCounts } from "@/components/notifications";
+import {
+  isRealtimeLive,
+  type RealtimeMessage,
+  useRealtimeEvents,
+} from "@/components/realtime";
 import { SocialMarkdown } from "@/components/social-markdown";
 import { Button } from "@/components/ui/button";
 import { MAX_DM_LENGTH } from "@/lib/limits";
 import type { MessageView } from "@/lib/social/direct-messages";
-import { THREAD_POLL_MS } from "@/lib/social/notifications";
+import { THREAD_POLL_MS, SAFETY_POLL_MS } from "@/lib/social/notifications";
 import { cn } from "@/lib/utils";
 import { getMessages, markConversationRead, sendMessage } from "../actions";
 
@@ -80,34 +85,67 @@ export function Thread({
     end.current?.scrollIntoView({ block: "end" });
   }, [newest]);
 
-  // Every THREAD_POLL_MS while the tab is visible (D80), at once when it comes back.
+  // Not read any more once the conversation is left.
+  const mounted = useRef(true);
   useEffect(() => {
-    let timer: ReturnType<typeof setInterval> | null = null;
-    let active = true;
-    async function poll() {
-      if ((await fetchNew()) && active) await markRead();
-    }
-    function start() {
-      if (timer === null)
-        timer = setInterval(() => void poll(), THREAD_POLL_MS);
-    }
-    function stop() {
-      if (timer !== null) clearInterval(timer);
-      timer = null;
-    }
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  const poll = useCallback(async () => {
+    if ((await fetchNew()) && mounted.current) await markRead();
+  }, [fetchNew, markRead]);
+
+  // Every THREAD_POLL_MS while the tab is visible (D80) and the realtime stream is down, every
+  // SAFETY_POLL_MS while it is up (task 90); at once when the tab comes back, the stream comes
+  // up or brings a message here.
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const every = useRef<number | null>(null);
+  const sync = useCallback(() => {
+    const wanted =
+      document.visibilityState === "hidden"
+        ? null
+        : isRealtimeLive()
+          ? SAFETY_POLL_MS
+          : THREAD_POLL_MS;
+    if (wanted === every.current) return;
+    if (timer.current !== null) clearInterval(timer.current);
+    timer.current =
+      wanted === null ? null : setInterval(() => void poll(), wanted);
+    every.current = wanted;
+  }, [poll]);
+  const onLive = useCallback(() => {
+    if (isRealtimeLive()) void poll();
+    sync();
+  }, [poll, sync]);
+  const onMessage = useCallback(
+    (message: RealtimeMessage) => {
+      if (
+        message.type === "message" &&
+        message.conversationId === conversationId
+      ) {
+        void poll();
+      }
+    },
+    [conversationId, poll],
+  );
+  useRealtimeEvents(onLive, onMessage);
+
+  useEffect(() => {
     function onVisibility() {
-      if (document.visibilityState === "hidden") return stop();
-      void poll();
-      start();
+      if (document.visibilityState !== "hidden") void poll();
+      sync();
     }
-    if (document.visibilityState !== "hidden") start();
+    sync();
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
-      active = false;
-      stop();
+      if (timer.current !== null) clearInterval(timer.current);
+      timer.current = null;
+      every.current = null;
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [fetchNew, markRead]);
+  }, [poll, sync]);
 
   async function loadOlder() {
     const before = messages[0]?.id;
