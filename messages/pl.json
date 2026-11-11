@@ -112,7 +112,9 @@
     "blockedHelp": "Zablokowane konta nie mogą pisać do Ciebie wiadomości, odpowiadać Ci, wspominać Cię, obserwować Cię ani brać udziału w Twojej społeczności, a Ty nie widzisz ich komentarzy.",
     "blockedCount": "{count, plural, =0 {Nikogo nie blokujesz.} one {# zablokowane konto} few {# zablokowane konta} many {# zablokowanych kont} other {# zablokowanego konta}}",
     "loadingBlocked": "Wczytywanie zablokowanych kont…",
-    "blockedFailed": "Nie udało się wczytać ani zmienić zablokowanych kont."
+    "blockedFailed": "Nie udało się wczytać ani zmienić zablokowanych kont.",
+    "deleteAccount": "Usuń konto",
+    "deleteAccountHelp": "Usuwa na zawsze Twoje teksty i dane; komentarze i posty w innych miejscach zostaną, podpisane jako usunięty użytkownik."
   },
   "errors": {
     "nicknameRequirement": "Nick musi mieć 3–30 znaków: litery a-z, cyfry, _ i -.",
@@ -266,7 +268,9 @@
     "categoryLabelRequired": "Podaj nazwę kategorii w obu językach.",
     "categoryLabelTooLong": "Nazwa kategorii może mieć najwyżej {max, number} znaków.",
     "adultTargetNotFound": "Pod tym adresem nie ma publicznego folderu, rozdziału ani okładki.",
-    "tagNotFound": "Tego tagu nie ma na liście."
+    "tagNotFound": "Tego tagu nie ma na liście.",
+    "deleteAccountInvalid": "Te dane są nieprawidłowe.",
+    "deleteAccountNicknameMismatch": "Nick nie zgadza się z Twoim kontem."
   },
   "password": {
     "mustContain": "Hasło musi zawierać:",
@@ -301,6 +305,14 @@
     "current": "Obecne hasło",
     "new": "Nowe hasło",
     "repeat": "Powtórz nowe hasło"
+  },
+  "deleteAccount": {
+    "title": "Usuń konto",
+    "description": "Twoje teksty wraz z wersjami, okładkami, komentarzami i forum, a także profil, avatar, biblioteka, obserwacje, notatki, oceny, reakcje, powiadomienia, wiadomości i ustawienia zostaną usunięte na zawsze. Twoje komentarze pod tekstami innych autorów i posty na cudzych forach zostaną, podpisane jako usunięty użytkownik. Twojego nicku nie będzie można użyć ponownie. Wszystkie urządzenia zostaną wylogowane.",
+    "password": "Hasło",
+    "nickname": "Wpisz swój nick, aby potwierdzić",
+    "confirm": "Usuń konto",
+    "deleting": "Usuwanie…"
   },
   "export": {
     "loadFailed": "Nie udało się wczytać danych do eksportu.",
@@ -1139,7 +1151,8 @@
     "pages": "Strony komentarzy",
     "newest": "Najnowsze komentarze",
     "older": "Starsze komentarze",
-    "menuFor": "Akcje komentarza {nickname}, {date}"
+    "menuFor": "Akcje komentarza {nickname}, {date}",
+    "deletedUser": "Usunięty użytkownik"
   },
   "mentions": {
     "suggestions": "Podpowiedzi nicków",
@@ -1399,7 +1412,8 @@
     "menuFor": "Akcje {kind, select, thread {wątku} other {postu}} {nickname}, {date}",
     "moderateFor": "Moderuj {kind, select, thread {wątek} other {post}} {nickname}, {date}",
     "quoteUnavailable": "Cytowany post jest niedostępny.",
-    "quoteOf": "Cytat z postu {nickname}"
+    "quoteOf": "Cytat z postu {nickname}",
+    "deletedUser": "Usunięty użytkownik"
   },
   "admin": {
     "title": "Admin",

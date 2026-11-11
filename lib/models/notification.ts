@@ -65,6 +65,9 @@ notificationSchema.index(
   { expireAfterSeconds: NOTIFICATION_TTL_DAYS * 24 * 60 * 60 },
 );
 
+// A deleted account leaves the actors of other users' notifications (task 89).
+notificationSchema.index({ actorIds: 1 });
+
 export const Notification: Model<NotificationFields> =
   (mongoose.models.Notification as Model<NotificationFields> | undefined) ??
   mongoose.model<NotificationFields>(

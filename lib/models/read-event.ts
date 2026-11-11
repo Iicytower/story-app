@@ -27,6 +27,9 @@ readEventSchema.index({ day: 1, folderId: 1 });
 readEventSchema.index({ folderId: 1 });
 readEventSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
+// A deleted account's reads (task 89).
+readEventSchema.index({ reader: 1 });
+
 export const ReadEvent: Model<ReadEventFields> =
   (mongoose.models.ReadEvent as Model<ReadEventFields> | undefined) ??
   mongoose.model<ReadEventFields>("ReadEvent", readEventSchema);

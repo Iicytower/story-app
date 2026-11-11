@@ -13,7 +13,7 @@ import { ForumThread, type ForumThreadFields } from "@/lib/models/forum-thread";
 import { Profile } from "@/lib/models/profile";
 import { Story } from "@/lib/models/story";
 import { ThreadFollow } from "@/lib/models/thread-follow";
-import { User } from "@/lib/models/user";
+import { NOT_DELETED, User } from "@/lib/models/user";
 import { avatarPath } from "@/lib/profiles/queries";
 import { resolveMentions } from "@/lib/social/mentions";
 import {
@@ -114,9 +114,14 @@ export async function hasPublicBook(
 // The author's forum as the viewer sees it: not for a blocked or globally banned author (D80).
 async function authorPlace(
   viewerId: string | null,
-  user: { _id: Types.ObjectId; nickname?: string | null; globalBan?: unknown },
+  user: {
+    _id: Types.ObjectId;
+    nickname?: string | null;
+    globalBan?: unknown;
+    deletedAt?: Date;
+  },
 ): Promise<Extract<ForumPlace, { scope: "author" }> | null> {
-  if (!user.nickname) return null;
+  if (!user.nickname || user.deletedAt) return null;
   const self = viewerId !== null && user._id.equals(viewerId);
   if (
     !self &&
@@ -150,7 +155,7 @@ export async function findAuthorForum(
 
 async function authorForumById(viewerId: string | null, authorId: string) {
   const user = await User.findById(authorId)
-    .select({ nickname: 1, globalBan: 1 })
+    .select({ nickname: 1, globalBan: 1, deletedAt: 1 })
     .lean();
   return user ? authorPlace(viewerId, user) : null;
 }
@@ -309,15 +314,19 @@ export async function findVisiblePost(viewerId: string, postId: string) {
     .select({ threadId: 1, userId: 1 })
     .lean();
   if (!post) return null;
+  // A deleted account's posts stay and take reactions and reports (task 89).
   const [found, named] = await Promise.all([
     findVisibleThread(viewerId, post.threadId.toString()),
-    User.exists({ _id: post.userId, nickname: { $type: "string" } }),
+    User.findOne({ _id: post.userId, nickname: { $type: "string" } })
+      .select({ deletedAt: 1 })
+      .lean(),
   ]);
   if (!found || found.thread.hidden || !named) return null;
   if (found.hidden.some((id) => id.equals(post.userId))) return null;
   return {
     _id: post._id,
     writerId: post.userId,
+    writerDeleted: Boolean(named.deletedAt),
     threadId: post.threadId,
     threadUserId: found.thread.userId,
     place: found.place,
@@ -360,6 +369,7 @@ export async function listThreads(
   const users = await User.find({
     _id: { $in: threads.map(({ userId }) => userId) },
     nickname: { $type: "string" },
+    ...NOT_DELETED,
   })
     .select({ nickname: 1 })
     .lean();
@@ -380,7 +390,8 @@ export async function listThreads(
 export interface PostView {
   id: string;
   state: "visible" | "deleted" | "hidden";
-  author: { nickname: string; avatar: string | null } | null;
+  // nickname null: a deleted account, shown without a link (task 89).
+  author: { nickname: string | null; avatar: string | null } | null;
   body: string | null;
   mentions: string[];
   // The post quoted, read with the viewer's visibility; nickname and excerpt are null when the
@@ -421,11 +432,12 @@ type RawPost = Pick<
   | "hidden"
 > & { _id: Types.ObjectId };
 
+// A deleted account's tombstone signs its posts as a deleted user (task 89).
 async function authorsOf(userIds: Types.ObjectId[]) {
   const ids = [...new Set(userIds.map(String))];
   const [users, profiles] = await Promise.all([
     User.find({ _id: { $in: ids }, nickname: { $type: "string" } })
-      .select({ nickname: 1, role: 1 })
+      .select({ nickname: 1, role: 1, deletedAt: 1 })
       .lean(),
     Profile.find({ userId: { $in: ids }, avatarId: { $exists: true } })
       .select({ userId: 1, avatarId: 1 })
@@ -442,9 +454,11 @@ async function authorsOf(userIds: Types.ObjectId[]) {
       users.filter((user) => isAdmin(user)).map(({ _id }) => _id.toString()),
     ),
     authors: new Map(
-      users.map(({ _id, nickname }) => [
+      users.map(({ _id, nickname, deletedAt }) => [
         _id.toString(),
-        { nickname: nickname!, avatar: avatars.get(_id.toString()) ?? null },
+        deletedAt
+          ? { nickname: null, avatar: null }
+          : { nickname, avatar: avatars.get(_id.toString()) ?? null },
       ]),
     ),
   };
@@ -545,7 +559,8 @@ export async function getThread(
         body.length > QUOTE_EXCERPT
           ? `${body.slice(0, QUOTE_EXCERPT).trimEnd()}…`
           : body;
-      return author
+      // A deleted account's post is quoted as unavailable (task 89).
+      return author?.nickname
         ? [[_id.toString(), { nickname: author.nickname, excerpt }] as const]
         : [];
     }),
@@ -589,7 +604,10 @@ export async function getThread(
         canHide: visible && !!may?.(post.userId.toString(), "hide"),
         canRestore:
           state === "hidden" && !!may?.(post.userId.toString(), "hide"),
-        canBan: visible && !!may?.(post.userId.toString(), "ban"),
+        canBan:
+          visible &&
+          author?.nickname !== null &&
+          !!may?.(post.userId.toString(), "ban"),
       },
     ];
   });

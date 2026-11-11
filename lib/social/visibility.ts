@@ -87,6 +87,7 @@ export async function findVisibleComment(viewerId: string, commentId: string) {
       ? Comment.findById(comment.parentId).select({ userId: 1 }).lean()
       : comment,
     hiddenUserIdsFor(viewerId),
+    // A deleted account's comments stay and take reactions and reports (task 89).
     User.exists({ _id: comment.userId, nickname: { $type: "string" } }),
   ]);
   if (!place || place.commentsDisabled || !root || !named) return null;

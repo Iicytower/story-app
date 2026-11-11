@@ -3,7 +3,7 @@ import { isDuplicateKeyError } from "@/lib/db";
 import { Block } from "@/lib/models/block";
 import { CommunityModerator } from "@/lib/models/community-moderator";
 import { Follow } from "@/lib/models/follow";
-import { User } from "@/lib/models/user";
+import { NOT_DELETED, User } from "@/lib/models/user";
 import { setConversationClosed } from "@/lib/social/direct-messages";
 import { logModeration } from "@/lib/social/moderation";
 
@@ -76,8 +76,8 @@ export async function liftBlock(blockerId: Id, blockedId: Id): Promise<void> {
   }
 }
 
-// The newest BLOCKED_SHOWN with the total; accounts without a nickname left (deleted, task 89)
-// are not listed.
+// The newest BLOCKED_SHOWN with the total; accounts without a nickname and deleted ones
+// (task 89) are not listed.
 export async function listBlocked(
   blockerId: Id,
 ): Promise<{ nicknames: string[]; total: number }> {
@@ -92,6 +92,7 @@ export async function listBlocked(
   const users = await User.find({
     _id: { $in: ids },
     nickname: { $type: "string" },
+    ...NOT_DELETED,
   })
     .select({ nickname: 1 })
     .lean();

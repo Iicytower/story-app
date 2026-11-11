@@ -14,7 +14,7 @@ import { CommunityBan } from "@/lib/models/community-ban";
 import { CommunityModerator } from "@/lib/models/community-moderator";
 import { Reaction } from "@/lib/models/reaction";
 import { Report } from "@/lib/models/report";
-import { NICKNAME_COLLATION, User } from "@/lib/models/user";
+import { NICKNAME_COLLATION, NOT_DELETED, User } from "@/lib/models/user";
 import { SOCIAL_LIMITS, takeUserAttempt } from "@/lib/rate-limit";
 import {
   hideForumContent,
@@ -54,7 +54,7 @@ async function limitError(userId: string): Promise<ActionError | null> {
 }
 
 async function findByNickname(nickname: string) {
-  return User.findOne({ nickname })
+  return User.findOne({ nickname, ...NOT_DELETED })
     .collation(NICKNAME_COLLATION)
     .select({ _id: 1, globalBan: 1 })
     .lean();

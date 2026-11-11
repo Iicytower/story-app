@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 import { connectDB } from "@/lib/db";
 import { Block } from "@/lib/models/block";
 import { Notification } from "@/lib/models/notification";
-import { NICKNAME_COLLATION, User } from "@/lib/models/user";
+import { NICKNAME_COLLATION, NOT_DELETED, User } from "@/lib/models/user";
 import { extractMentions } from "@/lib/social/mention-text";
 import { canInteract } from "@/lib/social/permissions";
 
@@ -31,6 +31,7 @@ export async function resolveMentions(
   await connectDB();
   const users = await User.find({
     nickname: { $type: "string", $in: nicknames },
+    ...NOT_DELETED,
     _id: { $nin: hidden },
     ...notBanned(new Date()),
   })
@@ -110,6 +111,7 @@ export async function mentionRecipients(
   await connectDB();
   const users = await User.find({
     nickname: { $type: "string", $in: nicknames },
+    ...NOT_DELETED,
   })
     .collation(NICKNAME_COLLATION)
     .select({ _id: 1 })
@@ -161,6 +163,7 @@ export async function findNicknameSuggestions(
   // after every character.
   const users = await User.find({
     nickname: { $type: "string", $gte: prefix, $lt: `${prefix}\uffff` },
+    ...NOT_DELETED,
     _id: { $ne: new Types.ObjectId(viewerId) },
     ...notBanned(new Date()),
   })

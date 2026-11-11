@@ -10,7 +10,7 @@ import { actionError, translateError } from "@/lib/i18n/action-error";
 import { Comment } from "@/lib/models/comment";
 import { ForumPost } from "@/lib/models/forum-post";
 import { Reaction } from "@/lib/models/reaction";
-import { User } from "@/lib/models/user";
+import { NOT_DELETED, User } from "@/lib/models/user";
 import { SOCIAL_LIMITS, takeUserAttempt } from "@/lib/rate-limit";
 import { findVisiblePost, forumPermission } from "@/lib/social/forums";
 import { notifyLater } from "@/lib/social/notify";
@@ -94,14 +94,18 @@ async function postTarget(
 async function refusal(userId: string, target: Target) {
   if (target.forum) {
     const [named, permission] = await Promise.all([
-      User.exists({ _id: userId, nickname: { $type: "string" } }),
+      User.exists({
+        _id: userId,
+        nickname: { $type: "string" },
+        ...NOT_DELETED,
+      }),
       forumPermission(userId, target.forum, "react", [target.writerId!]),
     ]);
     if (!named) return refused();
     return permission.ok ? null : translateError(permission);
   }
   const [named, ...permissions] = await Promise.all([
-    User.exists({ _id: userId, nickname: { $type: "string" } }),
+    User.exists({ _id: userId, nickname: { $type: "string" }, ...NOT_DELETED }),
     canInteract(userId, {
       authorId: target.authorId!.toString(),
       kind: "react",

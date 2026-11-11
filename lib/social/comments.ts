@@ -47,7 +47,8 @@ export interface CommentTarget {
 export interface CommentView {
   id: string;
   state: "visible" | "deleted" | "hidden";
-  author: { nickname: string; avatar: string | null } | null;
+  // nickname null: a deleted account, shown without a link (task 89).
+  author: { nickname: string | null; avatar: string | null } | null;
   body: string | null;
   // Nicknames whose mentions in the body link to the profile (task 82).
   mentions: string[];
@@ -196,11 +197,12 @@ export async function moderationFor(
     ).ok;
 }
 
+// A deleted account's tombstone signs its comments as a deleted user (task 89).
 async function authorsOf(userIds: Types.ObjectId[]) {
   const ids = [...new Set(userIds.map(String))];
   const [users, profiles] = await Promise.all([
     User.find({ _id: { $in: ids }, nickname: { $type: "string" } })
-      .select({ nickname: 1 })
+      .select({ nickname: 1, deletedAt: 1 })
       .lean(),
     Profile.find({ userId: { $in: ids }, avatarId: { $exists: true } })
       .select({ userId: 1, avatarId: 1 })
@@ -213,9 +215,11 @@ async function authorsOf(userIds: Types.ObjectId[]) {
     ]),
   );
   return new Map(
-    users.map(({ _id, nickname }) => [
+    users.map(({ _id, nickname, deletedAt }) => [
       _id.toString(),
-      { nickname: nickname!, avatar: avatars.get(_id.toString()) ?? null },
+      deletedAt
+        ? { nickname: null, avatar: null }
+        : { nickname, avatar: avatars.get(_id.toString()) ?? null },
     ]),
   );
 }
@@ -313,7 +317,9 @@ export async function getCommentThread(
       author: state === "visible" ? author! : null,
       body: state === "visible" ? comment.body : null,
       mentions:
-        state === "visible" ? (mentionsOf.get(comment._id.toString()) ?? []) : [],
+        state === "visible"
+          ? (mentionsOf.get(comment._id.toString()) ?? [])
+          : [],
       createdAt: comment.createdAt.toISOString(),
       edited: state === "visible" && comment.editedAt !== undefined,
       own: own && state === "visible",
@@ -323,7 +329,10 @@ export async function getCommentThread(
           : null,
       canHide:
         state === "visible" && !!may?.(comment.userId.toString(), "hide"),
-      canBan: state === "visible" && !!may?.(comment.userId.toString(), "ban"),
+      canBan:
+        state === "visible" &&
+        author?.nickname !== null &&
+        !!may?.(comment.userId.toString(), "ban"),
     };
   };
   const byParent = Map.groupBy(replies, ({ parentId }) => parentId!.toString());

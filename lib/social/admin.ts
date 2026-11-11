@@ -13,7 +13,7 @@ import {
   type ModerationLogFields,
 } from "@/lib/models/moderation-log";
 import { Story } from "@/lib/models/story";
-import { NICKNAME_COLLATION, User } from "@/lib/models/user";
+import { NICKNAME_COLLATION, NOT_DELETED, User } from "@/lib/models/user";
 import {
   chapterPublicPath,
   folderPublicPath,
@@ -51,7 +51,7 @@ export async function isActiveAdmin(userId: string): Promise<boolean> {
 }
 
 export function findUserByNick(nickname: string) {
-  return User.findOne({ nickname: nickname.trim() })
+  return User.findOne({ nickname: nickname.trim(), ...NOT_DELETED })
     .collation(NICKNAME_COLLATION)
     .select({ _id: 1, nickname: 1, role: 1, globalBan: 1 })
     .lean();
@@ -65,6 +65,7 @@ async function nicknamesOf(
   const users = await User.find({
     _id: { $in: unique },
     nickname: { $type: "string" },
+    ...NOT_DELETED,
   })
     .select({ nickname: 1 })
     .lean();
@@ -89,6 +90,7 @@ export async function listGlobalBans(): Promise<GlobalBanView[]> {
       { "globalBan.until": { $gt: new Date() } },
     ],
     nickname: { $type: "string" },
+    ...NOT_DELETED,
   })
     .sort({ "globalBan.at": -1, _id: -1 })
     .limit(ADMIN_LIST_LIMIT)
@@ -182,7 +184,11 @@ async function publicPlacePath(
   storyId: Types.ObjectId | null,
 ): Promise<string | null> {
   const [author, folder, chapter] = await Promise.all([
-    User.exists({ _id: authorId, nickname: { $type: "string" } }),
+    User.exists({
+      _id: authorId,
+      nickname: { $type: "string" },
+      ...NOT_DELETED,
+    }),
     Folder.exists({
       _id: folderId,
       userId: authorId,

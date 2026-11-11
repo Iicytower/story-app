@@ -11,7 +11,7 @@ import { lengthError } from "@/lib/limits";
 import { Conversation } from "@/lib/models/conversation";
 import { Follow } from "@/lib/models/follow";
 import { Message } from "@/lib/models/message";
-import { User } from "@/lib/models/user";
+import { NOT_DELETED, User } from "@/lib/models/user";
 import {
   giveBackAttempt,
   SOCIAL_LIMITS,
@@ -55,7 +55,7 @@ async function sendError(
   otherId: Types.ObjectId,
 ): Promise<ActionError | null> {
   const [named, permission] = await Promise.all([
-    User.exists({ _id: userId, nickname: { $type: "string" } }),
+    User.exists({ _id: userId, nickname: { $type: "string" }, ...NOT_DELETED }),
     canInteract(userId, { authorId: otherId.toString(), kind: "dm" }),
   ]);
   if (!named) return refused();

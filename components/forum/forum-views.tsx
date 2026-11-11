@@ -176,27 +176,26 @@ async function PostItem({
       </div>
     );
   }
+  // A deleted account keeps its posts, signed without a link (task 89).
+  const deletedUser = post.author.nickname === null;
+  const name = post.author.nickname ?? t("deletedUser");
   const headerId = `${postAnchor(post.id)}-by`;
   const date = formatPublishedAt(new Date(post.createdAt), now, locale);
   const callbackUrl = `/${locale}${thread.path}#${postAnchor(post.id)}`;
   return (
     <div className="flex min-w-0 gap-3">
-      <UserAvatar
-        nickname={post.author.nickname}
-        src={post.author.avatar}
-        alt=""
-        size={32}
-      />
+      <UserAvatar nickname={name} src={post.author.avatar} alt="" size={32} />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex min-w-0 items-start justify-between gap-2">
           <p
             id={headerId}
             className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-sm"
           >
-            <UserLink
-              nickname={post.author.nickname}
-              className="[overflow-wrap:anywhere]"
-            />
+            {deletedUser ? (
+              <span className="text-muted-foreground font-medium">{name}</span>
+            ) : (
+              <UserLink nickname={name} className="[overflow-wrap:anywhere]" />
+            )}
             <DateText value={post.createdAt} now={now} />
             {post.edited && (
               <span className="text-muted-foreground text-xs">
@@ -208,13 +207,13 @@ async function PostItem({
             commentId={post.id}
             kind="post"
             headingId="thread-title"
-            nickname={post.author.nickname}
+            nickname={name}
             date={date}
             authorId={thread.moderatedAuthorId}
             canHide={post.canHide}
             canBan={post.canBan}
             canReport={!post.own}
-            canBlock={signedIn && !post.own}
+            canBlock={signedIn && !post.own && !deletedUser}
             signedIn={signedIn}
             callbackUrl={callbackUrl}
           />
@@ -243,7 +242,7 @@ async function PostItem({
         <PostControls
           id={post.id}
           body={post.body}
-          nickname={post.author.nickname}
+          nickname={name}
           headerId={headerId}
           editable={post.editableUntil !== null}
           own={post.own}
@@ -256,7 +255,7 @@ async function PostItem({
           summary={reactions}
           own={post.own}
           locked={locked}
-          label={t("reactionsTo", { nickname: post.author.nickname })}
+          label={t("reactionsTo", { nickname: name })}
           callbackUrl={callbackUrl}
         />
       </div>

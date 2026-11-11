@@ -11,7 +11,7 @@ import { lengthError } from "@/lib/limits";
 import { Activity } from "@/lib/models/activity";
 import { Comment } from "@/lib/models/comment";
 import { Reaction } from "@/lib/models/reaction";
-import { User } from "@/lib/models/user";
+import { NOT_DELETED, User } from "@/lib/models/user";
 import {
   giveBackAttempt,
   SOCIAL_LIMITS,
@@ -93,7 +93,7 @@ async function interactionError(
   authorId: Types.ObjectId,
 ): Promise<ActionError | null> {
   const [named, permission] = await Promise.all([
-    User.exists({ _id: userId, nickname: { $type: "string" } }),
+    User.exists({ _id: userId, nickname: { $type: "string" }, ...NOT_DELETED }),
     canInteract(userId, { authorId: authorId.toString(), kind: "comment" }),
   ]);
   if (!named) return refused();
