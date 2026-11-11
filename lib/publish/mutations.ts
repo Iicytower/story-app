@@ -33,7 +33,7 @@ export async function arrivalUpdate(folderId: Id) {
 
 // Call after chapters become public: only those never published before get a date. Returns
 // them: they are the feed entry (task 75) and the "new chapter" notifications (task 81) of this
-// publication, one per book.
+// publication, one per book (recordChaptersPublished).
 export async function stampPublishedAt(
   filter: Record<string, unknown>,
 ): Promise<Types.ObjectId[]> {

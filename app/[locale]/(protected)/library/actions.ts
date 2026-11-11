@@ -14,10 +14,12 @@ import {
   MAX_LIBRARY_ITEMS,
   MAX_SHELVES,
 } from "@/lib/limits";
+import { Folder } from "@/lib/models/folder";
 import { LibraryItem } from "@/lib/models/library-item";
 import { Profile } from "@/lib/models/profile";
 import { Shelf } from "@/lib/models/shelf";
 import { SOCIAL_LIMITS, takeUserAttempt } from "@/lib/rate-limit";
+import { notifyLater } from "@/lib/social/notify";
 import { seedShelves } from "./starter";
 
 const isIdList = (value: unknown): value is string[] =>
@@ -86,7 +88,14 @@ export async function addToLibrary(
     return save();
   });
   if (result.upsertedCount === 1) {
-    // The "added to library" notification (task 81) and statistic (task 83) go here.
+    // The "added to library" statistic (task 83) goes here.
+    notifyLater(
+      async () => {
+        const book = await Folder.findById(folder).select({ userId: 1 }).lean();
+        return book ? [book.userId] : [];
+      },
+      { type: "library", actorId: user.userId, folderId: folder },
+    );
   }
 
   refresh();

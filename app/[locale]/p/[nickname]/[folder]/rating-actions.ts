@@ -9,6 +9,7 @@ import { isDuplicateKeyError } from "@/lib/db";
 import { actionError, translateError } from "@/lib/i18n/action-error";
 import { Rating } from "@/lib/models/rating";
 import { SOCIAL_LIMITS, takeUserAttempt } from "@/lib/rate-limit";
+import { notifyLater } from "@/lib/social/notify";
 import { canInteract } from "@/lib/social/permissions";
 import {
   isRatingTarget,
@@ -112,14 +113,25 @@ export async function rate(
       updatedAt: new Date(),
     },
   };
+  let inserted = false;
   try {
-    await Rating.updateOne(changed, update, { upsert: true });
+    const result = await Rating.updateOne(changed, update, { upsert: true });
+    inserted = result.upsertedCount === 1;
   } catch (error) {
     // The reader already gave this value, or a parallel request inserted a rating first.
     if (!isDuplicateKeyError(error)) throw error;
     await Rating.updateOne(changed, update);
   }
-  // Task 81: notify the author, grouped per object (a new rating is the upsert's upsertedCount).
+  // Only a new rating, not a changed one; grouped per object and anonymous when shown.
+  if (inserted) {
+    notifyLater(target.authorId, {
+      type: "rating",
+      actorId: userId,
+      authorId: target.authorId,
+      folderId: target.folderId,
+      ...(targetType === "story" && { storyIds: [targetId] }),
+    });
+  }
   // Task 83: the author's statistics count ratings by authorId and updatedAt. Task 84: the
   // "top rated" ranking reads the book's ratings by { targetType: "folder", targetId }.
   refresh();

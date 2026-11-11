@@ -27,7 +27,10 @@
     "profile": "My profile",
     "moderation": "Moderation",
     "admin": "Admin",
-    "stats": "Statistics"
+    "stats": "Statistics",
+    "notificationsUnread": "{count, plural, one {Notifications, # unread} other {Notifications, # unread}}",
+    "menuUnread": "Menu, unread notifications",
+    "toasts": "Alerts"
   },
   "settings": {
     "title": "Settings",
@@ -72,7 +75,26 @@
     "avatarsUnavailable": "Avatars are not available right now.",
     "viewProfile": "View profile",
     "loadingProfile": "Loading…",
-    "profileFailed": "The profile could not be loaded. Reload the page and try again."
+    "profileFailed": "The profile could not be loaded. Reload the page and try again.",
+    "notifications": "Notifications",
+    "notificationsHelp": "Choose what you are notified about. Moderation notifications are always on.",
+    "notificationsFailed": "The notification settings could not be loaded.",
+    "loadingNotifications": "Loading notification settings…",
+    "notificationGroups": {
+      "interactions": "My texts",
+      "conversations": "Conversations",
+      "chapters": "New chapters"
+    },
+    "notificationTypes": {
+      "comment": "Comments",
+      "reaction": "Reactions",
+      "rating": "Ratings",
+      "follower": "New followers",
+      "library": "Additions to libraries",
+      "reply": "Replies to my comments",
+      "libraryChapter": "Books in my library",
+      "followedChapter": "Authors I follow"
+    }
   },
   "errors": {
     "nicknameRequirement": "Nickname must be 3-30 characters: letters a-z, digits, _ and -.",
@@ -205,7 +227,8 @@
     "hideReasonTooLong": "A reason can have at most {max, number} characters.",
     "reportTargetNotFound": "This content no longer exists or is not available.",
     "reportAlreadyOpen": "You have already reported this. Your report is waiting for a decision.",
-    "reportNotFound": "This report no longer exists or has already been decided."
+    "reportNotFound": "This report no longer exists or has already been decided.",
+    "notificationNotFound": "This notification does not exist."
   },
   "password": {
     "mustContain": "The password must contain:",
@@ -1181,5 +1204,43 @@
     "send": "Send report",
     "sent": "Thank you. Your report has been sent.",
     "choose": "Choose a reason"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "list": "Notifications",
+    "markAllRead": "Mark all as read",
+    "empty": "No notifications yet.",
+    "loading": "Loading notifications…",
+    "failed": "The notifications could not be loaded.",
+    "unread": "Unread",
+    "accept": "Accept",
+    "decline": "Decline",
+    "newToast": "{count, plural, one {You have a new notification} other {You have # new notifications}}",
+    "open": "Open",
+    "someone": "Someone",
+    "target": "“{title}”",
+    "unavailable": "a text that is no longer available",
+    "types": {
+      "comment": "{actor} commented on {target}",
+      "reply": "{actor} replied to your comment on {target}",
+      "reaction": "{actor} {others, plural, =0 {reacted} one {and # other person reacted} other {and # other people reacted}} to {target}",
+      "reactionComment": "{actor} {others, plural, =0 {reacted} one {and # other person reacted} other {and # other people reacted}} to your comment on {target}",
+      "rating": "{count, plural, one {Someone rated} other {# people rated}} {target}",
+      "follower": "{actor} started following you",
+      "library": "{actor} added {target} to their library",
+      "libraryChapter": "{count, plural, one {A new chapter} other {# new chapters}} in {target} from your library",
+      "followedChapter": "{author} published {count, plural, one {a new chapter} other {# new chapters}} in {target}",
+      "moderatorInvite": "{author} invited you to moderate their community",
+      "moderatorAccepted": "{actor} accepted your invitation to moderate",
+      "moderatorDeclined": "{actor} declined your invitation to moderate",
+      "moderatorResigned": "{actor} is no longer a moderator of your community",
+      "moderatorRemoved": "{author} removed you from the moderators of their community",
+      "ban": "You have been banned from the community of {author}",
+      "hidden": "A moderator hid your comment on {target}",
+      "report": "New report in your community",
+      "reportAdmin": "New report for the admins",
+      "reportResolved": "Your report was accepted",
+      "reportDismissed": "Your report was dismissed"
+    }
   }
 }

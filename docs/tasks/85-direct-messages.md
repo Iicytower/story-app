@@ -8,6 +8,7 @@ Subtask 68, zależy od 81. Podstawa: D80 (Powiadomienia, DM, realtime – DM i p
 - Akcje: `startConversation(nick, body)` (ustawienie odbiorcy `dmFrom: everyone | following | nobody` w `settings`; `following` = osoby obserwowane przez odbiorcę; limit 10 nowych rozmów/dobę), `sendMessage(conversationId, body)` (30/min), `markConversationRead`. `sendMessage` i `startConversation` wołają `notifyMentions` z 82 (wzmianka tylko drugiej strony rozmowy). `canInteract(kind: "dm")`: ban globalny, blokada → odmowa. Tylko uczestnik widzi rozmowę (inne → `NOT_FOUND`).
 - Strony `/messages` (lista rozmów z nieprzeczytanymi) i `/messages/<id>` (wątek, `SocialMarkdown`, stronicowanie wstecz po 50). Przycisk „Wiadomość” na profilu. Licznik nieprzeczytanych w sidebarze z akcji `unreadCounts` (81). Polling otwartej rozmowy co 5 s przy widocznej karcie.
 - Ustawienie „Kto może zacząć rozmowę” w dialogu ustawień. Pozycja „Wiadomości” w sidebarze włączona.
+- Powiadomienia (81): `unreadCounts.messages` zwraca dziś 0 – podpiąć liczbę nieprzeczytanych rozmów; rodzaje DM w grupie `conversations`.
 
 ## Kryteria akceptacji
 

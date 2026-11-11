@@ -10,6 +10,7 @@ Subtask 68, zależy od 81 i 85. Podstawa: D80 (Powiadomienia, DM, realtime – r
 - Aplikacja: `publishRealtime(userIds, event)` w `notify()` (81) i `sendMessage` (85), w `after()`, błąd tylko w logach. Zmienna `REALTIME_PUBLIC_URL` (publiczny adres bramki) – bez niej klient używa tylko pollingu; dopisana do `connect-src` w `lib/security-headers.ts` (D77).
 - Klient: `EventSource` przy widocznej karcie; zdarzenie odświeża licznik i otwartą rozmowę. Przy błędzie lub braku zmiennej – polling z 81/85 (30 s / 5 s). Przy działającym SSE polling wstrzymany.
 - E2E: `tests/e2e/fake-tools.mjs` dostaje `/rt/stream` i `/publish` (atrapa SSE). Lokalnie usługa w `npm run up`, zgodna z `npm run tools:remote` (task 28) bez zmian skryptu poza listą usług; `docs/deploy.md`: zmienne, ścieżka `/rt/*`, wymaganie przed wydaniem.
+- Powiadomienia (81): polling `unreadCounts` co 30 s zastąpić SSE (polling zostaje jako fallback).
 
 ## Kryteria akceptacji
 

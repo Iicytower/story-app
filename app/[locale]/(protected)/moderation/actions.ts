@@ -17,6 +17,7 @@ import { Report } from "@/lib/models/report";
 import { NICKNAME_COLLATION, User } from "@/lib/models/user";
 import { SOCIAL_LIMITS, takeUserAttempt } from "@/lib/rate-limit";
 import { logModeration } from "@/lib/social/moderation";
+import { notifyLater } from "@/lib/social/notify";
 import {
   canModerate,
   isAdmin,
@@ -69,7 +70,7 @@ async function optionalReason(
 // The community is the comment's: authorId never comes from the client here (task 79).
 async function findModeratedComment(userId: string, commentId: string) {
   const comment = await Comment.findOne({ _id: commentId, deletedAt: null })
-    .select({ authorId: 1, userId: 1, hidden: 1 })
+    .select({ authorId: 1, userId: 1, hidden: 1, folderId: 1, storyId: 1 })
     .lean();
   if (!comment) return null;
   const role = await moderationRole(userId, comment.authorId.toString());
@@ -135,7 +136,14 @@ export async function hideContent(
     targetUserId: comment.userId,
     ...(text && { reason: text }),
   });
-  // Task 81: notify the writer of the comment.
+  notifyLater(comment.userId, {
+    type: "hidden",
+    actorId: user.userId,
+    authorId: comment.authorId,
+    folderId: comment.folderId,
+    ...(comment.storyId && { storyIds: [comment.storyId] }),
+    commentId: comment._id,
+  });
   refresh();
   return { ok: true };
 }
@@ -294,7 +302,11 @@ export async function banFromCommunity(
     targetUserId: found.targetId,
     reason: text,
   });
-  // Task 81: notify the banned user.
+  notifyLater(found.targetId, {
+    type: "ban",
+    actorId: user.userId,
+    authorId,
+  });
   refresh();
   return { ok: true };
 }
@@ -382,10 +394,21 @@ export async function inviteModerator(nickname: string): Promise<ActionResult> {
     targetId: target._id,
     targetUserId: target._id,
   });
-  // Task 81: the invitation arrives as a notification with Accept and Decline.
+  // Accepted or declined from the notification.
+  notifyLater(target._id, {
+    type: "moderatorInvite",
+    actorId: user.userId,
+    authorId: user.userId,
+  });
   refresh();
   return { ok: true };
 }
+
+const ROLE_NOTIFICATIONS = {
+  accept: "moderatorAccepted",
+  decline: "moderatorDeclined",
+  resign: "moderatorResigned",
+} as const;
 
 // The invited or active moderator's own step in authorId's community.
 async function ownRole(
@@ -426,7 +449,11 @@ async function ownRole(
     targetId: user.userId,
     targetUserId: user.userId,
   });
-  // Task 81: notify the author.
+  notifyLater(authorId, {
+    type: ROLE_NOTIFICATIONS[action],
+    actorId: user.userId,
+    authorId,
+  });
   refresh();
   return { ok: true };
 }
@@ -470,7 +497,11 @@ export async function removeModerator(nickname: string): Promise<ActionResult> {
     targetId: target._id,
     targetUserId: target._id,
   });
-  // Task 81: notify the former moderator.
+  notifyLater(target._id, {
+    type: "moderatorRemoved",
+    actorId: user.userId,
+    authorId: user.userId,
+  });
   refresh();
   return { ok: true };
 }
@@ -512,7 +543,7 @@ export async function resolveReport(
   if (limited) return limited;
   const reportNotFound = () => actionError("NOT_FOUND", "reportNotFound");
   const report = await Report.findOne({ _id: id, state: "open" })
-    .select({ route: 1, authorId: 1, targetUserId: 1 })
+    .select({ route: 1, authorId: 1, targetUserId: 1, reporterId: 1 })
     .lean();
   if (!report || !(await mayDecide(user.userId, report))) {
     return reportNotFound();
@@ -535,7 +566,11 @@ export async function resolveReport(
     targetId: report._id,
     targetUserId: report.targetUserId,
   });
-  // Task 81: notify the reporter of the outcome.
+  notifyLater(report.reporterId, {
+    type: outcome === "resolved" ? "reportResolved" : "reportDismissed",
+    actorId: user.userId,
+    ...(report.authorId && { authorId: report.authorId }),
+  });
   refresh();
   return { ok: true };
 }

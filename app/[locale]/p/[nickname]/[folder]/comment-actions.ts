@@ -19,6 +19,7 @@ import {
 } from "@/lib/rate-limit";
 import { recordActivity } from "@/lib/social/activity";
 import { COMMENT_EDIT_MS } from "@/lib/social/comments";
+import { notifyLater } from "@/lib/social/notify";
 import { canInteract, type Permission } from "@/lib/social/permissions";
 import { findVisibleFolder, findVisibleStory } from "@/lib/social/visibility";
 
@@ -98,6 +99,12 @@ async function interactionError(
   return permissionError(permission);
 }
 
+const placeEvent = (target: Target) => ({
+  authorId: target.authorId,
+  folderId: target.folderId,
+  ...(target.storyId && { storyIds: [target.storyId] }),
+});
+
 const placeOf = (comment: {
   storyId: Types.ObjectId | null;
   folderId: Types.ObjectId;
@@ -141,7 +148,13 @@ export async function addComment(
     parentId: null,
     body: text,
   });
-  // Task 81: notify the text's author. Task 82: mentions in the body.
+  notifyLater(found.authorId, {
+    type: "comment",
+    actorId: user.userId,
+    ...placeEvent(found),
+    commentId: comment._id,
+  });
+  // Task 82: mentions in the body.
   refresh();
   return { ok: true, id: comment._id.toString() };
 }
@@ -207,7 +220,18 @@ export async function replyToComment(
       commentId: reply._id,
     });
   }
-  // Task 81: notify the authors of the comment replied to and of the text. Task 82: mentions.
+  // The writers replied to get a reply; the text's author, if not one of them, a comment.
+  const writers = [parent.userId, root.userId];
+  const event = {
+    actorId: user.userId,
+    ...placeEvent(target),
+    commentId: reply._id,
+  };
+  notifyLater(writers, { ...event, type: "reply" });
+  if (!writers.some((id) => id.equals(target.authorId))) {
+    notifyLater(target.authorId, { ...event, type: "comment" });
+  }
+  // Task 82: mentions.
   refresh();
   return { ok: true, id: reply._id.toString() };
 }

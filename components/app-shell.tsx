@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { getUserSettings } from "@/lib/settings/queries";
 import { hasModerationAccess } from "@/lib/social/moderation";
+import { countUnread } from "@/lib/social/notification-list";
 import { toolsConfig } from "@/lib/tools/client";
 
 export async function AppShell({
@@ -11,9 +12,10 @@ export async function AppShell({
   userId: string;
   children: ReactNode;
 }) {
-  const [{ appearance }, moderation] = await Promise.all([
+  const [{ appearance }, moderation, unread] = await Promise.all([
     getUserSettings(userId),
     hasModerationAccess(userId),
+    countUnread(userId),
   ]);
   return (
     <div className="flex min-h-dvh w-full">
@@ -21,6 +23,7 @@ export async function AppShell({
         defaultCollapsed={appearance.sidebarCollapsed}
         toolsAvailable={toolsConfig() !== null}
         hiddenItems={moderation ? [] : ["moderation"]}
+        initialUnread={unread}
       />
       <main className="flex min-w-0 flex-1 flex-col">{children}</main>
     </div>
