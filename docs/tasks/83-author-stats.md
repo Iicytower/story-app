@@ -10,6 +10,7 @@ Subtask 68, zależy od 71, 72, 73, 76, 77 i 78. Podstawa: D80 (Statystyki i odkr
 - Kolekcje taska dopisane do `purgeSocialData` (69); test: trwałe usunięcie rozdziału i folderu kasuje ich wpisy.
 - Komentarze (76): liczba komentarzy z `comments` po indeksie `{authorId, createdAt: -1}` (`authorId` = właściciel tekstu).
 - Reakcje (77): liczba reakcji z `reactions` po indeksie `{authorId, createdAt: -1}` (`authorId` = autor tekstu).
+- Oceny (78): oceny z `ratings` po indeksie `{authorId, updatedAt: -1}` (`authorId` = autor tekstu; zmiana oceny przesuwa `updatedAt`).
 
 ## Kryteria akceptacji
 

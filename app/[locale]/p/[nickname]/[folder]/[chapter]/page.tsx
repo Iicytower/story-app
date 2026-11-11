@@ -20,6 +20,7 @@ import { stripComments } from "@/lib/stories/strip-comments";
 import { BlurredCover } from "../adult-cover";
 import { Comments } from "../comments";
 import { ChapterReactions } from "../reactions";
+import { RatingSection } from "../ratings";
 import { AdultGate } from "./adult-gate";
 import { GuestMarks } from "./guest-marks";
 import { ReaderMarks } from "./reader-marks";
@@ -136,11 +137,18 @@ export default async function PublishedChapterPage({
         </>
       )}
       {place && (
-        <ChapterReactions
-          viewerId={viewer.ok ? viewer.userId : null}
-          storyId={place.storyId}
-          path={chapter.path}
-        />
+        <div className="flex flex-col gap-3">
+          <RatingSection
+            viewerId={viewer.ok ? viewer.userId : null}
+            target={{ type: "story", id: place.storyId }}
+            path={chapter.path}
+          />
+          <ChapterReactions
+            viewerId={viewer.ok ? viewer.userId : null}
+            storyId={place.storyId}
+            path={chapter.path}
+          />
+        </div>
       )}
       {reading && (
         <ReadingTracker storyId={reading.storyId} resumeAt={reading.resumeAt} />

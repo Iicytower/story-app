@@ -193,7 +193,8 @@
     "commentTargetNotFound": "This chapter or book is not public, or has been deleted.",
     "commentEditExpired": "A comment can be edited only within 15 minutes of posting. You can still delete it.",
     "commentsDisabled": "The author has turned comments off here.",
-    "reactionTargetNotFound": "This chapter or comment is not public, or has been deleted."
+    "reactionTargetNotFound": "This chapter or comment is not public, or has been deleted.",
+    "ratingTargetNotFound": "This chapter or book is not public, or has been deleted."
   },
   "password": {
     "mustContain": "The password must contain:",
@@ -1065,5 +1066,13 @@
     "total": "{count, plural, one {# reaction} other {# reactions}}",
     "who": "Who reacted",
     "more": "{count, plural, other {and # more}}"
+  },
+  "ratings": {
+    "chapter": "Rate the chapter",
+    "book": "Rate the book",
+    "star": "{value, plural, one {# star} other {# stars}}",
+    "summary": "{count, plural, =0 {No ratings yet} one {{average, number, ::.0} average from # rating} other {{average, number, ::.0} average from # ratings}}",
+    "mine": "Your rating: {value, plural, one {# star} other {# stars}}",
+    "own": "You cannot rate your own text."
   }
 }
