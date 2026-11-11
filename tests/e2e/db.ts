@@ -44,6 +44,8 @@ export function clearStories(): Promise<void> {
     await connection.collection("moderationLog").deleteMany({});
     await connection.collection("reports").deleteMany({});
     await connection.collection("notifications").deleteMany({});
+    await connection.collection("readEvents").deleteMany({});
+    await connection.collection("dailyStats").deleteMany({});
   });
 }
 
@@ -479,5 +481,47 @@ export function setStoryContent(
         { $set: { content, updatedAt: new Date() } },
       );
     if (matchedCount !== 1) throw new Error(`No chapter ${title} in ${folder}`);
+  });
+}
+
+// Readers of a chapter on days before today, as dailyStats keeps them (task 83).
+export function seedDailyStats(
+  author: UserName,
+  folder: string,
+  title: string,
+  days: { daysAgo: number; readers: number }[],
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const owner = await userId(connection, author);
+    const folderDoc = await connection
+      .collection("folders")
+      .findOne({ userId: owner, name: folder, deletedAt: null });
+    const story = await connection
+      .collection("stories")
+      .findOne({ userId: owner, folderId: folderDoc?._id, title });
+    if (!folderDoc || !story) throw new Error(`No chapter ${title} in ${folder}`);
+    await connection.collection("dailyStats").insertMany(
+      days.map(({ daysAgo, readers }) => ({
+        storyId: story._id,
+        folderId: folderDoc._id,
+        authorId: owner,
+        day: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .slice(0, 10),
+        readers,
+      })),
+    );
+  });
+}
+
+export function sumDailyReaders(): Promise<number> {
+  return withE2EDb(async (connection) => {
+    const [total] = await connection
+      .collection("dailyStats")
+      .aggregate<{ readers: number }>([
+        { $group: { _id: null, readers: { $sum: "$readers" } } },
+      ])
+      .toArray();
+    return total?.readers ?? 0;
   });
 }

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Link, redirect } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { after, connection } from "next/server";
 import { retryDueCovers } from "@/lib/covers/mutations";
 import { requestOrigin } from "@/i18n/request-origin";
@@ -16,6 +16,7 @@ import { getPublishedChapter, publishedChapterId } from "@/lib/publish/queries";
 import { listChapterMarks, MARK_PARAM } from "@/lib/reading/marks";
 import { CONTINUE_PARAM, savedPosition } from "@/lib/reading/queries";
 import { COMMENTS_PARAM } from "@/lib/social/comments";
+import { chapterReader, recordRead } from "@/lib/social/read-stats";
 import { ownsPlace } from "@/lib/social/visibility";
 import { stripComments } from "@/lib/stories/strip-comments";
 import { ReportButton } from "@/components/report-dialog";
@@ -106,6 +107,18 @@ export default async function PublishedChapterPage({
       id: place.storyId,
     }));
   const tReports = await getTranslations("reports");
+  // headers() is not available in after(), so the reader is known before it.
+  const reader = place
+    ? chapterReader(
+        viewer.ok ? viewer.userId : null,
+        place.authorId,
+        await headers(),
+      )
+    : null;
+  if (place && reader) {
+    const { storyId, folderId, authorId } = place;
+    after(() => recordRead({ storyId, folderId, authorId, reader }));
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10">

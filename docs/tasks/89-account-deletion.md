@@ -16,6 +16,7 @@ Subtask 68, zależy od 69–88. Podstawa: D80 (Konto). Zmienia D37 (konta nie da
 - Zgłoszenia (80): `reports` (poza `PURGES`) – obsłużyć zgłoszenia konta po `reporterId` (indeks `{reporterId}`) i zgłoszenia jego treści po `targetUserId`.
 - Powiadomienia (81): `notifications` kasować po `userId` (odbiorca) i usuwać konto jako aktora (`actorIds`).
 - Wzmianki (82): „usunięte konta” w podpowiedziach `suggestNicknames` – wykluczyć konta usunięte (tombstone), dziś takie nie istnieją.
+- Statystyki (83): `readEvents.reader` w formie `u:<userId>` usunąć lub zanonimizować; `dailyStats` konta jako autora kasować po `authorId`.
 
 ## Kryteria akceptacji
 

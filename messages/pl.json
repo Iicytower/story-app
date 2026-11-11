@@ -391,7 +391,8 @@
     "editor": "Edytor – Story App",
     "library": "Biblioteka – Story App",
     "feed": "Feed – Story App",
-    "moderation": "Moderacja – Story App"
+    "moderation": "Moderacja – Story App",
+    "stats": "Statystyki – Story App"
   },
   "folders": {
     "title": "Foldery",
@@ -1248,5 +1249,24 @@
       "reportResolved": "Twoje zgłoszenie zostało przyjęte",
       "reportDismissed": "Twoje zgłoszenie zostało odrzucone"
     }
+  },
+  "stats": {
+    "title": "Statystyki",
+    "followers": "{count, plural, one {# obserwujący} few {# obserwujących} many {# obserwujących} other {# obserwującego}}",
+    "range": "Okres",
+    "days": "{count, plural, one {# dzień} few {# dni} many {# dni} other {# dnia}}",
+    "chartTitle": "Unikalni czytelnicy na dobę",
+    "chartLabel": "Wykres unikalnych czytelników na dobę z {days, plural, one {ostatniego # dnia} other {ostatnich # dni}}: łącznie {count, plural, one {# czytelnik} few {# czytelników} many {# czytelników} other {# czytelnika}}",
+    "chartTotal": "{count, plural, one {# czytelnik w tym okresie} few {# czytelników w tym okresie} many {# czytelników w tym okresie} other {# czytelnika w tym okresie}}, liczonych raz na rozdział i dobę",
+    "tableTitle": "Książki i rozdziały",
+    "tableNote": "Czytelnicy w wybranym okresie to suma unikalnych czytelników z każdej doby, więc osoba czytająca w kilka dni liczy się raz na każdy dzień. Reakcje, oceny, komentarze i dodania do bibliotek są liczone łącznie.",
+    "text": "Książka lub rozdział",
+    "readers": "Czytelnicy",
+    "reactions": "Reakcje",
+    "averageRating": "Średnia ocena",
+    "ratings": "Oceny",
+    "comments": "Komentarze",
+    "library": "W bibliotekach",
+    "notApplicable": "Nie dotyczy"
   }
 }

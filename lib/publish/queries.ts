@@ -113,6 +113,7 @@ const findPublishedFolder = cache(
     const covers = await coversOf([folder]);
     return {
       id: folder._id.toString(),
+      authorId: userId,
       nickname: author.nickname,
       name: folder.name,
       adult: isAdult(folder.adult),
@@ -192,13 +193,14 @@ export async function publishedChapterId(
   nickname: string,
   folderSlug: string,
   chapterSlug: string,
-): Promise<{ folderId: string; storyId: string } | null> {
+): Promise<{ folderId: string; storyId: string; authorId: string } | null> {
   const folder = await findPublishedFolder(nickname, folderSlug);
   if (!folder) return null;
   const index = chapterIndex(folder.chapters, chapterSlug);
   if (index === -1) return null;
   return {
     folderId: folder.id,
+    authorId: folder.authorId,
     storyId: folder.chapters[index]._id.toString(),
   };
 }
