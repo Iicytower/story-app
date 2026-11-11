@@ -13,6 +13,7 @@ Subtask 68, zależy od 75, 77, 80, 81, 82 i 86. Podstawa: D80 (Fora i panel admi
 - Powiadomienia (81): odpowiedź w obserwowanym wątku, cytat mojego posta; wzmianki (82). `recordActivity(forumThread)` dla wątku autora w swoim forum (75). Feed czyta dziś tylko `chapterPublished`: typ `forumThread` dopisać do zapytania i filtrów widoczności w `lib/social/feed.ts` oraz do renderowania na stronie `/feed`.
 - Gość czyta, strony indeksowane. Pozycja „Fora” w sidebarze włączona.
 - Moderacja (79): ukrywanie postów forum przez `hideContent` (dziś tylko komentarze); zbanowany w społeczności autora bez pisania i z zablokowanymi reakcjami – `isBannedAt` z `lib/social/moderation.ts` i prop `locked`.
+- Zgłoszenia (80): `targetType: "post"` jest w `REPORT_TARGETS`, ale `report` (`app/[locale]/p/[nickname]/report-actions.ts`) go dziś wyklucza – dopisać widoczność posta i trasę (`author` z `authorId` dla forum autora, `admin` dla globalnych) z testem.
 
 ## Kryteria akceptacji
 

@@ -14,6 +14,7 @@ Subtask 68, zależy od 80 i 87. Podstawa: D80 (Fora i panel admina – panel; Ro
 - Ban globalny zamyka też dostęp pod bezpośrednim adresem: spis książki zbanowanego autora (72) i `/avatars/<id>` jego avatara (70) → 404 dla innych.
 - Każde działanie w `moderationLog` (`scope: global`). Pozycja „Admin” w sidebarze tylko dla admina.
 - Moderacja (79): log globalny – `moderationLog` z `scope: global` (86), widok w panelu admina; dziś log społeczności widzi tylko autor w `/moderation`.
+- Zgłoszenia (80): kolejka na `listAdminReports` (`lib/social/moderation.ts`) – dziś bez kontroli roli i zwraca nick zgłaszającego, więc wywołanie tylko za guardem roli admina; rozstrzyganie trasy `admin` przez istniejące `resolveReport` (`app/[locale]/(protected)/moderation/actions.ts`, sprawdza rolę).
 
 ## Kryteria akceptacji
 

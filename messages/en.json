@@ -202,7 +202,10 @@
     "invitationNotFound": "This invitation no longer exists.",
     "moderatorNotFound": "This account is not a moderator here.",
     "tooManyModerators": "A community can have at most {max, number} moderators and invitations.",
-    "hideReasonTooLong": "A reason can have at most {max, number} characters."
+    "hideReasonTooLong": "A reason can have at most {max, number} characters.",
+    "reportTargetNotFound": "This content no longer exists or is not available.",
+    "reportAlreadyOpen": "You have already reported this. Your report is waiting for a decision.",
+    "reportNotFound": "This report no longer exists or has already been decided."
   },
   "password": {
     "mustContain": "The password must contain:",
@@ -1058,7 +1061,8 @@
     "replies": "{count, plural, one {# reply} other {# replies}}",
     "pages": "Comment pages",
     "newest": "Newest comments",
-    "older": "Older comments"
+    "older": "Older comments",
+    "menuFor": "Actions for the comment by {nickname}, {date}"
   },
   "reactions": {
     "chapter": "Reactions to the chapter",
@@ -1098,7 +1102,7 @@
     "resignTitle": "Resign as a moderator?",
     "resignDescription": "You will no longer moderate the community of {nickname}.",
     "tabs": "Moderation sections",
-    "tab": "{tab, select, hidden {Hidden content} bans {Bans} moderators {Moderators} other {Log}}",
+    "tab": "{tab, select, hidden {Hidden content} reports {Reports} bans {Bans} moderators {Moderators} other {Log}}",
     "noHidden": "No hidden content.",
     "hiddenList": "Hidden content",
     "writtenBy": "Comment by {nickname}",
@@ -1136,7 +1140,7 @@
     "removeFor": "Remove {nickname}",
     "noLog": "Nothing in the log yet.",
     "logList": "Moderation log",
-    "log": "{action, select, hide {{actor} hid a comment by {target}} restore {{actor} restored a comment by {target}} ban {{actor} banned {target}} unban {{actor} lifted the ban of {target}} invite {{actor} invited {target} to moderate} accept {{actor} accepted the invitation} decline {{actor} declined the invitation} resign {{actor} resigned as a moderator} other {{actor} removed the moderator {target}}}",
+    "log": "{action, select, hide {{actor} hid a comment by {target}} restore {{actor} restored a comment by {target}} ban {{actor} banned {target}} unban {{actor} lifted the ban of {target}} invite {{actor} invited {target} to moderate} accept {{actor} accepted the invitation} decline {{actor} declined the invitation} resign {{actor} resigned as a moderator} resolve {{actor} resolved a report about {target}} dismiss {{actor} dismissed a report about {target}} other {{actor} removed the moderator {target}}}",
     "menuFor": "Moderate the comment by {nickname}, {date}",
     "hide": "Hide",
     "hideTitle": "Hide comment?",
@@ -1148,6 +1152,34 @@
     "liftTitle": "Lift the ban of {nickname}?",
     "liftDescription": "{nickname} will be able to comment, react and rate again.",
     "removeTitle": "Remove {nickname}?",
-    "removeDescription": "{nickname} loses the moderator role or the invitation."
+    "removeDescription": "{nickname} loses the moderator role or the invitation.",
+    "reportList": "Open reports",
+    "noReports": "No open reports.",
+    "reportedComment": "Reported comment by {nickname}",
+    "reportedAt": "Reported {date}",
+    "reportReason": "Reason: {reason, select, spam {spam} harassment {harassment} illegal {illegal content} unmarkedAdult {18+ without a mark} other {other}}",
+    "reportDetails": "Details: {details}",
+    "reportedHidden": "Hidden by a moderator.",
+    "reportedGone": "The comment has been deleted.",
+    "resolve": "Resolve",
+    "dismiss": "Dismiss",
+    "resolveFor": "Resolve the report from {date}",
+    "dismissFor": "Dismiss the report from {date}",
+    "hideFor": "Hide the comment reported {date}",
+    "banFor": "Ban {nickname} (report from {date})"
+  },
+  "reports": {
+    "report": "Report",
+    "reportChapter": "Report chapter",
+    "reportBook": "Report book",
+    "reportProfile": "Report {nickname}",
+    "title": "{target, select, comment {Report comment} story {Report chapter} folder {Report book} other {Report profile}}",
+    "description": "The report goes to the author's moderators or to the administrators. The reported person does not learn who reported them.",
+    "reason": "Reason",
+    "reasons": "{reason, select, spam {Spam} harassment {Harassment} illegal {Illegal content} unmarkedAdult {18+ without a mark} other {Other}}",
+    "details": "Details (optional)",
+    "send": "Send report",
+    "sent": "Thank you. Your report has been sent.",
+    "choose": "Choose a reason"
   }
 }

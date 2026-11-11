@@ -5,19 +5,19 @@ import type { Types } from "mongoose";
 import { isId } from "@/lib/action-input";
 import type { ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
-import { connectDB, isDuplicateKeyError } from "@/lib/db";
+import { isDuplicateKeyError } from "@/lib/db";
 import { actionError, translateError } from "@/lib/i18n/action-error";
 import { Comment } from "@/lib/models/comment";
 import { Reaction } from "@/lib/models/reaction";
 import { User } from "@/lib/models/user";
 import { SOCIAL_LIMITS, takeUserAttempt } from "@/lib/rate-limit";
-import { canInteract, hiddenUserIdsFor } from "@/lib/social/permissions";
+import { canInteract } from "@/lib/social/permissions";
 import {
   isReaction,
   type ReactionKey,
   type ReactionTarget,
 } from "@/lib/social/reactions";
-import { findVisibleFolder, findVisibleStory } from "@/lib/social/visibility";
+import { findVisibleComment, findVisibleStory } from "@/lib/social/visibility";
 
 const invalid = () => actionError("INVALID_INPUT", "requestInvalid");
 const notFound = () => actionError("NOT_FOUND", "reactionTargetNotFound");
@@ -46,40 +46,17 @@ async function storyTarget(
   };
 }
 
-// A comment the reader sees as one (task 76): not deleted or hidden, comments on, its place
-// public, and neither it nor its thread written by an account hidden from the reader.
 async function commentTarget(
   userId: string,
   commentId: string,
 ): Promise<Target | null> {
-  await connectDB();
-  const comment = await Comment.findOne({
-    _id: commentId,
-    deletedAt: null,
-    hidden: { $exists: false },
-  })
-    .select({ userId: 1, parentId: 1, folderId: 1, storyId: 1 })
-    .lean();
+  const comment = await findVisibleComment(userId, commentId);
   if (!comment) return null;
-  const [place, root, hidden, named] = await Promise.all([
-    comment.storyId
-      ? findVisibleStory(userId, comment.storyId.toString())
-      : findVisibleFolder(userId, comment.folderId.toString()),
-    comment.parentId
-      ? Comment.findById(comment.parentId).select({ userId: 1 }).lean()
-      : comment,
-    hiddenUserIdsFor(userId),
-    User.exists({ _id: comment.userId, nickname: { $type: "string" } }),
-  ]);
-  if (!place || place.commentsDisabled || !root || !named) return null;
-  if (
-    hidden.some((id) => id.equals(comment.userId) || id.equals(root.userId))
-  ) {
-    return null;
-  }
   return {
-    authorId: place.userId,
-    writerId: place.userId.equals(comment.userId) ? null : comment.userId,
+    authorId: comment.authorId,
+    writerId: comment.authorId.equals(comment.writerId)
+      ? null
+      : comment.writerId,
     folderId: comment.folderId,
     storyId: comment.storyId,
   };

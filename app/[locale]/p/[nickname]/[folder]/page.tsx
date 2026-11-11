@@ -24,6 +24,8 @@ import { seedShelves } from "../../../(protected)/library/starter";
 import { countBookComments, COMMENTS_PARAM } from "@/lib/social/comments";
 import { BlurredCover } from "./adult-cover";
 import { Comments } from "./comments";
+import { ReportButton } from "@/components/report-dialog";
+import { ownsPlace } from "@/lib/social/visibility";
 import { GuestLibraryButton } from "./guest-library-button";
 import { RatingSection } from "./ratings";
 
@@ -110,6 +112,11 @@ export default async function PublishedFolderPage({
     commentCounts(viewer.ok ? viewer.userId : null, book),
   ]);
   const query = await searchParams;
+  const own = await ownsPlace(viewer.ok ? viewer.userId : null, {
+    type: "folder",
+    id: book.folderId,
+  });
+  const tReports = await getTranslations("reports");
 
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-10">
@@ -156,6 +163,13 @@ export default async function PublishedFolderPage({
               {t("continue", { title: reader.continueAt.title })}
             </Link>
           </Button>
+        )}
+        {!own && (
+          <ReportButton
+            target={viewer.ok ? { type: "folder", id: book.folderId } : null}
+            label={tReports("reportBook")}
+            callbackUrl={`/${await getLocale()}${folder.path}`}
+          />
         )}
       </div>
       <ol aria-label={t("chapters")} className="flex flex-col gap-2">

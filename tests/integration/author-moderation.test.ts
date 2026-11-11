@@ -637,8 +637,14 @@ describe("the log (criterion 5)", () => {
         { action: "remove", actor: "Alice", target: "Bob", reason: null },
       ].reverse(),
     );
-    expect(tabsFor("author")).toEqual(["hidden", "bans", "moderators", "log"]);
-    expect(tabsFor("moderator")).toEqual(["hidden", "bans"]);
+    expect(tabsFor("author")).toEqual([
+      "hidden",
+      "reports",
+      "bans",
+      "moderators",
+      "log",
+    ]);
+    expect(tabsFor("moderator")).toEqual(["hidden", "reports", "bans"]);
   });
 
   it("lists hidden comments with their place for the panel", async () => {

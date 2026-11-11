@@ -1,7 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { type RefObject, useId, useRef, useState, useTransition } from "react";
+import { type RefObject, useId, useRef, useState } from "react";
+import { ErrorText, SELECT, useAction } from "@/components/action-form";
 import { ActionMenu } from "@/components/action-menu";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,55 +16,14 @@ import {
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { ActionResult } from "@/lib/action-result";
 import { MAX_BAN_REASON_LENGTH } from "@/lib/limits";
 import {
   banFromCommunity,
   type BanDuration,
   hideContent,
 } from "@/app/[locale]/(protected)/moderation/actions";
-
-const SELECT =
-  "border-input dark:bg-input/30 focus-visible:border-ring focus-visible:ring-ring/50 h-8 rounded-lg border bg-transparent px-2 text-base outline-none focus-visible:ring-3 md:text-sm";
-
-// Runs an action, keeps its error next to the form and reports success.
-export function useAction() {
-  const tErrors = useTranslations("errors");
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
-  function run(action: () => Promise<ActionResult>, onDone?: () => void) {
-    setError(null);
-    startTransition(async () => {
-      let result: ActionResult;
-      try {
-        result = await action();
-      } catch {
-        setError(tErrors("offline"));
-        return;
-      }
-      if (!result.ok) {
-        setError(result.message);
-        return;
-      }
-      onDone?.();
-    });
-  }
-  return { error, pending, run, reset: () => setError(null) };
-}
-
-export function ErrorText({
-  id,
-  error,
-}: {
-  id?: string;
-  error: string | null;
-}) {
-  return error ? (
-    <p id={id} role="alert" className="text-destructive text-sm">
-      {error}
-    </p>
-  ) : null;
-}
+import { AuthDialog } from "@/app/[locale]/auth/auth-dialog";
+import { ReportDialog } from "@/components/report-dialog";
 
 const DURATION_VALUES = ["1", "7", "30", "forever"] as const;
 
@@ -297,55 +257,173 @@ function HideDialog({
   );
 }
 
-// The ⋮ menu next to a comment for the community's author and moderators (task 79).
-export function CommentModerationMenu({
+// The ⋮ menu next to a comment: Report for other readers and guests (task 80), Hide and Ban for
+// the community's author and moderators (task 79). Nothing to do, no menu.
+export function CommentMenu({
   commentId,
   nickname,
   date,
   authorId,
   canHide,
   canBan,
+  canReport,
+  signedIn,
+  callbackUrl,
 }: {
   commentId: string;
   nickname: string;
   // When it was written, so each comment's menu has its own name.
   date: string;
-  authorId: string;
+  // The community the viewer moderates, for banning the writer.
+  authorId: string | null;
   canHide: boolean;
   canBan: boolean;
+  canReport: boolean;
+  signedIn: boolean;
+  callbackUrl: string;
 }) {
   const t = useTranslations("moderation");
-  const [dialog, setDialog] = useState<"hide" | "ban" | null>(null);
+  const tComments = useTranslations("comments");
+  const tReports = useTranslations("reports");
+  const [dialog, setDialog] = useState<"hide" | "ban" | "report" | null>(
+    null,
+  );
   const trigger = useRef<HTMLButtonElement>(null);
-  const setOpen = (kind: "hide" | "ban") => (open: boolean) =>
+  const setOpen = (kind: "hide" | "ban" | "report") => (open: boolean) =>
     setDialog(open ? kind : null);
+  const moderates = authorId !== null && (canHide || canBan);
+  if (!moderates && !canReport) return null;
   return (
     <>
-      <ActionMenu label={t("menuFor", { nickname, date })} triggerRef={trigger}>
-        {canHide && (
+      <ActionMenu
+        label={
+          moderates
+            ? t("menuFor", { nickname, date })
+            : tComments("menuFor", { nickname, date })
+        }
+        triggerRef={trigger}
+      >
+        {canReport && (
+          <DropdownMenuItem onSelect={() => setDialog("report")}>
+            {tReports("report")}
+          </DropdownMenuItem>
+        )}
+        {moderates && canHide && (
           <DropdownMenuItem onSelect={() => setDialog("hide")}>
             {t("hide")}
           </DropdownMenuItem>
         )}
-        {canBan && (
+        {moderates && canBan && (
           <DropdownMenuItem onSelect={() => setDialog("ban")}>
             {t("banUser", { nickname })}
           </DropdownMenuItem>
         )}
       </ActionMenu>
-      <HideDialog
-        open={dialog === "hide"}
-        onOpenChange={setOpen("hide")}
-        commentId={commentId}
-        returnFocus={trigger}
-      />
-      <BanDialog
-        open={dialog === "ban"}
-        onOpenChange={setOpen("ban")}
-        authorId={authorId}
-        nickname={nickname}
-        returnFocus={trigger}
-      />
+      {canReport &&
+        (signedIn ? (
+          <ReportDialog
+            open={dialog === "report"}
+            onOpenChange={setOpen("report")}
+            target={{ type: "comment", id: commentId }}
+            returnFocus={trigger}
+          />
+        ) : (
+          <AuthDialog
+            callbackUrl={callbackUrl}
+            trigger={null}
+            open={dialog === "report"}
+            onOpenChange={(open) => {
+              setOpen("report")(open);
+              if (!open) requestAnimationFrame(() => trigger.current?.focus());
+            }}
+          />
+        ))}
+      {moderates && (
+        <>
+          <HideDialog
+            open={dialog === "hide"}
+            onOpenChange={setOpen("hide")}
+            commentId={commentId}
+            returnFocus={trigger}
+          />
+          <BanDialog
+            open={dialog === "ban"}
+            onOpenChange={setOpen("ban")}
+            authorId={authorId}
+            nickname={nickname}
+            returnFocus={trigger}
+          />
+        </>
+      )}
+    </>
+  );
+}
+
+// Hide and Ban buttons on a report in the moderation panel (task 80).
+export function ReportModerationButtons({
+  commentId,
+  nickname,
+  authorId,
+  canHide,
+  canBan,
+  hideLabel,
+  banLabel,
+}: {
+  commentId: string;
+  nickname: string | null;
+  authorId: string;
+  canHide: boolean;
+  canBan: boolean;
+  hideLabel: string;
+  banLabel: string;
+}) {
+  const t = useTranslations("moderation");
+  const [dialog, setDialog] = useState<"hide" | "ban" | null>(null);
+  const hideButton = useRef<HTMLButtonElement>(null);
+  const banButton = useRef<HTMLButtonElement>(null);
+  const setOpen = (kind: "hide" | "ban") => (open: boolean) =>
+    setDialog(open ? kind : null);
+  return (
+    <>
+      {canHide && (
+        <>
+          <Button
+            ref={hideButton}
+            size="sm"
+            variant="outline"
+            aria-label={hideLabel}
+            onClick={() => setDialog("hide")}
+          >
+            {t("hide")}
+          </Button>
+          <HideDialog
+            open={dialog === "hide"}
+            onOpenChange={setOpen("hide")}
+            commentId={commentId}
+            returnFocus={hideButton}
+          />
+        </>
+      )}
+      {canBan && nickname && (
+        <>
+          <Button
+            ref={banButton}
+            size="sm"
+            variant="outline"
+            aria-label={banLabel}
+            onClick={() => setDialog("ban")}
+          >
+            {t("banUser", { nickname })}
+          </Button>
+          <BanDialog
+            open={dialog === "ban"}
+            onOpenChange={setOpen("ban")}
+            authorId={authorId}
+            nickname={nickname}
+            returnFocus={banButton}
+          />
+        </>
+      )}
     </>
   );
 }

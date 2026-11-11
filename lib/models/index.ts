@@ -24,3 +24,4 @@ import "./comment";
 import "./reaction";
 import "./rating";
 import "./moderation-log";
+import "./report";

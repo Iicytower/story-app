@@ -16,6 +16,7 @@ import { retryDueCovers } from "@/lib/covers/mutations";
 import { getPublicLibrary, getPublicProfile } from "@/lib/profiles/queries";
 import type { LibraryBook } from "@/lib/library/queries";
 import { FollowButton } from "./follow-button";
+import { ReportButton } from "@/components/report-dialog";
 import { activeCommunityBan } from "@/lib/social/moderation";
 import { CommunityBanNotice } from "./[folder]/community-ban-notice";
 
@@ -59,6 +60,7 @@ export default async function ProfilePage({
     ? await getPublicLibrary(profile.userId, viewer)
     : null;
   const t = await getTranslations("profile");
+  const tReports = await getTranslations("reports");
 
   const content = (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10">
@@ -91,7 +93,15 @@ export default async function ProfilePage({
               followed={profile.followed}
             />
           )}
-          {/* Message (83), Block (84) and Report (80) go here. */}
+          {!profile.owner && (
+            <ReportButton
+              target={viewer ? { type: "profile", id: profile.nickname } : null}
+              label={tReports("reportProfile", { nickname: profile.nickname })}
+              className="h-auto max-w-full [overflow-wrap:anywhere] whitespace-normal"
+              callbackUrl={`/${await getLocale()}${profilePath(profile.nickname)}`}
+            />
+          )}
+          {/* Message (83) and Block (84) go here. */}
         </div>
       </header>
       {profile.bio && (

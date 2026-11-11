@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { connection } from "next/server";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { ReportModerationButtons } from "@/components/moderation-controls";
 import { UserLink } from "@/components/user-link";
 import { Link, redirect } from "@/i18n/navigation";
 import { requireUser } from "@/lib/auth/session";
@@ -10,6 +11,7 @@ import { MAX_MODERATORS } from "@/lib/limits";
 import {
   getModerationOverview,
   listCommunityBans,
+  listCommunityReports,
   listHiddenComments,
   listModerationLog,
   listModerators,
@@ -136,6 +138,91 @@ export default async function ModerationPage({
             </div>
           </li>
         ))}
+      </Section>
+    );
+  } else if (current && tab === "reports") {
+    const reports = await listCommunityReports(user.userId, current.authorId);
+    content = (
+      <Section
+        label={t("reportList")}
+        empty={reports.length === 0}
+        emptyText={t("noReports")}
+      >
+        {reports.map((report) => {
+          const at = date(report.createdAt);
+          return (
+            <li key={report.id} className={ITEM}>
+              <p className="font-medium [overflow-wrap:anywhere]">
+                {report.writer ? (
+                  t("reportedComment", { nickname: report.writer })
+                ) : (
+                  <DeletedAccount />
+                )}
+              </p>
+              {report.comment ? (
+                <>
+                  <p className="[overflow-wrap:anywhere] whitespace-pre-wrap">
+                    {report.comment.body}
+                  </p>
+                  {report.comment.state === "hidden" && (
+                    <p className="text-muted-foreground">
+                      {t("reportedHidden")}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-muted-foreground italic">
+                  {t("reportedGone")}
+                </p>
+              )}
+              <p>{t("reportReason", { reason: report.reason })}</p>
+              {report.details && (
+                <p className="[overflow-wrap:anywhere] whitespace-pre-wrap">
+                  {t("reportDetails", { details: report.details })}
+                </p>
+              )}
+              <p className="text-muted-foreground">
+                <time dateTime={report.createdAt}>
+                  {t("reportedAt", { date: at })}
+                </time>
+              </p>
+              <div className="flex flex-wrap items-start gap-2">
+                <ModerationButton
+                  kind={{ action: "resolved", reportId: report.id }}
+                  label={t("resolve")}
+                  ariaLabel={t("resolveFor", { date: at })}
+                  variant="default"
+                />
+                <ModerationButton
+                  kind={{ action: "dismissed", reportId: report.id }}
+                  label={t("dismiss")}
+                  ariaLabel={t("dismissFor", { date: at })}
+                />
+                {report.comment && (
+                  <>
+                    <ReportModerationButtons
+                      commentId={report.comment.id}
+                      nickname={report.writer}
+                      authorId={current.authorId}
+                      canHide={report.comment.canHide}
+                      canBan={report.comment.canBan}
+                      hideLabel={t("hideFor", { date: at })}
+                      banLabel={t("banFor", {
+                        nickname: report.writer ?? "",
+                        date: at,
+                      })}
+                    />
+                    <Button asChild size="sm" variant="ghost">
+                      <Link href={report.comment.path}>
+                        {t("showInPlace")}
+                      </Link>
+                    </Button>
+                  </>
+                )}
+              </div>
+            </li>
+          );
+        })}
       </Section>
     );
   } else if (current && tab === "bans") {

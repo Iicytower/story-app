@@ -1,7 +1,9 @@
 import { connectDB } from "@/lib/db";
+import { Comment } from "@/lib/models/comment";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
-import { isAuthorVisibleTo } from "@/lib/social/permissions";
+import { User } from "@/lib/models/user";
+import { hiddenUserIdsFor, isAuthorVisibleTo } from "@/lib/social/permissions";
 
 // D38 for a signed-in reader's writes, the same as the library (task 72): hidden authors' books
 // are not found. A chapter's comments are off when its book's are.
@@ -63,4 +65,63 @@ export async function findVisibleFolder(viewerId: string, folderId: string) {
     userId: folder.userId,
     commentsDisabled: Boolean(folder.commentsDisabled),
   };
+}
+
+// A comment the reader sees as one (task 76): not deleted or hidden, comments on, its place
+// public, and neither it nor its thread written by an account hidden from the reader.
+export async function findVisibleComment(viewerId: string, commentId: string) {
+  await connectDB();
+  const comment = await Comment.findOne({
+    _id: commentId,
+    deletedAt: null,
+    hidden: { $exists: false },
+  })
+    .select({ userId: 1, parentId: 1, folderId: 1, storyId: 1 })
+    .lean();
+  if (!comment) return null;
+  const [place, root, hidden, named] = await Promise.all([
+    comment.storyId
+      ? findVisibleStory(viewerId, comment.storyId.toString())
+      : findVisibleFolder(viewerId, comment.folderId.toString()),
+    comment.parentId
+      ? Comment.findById(comment.parentId).select({ userId: 1 }).lean()
+      : comment,
+    hiddenUserIdsFor(viewerId),
+    User.exists({ _id: comment.userId, nickname: { $type: "string" } }),
+  ]);
+  if (!place || place.commentsDisabled || !root || !named) return null;
+  if (
+    hidden.some((id) => id.equals(comment.userId) || id.equals(root.userId))
+  ) {
+    return null;
+  }
+  return {
+    _id: comment._id,
+    writerId: comment.userId,
+    authorId: place.userId,
+    folderId: comment.folderId,
+    storyId: comment.storyId,
+  };
+}
+
+// Whether the viewer wrote the chapter or book: nobody reports their own (task 80).
+export async function ownsPlace(
+  viewerId: string | null,
+  target: { type: "story" | "folder"; id: string },
+): Promise<boolean> {
+  if (!viewerId) return false;
+  await connectDB();
+  const owned =
+    target.type === "story"
+      ? await Story.exists({
+          _id: target.id,
+          userId: viewerId,
+          deletedAt: null,
+        })
+      : await Folder.exists({
+          _id: target.id,
+          userId: viewerId,
+          deletedAt: null,
+        });
+  return owned !== null;
 }

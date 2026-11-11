@@ -13,14 +13,18 @@ import { Comment, HIDDEN_COMMENT_TTL_DAYS } from "@/lib/models/comment";
 import { CommunityBan } from "@/lib/models/community-ban";
 import { CommunityModerator } from "@/lib/models/community-moderator";
 import { Reaction } from "@/lib/models/reaction";
+import { Report } from "@/lib/models/report";
 import { NICKNAME_COLLATION, User } from "@/lib/models/user";
 import { SOCIAL_LIMITS, takeUserAttempt } from "@/lib/rate-limit";
 import { logModeration } from "@/lib/social/moderation";
 import {
   canModerate,
+  isAdmin,
   isBanActive,
+  isModeratorOf,
   moderationRole,
 } from "@/lib/social/permissions";
+import { REPORT_OUTCOMES, type ReportOutcome } from "@/lib/social/reports";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 export type BanDuration = 1 | 7 | 30 | null;
@@ -467,6 +471,71 @@ export async function removeModerator(nickname: string): Promise<ActionResult> {
     targetUserId: target._id,
   });
   // Task 81: notify the former moderator.
+  refresh();
+  return { ok: true };
+}
+
+// Who may decide an open report: the author or a moderator of its community, the admin for
+// the rest (D80). A moderator does not decide a report about themselves or another moderator,
+// as with canModerate. Anyone else gets NOT_FOUND.
+async function mayDecide(
+  userId: string,
+  report: {
+    route: "author" | "admin";
+    authorId?: Types.ObjectId;
+    targetUserId: Types.ObjectId;
+  },
+): Promise<boolean> {
+  if (report.route === "author") {
+    const authorId = report.authorId!.toString();
+    const role = await moderationRole(userId, authorId);
+    if (role !== "moderator") return role !== null;
+    return (
+      !report.targetUserId.equals(userId) &&
+      !(await isModeratorOf(report.targetUserId.toString(), authorId))
+    );
+  }
+  const user = await User.findById(userId)
+    .select({ role: 1, globalBan: 1 })
+    .lean();
+  return isAdmin(user) && !isBanActive(user!.globalBan, new Date());
+}
+
+export async function resolveReport(
+  id: string,
+  outcome: ReportOutcome,
+): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!isId(id) || !REPORT_OUTCOMES.includes(outcome)) return invalid();
+  const limited = await limitError(user.userId);
+  if (limited) return limited;
+  const reportNotFound = () => actionError("NOT_FOUND", "reportNotFound");
+  const report = await Report.findOne({ _id: id, state: "open" })
+    .select({ route: 1, authorId: 1, targetUserId: 1 })
+    .lean();
+  if (!report || !(await mayDecide(user.userId, report))) {
+    return reportNotFound();
+  }
+
+  const { modifiedCount } = await Report.updateOne(
+    { _id: report._id, state: "open" },
+    {
+      $set: { state: outcome, resolvedBy: user.userId, resolvedAt: new Date() },
+    },
+  );
+  if (modifiedCount === 0) return reportNotFound();
+  await logModeration({
+    ...(report.route === "author"
+      ? { authorId: report.authorId! }
+      : { authorId: null, scope: "global" as const }),
+    actorId: user.userId,
+    action: outcome === "resolved" ? "resolve" : "dismiss",
+    targetType: "report",
+    targetId: report._id,
+    targetUserId: report.targetUserId,
+  });
+  // Task 81: notify the reporter of the outcome.
   refresh();
   return { ok: true };
 }
