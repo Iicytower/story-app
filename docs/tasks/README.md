@@ -80,7 +80,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 81 | ↳ [Powiadomienia](done/81-notifications.md) (subtask 68) | 71, 72, 73, 76, 77, 78, 79, 80 | [x] |
 | 82 | ↳ [Wzmianki @nick](done/82-mentions.md) (subtask 68) | 81 | [x] |
 | 83 | ↳ [Statystyki autora](done/83-author-stats.md) (subtask 68) | 71, 72, 73, 76, 77, 78 | [x] |
-| 84 | ↳ [Rankingi na stronie głównej](84-rankings.md) (subtask 68) | 71, 83 | [ ] |
+| 84 | ↳ [Rankingi na stronie głównej](done/84-rankings.md) (subtask 68) | 71, 83 | [x] |
 | 85 | ↳ [Wiadomości prywatne](85-direct-messages.md) (subtask 68) | 81 | [ ] |
 | 86 | ↳ [Blokowanie w pełnym zakresie](86-blocking.md) (subtask 68) | 82, 84, 85 | [ ] |
 | 87 | ↳ [Fora autora i globalne](87-forums.md) (subtask 68) | 75, 77, 80, 81, 82, 86 | [ ] |

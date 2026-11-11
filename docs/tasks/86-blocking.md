@@ -12,6 +12,7 @@ Subtask 68, zależy od 82, 84 i 85. Podstawa: D80 (Role, bany, blokady – bloka
 - Komentarze (76): odpowiedzi sprawdzane przez `canInteract(kind: "reply")` wobec autora rodzica i korzenia wątku (poza `COMMUNITY_KINDS`) – uwzględnić w teście macierzowym.
 - Moderacja (79): blokada moderatora przez autora (i odwrotnie) dziś nie odbiera roli – rozstrzygnąć tutaj; blokada w dowolną stronę już uniemożliwia zaproszenie i przyjęcie. Ban globalny: `moderationLog.scope: global` (dziś wpisy tylko społeczności).
 - Powiadomienia (81): moderacja ignoruje blokady w powiadomieniach, więc blokada między autorem a moderatorem musi kończyć relację `CommunityModerator`.
+- Rankingi (84): blokady filtrowane przy odczycie w obie strony przez `feedHiddenUserIds` (jak feed 75) – sprawdzić spójność z pełną blokadą.
 
 ## Kryteria akceptacji
 

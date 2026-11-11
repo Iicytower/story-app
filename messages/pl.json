@@ -796,7 +796,13 @@
     "logIn": "Zaloguj się",
     "recent": "Ostatnio opublikowane",
     "showMore": "Pokaż więcej",
-    "recentNone": "Nic jeszcze nie opublikowano."
+    "recentNone": "Nic jeszcze nie opublikowano.",
+    "weekly": "Popularne w tym tygodniu",
+    "topRated": "Najwyżej oceniane",
+    "followed": "Od obserwowanych",
+    "categories": "Popularne w kategoriach",
+    "byAuthor": "autor: {nickname}",
+    "chapterIn": "„{book}”, autor: {nickname}"
   },
   "notFound": {
     "text": "404 | Nie znaleziono tej strony."

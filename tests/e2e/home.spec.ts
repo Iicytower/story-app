@@ -1,5 +1,13 @@
 import type { Page } from "@playwright/test";
-import { findFolder, seedStory, withE2EDb } from "./db";
+import {
+  findFolder,
+  markAdultWithCover,
+  seedFollow,
+  seedPublished as seedBook,
+  seedRanking,
+  seedStory,
+  withE2EDb,
+} from "./db";
 import { storageStatePath } from "./env";
 import { expect, test } from "./helpers";
 
@@ -169,6 +177,75 @@ test("a narrow screen does not scroll sideways", async ({ page: visitor }) => {
   }
 });
 
+async function seedRankedBooks() {
+  await seedBook("dave", "Night", [
+    { title: "Dusk", publication: "public", content: "Dark text" },
+  ]);
+  await seedBook("erin", "Day", [
+    { title: "Dawn", publication: "public", content: "Light text" },
+  ]);
+  await markAdultWithCover("dave", "Night");
+  await seedRanking("weekly", [
+    { user: "dave", folder: "Night" },
+    { user: "erin", folder: "Day" },
+  ]);
+  await seedRanking("topRated", []);
+  await seedRanking("tag:fantasy", [{ user: "erin", folder: "Day" }]);
+}
+
+const ranking = (page: Page, name: string) =>
+  page.getByRole("list", { name, exact: true }).getByRole("link");
+
+test("a visitor sees the rankings with 18+ badges and no empty or followed sections", async ({
+  page: visitor,
+}) => {
+  await seedRankedBooks();
+  await visitor.goto("/");
+
+  const weekly = ranking(visitor, "Popular this week");
+  await expect(weekly).toHaveCount(2);
+  await expect(weekly.first()).toContainText("Night");
+  await expect(weekly.first()).toContainText("by Dave");
+  await expect(weekly.first()).toHaveAttribute("href", "/en/p/Dave/night");
+  // An 18+ book: the badge instead of its cover, next to the title too.
+  await expect(
+    weekly.first().getByRole("img", { name: "Cover of Night" }),
+  ).toHaveCount(0);
+  await expect(
+    weekly.first().getByRole("img", { name: "For adults only (18+)" }),
+  ).toHaveCount(2);
+  await expect(weekly.nth(1)).toContainText("Day");
+  await expect(
+    weekly.nth(1).getByRole("img", { name: "For adults only (18+)" }),
+  ).toHaveCount(0);
+
+  await expect(
+    visitor.getByRole("heading", { level: 2, name: "Popular in categories" }),
+  ).toBeVisible();
+  await expect(ranking(visitor, "Fantasy")).toHaveCount(1);
+  await expect(visitor.getByRole("heading", { name: "Top rated" })).toHaveCount(
+    0,
+  );
+  await expect(
+    visitor.getByRole("heading", { name: "From authors you follow" }),
+  ).toHaveCount(0);
+
+  await visitor.goto("/pl");
+  await expect(ranking(visitor, "Popularne w tym tygodniu")).toHaveCount(2);
+  await expect(ranking(visitor, "Fantasy")).toHaveCount(1);
+
+  await visitor.setViewportSize({ width: 375, height: 800 });
+  await visitor.goto("/en");
+  await expect(weekly.first()).toBeVisible();
+  expect(
+    await visitor.evaluate(
+      () =>
+        document.documentElement.scrollWidth <=
+        document.documentElement.clientWidth,
+    ),
+  ).toBe(true);
+});
+
 test.describe("signed in", () => {
   test.use({ storageState: storageStatePath("alice") });
 
@@ -195,5 +272,27 @@ test.describe("signed in", () => {
     await page.goto("/stories");
     await nav.getByRole("link", { name: "Home" }).click();
     await expect(page).toHaveURL("/en");
+  });
+
+  test("the rankings have a section with the latest chapters of followed authors", async ({
+    page,
+  }) => {
+    await seedRankedBooks();
+    await page.goto("/");
+    await expect(ranking(page, "Popular this week")).toHaveCount(2);
+    await expect(
+      page.getByRole("heading", { name: "From authors you follow" }),
+    ).toHaveCount(0);
+
+    await seedFollow("alice", "dave");
+    await page.reload();
+    const followed = ranking(page, "From authors you follow");
+    await expect(followed).toHaveCount(1);
+    await expect(followed.first()).toContainText("Dusk");
+    await expect(followed.first()).toContainText("Night by Dave");
+    await expect(followed.first()).toHaveAttribute(
+      "href",
+      "/en/p/Dave/night/dusk",
+    );
   });
 });

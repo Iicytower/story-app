@@ -73,7 +73,7 @@ interface RawEntry {
 
 // Authors the feed leaves out: those hidden from the viewer (D80) and, in the feed only, those
 // who blocked the viewer, so a block works both ways.
-async function feedHiddenUserIds(viewerId: string) {
+export async function feedHiddenUserIds(viewerId: string) {
   const [hidden, blockers] = await Promise.all([
     hiddenUserIdsFor(viewerId),
     Block.find({ blockedId: viewerId }, { _id: 0, blockerId: 1 }).lean(),

@@ -5,6 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { AuthDialog } from "./auth/auth-dialog";
 import { PublicSearch } from "./public-search";
+import { Rankings } from "./rankings";
 import { RecentlyPublished } from "./recently-published";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -31,6 +32,7 @@ export default async function HomePage({
         <div className={COLUMN}>
           <PublicSearch q={q} tag={tag} heading="h1" />
           <RecentlyPublished />
+          <Rankings viewerId={userId} />
         </div>
       </AppShell>
     );
@@ -73,6 +75,7 @@ export default async function HomePage({
         </section>
         <PublicSearch q={q} tag={tag} heading="h2" />
         <RecentlyPublished />
+        <Rankings viewerId={null} />
       </div>
     </main>
   );

@@ -28,3 +28,4 @@ import "./report";
 import "./notification";
 import "./read-event";
 import "./daily-stat";
+import "./ranking";

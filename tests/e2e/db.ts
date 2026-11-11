@@ -46,6 +46,7 @@ export function clearStories(): Promise<void> {
     await connection.collection("notifications").deleteMany({});
     await connection.collection("readEvents").deleteMany({});
     await connection.collection("dailyStats").deleteMany({});
+    await connection.collection("rankings").deleteMany({});
   });
 }
 
@@ -523,5 +524,73 @@ export function sumDailyReaders(): Promise<number> {
       ])
       .toArray();
     return total?.readers ?? 0;
+  });
+}
+
+async function findOwnFolder(
+  connection: mongoose.Connection,
+  user: UserName,
+  name: string,
+) {
+  const folder = await connection
+    .collection("folders")
+    .findOne({ userId: await userId(connection, user), name, deletedAt: null });
+  if (!folder) throw new Error(`No folder ${name} of ${user}`);
+  return folder;
+}
+
+// A fresh ranking (task 84), so the page does not recompute it after the response.
+export function seedRanking(
+  key: string,
+  books: { user: UserName; folder: string }[],
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const items = [];
+    for (const [index, { user, folder }] of books.entries()) {
+      const { _id } = await findOwnFolder(connection, user, folder);
+      items.push({ folderId: _id, score: books.length - index });
+    }
+    await connection
+      .collection<{ _id: string }>("rankings")
+      .updateOne(
+        { _id: key },
+        { $set: { items, computedAt: new Date(), computing: null } },
+        { upsert: true },
+      );
+  });
+}
+
+// An 18+ book with a rated 18+ cover: public lists show the badge instead of the image.
+export function markAdultWithCover(
+  user: UserName,
+  folder: string,
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const { _id: folderId, userId: owner } = await findOwnFolder(
+      connection,
+      user,
+      folder,
+    );
+    const now = new Date();
+    const { insertedId } = await connection.collection("covers").insertOne({
+      userId: owner,
+      folderId,
+      data: Buffer.from("cover"),
+      size: 5,
+      state: "rated",
+      manualAdult: true,
+      attempts: 0,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await connection.collection("folders").updateOne(
+      { _id: folderId },
+      {
+        $set: {
+          coverId: insertedId,
+          adult: { manual: true, auto: false },
+        },
+      },
+    );
   });
 }
