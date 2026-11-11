@@ -242,6 +242,11 @@ describe("the author's statistics (criteria 5, 6)", () => {
       now: new Date("2026-11-11T12:00:00Z"),
       toFake: ["Date"],
     });
+    // The first chapter was created at real time; keep it older than the faked "Book two".
+    await Story.collection.updateOne(
+      { _id: new Types.ObjectId(book.storyId) },
+      { $set: { createdAt: new Date("2026-11-10T12:00:00Z") } },
+    );
     const second = await Story.create({
       userId: alice,
       folderId: book.folderId,
