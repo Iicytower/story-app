@@ -2,7 +2,7 @@
 export const SOCIAL_NAV = {
   feed: true,
   library: true,
-  forums: false,
+  forums: true,
   messages: true,
   notifications: true,
   profile: true,

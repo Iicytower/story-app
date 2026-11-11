@@ -18,6 +18,7 @@ Subtask 68, zależy od 80 i 87. Podstawa: D80 (Fora i panel admina – panel; Ro
 - Powiadomienia (81): powiadomienia zgłoszeń trasy `admin` mają dziś `href: null` – dopisać link do kolejki w panelu admina.
 - Rankingi (84): ban globalny autora ukrywa go w rankingach od razu (filtr przy renderze), czytelnicy i oceniający zbanowani po przeliczeniu liczą się do następnego przeliczenia (≤ 1 h).
 - Moderacja (86): `moderationLog.scope: "global"` przy banie globalnym (przeniesione z 86; dziś wpisy tylko społeczności).
+- Fora (87): zarządzanie kategoriami działa na `forumCategories` (etykiety en/pl, `adminOnly`, kolejność, `moderatorIds`); panel moderacji nie listuje ukrytych postów i wątków (Przywróć tylko w wątku) – rozważyć listę w panelu; ban globalny w forach (dziś forum globalne sprawdza tylko własny ban globalny piszącego, bez bana społeczności).
 
 ## Kryteria akceptacji
 

@@ -26,7 +26,7 @@ import {
 } from "@/lib/social/reports";
 
 export type ReportTargetRef = {
-  type: Exclude<ReportTarget, "post">;
+  type: ReportTarget;
   // The nickname for a profile, the id otherwise.
   id: string;
 };

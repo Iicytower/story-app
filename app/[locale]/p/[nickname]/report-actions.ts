@@ -1,6 +1,6 @@
 "use server";
 
-import type { Types } from "mongoose";
+import { Types } from "mongoose";
 import { isId, isString } from "@/lib/action-input";
 import type { ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
@@ -10,6 +10,7 @@ import { lengthError } from "@/lib/limits";
 import { Report } from "@/lib/models/report";
 import { NICKNAME_COLLATION, User } from "@/lib/models/user";
 import { SOCIAL_LIMITS, takeUserAttempt } from "@/lib/rate-limit";
+import { findVisiblePost } from "@/lib/social/forums";
 import { notifyLater, reportRecipients } from "@/lib/social/notify";
 import { isAuthorVisibleTo } from "@/lib/social/permissions";
 import {
@@ -39,10 +40,25 @@ interface Target {
 // there to report.
 async function findTarget(
   userId: string,
-  targetType: Exclude<ReportTarget, "post">,
+  targetType: ReportTarget,
   target: string,
 ): Promise<Target | null> {
   switch (targetType) {
+    // An author's forum is their community; their own posts and the global categories go to the
+    // admin, like comments (task 80).
+    case "post": {
+      const post = await findVisiblePost(userId, target);
+      if (!post) return null;
+      return {
+        id: post._id,
+        userId: post.writerId,
+        authorId:
+          post.place.scope === "author" &&
+          !post.writerId.equals(post.place.authorId)
+            ? new Types.ObjectId(post.place.authorId)
+            : null,
+      };
+    }
     case "comment": {
       const comment = await findVisibleComment(userId, target);
       if (!comment) return null;
@@ -88,9 +104,9 @@ export async function report(
 ): Promise<ActionResult> {
   const user = await requireUser();
   if (!user.ok) return user;
-  // Forum posts join in task 87.
   if (
     (targetType !== "comment" &&
+      targetType !== "post" &&
       targetType !== "story" &&
       targetType !== "folder" &&
       targetType !== "profile") ||

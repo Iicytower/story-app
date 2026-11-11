@@ -85,17 +85,18 @@ export interface MentionOptions {
   exclude?: Id[];
   // A direct message (task 85): only a party to the conversation.
   only?: Id[];
-  // Already notified of this comment: an edit does not notify them twice.
+  // Already notified of this comment or forum post: an edit does not notify them twice.
   commentId?: Id;
+  postId?: Id;
 }
 
 // Who a new text of actorId notifies of a mention: existing accounts canInteract allows (bans and
-// blocks, D80), without the actor. Comments (76) now; posts (87) and messages (85, with only)
-// call it the same way, through notifyLater.
+// blocks, D80), without the actor. Comments (76), forum posts (87) and messages (85, with only)
+// call it through notifyLater.
 export async function mentionRecipients(
   actorId: Id,
   body: string,
-  { previous, exclude = [], only, commentId }: MentionOptions = {},
+  { previous, exclude = [], only, commentId, postId }: MentionOptions = {},
 ): Promise<Types.ObjectId[]> {
   const before = new Set(
     previous === undefined
@@ -122,10 +123,10 @@ export async function mentionRecipients(
         !skipped.has(id.toString()) && (!allowed || allowed.has(id.toString())),
     );
   const notified = new Set(
-    commentId && candidates.length > 0
+    (commentId || postId) && candidates.length > 0
       ? (
           (await Notification.distinct("userId", {
-            commentId,
+            ...(postId ? { postId } : { commentId }),
             userId: { $in: candidates },
           })) as Types.ObjectId[]
         ).map(String)

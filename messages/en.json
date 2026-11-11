@@ -95,7 +95,9 @@
       "reply": "Replies to my comments",
       "mention": "Mentions of me",
       "libraryChapter": "Books in my library",
-      "followedChapter": "Authors I follow"
+      "followedChapter": "Authors I follow",
+      "quote": "Quotes of my posts",
+      "threadReply": "New posts in threads I follow"
     },
     "messages": "Messages",
     "dmFrom": "Who can start a conversation with me",
@@ -246,7 +248,13 @@
     "reportNotFound": "This report no longer exists or has already been decided.",
     "notificationNotFound": "This notification does not exist.",
     "messageRequired": "Write a message first.",
-    "conversationNotFound": "This conversation does not exist."
+    "conversationNotFound": "This conversation does not exist.",
+    "forumNotFound": "This forum does not exist or is not available.",
+    "threadNotFound": "This thread does not exist or is not available.",
+    "postNotFound": "This post does not exist or is not available.",
+    "postRequired": "Write something first.",
+    "threadTitleRequired": "Give the thread a title.",
+    "postEditExpired": "A post can be edited only within 15 minutes of posting. You can still delete it."
   },
   "password": {
     "mustContain": "The password must contain:",
@@ -411,7 +419,8 @@
     "moderation": "Moderation – Story App",
     "stats": "Statistics – Story App",
     "messages": "Messages – Story App",
-    "conversation": "{nickname}: conversation – Story App"
+    "conversation": "{nickname}: conversation – Story App",
+    "forums": "Forums – Story App"
   },
   "folders": {
     "title": "Folders",
@@ -1087,7 +1096,8 @@
     "pages": "Pages",
     "noOlder": "No older entries.",
     "authorReplyChapter": "<author>{nickname}</author> <comment>replied to a comment</comment> under <chapter>{title}</chapter> in <book>{bookName}</book>",
-    "authorReplyBook": "<author>{nickname}</author> <comment>replied to a comment</comment> under <book>{bookName}</book>"
+    "authorReplyBook": "<author>{nickname}</author> <comment>replied to a comment</comment> under <book>{bookName}</book>",
+    "forumThread": "<author>{nickname}</author> started the thread <thread>{title}</thread> in their forum"
   },
   "comments": {
     "title": "{count, plural, =0 {Comments} one {# comment} other {# comments}}",
@@ -1196,7 +1206,7 @@
     "removeFor": "Remove {nickname}",
     "noLog": "Nothing in the log yet.",
     "logList": "Moderation log",
-    "log": "{action, select, hide {{actor} hid a comment by {target}} restore {{actor} restored a comment by {target}} ban {{actor} banned {target}} unban {{actor} lifted the ban of {target}} invite {{actor} invited {target} to moderate} accept {{actor} accepted the invitation} decline {{actor} declined the invitation} resign {{actor} resigned as a moderator} resolve {{actor} resolved a report about {target}} dismiss {{actor} dismissed a report about {target}} other {{actor} removed the moderator {target}}}",
+    "log": "{action, select, hide {{actor} hid {targetType, select, post {a post} thread {a thread} other {a comment}} by {target}} restore {{actor} restored {targetType, select, post {a post} thread {a thread} other {a comment}} by {target}} ban {{actor} banned {target}} unban {{actor} lifted the ban of {target}} invite {{actor} invited {target} to moderate} accept {{actor} accepted the invitation} decline {{actor} declined the invitation} resign {{actor} resigned as a moderator} resolve {{actor} resolved a report about {target}} dismiss {{actor} dismissed a report about {target}} other {{actor} removed the moderator {target}}}",
     "menuFor": "Moderate the comment by {nickname}, {date}",
     "hide": "Hide",
     "hideTitle": "Hide comment?",
@@ -1222,14 +1232,16 @@
     "resolveFor": "Resolve the report from {date}",
     "dismissFor": "Dismiss the report from {date}",
     "hideFor": "Hide the comment reported {date}",
-    "banFor": "Ban {nickname} (report from {date})"
+    "banFor": "Ban {nickname} (report from {date})",
+    "hideForumTitle": "Hide {kind, select, thread {thread} other {post}}?",
+    "hideForumDescription": "{kind, select, thread {The thread and its posts disappear for readers.} other {It shows as “Hidden by a moderator”.}} Moderators can restore it in place for 30 days, then it is deleted."
   },
   "reports": {
     "report": "Report",
     "reportChapter": "Report chapter",
     "reportBook": "Report book",
     "reportProfile": "Report {nickname}",
-    "title": "{target, select, comment {Report comment} story {Report chapter} folder {Report book} other {Report profile}}",
+    "title": "{target, select, comment {Report comment} post {Report post} story {Report chapter} folder {Report book} other {Report profile}}",
     "description": "The report goes to the author's moderators or to the administrators. The reported person does not learn who reported them.",
     "reason": "Reason",
     "reasons": "{reason, select, spam {Spam} harassment {Harassment} illegal {Illegal content} unmarkedAdult {18+ without a mark} other {Other}}",
@@ -1275,7 +1287,13 @@
       "report": "New report in your community",
       "reportAdmin": "New report for the admins",
       "reportResolved": "Your report was accepted",
-      "reportDismissed": "Your report was dismissed"
+      "reportDismissed": "Your report was dismissed",
+      "quote": "{actor} quoted your post in {target}",
+      "threadReply": "{actor} posted in {target}",
+      "mentionPost": "{actor} mentioned you in a post in {target}",
+      "reactionPost": "{actor} {others, plural, =0 {reacted} one {and # other person reacted} other {and # other people reacted}} to your post in {target}",
+      "hiddenPost": "A moderator hid your post in {target}",
+      "hiddenThread": "A moderator hid your thread {target}"
     }
   },
   "stats": {
@@ -1325,5 +1343,47 @@
     "confirmTitle": "Block {nickname}?",
     "confirmDescription": "{nickname} will not be able to message you, reply to you, mention you, follow you or take part in your community. Follows between you are removed and you will no longer see their comments. They can still read your public texts.",
     "blockingPending": "Blocking…"
+  },
+  "forums": {
+    "title": "Forums",
+    "categories": "Forum categories",
+    "breadcrumbs": "Forum navigation",
+    "pageTitle": "{title} – Story App",
+    "authorForum": "Forum of {nickname}",
+    "signIn": "Log in to write",
+    "adminOnly": "Only administrators write here.",
+    "threads": "Threads",
+    "noThreads": "No threads yet.",
+    "startedBy": "Started by {nickname}",
+    "posts": "{count, plural, one {# post} other {# posts}}",
+    "lastPost": "Last post",
+    "threadHidden": "Hidden by a moderator.",
+    "postHidden": "Hidden by a moderator.",
+    "postDeleted": "Post deleted.",
+    "restorePost": "Restore the post from {date}",
+    "restoreThread": "Restore the thread",
+    "edited": "edited",
+    "inReplyTo": "Quoting {nickname}",
+    "reactionsTo": "Reactions to {nickname}'s post",
+    "postList": "Posts",
+    "newPost": "Reply in the thread",
+    "submitPost": "Post",
+    "placeholder": "Write a post…",
+    "newThread": "New thread",
+    "threadTitle": "Title",
+    "threadBody": "Text",
+    "submitThread": "Start thread",
+    "editLabel": "Edit post",
+    "edit": "Edit",
+    "quote": "Quote",
+    "quoteFrom": "Quote {nickname}",
+    "deleteTitle": "Delete post?",
+    "deleteDescription": "The post will be deleted. Deleting the first post of a thread with replies leaves “Post deleted” in its place; without replies the thread goes with it.",
+    "follow": "Follow thread",
+    "unfollow": "Unfollow thread",
+    "menuFor": "Actions for the {kind, select, thread {thread} other {post}} by {nickname}, {date}",
+    "moderateFor": "Moderate the {kind, select, thread {thread} other {post}} by {nickname}, {date}",
+    "quoteUnavailable": "The quoted post is not available.",
+    "quoteOf": "Quote from {nickname}"
   }
 }

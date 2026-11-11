@@ -156,10 +156,10 @@ describe("report", () => {
     }
   });
 
-  it("refuses forum posts until task 87, bad input and too long details", async () => {
+  it("refuses bad input and too long details", async () => {
     const erins = await comment(erin, "Hello");
     signInAs(dave);
-    expect(await report("post", erins, "spam", "")).toEqual(INVALID);
+    expect(await report("thread" as never, erins, "spam", "")).toEqual(INVALID);
     expect(
       await report("comment", erins, "rude" as unknown as "spam", ""),
     ).toEqual(INVALID);

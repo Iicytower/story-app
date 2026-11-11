@@ -37,7 +37,7 @@ export function ReactionBar({
   label,
   callbackUrl,
 }: {
-  target: { type: "story" | "comment"; id: string } | null;
+  target: { type: "story" | "comment" | "post"; id: string } | null;
   summary: ReactionSummary;
   own: boolean;
   // Banned in the author's community: the counts stay, the buttons do not work (task 79).

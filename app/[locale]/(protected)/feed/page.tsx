@@ -59,6 +59,45 @@ export default async function FeedPage({
       ) : (
         <ul aria-label={t("entries")} className="flex flex-col gap-4">
           {entries.map((entry) => {
+            const time = (
+              <time
+                dateTime={entry.createdAt.toISOString()}
+                title={fullDate.format(entry.createdAt)}
+                className="text-muted-foreground text-sm"
+              >
+                {formatPublishedAt(entry.createdAt, now, locale)}
+              </time>
+            );
+            if (entry.type === "forumThread") {
+              const thread = entry.thread;
+              return (
+                <li
+                  key={entry.id}
+                  className="flex min-w-0 flex-col gap-1 border-b pb-4"
+                >
+                  <p className="min-w-0 [overflow-wrap:anywhere]">
+                    {t.rich("forumThread", {
+                      author: (chunks: ReactNode) => (
+                        <Link
+                          href={profilePath(entry.nickname)}
+                          className={linkClass}
+                        >
+                          {chunks}
+                        </Link>
+                      ),
+                      thread: (chunks: ReactNode) => (
+                        <Link href={thread.path} className={linkClass}>
+                          {chunks}
+                        </Link>
+                      ),
+                      nickname: entry.nickname,
+                      title: thread.title,
+                    })}
+                  </p>
+                  {time}
+                </li>
+              );
+            }
             const chapterPath =
               entry.type === "chapterPublished"
                 ? entry.chapters[0].path
@@ -138,13 +177,7 @@ export default async function FeedPage({
                       </span>
                     )}
                   </p>
-                  <time
-                    dateTime={entry.createdAt.toISOString()}
-                    title={fullDate.format(entry.createdAt)}
-                    className="text-muted-foreground text-sm"
-                  >
-                    {formatPublishedAt(entry.createdAt, now, locale)}
-                  </time>
+                  {time}
                 </div>
               </li>
             );

@@ -179,7 +179,9 @@ describe("feed", () => {
       { $set: { adult: { manual: true } } },
     );
     await setChapterPublished(book.ids[0], true);
-    expect((await feedOf(dave)).entries[0].book.adult).toBe(true);
+    expect((await feedOf(dave)).entries[0]).toMatchObject({
+      book: { adult: true },
+    });
   });
 
   it("drops hidden or deleted chapters at read time and does not repeat them (criterion 2)", async () => {
@@ -313,10 +315,11 @@ describe("feed", () => {
     vi.setSystemTime(new Date("2026-11-01T11:00:00Z"));
     await setChapterPublished(second.ids[0], true);
     vi.useRealTimers();
-    expect((await feedOf(dave)).entries.map(({ book }) => book.name)).toEqual([
-      "Second",
-      "First",
-    ]);
+    expect(
+      (await feedOf(dave)).entries.map((entry) =>
+        "book" in entry ? entry.book.name : null,
+      ),
+    ).toEqual(["Second", "First"]);
   });
 
   it("ignores a malformed cursor", () => {

@@ -23,7 +23,7 @@ export interface ModerationLogFields {
   scope?: "global";
   actorId: Types.ObjectId;
   action: ModerationAction;
-  targetType: "comment" | "user" | "report";
+  targetType: "comment" | "post" | "thread" | "user" | "report";
   targetId: Types.ObjectId;
   targetUserId?: Types.ObjectId;
   reason?: string;
@@ -38,7 +38,7 @@ const moderationLogSchema = new Schema<ModerationLogFields>(
     action: { type: String, enum: MODERATION_ACTIONS, required: true },
     targetType: {
       type: String,
-      enum: ["comment", "user", "report"],
+      enum: ["comment", "post", "thread", "user", "report"],
       required: true,
     },
     targetId: { type: Schema.Types.ObjectId, required: true },

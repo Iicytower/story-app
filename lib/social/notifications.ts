@@ -1,7 +1,7 @@
-// Notification kinds (D80, task 81) by group. Mentions came with task 82; forums join in 87.
+// Notification kinds (D80, task 81) by group. Mentions came with task 82, forums with 87.
 export const NOTIFICATION_GROUPS = {
   interactions: ["comment", "reaction", "rating", "follower", "library"],
-  conversations: ["reply", "mention"],
+  conversations: ["reply", "mention", "quote", "threadReply"],
   chapters: ["libraryChapter", "followedChapter"],
   moderation: [
     "moderatorInvite",
@@ -76,6 +76,9 @@ export interface NotificationSubject {
   commentId?: Id;
   // A mention in a direct message (task 85).
   conversationId?: Id;
+  // A forum post and its thread (task 87).
+  threadId?: Id;
+  postId?: Id;
 }
 
 // What groups notifications about one object, e.g. reaction:story:<id>: the most specific id.
@@ -88,18 +91,24 @@ export function objectKey(
     storyIds,
     commentId,
     conversationId,
+    threadId,
+    postId,
   }: NotificationSubject,
 ): string {
   // An admin-route report has no community; the reporter must not split or name it.
   if (type === "report" && !authorId) return "report:admin";
   const subject = conversationId
     ? `conversation:${conversationId.toString()}`
-    : commentId
-    ? `comment:${commentId.toString()}`
-    : storyIds?.length
-      ? `story:${storyIds.map(String).join(",")}`
-      : folderId
-        ? `folder:${folderId.toString()}`
-        : `user:${(authorId ?? actorId)?.toString() ?? ""}`;
+    : postId
+      ? `post:${postId.toString()}`
+      : threadId
+        ? `thread:${threadId.toString()}`
+        : commentId
+          ? `comment:${commentId.toString()}`
+          : storyIds?.length
+            ? `story:${storyIds.map(String).join(",")}`
+            : folderId
+              ? `folder:${folderId.toString()}`
+              : `user:${(authorId ?? actorId)?.toString() ?? ""}`;
   return `${type}:${subject}`;
 }

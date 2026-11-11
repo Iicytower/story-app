@@ -49,6 +49,9 @@ export function clearStories(): Promise<void> {
     await connection.collection("rankings").deleteMany({});
     await connection.collection("conversations").deleteMany({});
     await connection.collection("messages").deleteMany({});
+    await connection.collection("forumThreads").deleteMany({});
+    await connection.collection("forumPosts").deleteMany({});
+    await connection.collection("threadFollows").deleteMany({});
   });
 }
 

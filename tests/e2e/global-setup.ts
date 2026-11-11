@@ -4,6 +4,7 @@ import { connectDB, disconnectDB } from "@/lib/db";
 import "@/lib/models";
 import { NICKNAME_COLLATION, User } from "@/lib/models/user";
 import { up as seedPredefinedTags } from "@/migrations/007-predefined-tags";
+import { up as seedForumCategories } from "@/migrations/008-forum-categories";
 import { E2E_MONGODB_URI, USERS } from "./env";
 
 export default async function globalSetup() {
@@ -16,6 +17,7 @@ export default async function globalSetup() {
   await connection.dropDatabase();
   await connection.syncIndexes();
   await seedPredefinedTags(connection.db!);
+  await seedForumCategories(connection.db!);
   for (const user of Object.values(USERS)) {
     await createOrUpdateUser(user.nickname, user.password);
     if ("role" in user) {

@@ -2,12 +2,15 @@ import { Types } from "mongoose";
 import { profilePath } from "@/components/user-link";
 import { connectDB } from "@/lib/db";
 import { CommunityModerator } from "@/lib/models/community-moderator";
+import { ForumCategory } from "@/lib/models/forum-category";
+import { ForumThread } from "@/lib/models/forum-thread";
 import { Notification } from "@/lib/models/notification";
 import { Profile } from "@/lib/models/profile";
 import { Story } from "@/lib/models/story";
 import { User } from "@/lib/models/user";
 import { findChapterPaths, findPublicBooks } from "@/lib/publish/queries";
 import { commentAnchor } from "@/lib/social/comments";
+import { postAnchor, threadPath } from "@/lib/social/forums";
 import {
   type NotificationType,
   NOTIFICATIONS_SHOWN,
@@ -33,6 +36,10 @@ export interface NotificationView {
   onComment: boolean;
   // A mention in a direct message rather than in a comment (task 85).
   inMessage: boolean;
+  // About a forum post (task 87); the title is the thread's.
+  onPost: boolean;
+  // About a whole thread rather than one of its posts.
+  onThread: boolean;
   // The author of a pending invitation (moderatorInvite), for Accept and Decline.
   inviteFrom: string | null;
 }
@@ -84,6 +91,30 @@ export async function listNotifications(
   );
   const folderIds = unique(raw.flatMap(({ folderId }) => folderId ?? []));
   const storyIds = unique(raw.flatMap(({ storyIds: ids }) => ids ?? []));
+  const threadIds = unique(raw.flatMap(({ threadId }) => threadId ?? []));
+  const threads =
+    threadIds.length === 0
+      ? []
+      : await ForumThread.find({
+          _id: { $in: threadIds },
+          deletedAt: null,
+          hidden: { $exists: false },
+          userId: { $nin: hidden },
+        })
+          .select({ scope: 1, categoryId: 1, authorId: 1, title: 1 })
+          .lean();
+  const categories = new Set(
+    threads.some(({ categoryId }) => categoryId)
+      ? (
+          await ForumCategory.find({
+            _id: { $in: threads.flatMap(({ categoryId }) => categoryId ?? []) },
+          })
+            .select({ _id: 1 })
+            .lean()
+        ).map(({ _id }) => _id)
+      : [],
+  );
+  people.push(...unique(threads.flatMap(({ authorId }) => authorId ?? [])));
   const inviters = raw
     .filter(({ type }) => type === "moderatorInvite")
     .flatMap(({ authorId }) => authorId ?? []);
@@ -132,6 +163,41 @@ export async function listNotifications(
     ),
   );
   const storyById = new Map(visibleStories.map((s) => [s._id.toString(), s]));
+  // A thread while its forum is there for the viewer: the category exists, the author is not
+  // hidden and has a nickname. The author's public books are not checked here.
+  const threadPaths = new Map(
+    threads.flatMap((thread) => {
+      const id = thread._id.toString();
+      if (thread.scope === "global") {
+        return thread.categoryId && categories.has(thread.categoryId)
+          ? [
+              [
+                id,
+                {
+                  title: thread.title,
+                  path: threadPath({ scope: "global" }, id),
+                },
+              ] as const,
+            ]
+          : [];
+      }
+      const nickname =
+        thread.authorId && !isHidden(thread.authorId)
+          ? nicknames.get(thread.authorId.toString())
+          : undefined;
+      return nickname
+        ? [
+            [
+              id,
+              {
+                title: thread.title,
+                path: threadPath({ scope: "author", nickname }, id),
+              },
+            ] as const,
+          ]
+        : [];
+    }),
+  );
   const pending = new Set(
     invitations.map(({ authorId }) => authorId.toString()),
   );
@@ -175,6 +241,15 @@ export async function listNotifications(
     if (page && entry.commentId) {
       href = `${page}#${commentAnchor(entry.commentId.toString())}`;
     }
+    if (entry.threadId) {
+      const thread = threadPaths.get(entry.threadId.toString());
+      title = thread?.title ?? null;
+      href = thread
+        ? entry.postId
+          ? `${thread.path}#${postAnchor(entry.postId.toString())}`
+          : thread.path
+        : null;
+    }
     if (entry.conversationId) {
       href = `/messages/${entry.conversationId.toString()}`;
     } else if (entry.type === "follower") {
@@ -207,6 +282,8 @@ export async function listNotifications(
       href,
       onComment: Boolean(entry.commentId),
       inMessage: Boolean(entry.conversationId),
+      onPost: Boolean(entry.threadId),
+      onThread: Boolean(entry.threadId) && !entry.postId,
       inviteFrom:
         entry.type === "moderatorInvite" &&
         entry.authorId &&
