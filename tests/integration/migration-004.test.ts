@@ -88,6 +88,7 @@ describe("004-settings", () => {
       notifications: Object.fromEntries(
         OPTIONAL_NOTIFICATION_TYPES.map((type) => [type, true]),
       ),
+      messages: { dmFrom: "everyone" },
     });
   });
 
