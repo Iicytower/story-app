@@ -8,6 +8,15 @@ export interface CoverView {
   adult: boolean;
 }
 
+// The same order as isAdult (D67): the admin's mark decides over the filter's and the owner's.
+export function isAdultCover(cover: {
+  autoAdult?: boolean;
+  manualAdult?: boolean;
+  adminAdult?: boolean;
+}): boolean {
+  return cover.adminAdult ?? Boolean(cover.autoAdult || cover.manualAdult);
+}
+
 export const coverPath = (id: string | Types.ObjectId) => `/covers/${id}`;
 
 // Covers of the given folders by folder id; folders without a rated cover are left out.
@@ -17,14 +26,14 @@ export async function coversOf(
   const ids = folders.flatMap(({ coverId }) => (coverId ? [coverId] : []));
   if (ids.length === 0) return new Map();
   const covers = await Cover.find({ _id: { $in: ids }, state: "rated" })
-    .select({ folderId: 1, autoAdult: 1, manualAdult: 1 })
+    .select({ folderId: 1, autoAdult: 1, manualAdult: 1, adminAdult: 1 })
     .lean();
   return new Map(
     covers.map((cover) => [
       cover.folderId.toString(),
       {
         path: coverPath(cover._id),
-        adult: Boolean(cover.autoAdult || cover.manualAdult),
+        adult: isAdultCover(cover),
       },
     ]),
   );

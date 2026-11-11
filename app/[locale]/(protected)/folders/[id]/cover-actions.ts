@@ -14,6 +14,7 @@ import {
   CLAIM_LEASE_MS,
   rateCover,
   removeCovers,
+  syncFolderAdultWithCover,
 } from "@/lib/covers/mutations";
 import { storedImageBytes } from "@/lib/covers/queries";
 import { connectDB } from "@/lib/db";
@@ -135,10 +136,25 @@ export async function setCoverAdult(
   const folder = await ownedFolder(user.userId, id);
   if (!folder) return NOT_FOUND();
   if (!folder.coverId) return actionError("NOT_FOUND", "coverNotFound");
-  await Cover.updateOne(
-    { _id: folder.coverId, folderId: folder._id },
-    { $set: { manualAdult: adult } },
-  );
+  const cover = await Cover.findOne({
+    _id: folder.coverId,
+    folderId: folder._id,
+  })
+    .select({ adminAdult: 1 })
+    .lean();
+  if (!cover) return actionError("NOT_FOUND", "coverNotFound");
+  if (!adult && cover.adminAdult === true) {
+    return actionError("ADULT_LOCKED", "adultLockedByAdmin");
+  }
+  await Cover.updateOne({ _id: cover._id }, { $set: { manualAdult: adult } });
+  // Marking again takes back the admin's "not 18+", as for folders and chapters (task 88).
+  if (adult) {
+    const { modifiedCount } = await Cover.updateOne(
+      { _id: cover._id, adminAdult: false },
+      { $unset: { adminAdult: 1 } },
+    );
+    if (modifiedCount > 0) await syncFolderAdultWithCover(cover._id);
+  }
 
   refresh();
   return { ok: true };

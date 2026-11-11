@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { getUserSettings } from "@/lib/settings/queries";
 import { hasPublication } from "@/lib/social/author-stats";
+import { isActiveAdmin } from "@/lib/social/admin";
 import { hasModerationAccess } from "@/lib/social/moderation";
 import { countUnreadConversations } from "@/lib/social/direct-messages";
 import { countUnread } from "@/lib/social/notification-list";
@@ -16,16 +17,18 @@ export async function AppShell({
 }) {
   // One publication check for both entries.
   const publication = hasPublication(userId);
-  const [{ appearance }, moderation, unread, unreadMessages, published] =
+  const [{ appearance }, moderation, unread, unreadMessages, published, admin] =
     await Promise.all([
       getUserSettings(userId),
       publication.then((value) => hasModerationAccess(userId, value)),
       countUnread(userId),
       countUnreadConversations(userId),
       publication,
+      isActiveAdmin(userId),
     ]);
   const hiddenItems = [
     ...(moderation ? [] : ["moderation" as const]),
+    ...(admin ? [] : ["admin" as const]),
     ...(published ? [] : ["stats" as const]),
   ];
   return (

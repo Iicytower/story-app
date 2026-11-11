@@ -181,9 +181,9 @@ const CANNOT_MODERATE: Permission = {
   key: "cannotModerate",
 };
 
-// Nobody moderates themselves; in a global category there is no community ban (the global one
-// comes with task 88), and a category's moderator does not moderate an admin or a fellow
-// moderator of the category.
+// Nobody moderates themselves; in a global category there is no community ban (the admin's
+// global ban is in the admin panel), and a category's moderator does not moderate an admin or a
+// fellow moderator of the category.
 export async function canModerateForum(
   actorId: string,
   place: ForumPlace,

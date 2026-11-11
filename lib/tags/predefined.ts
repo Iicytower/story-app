@@ -1,4 +1,5 @@
 import type { Locale } from "@/i18n/routing";
+import type { ErrorMessage } from "@/lib/i18n/messages";
 import { MAX_TAG_LENGTH, normalizeTag } from "./tags";
 
 // Client-safe: no database code, the list comes from the server (D79).
@@ -49,18 +50,19 @@ export function labelOf(
   return predefined.find(({ key }) => key === tag)?.labels[locale] ?? null;
 }
 
-// For scripts/predefined-tags.ts: no spelling may point at two keys.
-export function predefinedTagError(
+// The one check of a predefined tag, for the script and the admin panel (D79, task 88): no
+// spelling may point at two keys. A message key, translated by the caller.
+export function validatePredefinedTag(
   entry: PredefinedTagView,
   others: PredefinedTagView[],
-): string | null {
+): ErrorMessage | null {
   if (entry.key !== normalizeTag(entry.key) || !entry.key) {
-    return `The key must be normalized: "${normalizeTag(entry.key)}".`;
+    return { key: "tagKeyNotNormalized", values: { key: normalizeTag(entry.key) } };
   }
   for (const text of [entry.key, ...Object.values(entry.labels)]) {
-    if (!text.trim()) return "Every label is required.";
+    if (!text.trim()) return { key: "tagLabelRequired" };
     if (text.length > MAX_TAG_LENGTH) {
-      return `"${text}" is longer than ${MAX_TAG_LENGTH} characters.`;
+      return { key: "tagLabelTooLong", values: { text, max: MAX_TAG_LENGTH } };
     }
   }
   const clash = others.find(
@@ -68,7 +70,7 @@ export function predefinedTagError(
       other.key !== entry.key &&
       spellings(other).some((spelling) => spellings(entry).includes(spelling)),
   );
-  return clash ? `A spelling is already used by "${clash.key}".` : null;
+  return clash ? { key: "tagSpellingTaken", values: { key: clash.key } } : null;
 }
 
 export interface TagChoice {

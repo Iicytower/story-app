@@ -84,7 +84,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 85 | ↳ [Wiadomości prywatne](done/85-direct-messages.md) (subtask 68) | 81 | [x] |
 | 86 | ↳ [Blokowanie w pełnym zakresie](done/86-blocking.md) (subtask 68) | 82, 84, 85 | [x] |
 | 87 | ↳ [Fora autora i globalne](done/87-forums.md) (subtask 68) | 75, 77, 80, 81, 82, 86 | [x] |
-| 88 | ↳ [Panel admina](88-admin-panel.md) (subtask 68) | 80, 87 | [ ] |
+| 88 | ↳ [Panel admina](done/88-admin-panel.md) (subtask 68) | 80, 87 | [x] |
 | 89 | ↳ [Usuwanie konta](89-account-deletion.md) (subtask 68) | 69–88 | [ ] |
 | 90 | ↳ [Realtime: serwis SSE w stosie narzędzi](90-realtime.md) (subtask 68) | 81, 85 | [ ] |
 | 91 | ↳ [Audyt bezpieczeństwa i E2E całości](91-social-audit.md) (subtask 68) | 69–90 | [ ] |

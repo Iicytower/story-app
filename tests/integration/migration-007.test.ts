@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { runMigrations } from "@/lib/migrate";
 import { PredefinedTag } from "@/lib/models/predefined-tag";
 import { listPredefinedTags } from "@/lib/tags/queries";
-import { predefinedTagError } from "@/lib/tags/predefined";
+import { validatePredefinedTag } from "@/lib/tags/predefined";
 import * as predefined007 from "@/migrations/007-predefined-tags";
 import { setupTestDb } from "./test-db";
 
@@ -26,7 +26,7 @@ describe("007-predefined-tags", () => {
       labels: { en: "Science fiction", pl: "Fantastyka naukowa" },
     });
     for (const tag of tags) {
-      expect(predefinedTagError(tag, tags)).toBeNull();
+      expect(validatePredefinedTag(tag, tags)).toBeNull();
     }
   });
 

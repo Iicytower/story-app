@@ -140,6 +140,20 @@ export async function retryDueCovers(
   return results;
 }
 
+// The folder's lock follows the cover as the filter set it, unless the admin decided (task 88);
+// the owner's own mark on the cover does not lock the folder (D68).
+export async function syncFolderAdultWithCover(coverId: Id): Promise<void> {
+  const cover = await Cover.findById(coverId)
+    .select({ folderId: 1, autoAdult: 1, adminAdult: 1 })
+    .lean();
+  if (!cover) return;
+  await Folder.updateOne(
+    { _id: cover.folderId, coverId: cover._id },
+    { $set: { "adult.auto": cover.adminAdult ?? Boolean(cover.autoAdult) } },
+    quiet,
+  );
+}
+
 // Removes the folder's cover and any pending one; the filter's 18+ lock goes with them.
 export async function removeCovers(folderId: Id): Promise<void> {
   await Cover.deleteMany({ folderId });

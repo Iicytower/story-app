@@ -17,6 +17,9 @@ import {
 } from "@/lib/social/notifications";
 import { hiddenUserIdsFor } from "@/lib/social/permissions";
 
+// The admins' queue (task 88).
+const ADMIN_REPORTS_PATH = "/admin?tab=reports";
+
 export interface NotificationView {
   id: string;
   type: NotificationType;
@@ -257,8 +260,7 @@ export async function listNotifications(
     } else if (entry.type === "ban") {
       href = author ? profilePath(author) : null;
     } else if (entry.type === "report") {
-      // The admins' queue comes with task 88.
-      href = entry.authorId ? "/moderation" : null;
+      href = entry.authorId ? "/moderation" : ADMIN_REPORTS_PATH;
     } else if (MODERATION_PAGE.includes(entry.type)) {
       href = "/moderation";
     } else if (

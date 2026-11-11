@@ -687,7 +687,11 @@ export async function setStoryAdult(
   if (!adult && lock) {
     return actionError(
       "ADULT_LOCKED",
-      lock === "auto" ? "adultLockedByImage" : "adultLockedByFolder",
+      lock === "admin"
+        ? "adultLockedByAdmin"
+        : lock === "auto"
+          ? "adultLockedByImage"
+          : "adultLockedByFolder",
     );
   }
   await Story.updateOne(
@@ -695,6 +699,14 @@ export async function setStoryAdult(
     { $set: { "adult.manual": adult } },
     { timestamps: false },
   );
+  // Marking again takes back the admin's "not 18+" (D80), never the admin's 18+.
+  if (adult) {
+    await Story.updateOne(
+      { ...owned, "adult.admin": false },
+      { $unset: { "adult.admin": 1 } },
+      { timestamps: false },
+    );
+  }
 
   refresh();
   return { ok: true };

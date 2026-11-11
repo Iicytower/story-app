@@ -9,6 +9,8 @@ import { chapterOrder, type ChapterSort } from "@/lib/folders/sort";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
 import { User } from "@/lib/models/user";
+import { requireUser } from "@/lib/auth/session";
+import { isBanActive, notGloballyBanned } from "@/lib/social/permissions";
 import { buildSnippet, type Snippet } from "@/lib/stories/search";
 import { stripComments } from "@/lib/stories/strip-comments";
 import { tagsForQuery } from "@/lib/tags/predefined";
@@ -52,12 +54,22 @@ function readingOrder<T>(chapters: T[], sort: ChapterSort | undefined): T[] {
 
 // Public pages: never notes, tags or ids, and only public chapters of a published active folder.
 // A folder with no public chapter left does not exist for readers.
-const findPublishedFolder = cache(
-  async (nickname: string, folderSlug: string) => {
+// The admin finds a banned author's books too (task 88); readers do not.
+async function loadPublishedFolder(
+  nickname: string,
+  folderSlug: string,
+  withBanned: boolean,
+) {
     await connectDB();
     const author = await findUserByNickname(nickname);
     if (!author) return null;
     const userId = author._id.toString();
+    // A globally banned author's books are hidden from others while the ban lasts (D80); the
+    // session is read only then, so the pages of everyone else stay as they are.
+    if (!withBanned && isBanActive(author.globalBan, new Date())) {
+      const viewer = await requireUser();
+      if (!viewer.ok || viewer.userId !== userId) return null;
+    }
     const folders = await Folder.find({ userId, deletedAt: null })
       .select({
         name: 1,
@@ -121,8 +133,28 @@ const findPublishedFolder = cache(
       path,
       chapters: visible,
     };
-  },
+}
+
+const findPublishedFolder = cache((nickname: string, folderSlug: string) =>
+  loadPublishedFolder(nickname, folderSlug, false),
 );
+
+// For the admin's 18+ mark by a public address (task 88), also of a globally banned author.
+export async function publicTargetIds(
+  nickname: string,
+  folderSlug: string,
+  chapterSlug?: string,
+): Promise<{ folderId: string; storyId: string | null } | null> {
+  const folder = await loadPublishedFolder(nickname, folderSlug, true);
+  if (!folder) return null;
+  if (!chapterSlug) return { folderId: folder.id, storyId: null };
+  const index = chapterIndex(folder.chapters, chapterSlug);
+  if (index === -1) return null;
+  return {
+    folderId: folder.id,
+    storyId: folder.chapters[index]._id.toString(),
+  };
+}
 
 export const getPublishedFolder = cache(
   async (nickname: string, folderSlug: string) => {
@@ -383,6 +415,7 @@ export async function chapterPublicPath(
 }
 
 // Accounts from before task 36 may have no nickname yet, so they have no public address.
+// Globally banned authors are left out of the search, its tags and the recent list (D80).
 async function findSearchableFolders() {
   const folders = await Folder.find({ published: true, deletedAt: null })
     .select({ userId: 1, name: 1, tags: 1, adult: 1, coverId: 1 })
@@ -390,6 +423,7 @@ async function findSearchableFolders() {
   const authors = await User.find({
     _id: { $in: folders.map(({ userId }) => userId) },
     nickname: { $type: "string" },
+    ...notGloballyBanned(new Date()),
   })
     .select({ nickname: 1 })
     .lean();

@@ -30,6 +30,8 @@ export const MAX_MENTIONS = 10;
 export const MAX_SHELVES = 20;
 export const MAX_LIBRARY_ITEMS = 500;
 export const MAX_MODERATORS = 10;
+// Forum category names in each language (task 88).
+export const MAX_CATEGORY_LABEL_LENGTH = 100;
 // Bookmarks and reader notes together.
 export const MAX_MARKS_PER_CHAPTER = 200;
 export const MAX_MARKS_PER_ACCOUNT = 5000;

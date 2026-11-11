@@ -39,7 +39,11 @@ export function AdultMenuItem({
         {state.adult ? t("unmark") : t("mark")}
         {locked && (
           <span className="text-muted-foreground text-xs">
-            {state.lock === "auto" ? t("lockedByImage") : t("lockedByFolder")}
+            {state.lock === "admin"
+              ? t("lockedByAdmin")
+              : state.lock === "auto"
+                ? t("lockedByImage")
+                : t("lockedByFolder")}
           </span>
         )}
       </span>

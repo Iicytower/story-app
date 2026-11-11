@@ -29,6 +29,8 @@ export interface FolderCover {
   id: string;
   manualAdult: boolean;
   autoAdult: boolean;
+  // The admin's mark (task 88): true locks it, false overrides the others until marked again.
+  adminAdult: boolean | null;
 }
 
 const PREVIEW_SCALE = 1 / 3;
@@ -58,7 +60,7 @@ export function CoverDialog({
   } | null>(null);
   const [busy, startTransition] = useTransition();
   const [manualAdult, setManualAdult] = useOptimistic(
-    cover?.manualAdult ?? false,
+    cover?.adminAdult === false ? false : (cover?.manualAdult ?? false),
   );
 
   function reset() {
@@ -144,7 +146,11 @@ export function CoverDialog({
                 height={COVER_HEIGHT * PREVIEW_SCALE}
                 className="rounded-md border"
               />
-              {cover.autoAdult ? (
+              {cover.adminAdult === true ? (
+                <p className="text-muted-foreground text-sm">
+                  {t("adminAdult")}
+                </p>
+              ) : cover.autoAdult && cover.adminAdult === null ? (
                 <p className="text-muted-foreground text-sm">
                   {t("autoAdult")}
                 </p>

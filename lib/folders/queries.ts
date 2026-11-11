@@ -90,7 +90,7 @@ export async function getFolder(userId: string, id: string) {
   const [cover, pending] = await Promise.all([
     folder.coverId
       ? Cover.findOne({ _id: folder.coverId, state: "rated" })
-          .select({ manualAdult: 1, autoAdult: 1 })
+          .select({ manualAdult: 1, autoAdult: 1, adminAdult: 1 })
           .lean()
       : null,
     Cover.exists({ folderId: folder._id, state: "pending" }),
@@ -118,6 +118,7 @@ export async function getFolder(userId: string, id: string) {
       path: coverPath(cover._id),
       manualAdult: Boolean(cover.manualAdult),
       autoAdult: Boolean(cover.autoAdult),
+      adminAdult: cover.adminAdult ?? null,
     },
     coverPending: Boolean(pending),
     coverRejected: Boolean(folder.coverRejectedAt),
