@@ -55,6 +55,14 @@ commentSchema.index({ parentId: 1, createdAt: 1 });
 commentSchema.index({ userId: 1 });
 commentSchema.index({ authorId: 1, createdAt: -1 });
 commentSchema.index({ purgeAt: 1 }, { expireAfterSeconds: 0 });
+// Replies whose top-level comment is gone (task 79), per chapter and per book's contents.
+commentSchema.index({ storyId: 1, parentId: 1 });
+commentSchema.index({ folderId: 1, storyId: 1, parentId: 1 });
+// The moderation panel's hidden content, newest first.
+commentSchema.index(
+  { authorId: 1, "hidden.at": -1 },
+  { partialFilterExpression: { hidden: { $exists: true } } },
+);
 
 export const Comment: Model<CommentFields> =
   (mongoose.models.Comment as Model<CommentFields> | undefined) ??

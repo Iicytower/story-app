@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +39,8 @@ export function ConfirmDialog({
   const [pending, startTransition] = useTransition();
   const tCommon = useTranslations("common");
   const tErrors = useTranslations("errors");
+  // Opened without a trigger of its own: the focus goes back to where it was, when still there.
+  const returnTo = useRef<HTMLElement | null>(null);
 
   function handleOpenChange(next: boolean) {
     onOpenChange(next);
@@ -67,7 +69,19 @@ export function ConfirmDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent
+        onOpenAutoFocus={() => {
+          returnTo.current =
+            document.activeElement instanceof HTMLElement
+              ? document.activeElement
+              : null;
+        }}
+        onCloseAutoFocus={(event) => {
+          if (!returnTo.current?.isConnected) return;
+          event.preventDefault();
+          returnTo.current.focus();
+        }}
+      >
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>

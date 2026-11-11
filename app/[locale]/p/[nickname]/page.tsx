@@ -16,6 +16,8 @@ import { retryDueCovers } from "@/lib/covers/mutations";
 import { getPublicLibrary, getPublicProfile } from "@/lib/profiles/queries";
 import type { LibraryBook } from "@/lib/library/queries";
 import { FollowButton } from "./follow-button";
+import { activeCommunityBan } from "@/lib/social/moderation";
+import { CommunityBanNotice } from "./[folder]/community-ban-notice";
 
 async function viewerId(): Promise<string | null> {
   const user = await requireUser();
@@ -97,6 +99,9 @@ export default async function ProfilePage({
           <SocialMarkdown content={profile.bio} />
         </section>
       )}
+      <CommunityBanNotice
+        ban={await activeCommunityBan(viewer, profile.userId.toString())}
+      />
       <section aria-labelledby="profile-books" className="flex flex-col gap-3">
         <h2 id="profile-books" className="text-xl font-semibold">
           {t("books")}

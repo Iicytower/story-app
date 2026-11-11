@@ -6,7 +6,12 @@ import { Profile } from "@/lib/models/profile";
 import { Story } from "@/lib/models/story";
 import { User } from "@/lib/models/user";
 import { avatarPath } from "@/lib/profiles/queries";
-import { hiddenUserIdsFor } from "@/lib/social/permissions";
+import {
+  decideModeration,
+  hiddenUserIdsFor,
+  moderationRole,
+  moderatorIdsOf,
+} from "@/lib/social/permissions";
 
 export const COMMENTS_PAGE_SIZE = 50;
 export const MAX_REPLIES_SHOWN = 100;
@@ -47,6 +52,9 @@ export interface CommentView {
   edited: boolean;
   own: boolean;
   editableUntil: string | null;
+  // What the viewer, as the author or a moderator of the community, may do (task 79).
+  canHide: boolean;
+  canBan: boolean;
 }
 
 export interface CommentThreadView extends CommentView {
@@ -55,6 +63,10 @@ export interface CommentThreadView extends CommentView {
 
 export interface CommentThread {
   disabled: boolean;
+  // The owner of the text, whose community the thread is in; for the server only.
+  authorId: string | null;
+  // The community the viewer moderates, for banning a comment's writer (task 79).
+  moderatedAuthorId: string | null;
   total: number;
   comments: CommentThreadView[];
   next: string | null;
@@ -104,14 +116,78 @@ async function countShown(
   };
 }
 
-async function commentsAreOff({ folderId, storyId }: CommentTarget) {
+async function placeState({ folderId, storyId }: CommentTarget) {
   const [folder, story] = await Promise.all([
-    Folder.findById(folderId).select({ commentsDisabled: 1 }).lean(),
+    Folder.findById(folderId).select({ commentsDisabled: 1, userId: 1 }).lean(),
     storyId
       ? Story.findById(storyId).select({ commentsDisabled: 1 }).lean()
       : null,
   ]);
-  return Boolean(folder?.commentsDisabled || story?.commentsDisabled);
+  return {
+    off: Boolean(folder?.commentsDisabled || story?.commentsDisabled),
+    authorId: folder?.userId.toString() ?? null,
+  };
+}
+
+// Top-level comments gone while their replies stay: a hidden one purged by the TTL index
+// (task 79). They show as "comment deleted", dated by their id.
+async function orphanParents(
+  place: Record<string, unknown>,
+  hidden: Types.ObjectId[],
+  after: Cursor | null,
+): Promise<Raw[]> {
+  // Only replies the viewer sees: an orphan with none of them shows nothing.
+  const parentIds = (await Comment.distinct("parentId", {
+    ...place,
+    parentId: { $ne: null },
+    ...visibleTo(hidden),
+  })) as Types.ObjectId[];
+  if (parentIds.length === 0) return [];
+  const present = new Set(
+    (await Comment.find({ _id: { $in: parentIds } }, { _id: 1 }).lean()).map(
+      ({ _id }) => _id.toString(),
+    ),
+  );
+  return parentIds
+    .filter((id) => !present.has(id.toString()))
+    .map((id) => ({
+      _id: id,
+      // No writer to name: the id matches no account.
+      userId: id,
+      parentId: null,
+      body: "",
+      createdAt: id.getTimestamp(),
+      deletedAt: id.getTimestamp(),
+    }))
+    .filter(
+      ({ createdAt, _id }) =>
+        !after ||
+        createdAt < after.createdAt ||
+        (createdAt.getTime() === after.createdAt.getTime() &&
+          _id.toString() < after.id.toString()),
+    );
+}
+
+const newestFirst = (a: Raw, b: Raw) =>
+  b.createdAt.getTime() - a.createdAt.getTime() ||
+  b._id.toString().localeCompare(a._id.toString());
+
+// Who the viewer may hide and ban in authorId's community; nothing outside their own.
+async function moderationFor(viewerId: string | null, authorId: string | null) {
+  const role =
+    viewerId && authorId ? await moderationRole(viewerId, authorId) : null;
+  if (!role || !authorId || !viewerId) return null;
+  const moderators = await moderatorIdsOf(authorId);
+  return (writerId: string, action: "hide" | "ban") =>
+    decideModeration(
+      {
+        role,
+        self: writerId === viewerId,
+        targetIsAuthor: writerId === authorId,
+        targetIsModerator: moderators.has(writerId),
+      },
+      action,
+    ).ok;
 }
 
 async function authorsOf(userIds: Types.ObjectId[]) {
@@ -145,15 +221,26 @@ export async function getCommentThread(
   after: Cursor | null,
 ): Promise<CommentThread> {
   await connectDB();
-  if (await commentsAreOff(target)) {
-    return { disabled: true, total: 0, comments: [], next: null };
+  const placeInfo = await placeState(target);
+  if (placeInfo.off) {
+    return {
+      disabled: true,
+      authorId: placeInfo.authorId,
+      moderatedAuthorId: null,
+      total: 0,
+      comments: [],
+      next: null,
+    };
   }
-  const hidden = await hiddenUserIdsFor(viewerId);
+  const [hidden, may] = await Promise.all([
+    hiddenUserIdsFor(viewerId),
+    moderationFor(viewerId, placeInfo.authorId),
+  ]);
   // A chapter's comments follow it by id, also into another book.
   const place = target.storyId
     ? { storyId: new Types.ObjectId(target.storyId) }
     : { folderId: new Types.ObjectId(target.folderId), storyId: null };
-  const [top, total] = await Promise.all([
+  const [found, orphans, total] = await Promise.all([
     Comment.find({
       ...place,
       parentId: null,
@@ -169,8 +256,12 @@ export async function getCommentThread(
       .limit(COMMENTS_PAGE_SIZE + 1)
       .select(SELECT)
       .lean<Raw[]>(),
+    orphanParents(place, hidden, after),
     countShown(place, hidden).then((filter) => Comment.countDocuments(filter)),
   ]);
+  const top = [...found, ...orphans]
+    .sort(newestFirst)
+    .slice(0, COMMENTS_PAGE_SIZE + 1);
   const page = top.slice(0, COMMENTS_PAGE_SIZE);
   // Each comment's own first replies; one query per comment of the page uses { parentId, createdAt }.
   const replies = (
@@ -211,24 +302,27 @@ export async function getCommentThread(
         own && state === "visible" && editableUntil > now
           ? new Date(editableUntil).toISOString()
           : null,
+      canHide:
+        state === "visible" && !!may?.(comment.userId.toString(), "hide"),
+      canBan: state === "visible" && !!may?.(comment.userId.toString(), "ban"),
     };
   };
   const byParent = Map.groupBy(replies, ({ parentId }) => parentId!.toString());
+  const orphanIds = new Set(orphans.map(({ _id }) => _id.toString()));
   const comments = page.flatMap((comment) => {
     const shown = view(comment);
     if (!shown) return [];
-    return [
-      {
-        ...shown,
-        replies: (byParent.get(comment._id.toString()) ?? []).flatMap(
-          (reply) => view(reply) ?? [],
-        ),
-      },
-    ];
+    const shownReplies = (byParent.get(comment._id.toString()) ?? []).flatMap(
+      (reply) => view(reply) ?? [],
+    );
+    if (shownReplies.length === 0 && orphanIds.has(shown.id)) return [];
+    return [{ ...shown, replies: shownReplies }];
   });
   const last = page.at(-1);
   return {
     disabled: false,
+    authorId: placeInfo.authorId,
+    moderatedAuthorId: may ? placeInfo.authorId : null,
     total,
     comments,
     next:

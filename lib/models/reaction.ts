@@ -18,6 +18,9 @@ export interface ReactionFields {
   storyId: Types.ObjectId | null;
   reaction: ReactionKey;
   createdAt: Date;
+  // Set with the comment's own while a moderator hides it: the TTL index deletes no reactions
+  // along with their comment (task 79).
+  purgeAt?: Date;
 }
 
 const reactionSchema = new Schema<ReactionFields>(
@@ -30,6 +33,7 @@ const reactionSchema = new Schema<ReactionFields>(
     storyId: { type: Schema.Types.ObjectId, ref: "Story", default: null },
     reaction: { type: String, enum: REACTIONS, required: true },
     createdAt: { type: Date, required: true },
+    purgeAt: { type: Date },
   },
   { versionKey: false },
 );
@@ -43,6 +47,7 @@ reactionSchema.index({ targetType: 1, targetId: 1, createdAt: -1 });
 reactionSchema.index({ authorId: 1, createdAt: -1 });
 reactionSchema.index({ folderId: 1 });
 reactionSchema.index({ storyId: 1 });
+reactionSchema.index({ purgeAt: 1 }, { expireAfterSeconds: 0 });
 
 export const Reaction: Model<ReactionFields> =
   (mongoose.models.Reaction as Model<ReactionFields> | undefined) ??

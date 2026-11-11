@@ -120,6 +120,80 @@ export async function isModeratorOf(
   return moderator !== null;
 }
 
+export type ModerationRole = "author" | "moderator";
+
+// The actor's role in authorId's community. A global ban makes the account read-only, which
+// takes moderation away too (D80).
+export async function moderationRole(
+  actorId: string,
+  authorId: string,
+): Promise<ModerationRole | null> {
+  if (!isValidObjectId(authorId)) return null;
+  const [actor, moderator] = await Promise.all([
+    User.findById(actorId, { globalBan: 1 }).lean(),
+    actorId === authorId ? null : isModeratorOf(actorId, authorId),
+  ]);
+  if (!actor || isBanActive(actor.globalBan, new Date())) return null;
+  if (actorId === authorId) return "author";
+  return moderator ? "moderator" : null;
+}
+
+export interface ModerationFacts {
+  role: ModerationRole;
+  self: boolean;
+  targetIsAuthor: boolean;
+  targetIsModerator: boolean;
+}
+
+const CANNOT_MODERATE: Permission = {
+  ok: false,
+  error: "FORBIDDEN",
+  key: "cannotModerate",
+};
+
+// Nobody moderates themselves or the author; a moderator never moderates another moderator
+// (D80). The author hides a moderator's content but bans only after taking the role away.
+export function decideModeration(
+  { role, self, targetIsAuthor, targetIsModerator }: ModerationFacts,
+  action: "hide" | "ban",
+): Permission {
+  if (self || targetIsAuthor) return CANNOT_MODERATE;
+  if (targetIsModerator && (role === "moderator" || action === "ban")) {
+    return CANNOT_MODERATE;
+  }
+  return { ok: true };
+}
+
+// Whether actorId, with role in authorId's community, may hide targetId's content or ban them.
+export async function canModerate(
+  actorId: string,
+  { authorId, role, targetId, action }: {
+    authorId: string;
+    role: ModerationRole;
+    targetId: string;
+    action: "hide" | "ban";
+  },
+): Promise<Permission> {
+  return decideModeration(
+    {
+      role,
+      self: actorId === targetId,
+      targetIsAuthor: authorId === targetId,
+      targetIsModerator: await isModeratorOf(targetId, authorId),
+    },
+    action,
+  );
+}
+
+// Active moderators of authorId's community, for the controls next to each comment.
+export async function moderatorIdsOf(authorId: string): Promise<Set<string>> {
+  const moderators = await CommunityModerator.find(
+    { authorId, state: "active" },
+    { _id: 0, userId: 1 },
+  ).lean();
+  return new Set(moderators.map(({ userId }) => userId.toString()));
+}
+
 export function isAdmin(user: { role?: string } | null | undefined): boolean {
   return user?.role === "admin";
 }

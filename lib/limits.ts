@@ -46,6 +46,7 @@ const LENGTHS = {
   threadTitle: { max: MAX_THREAD_TITLE_LENGTH, key: "threadTitleTooLong" },
   bio: { max: MAX_BIO_LENGTH, key: "bioTooLong" },
   banReason: { max: MAX_BAN_REASON_LENGTH, key: "banReasonTooLong" },
+  hideReason: { max: MAX_BAN_REASON_LENGTH, key: "hideReasonTooLong" },
   report: { max: MAX_REPORT_LENGTH, key: "reportTooLong" },
   readerNote: { max: MAX_READER_NOTE_LENGTH, key: "readerNoteTooLong" },
   quote: { max: MAX_QUOTE_LENGTH, key: "quoteTooLong" },
@@ -73,7 +74,8 @@ export function countError(
     | "tooManyShelves"
     | "tooManyLibraryItems"
     | "tooManyChapterMarks"
-    | "tooManyMarks",
+    | "tooManyMarks"
+    | "tooManyModerators",
 ): ValidationError {
   const max = {
     tooManyFolders: MAX_FOLDERS,
@@ -83,6 +85,7 @@ export function countError(
     tooManyLibraryItems: MAX_LIBRARY_ITEMS,
     tooManyChapterMarks: MAX_MARKS_PER_CHAPTER,
     tooManyMarks: MAX_MARKS_PER_ACCOUNT,
+    tooManyModerators: MAX_MODERATORS,
   }[key];
   return { ok: false, error: "INVALID_INPUT", key, values: { max } };
 }

@@ -1,4 +1,5 @@
 import { getLocale, getTranslations } from "next-intl/server";
+import { isBannedAt } from "@/lib/social/moderation";
 import { getRating } from "@/lib/social/rating-summary";
 import { ratingAnchor, type RatingTarget } from "@/lib/social/ratings";
 import { RatingStars } from "./rating-stars";
@@ -13,7 +14,10 @@ export async function RatingSection({
   target: { type: RatingTarget; id: string };
   path: string;
 }) {
-  const { summary, own } = await getRating(viewerId, target.type, target.id);
+  const [{ summary, own }, locked] = await Promise.all([
+    getRating(viewerId, target.type, target.id),
+    isBannedAt(viewerId, target),
+  ]);
   const t = await getTranslations("ratings");
   const locale = await getLocale();
   return (
@@ -22,6 +26,7 @@ export async function RatingSection({
         target={viewerId ? target : null}
         summary={summary}
         own={own}
+        locked={locked}
         label={t(target.type === "story" ? "chapter" : "book")}
         callbackUrl={`/${locale}${path}#${ratingAnchor}`}
       />

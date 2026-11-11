@@ -8,6 +8,7 @@ Subtask 68, zależy od 79. Podstawa: D80 (Role, bany, blokady – zgłoszenia). 
 - Trasa z D80: komentarz i post forum autora → `author` (autor i moderatorzy); rozdział, książka, profil, posty forów globalnych → `admin`. Typ `post` (trasa i test) dopisywany w 87. Zgłoszenie obiektu niewidocznego dla zgłaszającego (D38, ukryty) → `NOT_FOUND`. Ban globalny nie blokuje zgłoszeń.
 - Akcje `report(...)` (limit 20/dobę, `canInteract` nie dotyczy – zablokowany też może zgłosić), `resolveReport(id, outcome)` dla uprawnionych, z wpisem w `moderationLog`.
 - UI: „Zgłoś” w menu ⋮ komentarza, na stronie czytania, spisie i profilu (dialog z powodem); zakładka „Zgłoszenia” w `/moderation`; kolejka admina w 88 (tu tylko zapytanie `listAdminReports`). Haki powiadomień: nowe zgłoszenie, wynik dla zgłaszającego (81).
+- Moderacja (79): zakładka Zgłoszenia w `/moderation` (dziś Ukryte, Bany, Moderatorzy, Log; URL `?community=<authorId>&tab=`); ukrycie i ban ze zgłoszenia przez akcje z `app/[locale]/(protected)/moderation/actions.ts` (`hideContent`, `banFromCommunity`), log w `moderationLog`.
 
 ## Kryteria akceptacji
 

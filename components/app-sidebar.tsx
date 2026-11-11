@@ -131,10 +131,12 @@ function ActionButton({
 
 function NavItems({
   compact,
+  hiddenItems,
   onDone,
   onSettings,
 }: {
   compact: boolean;
+  hiddenItems: SocialNavItem[];
   onDone: () => void;
   onSettings: () => void;
 }) {
@@ -142,7 +144,7 @@ function NavItems({
   const t = useTranslations("sidebar");
   const socialLinks = (items: SocialNavItem[]) =>
     items
-      .filter((item) => SOCIAL_NAV[item])
+      .filter((item) => SOCIAL_NAV[item] && !hiddenItems.includes(item))
       .map((item) => (
         <NavLink
           key={item}
@@ -192,9 +194,12 @@ function NavItems({
 export function AppSidebar({
   defaultCollapsed,
   toolsAvailable,
+  hiddenItems = [],
 }: {
   defaultCollapsed: boolean;
   toolsAvailable: boolean;
+  // Entries that are on but not for this account.
+  hiddenItems?: SocialNavItem[];
 }) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -241,6 +246,7 @@ export function AppSidebar({
           <nav aria-label={t("mainNav")} className="flex flex-1 flex-col gap-1">
             <NavItems
               compact={false}
+              hiddenItems={hiddenItems}
               onDone={() => setDrawerOpen(false)}
               onSettings={openSettings}
             />
@@ -254,6 +260,7 @@ export function AppSidebar({
       >
         <NavItems
           compact={collapsed}
+          hiddenItems={hiddenItems}
           onDone={() => {}}
           onSettings={openSettings}
         />

@@ -6,7 +6,8 @@ export const SOCIAL_NAV = {
   messages: false,
   notifications: false,
   profile: true,
-  moderation: false,
+  // Only for an author with a publication, a moderator or an invited account (AppShell).
+  moderation: true,
   admin: false,
   stats: false,
 };

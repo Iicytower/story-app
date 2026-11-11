@@ -13,6 +13,7 @@ Subtask 68, zależy od 80 i 87. Podstawa: D80 (Fora i panel admina – panel; Ro
   - Predefiniowane tagi (D79): lista, dodanie, zmiana etykiet, usunięcie z tą samą walidacją co skrypt (wspólna funkcja); `npm run tags` zostaje.
 - Ban globalny zamyka też dostęp pod bezpośrednim adresem: spis książki zbanowanego autora (72) i `/avatars/<id>` jego avatara (70) → 404 dla innych.
 - Każde działanie w `moderationLog` (`scope: global`). Pozycja „Admin” w sidebarze tylko dla admina.
+- Moderacja (79): log globalny – `moderationLog` z `scope: global` (86), widok w panelu admina; dziś log społeczności widzi tylko autor w `/moderation`.
 
 ## Kryteria akceptacji
 

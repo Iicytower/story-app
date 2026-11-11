@@ -32,6 +32,9 @@ const communityBanSchema = new Schema<CommunityBanFields>(
 );
 
 communityBanSchema.index({ authorId: 1, userId: 1 }, { unique: true });
+// An expired ban already allows everything (isBanActive); this only clears it away. A ban
+// without end has no date, which TTL skips.
+communityBanSchema.index({ until: 1 }, { expireAfterSeconds: 0 });
 
 export const CommunityBan: Model<CommunityBanFields> =
   (mongoose.models.CommunityBan as Model<CommunityBanFields> | undefined) ??

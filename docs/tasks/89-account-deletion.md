@@ -12,6 +12,7 @@ Subtask 68, zależy od 69–88. Podstawa: D80 (Konto). Zmienia D37 (konta nie da
 - Komentarze (76): komentarze konta po `userId` (indeks `{userId}`), dziś konta bez nicku/nieistniejące są przy odczycie pomijane (poza zaślepką usuniętego/ukrytego) – dostosować do „usunięty użytkownik”. Nowe kolekcje z `folderId` dopisywać też do `moveChapterSocialData` (`lib/social/cascade.ts`).
 - Reakcje (77): reakcje konta kasowane po `userId` (unikalny indeks `{userId, targetType, targetId}`), reakcje innych na jego tekstach – przez `purgeSocialData` (indeksy `{folderId}`, `{storyId}`).
 - Oceny (78): oceny konta kasowane po `userId` (unikalny indeks `{userId, targetType, targetId}`), oceny innych na jego tekstach – przez `purgeSocialData` (indeksy `{folderId}`, `{storyId}`).
+- Moderacja (79): `communityModerators` i `communityBans` kasowane w obie strony (konto jako autor i jako moderator/zbanowany); `moderationLog` (poza `PURGES`) zostaje z tombstone zamiast danych konta.
 
 ## Kryteria akceptacji
 
