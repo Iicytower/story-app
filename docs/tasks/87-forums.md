@@ -12,6 +12,7 @@ Subtask 68, zależy od 75, 77, 80, 81, 82 i 86. Podstawa: D80 (Fora i panel admi
 - Reakcje (77): `react` z `targetType "post"` zwraca dziś `INVALID_INPUT` – dopisać kontrolę widoczności posta i `canInteract` wobec piszącego; dla posta `folderId` i `storyId` `null`, `authorId` = autor forum, `null` dla forum globalnego.
 - Powiadomienia (81): odpowiedź w obserwowanym wątku, cytat mojego posta; wzmianki (82). `recordActivity(forumThread)` dla wątku autora w swoim forum (75). Feed czyta dziś tylko `chapterPublished`: typ `forumThread` dopisać do zapytania i filtrów widoczności w `lib/social/feed.ts` oraz do renderowania na stronie `/feed`.
 - Gość czyta, strony indeksowane. Pozycja „Fora” w sidebarze włączona.
+- Moderacja (79): ukrywanie postów forum przez `hideContent` (dziś tylko komentarze); zbanowany w społeczności autora bez pisania i z zablokowanymi reakcjami – `isBannedAt` z `lib/social/moderation.ts` i prop `locked`.
 
 ## Kryteria akceptacji
 

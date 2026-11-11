@@ -1,4 +1,5 @@
 import { getLocale, getTranslations } from "next-intl/server";
+import { CommentModerationMenu } from "@/components/moderation-controls";
 import { SocialMarkdown } from "@/components/social-markdown";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
@@ -13,9 +14,11 @@ import {
   getCommentThread,
   parseCommentsCursor,
 } from "@/lib/social/comments";
+import { activeCommunityBan } from "@/lib/social/moderation";
 import { getReactionSummaries } from "@/lib/social/reaction-summary";
 import { EMPTY_SUMMARY, type ReactionSummary } from "@/lib/social/reactions";
 import { AuthDialog } from "../../../auth/auth-dialog";
+import { CommunityBanNotice } from "./community-ban-notice";
 import { CommentControls, NewCommentForm } from "./comment-form";
 import { ReactionBar } from "./reaction-bar";
 
@@ -27,14 +30,19 @@ async function CommentItem({
   now,
   reactions,
   signedIn,
+  locked,
   path,
+  moderatedAuthorId,
 }: {
   comment: CommentView;
   canReply: boolean;
   now: Date;
   reactions: ReactionSummary;
   signedIn: boolean;
+  // Banned in the author's community: reading only (D80).
+  locked: boolean;
   path: string;
+  moderatedAuthorId: string | null;
 }) {
   const t = await getTranslations("comments");
   const tReactions = await getTranslations("reactions");
@@ -69,19 +77,33 @@ async function CommentItem({
         size={32}
       />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <p
-          id={`${commentAnchor(comment.id)}-by`}
-          className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-sm"
-        >
-          <UserLink
-            nickname={comment.author.nickname}
-            className="[overflow-wrap:anywhere]"
-          />
-          {time}
-          {comment.edited && (
-            <span className="text-muted-foreground text-xs">{t("edited")}</span>
+        <div className="flex min-w-0 items-start justify-between gap-2">
+          <p
+            id={`${commentAnchor(comment.id)}-by`}
+            className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-sm"
+          >
+            <UserLink
+              nickname={comment.author.nickname}
+              className="[overflow-wrap:anywhere]"
+            />
+            {time}
+            {comment.edited && (
+              <span className="text-muted-foreground text-xs">
+                {t("edited")}
+              </span>
+            )}
+          </p>
+          {moderatedAuthorId && (comment.canHide || comment.canBan) && (
+            <CommentModerationMenu
+              commentId={comment.id}
+              nickname={comment.author.nickname}
+              date={formatPublishedAt(created, now, locale)}
+              authorId={moderatedAuthorId}
+              canHide={comment.canHide}
+              canBan={comment.canBan}
+            />
           )}
-        </p>
+        </div>
         <CommentControls
           id={comment.id}
           body={comment.body}
@@ -97,6 +119,7 @@ async function CommentItem({
           target={signedIn ? { type: "comment", id: comment.id } : null}
           summary={reactions}
           own={comment.own}
+          locked={locked}
           label={tReactions("comment", { nickname: comment.author.nickname })}
           callbackUrl={`/${locale}${path}#${commentAnchor(comment.id)}`}
         />
@@ -124,6 +147,9 @@ export async function Comments({
   const locale = await getLocale();
   const now = new Date();
   const signedIn = viewerId !== null;
+  const ban = thread.authorId
+    ? await activeCommunityBan(viewerId, thread.authorId)
+    : null;
   // Placeholders show no reactions.
   const reactions = await getReactionSummaries(
     viewerId,
@@ -136,11 +162,13 @@ export async function Comments({
   const item = (comment: CommentView, canReply: boolean) => (
     <CommentItem
       comment={comment}
-      canReply={canReply}
+      canReply={canReply && !ban}
+      locked={ban !== null}
       now={now}
       reactions={reactions.get(comment.id) ?? EMPTY_SUMMARY}
       signedIn={signedIn}
       path={path}
+      moderatedAuthorId={thread.moderatedAuthorId}
     />
   );
 
@@ -153,11 +181,12 @@ export async function Comments({
       <h2 id="comments-title" className="text-xl font-semibold">
         {t("title", { count: thread.total })}
       </h2>
+      <CommunityBanNotice ban={ban} />
       {thread.disabled ? (
         <p className="text-muted-foreground">{t("disabled")}</p>
       ) : (
         <>
-          {signedIn ? (
+          {ban ? null : signedIn ? (
             <NewCommentForm
               place={
                 target.storyId

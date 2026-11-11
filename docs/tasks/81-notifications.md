@@ -14,6 +14,7 @@ Subtask 68, zależy od 71, 72, 73, 76, 77, 78, 79 i 80. Podstawa: D80 (Powiadomi
 - Komentarze (76): haki w `addComment`, `replyToComment` i `editComment` (`app/[locale]/p/[nickname]/[folder]/comment-actions.ts`).
 - Reakcje (77): hak w `react` (`app/[locale]/p/[nickname]/[folder]/reaction-actions.ts`) po upsercie; powiadomienie tylko o nowej reakcji, nie o zmianie – trzeba przechwycić wynik upsertu (`upsertedCount`), dziś nieprzechwytywany. Ta sama reakcja niczego nie zmienia (`react` idempotentne).
 - Oceny (78): hak w `rate` (`app/[locale]/p/[nickname]/[folder]/rating-actions.ts`) po upsercie; wynik upsertu (nowa vs zmieniona ocena) dziś nieprzechwytywany. Ta sama wartość niczego nie zmienia (także `updatedAt`).
+- Moderacja (79): haki w komentarzach w `app/[locale]/(protected)/moderation/actions.ts` – zaproszenie na moderatora (akceptacja z powiadomienia), odpowiedź na zaproszenie, odebranie roli, ban, ukrycie.
 
 ## Kryteria akceptacji
 

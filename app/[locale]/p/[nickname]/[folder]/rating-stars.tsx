@@ -31,12 +31,15 @@ export function RatingStars({
   target,
   summary,
   own,
+  locked = false,
   label,
   callbackUrl,
 }: {
   target: { type: RatingTarget; id: string } | null;
   summary: RatingSummary;
   own: boolean;
+  // Banned in the author's community: the average stays, the stars do not work (task 79).
+  locked?: boolean;
   label: string;
   callbackUrl: string;
 }) {
@@ -90,7 +93,7 @@ export function RatingStars({
               size="icon-sm"
               aria-label={t("star", { value })}
               aria-pressed={target ? shown.mine === value : undefined}
-              disabled={target !== null && own}
+              disabled={target !== null && (own || locked)}
               aria-disabled={target !== null && pending ? true : undefined}
               onClick={(event) => pick(value, event.currentTarget)}
             >

@@ -89,6 +89,8 @@ export const SOCIAL_LIMITS = {
   progress: { name: "progress", max: 60, windowMs: MINUTE },
   // Adding, editing and deleting bookmarks and reader notes (task 74).
   marks: { name: "marks", max: 60, windowMs: MINUTE },
+  // Every step of an author's or moderator's moderation (task 79).
+  moderate: { name: "moderate", max: 60, windowMs: MINUTE },
   // Each one is a classifier call (task 70).
   avatarDay: { name: "avatar-day", max: 20, windowMs: DAY },
 } as const satisfies Record<string, RateLimitRule>;

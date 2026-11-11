@@ -33,12 +33,15 @@ export function ReactionBar({
   target,
   summary,
   own,
+  locked = false,
   label,
   callbackUrl,
 }: {
   target: { type: "story" | "comment"; id: string } | null;
   summary: ReactionSummary;
   own: boolean;
+  // Banned in the author's community: the counts stay, the buttons do not work (task 79).
+  locked?: boolean;
   label: string;
   callbackUrl: string;
 }) {
@@ -94,7 +97,7 @@ export function ReactionBar({
                   count,
                 })}
                 aria-pressed={target ? chosen : undefined}
-                disabled={target !== null && (own || pending)}
+                disabled={target !== null && (own || locked || pending)}
                 onClick={(event) => toggle(reaction, event.currentTarget)}
                 className={cn(
                   "px-1.5 tabular-nums",

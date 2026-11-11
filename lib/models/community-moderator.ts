@@ -22,6 +22,8 @@ const communityModeratorSchema = new Schema<CommunityModeratorFields>(
 );
 
 communityModeratorSchema.index({ authorId: 1, userId: 1 }, { unique: true });
+// The sidebar entry and the panel look up an account's own roles (task 79).
+communityModeratorSchema.index({ userId: 1 });
 
 export const CommunityModerator: Model<CommunityModeratorFields> =
   (mongoose.models.CommunityModerator as

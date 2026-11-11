@@ -23,3 +23,4 @@ import "./activity";
 import "./comment";
 import "./reaction";
 import "./rating";
+import "./moderation-log";

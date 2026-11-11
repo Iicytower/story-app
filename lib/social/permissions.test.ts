@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   decideInteraction,
+  decideModeration,
   type InteractionFacts,
   type InteractionKind,
   isAdmin,
@@ -139,5 +140,49 @@ describe("isAdmin", () => {
     expect(isAdmin({ role: "admin" })).toBe(true);
     expect(isAdmin({})).toBe(false);
     expect(isAdmin(null)).toBe(false);
+  });
+});
+
+describe("decideModeration (task 79)", () => {
+  const CANNOT = { ok: false, error: "FORBIDDEN", key: "cannotModerate" };
+  const facts = {
+    self: false,
+    targetIsAuthor: false,
+    targetIsModerator: false,
+  };
+
+  it("lets the author and a moderator hide and ban a reader", () => {
+    for (const role of ["author", "moderator"] as const) {
+      for (const action of ["hide", "ban"] as const) {
+        expect(decideModeration({ ...facts, role }, action)).toEqual(ALLOWED);
+      }
+    }
+  });
+
+  it("refuses oneself and the author for everyone", () => {
+    for (const role of ["author", "moderator"] as const) {
+      expect(decideModeration({ ...facts, role, self: true }, "hide")).toEqual(
+        CANNOT,
+      );
+      expect(
+        decideModeration({ ...facts, role, targetIsAuthor: true }, "ban"),
+      ).toEqual(CANNOT);
+    }
+  });
+
+  it("a moderator never moderates a moderator; the author hides but does not ban one", () => {
+    const moderator = { ...facts, targetIsModerator: true };
+    expect(
+      decideModeration({ ...moderator, role: "moderator" }, "hide"),
+    ).toEqual(CANNOT);
+    expect(
+      decideModeration({ ...moderator, role: "moderator" }, "ban"),
+    ).toEqual(CANNOT);
+    expect(decideModeration({ ...moderator, role: "author" }, "hide")).toEqual(
+      ALLOWED,
+    );
+    expect(decideModeration({ ...moderator, role: "author" }, "ban")).toEqual(
+      CANNOT,
+    );
   });
 });

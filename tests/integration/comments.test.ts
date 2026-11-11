@@ -458,6 +458,8 @@ describe("comments turned off (criterion 4)", () => {
     });
     expect(await chapterThread(null)).toEqual({
       disabled: true,
+      authorId: alice.toString(),
+      moderatedAuthorId: null,
       total: 0,
       comments: [],
       next: null,

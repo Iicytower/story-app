@@ -114,6 +114,22 @@ describe("AppSidebar", () => {
     ]);
   });
 
+  it("leaves out an entry hidden for this account (moderation, task 79)", () => {
+    nav.moderation = true;
+    const html = renderToStaticMarkup(
+      <NextIntlClientProvider locale="en" messages={en}>
+        <TooltipProvider>
+          <AppSidebar
+            defaultCollapsed={false}
+            toolsAvailable
+            hiddenItems={["moderation"]}
+          />
+        </TooltipProvider>
+      </NextIntlClientProvider>,
+    );
+    expect(labels(html)).not.toContain(en.sidebar.moderation);
+  });
+
   it("links each entry to its page", () => {
     nav.library = true;
     expect(render("en")).toContain('href="/library"');
