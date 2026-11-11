@@ -15,6 +15,7 @@ Subtask 68, zależy od 69–88. Podstawa: D80 (Konto). Zmienia D37 (konta nie da
 - Moderacja (79): `communityModerators` i `communityBans` kasowane w obie strony (konto jako autor i jako moderator/zbanowany); `moderationLog` (poza `PURGES`) zostaje z tombstone zamiast danych konta.
 - Zgłoszenia (80): `reports` (poza `PURGES`) – obsłużyć zgłoszenia konta po `reporterId` (indeks `{reporterId}`) i zgłoszenia jego treści po `targetUserId`.
 - Powiadomienia (81): `notifications` kasować po `userId` (odbiorca) i usuwać konto jako aktora (`actorIds`).
+- Wzmianki (82): „usunięte konta” w podpowiedziach `suggestNicknames` – wykluczyć konta usunięte (tombstone), dziś takie nie istnieją.
 
 ## Kryteria akceptacji
 

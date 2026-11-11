@@ -92,6 +92,7 @@
       "follower": "New followers",
       "library": "Additions to libraries",
       "reply": "Replies to my comments",
+      "mention": "Mentions of me",
       "libraryChapter": "Books in my library",
       "followedChapter": "Authors I follow"
     }
@@ -1087,6 +1088,10 @@
     "older": "Older comments",
     "menuFor": "Actions for the comment by {nickname}, {date}"
   },
+  "mentions": {
+    "suggestions": "Nickname suggestions",
+    "count": "{count, plural, one {# nickname suggestion} other {# nickname suggestions}}"
+  },
   "reactions": {
     "chapter": "Reactions to the chapter",
     "comment": "Reactions to {nickname}'s comment",
@@ -1223,6 +1228,7 @@
     "types": {
       "comment": "{actor} commented on {target}",
       "reply": "{actor} replied to your comment on {target}",
+      "mention": "{actor} mentioned you in a comment on {target}",
       "reaction": "{actor} {others, plural, =0 {reacted} one {and # other person reacted} other {and # other people reacted}} to {target}",
       "reactionComment": "{actor} {others, plural, =0 {reacted} one {and # other person reacted} other {and # other people reacted}} to your comment on {target}",
       "rating": "{count, plural, one {Someone rated} other {# people rated}} {target}",

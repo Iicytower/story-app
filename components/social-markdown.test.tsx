@@ -1,6 +1,14 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { SocialMarkdown } from "./social-markdown";
+
+vi.mock("@/i18n/navigation", () => ({
+  Link: ({ href, children, className }: React.ComponentProps<"a">) => (
+    <a href={`/en${href}`} className={className}>
+      {children}
+    </a>
+  ),
+}));
 
 const render = (content: string) =>
   renderToStaticMarkup(<SocialMarkdown content={content} />);
@@ -45,5 +53,31 @@ describe("SocialMarkdown", () => {
 
   it("drops javascript: links", () => {
     expect(render("[x](javascript:alert(1))")).not.toContain("javascript:");
+  });
+
+  it("links resolved mentions to the profile, keeping the text as written", () => {
+    const html = renderToStaticMarkup(
+      <SocialMarkdown content="Hi @erin and @Nobody" mentions={["Erin"]} />,
+    );
+    expect(html).toContain('<a href="/en/p/Erin" class="font-medium hover:underline">@erin</a>');
+    expect(html).toContain("@Nobody");
+    expect(html).not.toContain("/p/Nobody");
+    expect(html).not.toContain("nofollow");
+  });
+
+  it("leaves mentions in code and links as they are", () => {
+    const html = renderToStaticMarkup(
+      <SocialMarkdown
+        content={"`@Erin` [@Erin](https://x.test)\n\n**@Erin**"}
+        mentions={["Erin"]}
+      />,
+    );
+    expect(html.match(/\/p\/Erin/g)).toHaveLength(1);
+    expect(html).toContain("<strong><a");
+    expect(html).toContain('href="https://x.test"');
+  });
+
+  it("leaves every mention as text without resolved nicknames", () => {
+    expect(render("Hi @Erin")).not.toContain("<a");
   });
 });

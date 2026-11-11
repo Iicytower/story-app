@@ -78,7 +78,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 79 | ↳ [Moderacja autora](done/79-author-moderation.md) (subtask 68) | 76 | [x] |
 | 80 | ↳ [Zgłoszenia](done/80-reports.md) (subtask 68) | 79 | [x] |
 | 81 | ↳ [Powiadomienia](done/81-notifications.md) (subtask 68) | 71, 72, 73, 76, 77, 78, 79, 80 | [x] |
-| 82 | ↳ [Wzmianki @nick](82-mentions.md) (subtask 68) | 81 | [ ] |
+| 82 | ↳ [Wzmianki @nick](done/82-mentions.md) (subtask 68) | 81 | [x] |
 | 83 | ↳ [Statystyki autora](83-author-stats.md) (subtask 68) | 71, 72, 73, 76, 77, 78 | [ ] |
 | 84 | ↳ [Rankingi na stronie głównej](84-rankings.md) (subtask 68) | 71, 83 | [ ] |
 | 85 | ↳ [Wiadomości prywatne](85-direct-messages.md) (subtask 68) | 81 | [ ] |

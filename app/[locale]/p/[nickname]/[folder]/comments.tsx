@@ -114,7 +114,10 @@ async function CommentItem({
           own={comment.own}
           canReply={canReply}
         >
-          <SocialMarkdown content={comment.body} />
+          <SocialMarkdown
+            content={comment.body}
+            mentions={comment.mentions}
+          />
         </CommentControls>
         <ReactionBar
           target={signedIn ? { type: "comment", id: comment.id } : null}
