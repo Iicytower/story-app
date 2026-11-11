@@ -16,9 +16,14 @@ import {
 import { LocalDate } from "@/components/local-date";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  isRealtimeLive,
+  useRealtimeConnection,
+  useRealtimeEvents,
+} from "@/components/realtime";
 import { useRouter } from "@/i18n/navigation";
 import type { NotificationView } from "@/lib/social/notification-list";
-import { POLL_MS } from "@/lib/social/notifications";
+import { POLL_MS, SAFETY_POLL_MS } from "@/lib/social/notifications";
 import { cn } from "@/lib/utils";
 
 export type UnreadUpdate = number | ((current: number) => number);
@@ -31,12 +36,15 @@ export function refreshUnreadCounts() {
 }
 
 // The unread counters (notifications and conversations), polled every POLL_MS only while the tab
-// is visible (D80); coming back to the tab asks at once. A rise of notifications during the
-// session shows a toast; messages have their own counter by the Messages entry.
+// is visible (D80) and the realtime stream is down, every SAFETY_POLL_MS while it is up
+// (task 90): an event of the stream asks at
+// once, and so do coming back to the tab and the stream coming up. A rise of notifications
+// during the session shows a toast; messages have their own counter by the Messages entry.
 export function useUnreadNotifications(
   initial: number,
   onOpen: () => void,
   initialMessages = 0,
+  realtimeUrl: string | null = null,
 ): [number, (update: UnreadUpdate) => void, number] {
   const [count, setCount] = useState(initial);
   const [messages, setMessages] = useState(initialMessages);
@@ -53,44 +61,60 @@ export function useUnreadNotifications(
     setCount(value);
   }, []);
 
+  useRealtimeConnection(realtimeUrl);
+
+  const poll = useCallback(async () => {
+    const result = await unreadCounts().catch(() => null);
+    if (!result?.ok) return;
+    const added = result.notifications - last.current;
+    if (added > 0) {
+      toast(t("newToast", { count: added }), {
+        action: { label: t("open"), onClick: () => open.current() },
+      });
+    }
+    update(result.notifications);
+    setMessages(result.messages);
+  }, [t, update]);
+
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const every = useRef<number | null>(null);
+  const sync = useCallback(() => {
+    const wanted =
+      document.visibilityState === "hidden"
+        ? null
+        : isRealtimeLive()
+          ? SAFETY_POLL_MS
+          : POLL_MS;
+    if (wanted === every.current) return;
+    if (timer.current !== null) clearInterval(timer.current);
+    timer.current =
+      wanted === null ? null : setInterval(() => void poll(), wanted);
+    every.current = wanted;
+  }, [poll]);
+  const onLive = useCallback(() => {
+    if (isRealtimeLive()) void poll();
+    sync();
+  }, [poll, sync]);
+  const onMessage = useCallback(() => void poll(), [poll]);
+  useRealtimeEvents(onLive, onMessage);
+
   useEffect(() => {
-    let timer: ReturnType<typeof setInterval> | null = null;
-    let active = true;
-    async function poll() {
-      const result = await unreadCounts().catch(() => null);
-      if (!active || !result?.ok) return;
-      const added = result.notifications - last.current;
-      if (added > 0) {
-        toast(t("newToast", { count: added }), {
-          action: { label: t("open"), onClick: () => open.current() },
-        });
-      }
-      update(result.notifications);
-      setMessages(result.messages);
-    }
-    function start() {
-      if (timer === null) timer = setInterval(() => void poll(), POLL_MS);
-    }
-    function stop() {
-      if (timer !== null) clearInterval(timer);
-      timer = null;
-    }
     function onVisibility() {
-      if (document.visibilityState === "hidden") return stop();
-      void poll();
-      start();
+      if (document.visibilityState !== "hidden") void poll();
+      sync();
     }
     const onChanged = () => void poll();
-    if (document.visibilityState !== "hidden") start();
+    sync();
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener(COUNTS_CHANGED, onChanged);
     return () => {
-      active = false;
-      stop();
+      if (timer.current !== null) clearInterval(timer.current);
+      timer.current = null;
+      every.current = null;
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener(COUNTS_CHANGED, onChanged);
     };
-  }, [t, update]);
+  }, [poll, sync]);
 
   return [count, update, messages];
 }

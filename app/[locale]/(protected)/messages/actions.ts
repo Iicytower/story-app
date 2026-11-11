@@ -1,6 +1,7 @@
 "use server";
 
 import { Types } from "mongoose";
+import { after } from "next/server";
 import { findUserByNickname } from "@/lib/accounts";
 import { isId, isString } from "@/lib/action-input";
 import type { ActionError, ActionResult } from "@/lib/action-result";
@@ -32,6 +33,7 @@ import {
 import { mentionRecipients } from "@/lib/social/mentions";
 import { notifyLater } from "@/lib/social/notify";
 import { canInteract } from "@/lib/social/permissions";
+import { publishRead, publishRealtime } from "@/lib/social/realtime";
 
 const invalid = () => actionError("INVALID_INPUT", "requestInvalid");
 const rateLimited = () => actionError("RATE_LIMITED", "tooManyAttempts");
@@ -81,6 +83,14 @@ async function deliver(
       $max: { lastMessageAt: message.createdAt },
       $set: { unreadBy: [otherId] },
     },
+  );
+  // Open pages of both (the sender's other devices too) fetch it at once (task 90); the event
+  // carries no content.
+  after(() =>
+    publishRealtime([otherId.toString(), userId], {
+      type: "message",
+      conversationId: conversationId.toString(),
+    }),
   );
   // Only the other party can be mentioned in a conversation (task 82).
   notifyLater(() => mentionRecipients(userId, body, { only: [otherId] }), {
@@ -207,10 +217,11 @@ export async function markConversationRead(
   if (!user.ok) return user;
   if (!isId(conversationId)) return invalid();
   await connectDB();
-  const { matchedCount } = await Conversation.updateOne(
+  const { matchedCount, modifiedCount } = await Conversation.updateOne(
     { _id: conversationId, participantIds: new Types.ObjectId(user.userId) },
     { $pull: { unreadBy: new Types.ObjectId(user.userId) } },
   );
+  if (modifiedCount > 0) publishRead(user.userId);
   return matchedCount > 0 ? { ok: true } : notFound();
 }
 

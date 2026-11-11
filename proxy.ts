@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { routing } from "@/i18n/routing";
 import { isPublicPath } from "@/lib/auth/public-paths";
 import { contentSecurityPolicy } from "@/lib/security-headers";
+import { realtimeUrl } from "@/lib/social/realtime";
 
 const intl = createMiddleware(routing);
 
@@ -20,6 +21,7 @@ export const proxy = auth((request) => {
   const csp = contentSecurityPolicy(
     nonce,
     process.env.NODE_ENV === "development",
+    realtimeUrl(),
   );
   const headers = new Headers(request.headers);
   headers.set("x-nonce", nonce);

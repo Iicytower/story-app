@@ -276,11 +276,14 @@ export function AppSidebar({
   hiddenItems = [],
   initialUnread = 0,
   initialUnreadMessages = 0,
+  realtimeUrl = null,
 }: {
   defaultCollapsed: boolean;
   toolsAvailable: boolean;
   initialUnread?: number;
   initialUnreadMessages?: number;
+  // The realtime stream's address (task 90); without it the counters only poll.
+  realtimeUrl?: string | null;
   // Entries that are on but not for this account.
   hiddenItems?: SocialNavItem[];
 }) {
@@ -299,6 +302,7 @@ export function AppSidebar({
     initialUnread,
     openNotifications,
     initialUnreadMessages,
+    realtimeUrl,
   );
 
   // React's dev-mode remount resets <html> attributes set by the inline script, and a

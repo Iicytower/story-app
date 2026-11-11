@@ -265,6 +265,16 @@ export async function classifier(mode: "safe" | "adult" | "down") {
   });
 }
 
+// The fake realtime service (fake-tools.mjs, task 90): down unless a test sets "up", and the
+// test sets "down" back afterwards. Down also ends the open streams.
+export async function realtime(mode: "up" | "down") {
+  await fetch(`http://127.0.0.1:${E2E_TOOLS_PORT}/rt/mode`, {
+    method: "POST",
+    headers: { "X-Tools-Secret": E2E_TOOLS_SECRET },
+    body: mode,
+  });
+}
+
 // A solid-colour PNG the browser can decode, crop and re-encode.
 export function png(
   width: number,

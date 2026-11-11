@@ -27,6 +27,7 @@
 2. Merge `staging` → `main` robi użytkownik (nigdy push na `main` z lokalnego repo), potem tag `vX.Y.Z` → deploy produkcji.
 3. Rollback: „Promote” poprzedniego deploymentu w Vercelu.
 
+- **Wydanie z taskiem 90 (realtime, D80):** wymaga serwera narzędzi na produkcji. Przed wydaniem `npm run tools:remote` (usługa `realtime` i trasy `/rt/stream`, `/publish` w bramce), w Coolify zmienna usługi `APP_ORIGIN` z adresami aplikacji, na Vercelu `REALTIME_PUBLIC_URL` (sekcja „Serwer narzędzi na Mikrusie”, kroki 8–9). Bez `REALTIME_PUBLIC_URL` albo przy niedziałającej usłudze liczniki i rozmowy działają pollingiem (30 s / 5 s).
 - **Wydanie z taskiem 70 (avatary):** przed wydaniem przebuduj i ponownie wdróż stos narzędzi (lokalnie `npm run up`, na Mikrusie `npm run tools:remote`), bo klasyfikator z `docker/tools/compose.yml` musi przyjmować `?size=256x256`. Do tego czasu okładki działają, a upload avatara zwraca niedostępność narzędzi (`TOOL_UNAVAILABLE`).
 
 ## Migracje
@@ -66,13 +67,14 @@ Odpowiednik prawdziwego serwera narzędzi (task 28), w całości w Dockerze. Us�
 - `coolify`, `coolify-db`, `coolify-redis` – Coolify 4.6.0 (pliki bazowe Coolify przerobione na wolumeny projektu, bez `/data/coolify` na hoście);
 - `tools-server` – serwer docelowy: DinD z `sshd` (`docker/tools-server/`), dodany w Coolify jako serwer `story-app-tools`, bez proxy (`proxy_type: none`).
 
-Coolify wdraża na `tools-server` usługę Compose `story-app-tools` z `docker/tools/compose.yml`: bramka Caddy z nagłówkiem `X-Tools-Secret`, ścieżką `/health`, `/lt/*` do LanguageTool 6.8 (task 29, D58) i `/dict/*` do serwisu słownikowego (taski 25, 32 i 33, D61–D63) i `/classify` do klasyfikatora okładek (task 26, D68), usługi bez portu na zewnątrz. Klasyfikator przy pierwszym starcie instaluje pakiety Pythona i pobiera model ONNX (23,7 MB, sprawdzany SHA-256) do wolumenu `classifier-data`, więc jego healthcheck ma `start_period` 10 min; pamięć ok. 290 MiB po ocenie (pomiar lokalny 2026-11-09, limit 512 MB). Aplikacja: `COVERS_MAX_TOTAL_MB` (globalny limit okładek, domyślnie 200) i `COVERS_ADULT_THRESHOLD` (próg 18+, domyślnie 0,5) – ustawić na Vercelu po pomiarze danych w Atlasie i kalibracji progu (task 67; do tego czasu szacunek 150 MB w `.env.example`).
+Coolify wdraża na `tools-server` usługę Compose `story-app-tools` z `docker/tools/compose.yml`: bramka Caddy z nagłówkiem `X-Tools-Secret`, ścieżką `/health`, `/lt/*` do LanguageTool 6.8 (task 29, D58) i `/dict/*` do serwisu słownikowego (taski 25, 32 i 33, D61–D63) i `/classify` do klasyfikatora okładek (task 26, D68), a także realtime (task 90, D80): tylko `/rt/stream` **bez** `X-Tools-Secret` (strumień SSE `GET /rt/stream?token=…` z tokenem HMAC od aplikacji, `flush_interval -1`; reszta `/rt/*` → 401) i `/publish` z sekretem; usługi bez portu na zewnątrz. Serwis realtime to `docker/tools/realtime/server.mjs` (Node bez zależności, limit 64 MB) skopiowany do `content:` w `compose.yml` – po zmianie pliku trzeba przenieść kopię (test `realtime-service.test.ts` pilnuje zgodności i braku `$`). Zmienna usługi `APP_ORIGIN`: adresy aplikacji dla CORS, po przecinku (domyślnie `http://localhost:3000`); token jest ważny 10 min, a strumień kończy się z jego wygaśnięciem (strona odnawia go wcześniej). Limity serwisu: 10 strumieni na konto (najstarszy zamykany), 2000 łącznie (`MAX_STREAMS`, ponad limit 503 i strona wraca do pollingu), 500 kont na jedno `/publish` (aplikacja dzieli większe listy). Przy działającym strumieniu strona i tak odpytuje co 5 min na wypadek zgubionego zdarzenia. Klasyfikator przy pierwszym starcie instaluje pakiety Pythona i pobiera model ONNX (23,7 MB, sprawdzany SHA-256) do wolumenu `classifier-data`, więc jego healthcheck ma `start_period` 10 min; pamięć ok. 290 MiB po ocenie (pomiar lokalny 2026-11-09, limit 512 MB). Aplikacja: `COVERS_MAX_TOTAL_MB` (globalny limit okładek, domyślnie 200) i `COVERS_ADULT_THRESHOLD` (próg 18+, domyślnie 0,5) – ustawić na Vercelu po pomiarze danych w Atlasie i kalibracji progu (task 67; do tego czasu szacunek 150 MB w `.env.example`).
 
 | Co | Adres |
 | --- | --- |
 | Panel Coolify | `http://localhost:8000` (realtime: 6001, 6002), login `admin@story-app.localhost`, hasło w `.tools/tools.env` |
 | Bramka narzędzi | `http://127.0.0.1:8110` (`TOOLS_API_URL`) |
 | LanguageTool | `http://127.0.0.1:8110/lt/v2/check` (z nagłówkiem `X-Tools-Secret`) |
+| Realtime | `http://127.0.0.1:8110/rt/stream?token=…` (bez sekretu), `POST /publish` z `X-Tools-Secret`; w `.env.local` `REALTIME_PUBLIC_URL=http://127.0.0.1:8110` (dopisz ręcznie, `npm run up` go nie ustawia), aplikacja na `http://localhost:3000` |
 | Serwis słownikowy | `POST http://127.0.0.1:8110/dict/lemmas`, `/dict/definitions`, `/dict/synonyms` i `/dict/rhymes` z `{"forms": [...]}` (`/rhymes` także z `keys` i opcjonalnymi `filters`), `GET /dict/health` (wersja i data budowy każdej bazy); z nagłówkiem `X-Tools-Secret` |
 
 Wszystkie porty tylko na `127.0.0.1`. Projekt Compose ma stałą nazwę `story_app` (`name:` w `docker-compose.yml`), więc wolumeny i kontenery mają prefiks `story_app` niezależnie od nazwy katalogu.
@@ -92,7 +94,7 @@ Konto admina, przełącznik API i token zakłada skrypt przez `php artisan tinke
 Uwagi:
 
 - Wbudowany serwer `localhost` (`host.docker.internal`) jest nieosiągalny: Coolify nie ma do niego klucza (brak `PrivateKey` 0), a my nie dajemy SSH do hosta. Nic na nim nie wdrażamy. Skutek w logach: przy starcie `StartProxy … FAIL`, a co minutę `CheckAndStartSentinelJob … FAIL` i w `storage/logs/laravel.log` ostrzeżenia `ServerConnectionCheck: Server not reachable` dla `localhost` – do zignorowania.
-- Zmiana `docker/tools/compose.yml`: `npm run up` wysyła nowy `docker_compose_raw` i restartuje usługę, gdy plik różni się od ostatnio wdrożonego (hash w `.tools/deployed-compose.sha256`). Coolify zapisuje plik z `content:` (Caddyfile) tylko wtedy, gdy go nie ma na serwerze, więc przy zmianie Caddyfile trzeba podbić numer w nazwie źródła (`./Caddyfile-vN`); restart po zmianie compose zapisze nowy plik. Stare pliki zostają w katalogu usługi na serwerze i niczemu nie przeszkadzają.
+- Zmiana `docker/tools/compose.yml`: `npm run up` wysyła nowy `docker_compose_raw` i restartuje usługę, gdy plik różni się od ostatnio wdrożonego (hash w `.tools/deployed-compose.sha256`). Coolify zapisuje plik z `content:` tylko wtedy, gdy go nie ma na serwerze, więc `scripts/tools.ts` porównuje treść każdego pliku `content:` (Caddyfile, kod serwisów) z zapisaną w Coolify (API storages, dopasowanie po `target`), zmienioną wysyła `PATCH`, czeka, aż trafi na serwer, i restartuje usługę. Nazwa źródła się nie zmienia. `target` musi być unikalny we wszystkich usługach (dlatego realtime ma `/app/realtime.mjs`, a nie `/app/server.mjs` jak serwis słownikowy).
 - Baza słownika leży na wolumenie usługi (`<uuid>_dict-data` w serwerze docelowym). Usunięcie usługi w Coolify może usunąć jej wolumeny; wtedy po `npm run up` trzeba ponownie `npm run dict:upload`.
 - Błąd walidacji serwera (np. brak `git`, `curl`, `jq` w obrazie) zostaje w Coolify; po poprawce trzeba kliknąć Validate przy serwerze w panelu albo zresetować środowisko.
 - Zasoby (pomiar 2026-11-06, po sprawdzeniu rozdziału): Coolify ok. 430 MB, Postgres 43 MB, Redis 13 MB, serwer docelowy 740 MB (w tym LanguageTool ok. 490 MB z limitem 800 MB, bramka 14 MB), razem ok. 1,2 GB bez MongoDB. Serwis słownikowy (2026-11-06): ok. 17–25 MB przy limicie 128 MB, baza 413 MB na dysku. Obrazy ok. 1,4 GB na hoście i 1,35 GB w DinD (LanguageTool 0,75 GB).
@@ -145,7 +147,11 @@ Skrypt sprawdzony na „fałszywym Mikrusie” (kontener Debian 13 z systemd i S
    - `TOOLS_API_URL` = `https://srvNN-20ID.wykr.es`
    - `TOOLS_API_SECRET` = wartość `TOOLS_API_SECRET` z `.tools/mikrus/tools.env`
 
-   Potem Redeploy obu środowisk. Bez tych zmiennych narzędzia pokazują „not available” (D56).
+   - `REALTIME_PUBLIC_URL` = `https://srvNN-20ID.wykr.es` (task 90; musi być `https`, bo strona z Vercela nie połączy się z `http`; trafia też do `connect-src` CSP)
+
+   W panelu Coolify (tunel `ssh -p 10ID -L 8000:127.0.0.1:8000 root@srvNN.mikr.us`, usługa `story-app-tools` → Environment Variables) ustaw `APP_ORIGIN` = adres produkcji i stagingu po przecinku, np. `https://<domena produkcji>,https://story-app-git-staging-iicytowers-projects.vercel.app`, i zrestartuj usługę. `npm run tools:remote` tej zmiennej nie nadpisuje.
+
+   Potem Redeploy obu środowisk. Bez tych zmiennych narzędzia pokazują „not available” (D56), a powiadomienia i wiadomości działają pollingiem.
 9. **Sprawdzenie** (kryteria taska 28):
    ```sh
    URL=https://srvNN-20ID.wykr.es
@@ -154,6 +160,9 @@ Skrypt sprawdzony na „fałszywym Mikrusie” (kontener Debian 13 z systemd i S
    curl -s -o /dev/null -w "%{http_code}\n" -H "X-Tools-Secret: $TOOLS_API_SECRET" "$URL/health"  # 200
    curl -s -H "X-Tools-Secret: $TOOLS_API_SECRET" "$URL/dict/health"                               # daty baz
    curl -s -o /dev/null -w "%{time_total}\n" -H "X-Tools-Secret: $TOOLS_API_SECRET" "$URL/health" # opóźnienie
+   curl -s -o /dev/null -w "%{http_code}\n" -X POST "$URL/publish"                                # 401
+   curl -s -o /dev/null -w "%{http_code}\n" "$URL/rt/stream?token=x"                              # 401
+   curl -s -i -H "Origin: https://<domena produkcji>" "$URL/rt/stream?token=x" | grep -i access-control  # adres z APP_ORIGIN
    ssh -p 10ID root@srvNN.mikr.us 'ip -6 addr show scope global'    # adres IPv6 serwera
    curl -g -s -m 5 -o /dev/null -w "%{http_code}\n" "http://[IPv6]:20ID/health"   # 401
    curl -g -s -m 5 "http://[IPv6]:8000" || echo "panel niedostępny – dobrze"
@@ -243,3 +252,4 @@ docker run --rm --network host -v "$BACKUP:/backup:ro" mongo:8 mongoimport --uri
 6. Foldery: nowy folder, rozdział o tym samym tytule w dwóch folderach, przeniesienie rozdziału, notatki folderu z autozapisem.
 7. Narzędzia (gdy `TOOLS_API_*` ustawione): „Korekta” → „Sprawdź” na rozdziale z błędem („Napewno”) podkreśla go w tekście, ✓ poprawia, a po odświeżeniu nierozpatrzone poprawki wracają. Pierwsze sprawdzenie po restarcie serwera może trwać do ok. minuty.
 8. „Definicje” („kota”), „Synonimy” („dom”) i „Rymy” („kota”, z filtrem części mowy) zwracają wyniki ze źródłami.
+9. Realtime (gdy `REALTIME_PUBLIC_URL` ustawione): w DevTools → Network żądanie `rt/stream` ma status 200 i typ `eventsource`, bez błędu CSP w konsoli; wiadomość z drugiego konta pojawia się w otwartej rozmowie i w liczniku „Messages” od razu, nie po 5/30 s.
