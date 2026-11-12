@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
 import { AuthDialog } from "./auth/auth-dialog";
 import { PublicSearch } from "./public-search";
 import { Rankings } from "./rankings";
@@ -38,12 +39,18 @@ export default async function HomePage({
     );
   }
 
-  const t = await getTranslations("home");
+  const [t, tCommon] = await Promise.all([
+    getTranslations("home"),
+    getTranslations("common"),
+  ]);
   const afterLogin =
     typeof callbackUrl === "string" ? callbackUrl : `/${locale}`;
   return (
     <main className="flex flex-1 flex-col">
-      <div className="flex justify-end p-2">
+      <div className="flex items-center justify-between p-2">
+        <Link href="/" className="px-2 font-semibold">
+          {tCommon("appName")}
+        </Link>
         <AuthDialog
           defaultOpen={authParam === "login" || callbackUrl !== undefined}
           callbackUrl={afterLogin}

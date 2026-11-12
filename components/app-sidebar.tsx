@@ -2,10 +2,12 @@
 
 import {
   BellIcon,
+  BookOpenIcon,
   ChartColumnIcon,
   FolderIcon,
   HouseIcon,
   LibraryIcon,
+  LogOutIcon,
   MailIcon,
   MenuIcon,
   MessagesSquareIcon,
@@ -27,7 +29,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { saveSettings } from "@/app/[locale]/(protected)/actions";
+import { logout, saveSettings } from "@/app/[locale]/(protected)/actions";
 import {
   clearSettingsReopen,
   SettingsDialog,
@@ -38,6 +40,14 @@ import {
   useUnreadNotifications,
 } from "@/components/notifications";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { UserAvatar } from "@/components/user-avatar";
 import { Toaster } from "@/components/ui/sonner";
 import { WithTooltip } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -56,14 +66,14 @@ export type SocialNavItem =
   | "admin"
   | "stats";
 
-// Order from D80: feed and library above Folders, the rest below.
+// Order from D80: feed and library above Folders, the rest below; moderation, rarely used,
+// at the bottom above the account (D83).
 const SOCIAL_ABOVE_FOLDERS: SocialNavItem[] = ["feed", "library"];
 const SOCIAL_BELOW_FOLDERS: SocialNavItem[] = [
   "forums",
   "messages",
   "notifications",
   "profile",
-  "moderation",
   "admin",
   "stats",
 ];
@@ -190,21 +200,115 @@ function ActionButton({
   );
 }
 
+function AppName({
+  compact,
+  onClick,
+}: {
+  compact: boolean;
+  onClick: () => void;
+}) {
+  const t = useTranslations("common");
+  const link = (
+    <Link
+      href="/"
+      prefetch={false}
+      aria-label={compact ? t("appName") : undefined}
+      onClick={onClick}
+      className="flex h-9 items-center gap-2 rounded-md px-2.5 font-semibold"
+    >
+      <BookOpenIcon aria-hidden className="size-4 shrink-0" />
+      {!compact && t("appName")}
+    </Link>
+  );
+  return compact ? (
+    <WithTooltip label={t("appName")} side="right">
+      {link}
+    </WithTooltip>
+  ) : (
+    link
+  );
+}
+
+function AccountMenu({
+  compact,
+  nickname,
+  avatar,
+  profilePath,
+  onSettings,
+}: {
+  compact: boolean;
+  nickname: string | null;
+  avatar: string | null;
+  profilePath: string | null;
+  onSettings: () => void;
+}) {
+  const t = useTranslations("sidebar");
+  const name = nickname ?? t("account");
+  const trigger = (
+    <DropdownMenuTrigger asChild>
+      <Button
+        variant="ghost"
+        aria-label={t("accountMenu", { name })}
+        className={`${ITEM} px-1.5`}
+      >
+        <UserAvatar nickname={nickname ?? ""} src={avatar} alt="" size={22} />
+        {!compact && <span className="truncate">{name}</span>}
+      </Button>
+    </DropdownMenuTrigger>
+  );
+  return (
+    <DropdownMenu modal={false}>
+      {compact ? (
+        <WithTooltip label={name} side="right">
+          {trigger}
+        </WithTooltip>
+      ) : (
+        trigger
+      )}
+      <DropdownMenuContent side="top" className="min-w-48">
+        {profilePath !== null && (
+          <DropdownMenuItem asChild>
+            <Link href={profilePath}>
+              <UserIcon />
+              {t("profile")}
+            </Link>
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem onSelect={onSettings}>
+          <SettingsIcon />
+          {t("settings")}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => void logout()}>
+          <LogOutIcon />
+          {t("logOut")}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function NavItems({
   compact,
   hiddenItems,
+  nickname,
+  avatar,
   profilePath,
   unread,
   unreadMessages,
+  pendingModeration,
   onDone,
   onSettings,
   onNotifications,
 }: {
   compact: boolean;
   hiddenItems: SocialNavItem[];
+  nickname: string | null;
+  avatar: string | null;
   profilePath: string | null;
   unread: number;
   unreadMessages: number;
+  pendingModeration: number;
   onDone: () => void;
   onSettings: () => void;
   onNotifications: () => void;
@@ -254,6 +358,7 @@ function NavItems({
       );
   return (
     <>
+      <AppName compact={compact} onClick={onDone} />
       <NavLink
         href="/"
         label={t("home")}
@@ -276,11 +381,23 @@ function NavItems({
       />
       {socialLinks(SOCIAL_BELOW_FOLDERS)}
       <div className="mt-auto flex flex-col gap-1">
-        <ActionButton
-          label={t("settings")}
-          icon={<SettingsIcon />}
+        {!hiddenItems.includes("moderation") && (
+          <NavLink
+            href={SOCIAL_LINKS.moderation.href}
+            label={t("moderation")}
+            icon={SOCIAL_LINKS.moderation.icon}
+            compact={compact}
+            current={pathname === SOCIAL_LINKS.moderation.href}
+            onClick={onDone}
+            badge={pendingModeration}
+          />
+        )}
+        <AccountMenu
           compact={compact}
-          onClick={onSettings}
+          nickname={nickname}
+          avatar={avatar}
+          profilePath={profilePath}
+          onSettings={onSettings}
         />
       </div>
     </>
@@ -291,27 +408,34 @@ export function AppSidebar({
   defaultCollapsed,
   toolsAvailable,
   hiddenItems = [],
-  profilePath = null,
+  nickname = null,
+  avatar = null,
   initialUnread = 0,
   initialUnreadMessages = 0,
+  pendingModeration = 0,
   realtimeUrl = null,
 }: {
   defaultCollapsed: boolean;
   toolsAvailable: boolean;
   initialUnread?: number;
   initialUnreadMessages?: number;
+  // Shown by Moderation; filled in by task 106.
+  pendingModeration?: number;
   // The realtime stream's address (task 90); without it the counters only poll.
   realtimeUrl?: string | null;
   // Entries that are not for this account.
   hiddenItems?: SocialNavItem[];
-  // The account's own profile, where "My profile" shows as the current page.
-  profilePath?: string | null;
+  // Null for an account without a nickname, which has no profile (D37).
+  nickname?: string | null;
+  avatar?: string | null;
 }) {
+  const profilePath = nickname === null ? null : `/p/${nickname}`;
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(settingsReopenRequested);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const t = useTranslations("sidebar");
+  const tCommon = useTranslations("common");
   const menu = useRef<HTMLButtonElement>(null);
   const sidebar = useRef<HTMLElement>(null);
   const openNotifications = useCallback(() => {
@@ -345,37 +469,46 @@ export function AppSidebar({
 
   return (
     <>
-      <WithTooltip label={t("menu")} side="right">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          ref={menu}
-          aria-label={unread > 0 ? t("menuUnread") : t("menu")}
-          className="absolute top-1 left-1 z-40 md:hidden"
-          onClick={() => setDrawerOpen(true)}
-        >
-          <MenuIcon />
-          {unread > 0 && (
-            <span
-              aria-hidden
-              className="bg-primary absolute top-1 right-1 size-2 rounded-full"
-            />
-          )}
-        </Button>
-      </WithTooltip>
+      <div className="bg-background fixed inset-x-0 top-0 z-40 flex h-10 items-center gap-1 border-b px-1 md:hidden">
+        <WithTooltip label={t("menu")} side="right">
+          <Button
+            variant="ghost"
+            size="icon"
+            ref={menu}
+            aria-label={unread > 0 ? t("menuUnread") : t("menu")}
+            // 44px touch target inside the 40px bar
+            className="relative after:absolute after:-inset-1.5 after:content-['']"
+            onClick={() => setDrawerOpen(true)}
+          >
+            <MenuIcon />
+            {unread > 0 && (
+              <span
+                aria-hidden
+                className="bg-primary absolute top-1 right-1 size-2 rounded-full"
+              />
+            )}
+          </Button>
+        </WithTooltip>
+        <Link href="/" prefetch={false} className="font-semibold">
+          {tCommon("appName")}
+        </Link>
+      </div>
       <Dialog open={drawerOpen} onOpenChange={setDrawerOpen}>
         <DialogContent
           aria-describedby={undefined}
-          className="top-0 left-0 flex h-dvh max-w-64 translate-x-0 translate-y-0 flex-col gap-1 rounded-none pt-10 sm:max-w-64"
+          className="top-0 left-0 flex h-dvh max-w-64 translate-x-0 translate-y-0 flex-col gap-1 rounded-none p-2 sm:max-w-64"
         >
           <DialogTitle className="sr-only">{t("menu")}</DialogTitle>
           <nav aria-label={t("mainNav")} className="flex flex-1 flex-col gap-1">
             <NavItems
               compact={false}
               hiddenItems={hiddenItems}
+              nickname={nickname}
+              avatar={avatar}
               profilePath={profilePath}
               unread={unread}
               unreadMessages={unreadMessages}
+              pendingModeration={pendingModeration}
               onDone={() => setDrawerOpen(false)}
               onSettings={openSettings}
               onNotifications={openNotifications}
@@ -392,9 +525,12 @@ export function AppSidebar({
         <NavItems
           compact={collapsed}
           hiddenItems={hiddenItems}
+          nickname={nickname}
+          avatar={avatar}
           profilePath={profilePath}
           unread={unread}
           unreadMessages={unreadMessages}
+          pendingModeration={pendingModeration}
           onDone={() => {}}
           onSettings={openSettings}
           onNotifications={openNotifications}

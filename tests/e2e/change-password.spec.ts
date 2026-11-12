@@ -6,6 +6,7 @@ import {
   expectSignedOut,
   login,
   PASSWORD_REQUIREMENT_TEXTS,
+  logOut,
   openSettings,
   test,
 } from "./helpers";
@@ -81,8 +82,7 @@ test("after the change only the new password signs in", async ({ page }) => {
   // The menu still responds after the dialog, and this session outlives the change.
   await page.reload();
   await expect(page).toHaveURL("/en");
-  const settings = await openSettings(page);
-  await settings.getByRole("button", { name: "Log out", exact: true }).click();
+  await logOut(page);
   await expectSignedOut(page);
 
   await signIn(page, USERS.carol.password);

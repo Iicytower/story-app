@@ -7,7 +7,6 @@ import {
   changeLocale,
   listDictionary,
   logOutOtherDevices,
-  logout,
   removeFromDictionary,
   saveSettings,
 } from "@/app/[locale]/(protected)/actions";
@@ -262,14 +261,13 @@ function SettingsContent({ toolsAvailable }: { toolsAvailable: boolean }) {
         <h3 id="settings-account" className="font-medium">
           {t("account")}
         </h3>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setChangingPassword(true)}>
-            {t("changePassword")}
-          </Button>
-          <Button variant="outline" onClick={() => void logout()}>
-            {t("logOut")}
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          className="justify-self-start"
+          onClick={() => setChangingPassword(true)}
+        >
+          {t("changePassword")}
+        </Button>
         <Button
           variant="outline"
           className="justify-self-start"

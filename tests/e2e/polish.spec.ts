@@ -1,7 +1,7 @@
 import type { Browser } from "@playwright/test";
 import { clearSettings, findSettings, seedSettings } from "./db";
 import { USERS, storageStatePath } from "./env";
-import { expect, login, test } from "./helpers";
+import { expect, login, openMenu, openSettings, test } from "./helpers";
 
 // Bob's language setting would otherwise leak into other tests that sign him in.
 test.afterEach(() => clearSettings("bob"));
@@ -22,10 +22,7 @@ test("switching to Polish keeps the page, survives a reload and is saved", async
   await page.context().clearCookies();
   await login(page, "bob");
   await page.goto("/en/books?q=dragon");
-  await page
-    .getByRole("navigation", { name: "Main" })
-    .getByRole("button", { name: "Settings" })
-    .click();
+  await openSettings(page);
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Interface language").selectOption("pl");
   await dialog.getByRole("button", { name: "Save" }).click();
@@ -63,14 +60,12 @@ test("switching to Polish keeps the page, survives a reload and is saved", async
   await page.goto("/books");
   await expect(page).toHaveURL("/pl/books");
 
-  await page
-    .getByRole("navigation", { name: "Główna" })
-    .getByRole("button", { name: "Ustawienia" })
-    .click();
-  await page
-    .getByRole("dialog", { name: "Ustawienia" })
-    .getByRole("button", { name: "Wyloguj", exact: true })
-    .click();
+  await openMenu(
+    page
+      .getByRole("navigation", { name: "Główna" })
+      .getByRole("button", { name: /^Menu konta, / }),
+  );
+  await page.getByRole("menuitem", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL("/pl");
   await page.goto("/");
   await expect(page).toHaveURL("/pl");

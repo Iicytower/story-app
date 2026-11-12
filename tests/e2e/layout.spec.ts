@@ -1,9 +1,11 @@
-import { findSettings, seedStory } from "./db";
+import { findSettings, seedPublished, seedStory } from "./db";
 import { storageStatePath } from "./env";
 import {
   expect,
+  accountAction,
   expectSignedOut,
   login,
+  logOut,
   openSettings,
   saveTheme,
   sidebarAction,
@@ -12,27 +14,71 @@ import {
 
 test.use({ storageState: storageStatePath("alice") });
 
-// Moved to the settings dialog (D50).
-const OLD_ITEMS = ["Toggle theme", "Language", "Change password", "Log out"];
+// Moved to the settings dialog (D50) and the account menu (D83).
+const OLD_ITEMS = [
+  "Toggle theme",
+  "Language",
+  "Change password",
+  "Settings",
+  "Log out",
+];
 
-test("the sidebar keeps the views and opens the settings", async ({ page }) => {
+test("the sidebar names the app and the account, whose menu opens the settings", async ({
+  page,
+}) => {
   await page.goto("/books");
   const nav = page.getByRole("navigation", { name: "Main" });
+  await expect(nav.getByRole("link", { name: "Story App" })).toBeVisible();
+  const account = nav.getByRole("button", { name: "Account menu, Alice" });
+  await expect(account).toContainText("Alice");
   for (const name of OLD_ITEMS)
-    await expect(nav.getByRole("button", { name })).toHaveCount(0);
+    await expect(nav.getByRole("button", { name, exact: true })).toHaveCount(0);
   await nav.getByRole("button", { name: "Collapse sidebar" }).click();
   for (const name of OLD_ITEMS)
-    await expect(nav.getByRole("button", { name })).toHaveCount(0);
-  await nav.getByRole("button", { name: "Settings" }).click();
+    await expect(nav.getByRole("button", { name, exact: true })).toHaveCount(0);
+  // Collapsed, the block is the avatar alone.
+  await expect(account).not.toContainText("Alice");
+  await openSettings(page);
 
   const dialog = page.getByRole("dialog", { name: "Settings" });
   for (const name of ["Appearance", "Language", "Account"])
     await expect(
       dialog.getByRole("region", { name, exact: true }),
     ).toBeVisible();
+  await expect(
+    dialog.getByRole("button", { name: "Log out", exact: true }),
+  ).toHaveCount(0);
   await page.mouse.click(5, 5);
   await expect(dialog).toBeHidden();
   await nav.getByRole("button", { name: "Expand sidebar" }).click();
+  await expect(account).toContainText("Alice");
+
+  await accountAction(page, "My profile");
+  await expect(page).toHaveURL("/en/p/Alice");
+  await nav.getByRole("link", { name: "Story App" }).click();
+  await expect(page).toHaveURL("/en");
+});
+
+test("Moderation sits above the account block and Feed is Aktualności in Polish", async ({
+  page,
+}) => {
+  await seedPublished("alice", "Layout", [
+    { title: "One", publication: "public", content: "Text" },
+  ]);
+  await page.goto("/pl/books");
+  const nav = page.getByRole("navigation", { name: "Główna" });
+  await expect(nav.getByRole("link", { name: "Aktualności" })).toBeVisible();
+  const moderation = (await nav
+    .getByRole("link", { name: "Moderacja" })
+    .boundingBox())!;
+  const account = (await nav
+    .getByRole("button", { name: "Menu konta, Alice" })
+    .boundingBox())!;
+  const stats = (await nav
+    .getByRole("link", { name: "Statystyki" })
+    .boundingBox())!;
+  expect(moderation.y).toBeGreaterThan(stats.y);
+  expect(moderation.y + moderation.height).toBeLessThanOrEqual(account.y);
 });
 
 test("each theme applies at once and survives a reload", async ({ page }) => {
@@ -109,8 +155,7 @@ test("log out returns to the home page and protects /books again", async ({
   await page.context().clearCookies();
   await login(page, "alice");
   await page.goto("/books");
-  const dialog = await openSettings(page);
-  await dialog.getByRole("button", { name: "Log out", exact: true }).click();
+  await logOut(page);
   await expect(page).toHaveURL("/en");
   await expectSignedOut(page);
 
@@ -135,11 +180,12 @@ for (const [name, viewport] of [
       const title = await page
         .getByRole("textbox", { name: "Title" })
         .boundingBox();
-      expect(title!.y).toBeLessThan(60);
+      // Below md the app's top bar (2.5rem) comes first.
+      expect(title!.y).toBeLessThan(100);
 
-      await expect(page.getByRole("button", { name: "Account" })).toHaveCount(
-        0,
-      );
+      await expect(
+        page.getByRole("button", { name: "Account", exact: true }),
+      ).toHaveCount(0);
 
       await sidebarAction(page, "Books");
       await expect(page).toHaveURL("/en/books");
@@ -184,19 +230,40 @@ test("Home goes to the default view and a collapsed sidebar stays collapsed", as
 });
 
 test.describe("on a narrow screen", () => {
-  test.use({ viewport: { width: 390, height: 844 } });
+  test.use({ viewport: { width: 375, height: 812 } });
 
-  test("the menu button stays clear of the editor's title row", async ({
+  test("the top bar with the menu and the app name stays clear of the page", async ({
     page,
   }) => {
     const id = await seedStory("alice", { title: "Clear", folder: "Book" });
     await page.goto(`/chapters/${id}`);
 
-    const menu = await page
+    const menu = (await page
       .getByRole("button", { name: "Menu", exact: true })
-      .boundingBox();
-    const back = await page.getByRole("link", { name: /Book/ }).boundingBox();
-    expect(menu!.x + menu!.width).toBeLessThanOrEqual(back!.x);
+      .boundingBox())!;
+    const name = (await page
+      .getByRole("link", { name: "Story App" })
+      .boundingBox())!;
+    expect(name.x).toBeGreaterThanOrEqual(menu.x + menu.width);
+    const back = (await page
+      .getByRole("link", { name: /Book/ })
+      .boundingBox())!;
+    expect(menu.y + menu.height).toBeLessThanOrEqual(back.y);
+    // The editor fits the screen under the bar.
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollHeight <= window.innerHeight,
+      ),
+    ).toBe(true);
+
+    await page.goto("/books");
+    const bar = (await page
+      .getByRole("button", { name: "Menu", exact: true })
+      .boundingBox())!;
+    const heading = (await page
+      .getByRole("heading", { level: 1 })
+      .boundingBox())!;
+    expect(bar.y + bar.height).toBeLessThanOrEqual(heading.y);
   });
 
   test("the drawer closes after choosing a view", async ({ page }) => {
@@ -204,10 +271,12 @@ test.describe("on a narrow screen", () => {
     await page.getByRole("button", { name: "Menu" }).click();
     const drawer = page.getByRole("dialog", { name: "Menu" });
     await expect(
-      drawer.getByRole("button", { name: "Settings" }),
+      drawer.getByRole("button", { name: "Account menu, Alice" }),
     ).toBeVisible();
     for (const name of OLD_ITEMS)
-      await expect(drawer.getByRole("button", { name })).toHaveCount(0);
+      await expect(
+        drawer.getByRole("button", { name, exact: true }),
+      ).toHaveCount(0);
     await page.getByRole("link", { name: "Books" }).click();
     await expect(page).toHaveURL("/en/books");
     await expect(page.getByRole("dialog")).toBeHidden();
@@ -219,7 +288,9 @@ test("the 404 outside a locale follows the system theme", async ({ page }) => {
     await page.emulateMedia({ colorScheme });
     const response = await page.goto("/missing.txt");
     expect(response?.status()).toBe(404);
-    await expect(page.getByText("404 | This page could not be found.")).toBeVisible();
+    await expect(
+      page.getByText("404 | This page could not be found."),
+    ).toBeVisible();
     await expect(page.locator("html")).toHaveClass(
       colorScheme === "dark" ? /\bdark\b/ : /^(?!.*\bdark\b)/,
     );

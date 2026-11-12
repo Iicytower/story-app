@@ -121,6 +121,21 @@ export async function myProfilePath(userId: string): Promise<string | null> {
   return user?.nickname ? `/p/${user.nickname}` : null;
 }
 
+// The sidebar's account block: an account without a nickname (D37) has no profile yet.
+export async function myAccount(
+  userId: string,
+): Promise<{ nickname: string | null; avatar: string | null }> {
+  await connectDB();
+  const [user, profile] = await Promise.all([
+    User.findById(userId).select({ nickname: 1 }).lean(),
+    Profile.findOne({ userId }).select({ avatarId: 1 }).lean(),
+  ]);
+  return {
+    nickname: user?.nickname ?? null,
+    avatar: profile?.avatarId ? avatarPath(profile.avatarId.toString()) : null,
+  };
+}
+
 // Newest first; one page more is asked for only to know whether there is a next one.
 export async function listFollows(
   userId: Types.ObjectId,
