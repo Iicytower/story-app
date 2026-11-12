@@ -7,7 +7,7 @@ Status: aktualna. Zmienia D16, D17, D27, D30, D42, D50, D54 oraz części D80 `n
 ## Przebieg i branche
 
 - Branch zbiorczy `fix/ui` z `feature/social`, lokalny, niepushowany. Subtaski: `feature/NN-<slug>` z aktualnego `fix/ui`, jeden commit `NN: <opis>`, merge `--no-ff` do `fix/ui`. `fix/ui` do `feature/social`/`develop` merguje użytkownik.
-- Przebieg bez nadzoru: `/autorun 51`. Rozstrzygnięcia Claude'a z przebiegu w sekcji „Rozstrzygnięcia Claude'a do potwierdzenia” na końcu tego pliku.
+- Przebieg bez nadzoru: `/autorun 51`, w nocy przez `scripts/autorun-night.sh 51` (`claude -p` z `--permission-mode auto --permission-prompts none`, wznawianie tej samej sesji po limicie, opis w `README.md`). Rozstrzygnięcia Claude'a z przebiegu w sekcji „Rozstrzygnięcia Claude'a do potwierdzenia” na końcu tego pliku.
 - Bez nowych pakietów npm. Nowe komponenty shadcn (np. `tabs`, `avatar`, `skeleton`, `badge`) wolno dodać do `components/ui`, jeśli korzystają tylko z zainstalowanego `radix-ui`: źródło z MCP `shadcn` (`view_items_in_registries`), importy z `radix-ui`, zapis plikiem. Nie przez `npx shadcn add`, jeśli ten chce instalować zależności (`autorun-guard.sh` blokuje instalację). Czas względny przez `Intl.RelativeTimeFormat`.
 - `ui-checker` używa Playwright MCP (`mcp__playwright__*`) i sprawdza każdy subtask zmieniający UI: dwa warianty (1280 jasny `/en`, 375 ciemny `/pl`). Audyt końcowy (107): wszystkie 8 wariantów i obszary niesprawdzone w raporcie; wynik w `docs/ui-ux-report-after.md` ze zrzutami w `docs/ui-ux-report-after/`, ten sam format i ocena 0–10.
 - Testy: każdy subtask aktualizuje E2E i helpery, które psuje (selektory, adresy, teksty), w tym samym tasku.

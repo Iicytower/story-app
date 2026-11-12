@@ -53,6 +53,18 @@ Open the repo in Claude Code and run:
 
 The skill checks the requirements, installs dependencies, creates `.env.local` with a generated secret, starts MongoDB, applies migrations and starts the dev server.
 
+### Unattended runs overnight
+
+`/autorun <umbrella task>` can run headless and survive usage limits:
+
+```bash
+mkdir -p .claude/autorun-logs && nohup scripts/autorun-night.sh 51 > .claude/autorun-logs/night.log 2>&1 &
+```
+
+The script starts `claude -p "/autorun 51"` with a fixed session ID and, whenever the process ends while `.claude/autorun.lock` still exists (usage limit, API error), waits 20 minutes and resumes the same conversation. It stops when the skill removes the lock, after 3 normal exits in a row without a new commit, or after 40 attempts. `scripts/autorun-night.sh 51 --resume` continues the last session after a manual stop. Settings: `AUTORUN_WAIT`, `AUTORUN_MAX_ATTEMPTS`, `AUTORUN_MAX_STALLS`, `AUTORUN_MODEL`. Logs: `.claude/autorun-logs/`.
+
+Nobody answers prompts during the run: permissions use `--permission-mode auto --permission-prompts none` (anything that would still ask is denied, not left waiting), questions are refused by the `autorun-guard.sh` hook and the agent logs its own decisions in the umbrella task's decision file. Commands the run needs must be in `.claude/settings.json` `allow`.
+
 ### Manually
 
 ```sh
