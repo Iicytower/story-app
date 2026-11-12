@@ -1,0 +1,10 @@
+# D75 – Unieważnianie sesji i słabe hasła (2026-11-10)
+
+Status: aktualna.
+
+- Task 58, decyzje użytkownika. Każde logowanie zapisuje sesję w kolekcji `sessions` (losowe `_id`, `userId`, `expiresAt` z indeksem TTL), a JWT niesie jej `sid`. Callback `jwt` przy każdym `auth()` sprawdza, czy sesja istnieje; jeśli nie, zwraca `null` i Auth.js czyści cookie. Tokeny sprzed D75 nie mają `sid`, więc po wdrożeniu każdy loguje się raz ponownie.
+- Wylogowanie (`events.signOut`) usuwa sesję, więc skopiowane cookie przestaje działać. Zmiana hasła usuwa wszystkie inne sesje użytkownika, a bieżąca zostaje. Przycisk „Wyloguj inne urządzenia” w ustawieniach (z potwierdzeniem) robi to samo bez zmiany hasła. Bez listy sesji. `maxAge` zostaje 30 dni; `expiresAt` sesji przesuwa się razem z odnawianym JWT najwyżej raz na dobę.
+- Koszt: jeden odczyt sesji po `_id` na `auth()`, z cache pozytywnych wyników w pamięci procesu na 10 s. Usunięcie sesji czyści cache w tym samym bundlu. Inna instancja serwera, a także proxy (osobny bundle), mogą przez te 10 s uznawać sesję za ważną. Strony i akcje i tak sprawdzają `requireUser()`/`auth()` w bundlu aplikacji, więc po unieważnieniu chroniona strona przekierowuje na stronę główną.
+- `sid` jest też w obiekcie sesji (`/api/auth/session`), żeby akcje wiedziały, której sesji nie usuwać. Sam `sid` bez podpisanego cookie nic nie daje.
+- Limit `changePassword`: 5 błędnych obecnych haseł na 15 min na użytkownika (`RATE_LIMITED`), także dla poprawnego hasła po przekroczeniu. Udana zmiana oddaje próbę, a nowe hasło odrzucone przez walidację się nie liczy.
+- I5 (decyzja użytkownika: reguły bez listy): `passwordError` odrzuca hasło, w którym jeden znak stanowi co najmniej połowę znaków, hasło z ciągiem 6 kolejnych znaków alfabetu, cyfr albo rzędu klawiatury (`abcdef`, `123456`, `qwerty`, `asdfgh`, także wstecz) oraz hasło zawierające nick (bez rozróżniania wielkości liter). Działa przy rejestracji, zmianie hasła i w `create-account`; nie dotyczy logowania istniejących kont.

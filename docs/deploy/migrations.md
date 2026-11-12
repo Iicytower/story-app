@@ -4,7 +4,7 @@ Część `docs/deploy.md` (indeks i wydania tam).
 
 ## Migracje
 
-Mechanizm: `docs/decisions.md` D14. Migracje uruchamiają się w buildzie produkcji i stagingu (`vercel.json` → `buildCommand`), przed `next build`. Preview innych branchy je pomijają.
+Mechanizm: D14 (`docs/decisions/D014-migracje.md`). Migracje uruchamiają się w buildzie produkcji i stagingu (`vercel.json` → `buildCommand`), przed `next build`. Preview innych branchy je pomijają.
 
 - **Przy wydaniu:** migracja wykonuje się na stagingu przy merge'u do `staging`, a na produkcji przy merge'u do `main`. W trakcie builda ruch dalej obsługuje stary deployment, więc migracje są expand-only. Przed merge'em do `main` sprawdzić w logu builda stagingu linie `Applying <id>` i `Indexes synced`.
 - **Nieudany build:** migracja z błędem nie jest zapisana w `migrations`, a blokada jest zwalniana. Kolejny deploy powtarza migrację, a kopia z pierwszej próby zostaje.

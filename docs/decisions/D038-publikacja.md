@@ -1,0 +1,18 @@
+# D38 – Publikacja zamiast udostępniania linkiem (2026-11-01, zmienione 2026-11-04 w D54)
+
+Status: aktualna. Zmieniona w D54.
+
+- Zmienia D1, D11, D18, D25 i spec („Udostępnianie przez link”). Decyzja użytkownika: „Share” znika całkowicie. Usunięte trasy `/s/...`, akcje `setSharing` i `setFolderSharing`, nagłówki `X-Robots-Tag`, przyciski. Wysłane linki przestają działać i nie są przenoszone do publikacji. `shareToken` zostaje w dokumentach (D14, expand-only), usuwamy go ze schematu, a `syncIndexes()` w buildzie usuwa indeksy.
+- Bez pliku migracji: brak `published` to nieopublikowany folder, brak `publication` to brak decyzji, więc po wdrożeniu nic nie jest publiczne.
+- W UI zawsze „Publish” / „Unpublish”, także przy rozdziale; wartość `hidden` to tylko nazwa w bazie.
+- Stan: `folders.published` oraz `stories.publication` (`public`, `hidden`, brak). Rozdział jest publiczny tylko, gdy folder jest aktywny i `published`, a rozdział aktywny i `public`.
+- „Publish” folderu: `published`, rozdziały bez decyzji stają się `public`, jawne stany zostają. „Unpublish” zachowuje stany rozdziałów, więc ponowny „Publish” przywraca ten sam zestaw. „Publish all” (z potwierdzeniem, tylko w opublikowanym folderze) ustawia wszystkie aktywne na `public`.
+- „Publish” rozdziału to publikacja folderu z pozostałymi wyłączonymi: w nieopublikowanym folderze rozdział dostaje `public`, a wszystkie pozostałe `hidden`, także te publiczne przed „Unpublish” (zgłoszenie użytkownika: nie mogą wracać razem z jednym rozdziałem). W opublikowanym folderze zmienia się tylko ten rozdział. „Unpublish” rozdziału ustawia `hidden`.
+- Nowy, zaimportowany, przeniesiony lub przywrócony rozdział: `hidden` w opublikowanym folderze, inaczej brak decyzji. Przeniesienie kasuje też stare adresy.
+- Folder bez żadnego publicznego rozdziału daje czytelnikowi 404.
+- Kolejność czytania: przy „Newest first” strony publiczne odwracają kolejność (najstarszy rozdział jako 1., także poprzedni / następny). „Manual” i „A–Z” zostają jak u autora.
+- Adres: `/p/<nick>/<folder>` (spis) i `/p/<nick>/<folder>/<rozdział>`, także dla pojedynczego rozdziału. Slugi z `safeFileName`, liczone przy odczycie, bez unikalnego indeksu, bo każdy `E11000` w zapisach znaczy dziś „tytuł zajęty”. Kolizję (np. „Ą” i „A”) rozstrzyga `_id`: starszy dostaje czysty slug, nowszy `-2`. Ukryte rozdziały i prywatne foldery też się liczą, więc ukrycie nie zmienia adresu sąsiada, ale sufiks `-2` zdradza istnienie podobnie nazwanego prywatnego folderu. Adres zależy od sąsiadów: usunięcie lub zmiana nazwy starszego z dwóch kolidujących przesuwa adres młodszego bez przekierowania, a zmiana nazwy może przejąć cudzy dotychczasowy adres. Kolizje wymagają nazw różniących się tylko wielkością liter, znakami diakrytycznymi lub interpunkcją, więc to przypadek rzadki i zaakceptowany.
+- Zmiana tytułu lub nazwy zmienia adres, a stary trafia do `formerSlugs` i przekierowuje (307, bo slug może wrócić do użycia, a 308 przeglądarka zapamiętuje na stałe), tylko dla publicznego rozdziału lub opublikowanego folderu. Aktualny slug ma pierwszeństwo nad `formerSlugs`. Nick w złej wielkości liter też przekierowuje.
+- Strony są indeksowane (decyzja użytkownika): bez `noindex`, tytuł strony to „<tytuł> by <nick>”. Bez sitemap. Treść na żywo, jak w dawnym „Share”, więc autozapis po 20 s jest od razu publiczny (`connection()`, bez cache).
+- Publikacja to zmiana organizacyjna: `timestamps: false`, bez zmian `lastActivityAt` i `notesUpdatedAt`. Eksportu i wersji folderów nie dotyczy, przywrócenie wersji nie zmienia `publication` rozdziału, który został w folderze.
+- UI: „Publish” / „Unpublish” i link na stronie folderu i w edytorze, przycisk ikony przy każdym rozdziale na liście.

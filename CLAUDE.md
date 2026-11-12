@@ -7,7 +7,7 @@ Aplikacja webowa do pisania opowiadań (docelowo publiczna, D46) w markdown (Nex
 ## Dokumentacja
 
 - `docs/spec.md` – specyfikacja funkcjonalna (kopia dokumentu z Claude Docs, nie edytować bez prośby).
-- `docs/decisions.md` – decyzje i odstępstwa od spec; **ma pierwszeństwo nad spec**. Nową decyzję dopisz tutaj i jednym wierszem w spisie `docs/decisions/index.md`. Duże decyzje mają własne pliki w `docs/decisions/` (D80: `docs/decisions/d80/<obszar>.md`, w `decisions.md` tylko indeks) – czytaj tylko pliki potrzebne do taska.
+- `docs/decisions/` – decyzje i odstępstwa od spec, **mają pierwszeństwo nad spec**. Plik na decyzję (`DNNN-slug.md`; D80 to folder `D080-system-spolecznosciowy/` z `index.md` i plikami obszarów), spis `index.md` (aktualne wg tematów, archiwalne osobno, jedno zdanie na decyzję). Nowa decyzja, zmiana lub archiwizacja starszej: według D82 (`D082-decyzje-w-plikach.md`) – plik z linią statusu i wiersz w spisie.
 - `docs/testing.md` – strategia testów (unit / integracyjne z MongoDB w Dockerze / E2E Playwright). **Obowiązkowa przy każdym tasku.**
 - `docs/tasks/README.md` – lista tasków ze statusami, branche i definicja „zrobione”; szczegóły otwartych tasków w `docs/tasks/NN-*.md` (sekcje Zakres, Kryteria akceptacji, Testy), zakończonych w `docs/tasks/done/`. Otwarte taski są w tabeli w kolejności realizacji.
 - `README.md` (po angielsku) – krótki, marketingowy opis aplikacji, stack, proces pracy z Claude Code i uruchamianie lokalne (ręcznie i skillem `/local-setup`). Aktualizuj go w ramach taska, który zmienia coś z tych sekcji (np. stack, komendy, wymagania, kroki uruchomienia, skille, hooki); przy zmianie kroków uruchomienia popraw też `.claude/skills/local-setup/SKILL.md`. Opis domenowy zostaje ogólny (kilka zdań), bez listy funkcji.
@@ -15,7 +15,7 @@ Aplikacja webowa do pisania opowiadań (docelowo publiczna, D46) w markdown (Nex
 
 ## Praca z taskami
 
-1. Przed startem przeczytaj plik taska oraz wskazane sekcje spec i `decisions.md`.
+1. Przed startem przeczytaj plik taska oraz wskazane sekcje spec i pliki decyzji.
 2. Utwórz branch `feature/NN-<slug>` z `develop` i ustaw status `[~]` w `docs/tasks/README.md`. Wyjątek: taski systemu społecznościowego (68–91, D80) – branch z `feature/social` i merge do niego; `feature/social` do `develop` merguje użytkownik.
 3. Niejasności lub kilka sensownych rozwiązań → zapytaj, zanim zaimplementujesz.
 4. Napisz testy z sekcji „Testy” taska razem z kodem (nie na końcu). Każde kryterium akceptacji musi mieć test albo oznaczenie `manual`.
@@ -60,7 +60,7 @@ Aplikacja webowa do pisania opowiadań (docelowo publiczna, D46) w markdown (Nex
 
 ## Oszczędzanie kontekstu
 
-- Decyzje: najpierw spis `docs/decisions/index.md`, potem tylko potrzebna decyzja (`grep -n "^## Dnn" docs/decisions.md` i Read z `offset`/`limit`, D80 w `docs/decisions/d80/`). Nie czytaj całego `docs/decisions.md`.
+- Decyzje: najpierw spis `docs/decisions/index.md`, potem tylko pliki potrzebnych decyzji z linków (przy D80 tylko potrzebne pliki obszarów). Archiwalnych nie czytaj, chyba że status wskazuje część nadal aktualną albo pytanie dotyczy historii.
 - Pliki ponad ok. 300 linii (`messages/*.json`, duże komponenty, dokumenty) czytaj przez `grep -n` i zakres linii, nie w całości.
 - Dokumentacja Next.js (AGENTS.md): tylko przy API nowym albo niepewnym; szukaj `grep -rln "<api>" node_modules/next/dist/docs/` i czytaj znaleziony fragment, albo context7. Nie czytaj całych przewodników „na zapas”. Pozostałe biblioteki – context7.
 - Testy: reporter `dot` (Vitest wypisuje konsolę tylko z nieudanych testów). Per zmiana uruchamiaj `npx vitest related <pliki> --run` i specy dotkniętych stron; pełne `npm run verify` rzadziej (przed merge'em, co kilka tasków).

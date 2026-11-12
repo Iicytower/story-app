@@ -1,6 +1,6 @@
 # Taski
 
-Źródło wymagań: [`../spec.md`](../spec.md) + [`../decisions.md`](../decisions.md) (ma pierwszeństwo). Wersja 1.0 (tag `v1.0.0`) jest na produkcji; taski dotyczą zmian po 1.0. Szczegóły otwartego tasku w `NN-<slug>.md` (sekcje Zakres, Kryteria akceptacji, Testy). Zakończone taski: wiersz zostaje w tabeli ze statusem `[x]`, a plik przenosimy do [`done/`](done/) (`git mv`, w commicie taska) i poprawiamy link w tabeli. Numeracja rośnie dalej, żeby nie powtarzać nazw branchy.
+Źródło wymagań: [`../spec.md`](../spec.md) + [`../decisions/index.md`](../decisions/index.md) (ma pierwszeństwo). Wersja 1.0 (tag `v1.0.0`) jest na produkcji; taski dotyczą zmian po 1.0. Szczegóły otwartego tasku w `NN-<slug>.md` (sekcje Zakres, Kryteria akceptacji, Testy). Zakończone taski: wiersz zostaje w tabeli ze statusem `[x]`, a plik przenosimy do [`done/`](done/) (`git mv`, w commicie taska) i poprawiamy link w tabeli. Numeracja rośnie dalej, żeby nie powtarzać nazw branchy.
 
 Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `develop`).
 
