@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Stop: during /autorun the orchestrator may only stop once every subtask is done ([x]) or its file has a
-# "## Blokada" or "## Pominięty" section. The skill removes the lock at the very end.
+# "## Blokada" (blocked) or "## Pominięty" (skipped) section. The skill removes the lock at the very end.
 input=$(cat)
 lock="$CLAUDE_PROJECT_DIR/.claude/autorun.lock"
 [[ -f $lock ]] || exit 0
