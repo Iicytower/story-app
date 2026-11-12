@@ -7,6 +7,7 @@ Część decyzji D80 (System społecznościowy, 2026-11-10); indeks w [`../../de
 - DM: rozmowa dwóch osób, bezterminowo. Ustawienie „kto może zacząć rozmowę”: wszyscy (domyślnie) / obserwowani przeze mnie / nikt; istniejące rozmowy działają. Blokada zamyka rozmowę w obie strony.
 - Polling bez realtime: licznik powiadomień i DM co 30 s, otwarta rozmowa co 5 s, wstrzymany, gdy karta jest w tle. Zostaje jako fallback.
 - Realtime: tylko własny serwis SSE w stosie narzędzi (`docker/tools/compose.yml`, Coolify; lokalnie `npm run up`, docelowo Mikrus z taska 28), Node bez zależności. Przeglądarka łączy się natywnym `EventSource` przez bramkę (ścieżka `/rt/*` bez `X-Tools-Secret`, z krótkim tokenem HMAC od aplikacji w zapytaniu), aplikacja publikuje zdarzenia przez bramkę z sekretem. Publiczny adres w zmiennej `REALTIME_PUBLIC_URL`, dopisany do `connect-src` CSP (D77). Bez zmiennej albo przy błędzie połączenia: polling. Wymaga serwera narzędzi na produkcji przed wydaniem.
+- DM – nowa wiadomość (2026-11-12, bez taska): przycisk „Nowa wiadomość” na `/messages` otwiera dialog z polem „Do” (combobox z podpowiedziami `suggestNicknames`, jak wzmianki z taska 82) i treścią; wysyła `startConversation`, więc istniejąca rozmowa idzie dalej w niej, a odmowy i limity są te same co z profilu. Komponent `app/[locale]/(protected)/messages/new-message-button.tsx`.
 
 ## Rozstrzygnięcia Claude'a do potwierdzenia
 
