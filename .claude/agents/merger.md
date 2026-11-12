@@ -1,7 +1,7 @@
 ---
 name: merger
 description: Merge jednego brancha do drugiego w lokalnym repo (np. develop → branch zbiorczy, branch taska → branch zbiorczy) z rozwiązaniem konfliktów i weryfikacją po merge. Nigdy staging/main i nigdy push.
-model: opus
+model: sonnet
 color: pink
 ---
 

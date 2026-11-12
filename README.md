@@ -26,7 +26,7 @@ The main architectural rules:
 The app is developed with [Claude Code](https://claude.com/claude-code) following a written, test-first process. The documentation in `docs/` is the source of truth for both the human and the agent:
 
 - **`docs/spec.md`**: the original functional specification.
-- **`docs/decisions.md`**: numbered decisions (D1, D2, …) recording every change to the spec and every non-obvious choice. Decisions override the spec.
+- **`docs/decisions.md`**: numbered decisions (D1, D2, …) recording every change to the spec and every non-obvious choice. Decisions override the spec; large ones live in `docs/decisions/` (e.g. the social system in `docs/decisions/d80/`).
 - **`docs/tasks/`**: one file per task with scope, acceptance criteria and the tests that cover them. Each task runs on its own `feature/NN-<slug>` branch from `develop` and ends with a single commit.
 - **`docs/testing.md`**: every acceptance criterion maps to a unit, integration or E2E test, or is explicitly marked `manual`. A task is done only when `npm run verify` (lint, typecheck, Vitest, Playwright) passes.
 - **`docs/deploy.md`**: environments, releases, migrations and backups.
@@ -36,7 +36,7 @@ The agent is constrained by project configuration in `.claude/`:
 - **`CLAUDE.md` / `AGENTS.md`**: project rules, workflow and commands.
 - **Hooks**: ESLint and Prettier run after every edit, `tsc` runs before the agent finishes, and a guard blocks merges and pushes to `staging` and `main`. Releases (`develop` → `staging` → `main`) are made only by the human.
 - **Skills**: repeatable procedures such as `/tasks`, `/release-prs`, `/resolve-pr-conflicts`, `/local-setup` and `/autorun`, which works through a group of tasks unattended.
-- **Subagents** (`.claude/agents/`): researcher, implementer, verifier, reviewer, UI checker, security auditor, docs keeper and merger. The main session orchestrates and delegates the work to keep its context small.
+- **Subagents** (`.claude/agents/`): researcher, implementer, verifier, reviewer, UI checker, security auditor, docs keeper and merger. The main session orchestrates and delegates the work to keep its context small; Opus for implementation, review and security audit, Sonnet for the rest.
 
 ## Running locally
 

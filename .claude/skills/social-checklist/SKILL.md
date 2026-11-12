@@ -5,7 +5,7 @@ description: Checklist for code of the social system (tasks 68–91, D80) – pe
 
 # Lista kontrolna systemu społecznościowego (D80)
 
-Źródło prawdy: `docs/decisions.md` D80 i plik taska. Przy każdej akcji i każdym odczycie sprawdź:
+Źródło prawdy: `docs/decisions/d80/` (zawsze `scope.md` i `roles-bans-blocks.md`, do tego plik obszaru taska; indeks w `docs/decisions.md`, D80) i plik taska. Przy każdej akcji i każdym odczycie sprawdź:
 
 1. **Sesja i właściciel**: `requireUser()`, `userId` z sesji, guardy D71, wynik `{ ok, ... }` bez wyjątków.
 2. **Uprawnienia** tylko przez `lib/social/permissions.ts` (`canInteract`, `hiddenAuthorsFor` itp.): ban w społeczności autora, ban globalny (tylko odczyt), blokada w obie strony, wyłączone komentarze, rola (admin, moderator autora, moderator kategorii), ustawienie DM „kto może pisać”. Nigdy warunek tylko w komponencie.
