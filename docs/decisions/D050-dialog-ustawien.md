@@ -1,6 +1,6 @@
 # D50 – Dialog ustawień (2026-11-03)
 
-Status: aktualna. Zmieniona w D80 (nowe ustawienia).
+Status: aktualna. Zmieniona w D80 (nowe ustawienia), D83 (zakładki, wylogowanie w sidebarze).
 
 - Motyw, język, zmiana hasła i wylogowanie przechodzą z sidebaru do jednego dialogu „Settings”, otwieranego z sidebaru; osobnej strony ustawień nie ma (decyzja użytkownika, task 46).
 - Motyw w dialogu ma trzy opcje: jasny, ciemny i systemowy.

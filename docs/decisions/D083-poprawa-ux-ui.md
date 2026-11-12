@@ -1,0 +1,78 @@
+# D83 – Poprawa UX i UI (2026-11-12)
+
+Status: aktualna. Zmienia D16, D17, D27, D30, D42, D50, D54 oraz części D80 `navigation.md`, `text-interactions.md`, `stats-discovery.md`.
+
+- Task zbiorczy 51, subtaski 93–107, decyzje użytkownika z 2026-11-12 na podstawie raportu [`docs/ui-ux-report.md`](../ui-ux-report.md) (ocena 6/10, zrzuty w `docs/ui-ux-report/`). Numery w nawiasach (np. 3.1) to punkty raportu. Priorytet: funkcjonalność i wygoda, potem spójność, potem estetyka; prostota, mało animacji.
+
+## Przebieg i branche
+
+- Branch zbiorczy `fix/ui` z `feature/social`, lokalny, niepushowany. Subtaski: `feature/NN-<slug>` z aktualnego `fix/ui`, jeden commit `NN: <opis>`, merge `--no-ff` do `fix/ui`. `fix/ui` do `feature/social`/`develop` merguje użytkownik.
+- Przebieg bez nadzoru: `/autorun 51`. Rozstrzygnięcia Claude'a z przebiegu w sekcji „Rozstrzygnięcia Claude'a do potwierdzenia” na końcu tego pliku.
+- Bez nowych pakietów npm. Nowe komponenty shadcn (np. `tabs`, `avatar`, `skeleton`, `badge`) wolno dodać do `components/ui`, jeśli korzystają tylko z zainstalowanego `radix-ui`: źródło z MCP `shadcn` (`view_items_in_registries`), importy z `radix-ui`, zapis plikiem. Nie przez `npx shadcn add`, jeśli ten chce instalować zależności (`autorun-guard.sh` blokuje instalację). Czas względny przez `Intl.RelativeTimeFormat`.
+- `ui-checker` używa Playwright MCP (`mcp__playwright__*`) i sprawdza każdy subtask zmieniający UI: dwa warianty (1280 jasny `/en`, 375 ciemny `/pl`). Audyt końcowy (107): wszystkie 8 wariantów i obszary niesprawdzone w raporcie; wynik w `docs/ui-ux-report-after.md` ze zrzutami w `docs/ui-ux-report-after/`, ten sam format i ocena 0–10.
+- Testy: każdy subtask aktualizuje E2E i helpery, które psuje (selektory, adresy, teksty), w tym samym tasku.
+
+## Nazewnictwo i adresy (93)
+
+- W UI kontener to „Książka” / „Book”, element to „Rozdział” / „Chapter” (pl: Książki, Nowa książka, Nowy rozdział; en: Books, New book, New chapter). Dotyczy wszystkich wartości w `messages/*.json`, tytułów stron i metadanych, także stron publicznych. Klucze w `messages/*.json` (np. `folders.*`), modele (`Folder`, `Story`), kolekcje i nazwy w kodzie bez zmian. Zmienia D16 tylko w warstwie UI.
+- Nowe adresy prywatne, bez przekierowań (na produkcji nie ma jeszcze danych użytkowników): `/books` (lista, dawne `/stories`), `/books/[id]` (dawne `/folders/[id]`), `/chapters/[id]` (edytor, dawne `/stories/[id]`). Route Handlery eksportu: `/books/[id]/export…` i `/chapters/[id]/export…` (dawne `/folders/[id]/export…`, `/stories/[id]/export…`). Stare adresy kończą się 404. Adresy publiczne `/p/<nick>/<książka>/<rozdział>` bez zmian.
+
+## Daty (94)
+
+- Każda data z godziną przez `LocalDate` (strefa przeglądarki), także feed, statystyki, moderacja, admin, fora, komentarze, notatka o banie (8.1). Daty bez godziny mogą zostać w UTC.
+- Powiadomienia i lista wiadomości: czas względny („2 godz. temu”, pełna data w `title`) i grupy „Dzisiaj” / „Wcześniej” w powiadomieniach (6.5).
+
+## Nawigacja i układ (95, 96)
+
+- Na górze sidebara nazwa aplikacji (link do `/`). Na dole zamiast pozycji „Ustawienia” blok konta: avatar i nick, menu: „Mój profil”, „Ustawienia”, „Wyloguj”. Wylogowanie znika z dialogu ustawień (zmienia D50). Gość: bez zmian poza nazwą aplikacji.
+- „Feed” po polsku „Aktualności”. „Moderacja” na dole listy, nad blokiem konta. Licznik nieprzeczytanych przy „Wiadomości” (104) i oczekujących zgłoszeń przy „Moderacja” (106).
+- Mobile: cienki pasek u góry z hamburgerem i nazwą aplikacji (2.4).
+- Dialogi bez `backdrop-blur`, samo przyciemnienie (1.5).
+- Dwa warianty szerokości treści (1.4): wąski (listy, czytanie, formularze; `max-w-3xl`) i szeroki (tabele, książka, statystyki; `max-w-5xl`), wspólny komponent kontenera używany na wszystkich stronach.
+- Zalogowany widzi sidebar na wszystkich stronach `/p/...` (1.3); gość bez zmian.
+
+## Książki, rozdziały, wersje (97, 98)
+
+- Widoczny przycisk główny „Nowa książka” na liście i „Nowy rozdział” w książce; w menu ⋮ zostają akcje rzadkie (3.2).
+- Tryb `created` sortuje rozdziały od najstarszego (`createdAt` rosnąco, remis `_id` rosnąco) – dotyczy listy, panelu Chapters, eksportu, wersji i strony publicznej (wspólne `chapterOrder`). Wartość `created` zostaje, więc wszystkie istniejące książki w tym trybie zmieniają kolejność bez migracji danych (zmienia D17).
+- Na liście rozdziałów tylko tagi różne od tagów książki (3.4). Status publikacji jako etykieta tekstowa „Publiczny” / „Niepubliczny” zamiast samej ikony (3.5). Link publiczny jako kompaktowy wiersz „Publiczny · Kopiuj link · Otwórz” bez pola z URL, w książce i w edytorze (3.6). Szkielety o stałej wysokości tam, gdzie elementy doładowują się po hydratacji (3.9).
+- Nowe pole `folders.description` (opis książki, zwykły tekst, do 1000 znaków w `lib/limits.ts`, D72), edycja na stronie książki, widoczny na publicznej stronie książki i w wynikach wyszukiwarki; `npm run seed` wypełnia opisy.
+- Wersje (3.8): „Przywróć całą wersję” nieaktywny, gdy żaden rozdział się nie różni; styl drugorzędny i `AlertDialog` z potwierdzeniem; klikalny cały wiersz checkboxa.
+
+## Edytor (99)
+
+- Górny odstęp przewijania (`TOP_GAP`) zmniejszony do dwóch wysokości linii, także w notatkach (4.1, 3.7); dolny odstęp bez zmian (zmienia D30 i pozycję „na początku” z D27).
+- Układ mobile/desktop bez przeskoku po hydratacji: przełączanie w CSS albo oba warianty ukryte do hydratacji (4.2).
+- Pasek narzędzi notatek (rozdziału i książki) widoczny tylko, gdy pole ma fokus; pasek treści bez zmian (4.3).
+- Tryby edytora: „Tekst” / „Markdown” (en: „Text” / „Markdown”) zamiast „Podgląd” / „Źródło” (4.4).
+- Sidebar aplikacji zwinięty domyślnie na stronie edytora; ręczne rozwinięcie zapamiętane jak dotychczasowy stan sidebara (4.5).
+- Stały, cichy status „Zapisano” w stopce obok licznika słów, bez animacji (4.6). Margines kart w panelu Narzędzia (4.7).
+
+## Strona główna (100)
+
+- Zalogowany: na górze wiersz „Ostatnio edytowane: <rozdział> → Kontynuuj” (link do edytora) i przycisk „Nowa książka” (2.1).
+- Sekcja „Popularne w kategoriach” usunięta, kategorie jako filtr chipów nad listą; sekcja „Od obserwowanych” usunięta, bo dubluje Aktualności (2.2, zmienia D54 i D80 `stats-discovery.md`). Kod i zapytania, które zostają bez użycia, usunięte.
+- Wyszukiwarka: przycisk z ikoną lupy, krótszy placeholder („Szukaj opowiadań”), etykiety „Kategorie” / „Tagi” (2.3). Mobile: data w linii z autorem (2.4).
+
+## Ustawienia, profil, biblioteka, statystyki (101, 102)
+
+- Dialog ustawień z zakładkami (po lewej, na mobile u góry): Wygląd, Profil, Konto, Powiadomienia (7.1, zmienia D50). Dialog można otworzyć na wybranej zakładce.
+- Na własnym profilu przycisk „Edytuj profil” otwierający zakładkę Profil; jedna nazwa „O mnie” (6.6).
+- „Biblioteka publiczna” przeniesiona do „Zarządzaj półkami” (5.1).
+- Statystyki: wykres bez animacji (`isAnimationActive={false}`), szkielet o stałej wysokości, opis „Książki i rozdziały” w jednym zdaniu (5.3).
+
+## Społeczność (103, 104, 105)
+
+- Reakcje: widoczne tylko użyte, z licznikami, i jeden przycisk „Dodaj reakcję” z wyborem; łączny licznik usunięty (6.3, zmienia D80 `text-interactions.md`).
+- Fora: pod nazwą kategorii linia meta (liczba wątków, ostatnia aktywność) (6.1); formularz nowego wątku za przyciskiem „Nowy wątek” (6.2).
+- Wiadomości: podgląd ostatniej wiadomości i wyróżnienie nieprzeczytanych (6.4), licznik w sidebarze. Aktualności: jeden wyróżniony link na wpis (tytuł rozdziału), reszta bez podkreślenia (5.2).
+- Strona książki: „Czytaj dalej” jako przycisk główny, średnia jako liczba, gwiazdki tylko jako „Twoja ocena”, okładka i opis (6.7). Obie oceny (książki i rozdziału) zostają.
+- Rozdział publiczny: nawigacja „Następny rozdział →” bezpośrednio pod tekstem, potem reakcje, ocena rozdziału, zgłoszenie; pasek zakładek z ramką zamiast cienia (6.8).
+
+## Moderacja i admin (106)
+
+- Licznik oczekujących zgłoszeń przy zakładce i w sidebarze (7.2). Ban globalny jako przycisk w stylu destrukcyjnym; etykieta „Zgłoszony profil: <nick>” (7.3).
+
+## Rozstrzygnięcia Claude'a do potwierdzenia
+
+(uzupełniane w przebiegu)

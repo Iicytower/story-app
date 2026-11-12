@@ -1,6 +1,6 @@
 # D42 – Publiczna wyszukiwarka, strona główna i sidebar (2026-11-01, zmienione 2026-11-04 w D54)
 
-Status: aktualna. Zmieniona w D54, D50, D80.
+Status: aktualna. Zmieniona w D54, D50, D80, D83 (sidebar).
 
 - Zmienia D1, D4, D29, D36, D38 i D40. Strona `/` to publiczna wyszukiwarka i widok domyślny po zalogowaniu (logowanie, rejestracja i Home prowadzą na `/`). Zalogowany widzi tę samą stronę z sidebarem.
 - Treść: regex bez rozróżniania wielkości liter, jak na `/stories`. `$text` nie zna polskiego, Atlas Search wymagałby innego obrazu Dockera i indeksu poza `syncIndexes()`, a embeddingi wysyłają tekst do dostawcy i kosztują. Regex nie zna odmiany („ręka” nie znajdzie „ręce”), nie widzi tekstu rozdzielonego znacznikami (`**a** b` dla „a b”) i przegląda wszystkie publiczne rozdziały. Przy dużej liczbie tekstów trzeba wrócić do Atlas Search.

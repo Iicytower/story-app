@@ -46,7 +46,22 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 34 | [Rymy](done/34-rhymes.md) | 25, 27 | [x] |
 | 35 | [Filtry rymów](done/35-rhyme-filters.md) | 34 | [x] |
 | 55 | [Korekta w głównym edytorze](done/55-inline-proofreading.md) | 23 | [x] |
-| 51 | [Poprawa wyglądu (mobile i web)](51-ui-polish.md) | – | [ ] |
+| 51 | [Poprawa UX i UI (zbiorczy)](51-ui-polish.md) | – | [ ] |
+| 93 | ↳ [Nazewnictwo „Książka/Rozdział” i nowe adresy](93-books-naming-routes.md) (subtask 51) | – | [ ] |
+| 94 | ↳ [Daty w lokalnej strefie i czas względny](94-local-dates.md) (subtask 51) | 93 | [ ] |
+| 95 | ↳ [Sidebar: nazwa aplikacji, blok konta, pasek mobile](95-sidebar-account.md) (subtask 51) | 93 | [ ] |
+| 96 | ↳ [Szerokości treści i sidebar na stronach publicznych](96-layout-widths.md) (subtask 51) | 95 | [ ] |
+| 97 | ↳ [Główne akcje i kolejność rozdziałów](97-book-actions-order.md) (subtask 51) | 93 | [ ] |
+| 98 | ↳ [Strona książki, opis i wersje](98-book-page.md) (subtask 51) | 97 | [ ] |
+| 99 | ↳ [Edytor: odstęp, układ mobile, paski, nazwy trybów](99-editor-ux.md) (subtask 51) | 95 | [ ] |
+| 100 | ↳ [Strona główna: skrót do pisania i mniej sekcji](100-home-page.md) (subtask 51) | 97 | [ ] |
+| 101 | ↳ [Dialog ustawień z zakładkami](101-settings-tabs.md) (subtask 51) | 95 | [ ] |
+| 102 | ↳ [Profil, biblioteka, statystyki](102-profile-library-stats.md) (subtask 51) | 101 | [ ] |
+| 103 | ↳ [Reakcje i fora](103-reactions-forums.md) (subtask 51) | 94 | [ ] |
+| 104 | ↳ [Wiadomości i aktualności](104-messages-feed.md) (subtask 51) | 94, 95 | [ ] |
+| 105 | ↳ [Publiczna strona książki i rozdziału](105-public-book-chapter.md) (subtask 51) | 96, 98, 103 | [ ] |
+| 106 | ↳ [Moderacja i panel admina](106-moderation-admin.md) (subtask 51) | 95 | [ ] |
+| 107 | ↳ [Audyt końcowy UI/UX i raport po poprawkach](107-ui-audit.md) (subtask 51) | 93–106 | [ ] |
 | 66 | [Okładki folderów i oznaczenie 18+ (zbiorczy)](done/66-covers-and-adult-rating.md) | – | [x] |
 | 65 | ↳ [Oznaczenie 18+](done/65-adult-rating.md) (subtask 66) | – | [x] |
 | 26 | ↳ [Upload okładek](done/26-cover-upload.md) (subtask 66) | 65 | [x] |
@@ -110,6 +125,7 @@ Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 - `feature/NN-<slug>` – jeden branch na task, tworzony z `develop`.
 - `security` – lokalny branch zbiorczy poprawek bezpieczeństwa (taski 56–63 i aktualizacja zależności z 2026-11-09), z `develop`. Branche tasków z niego i merge do niego; do `develop` merguje użytkownik po przeglądzie.
 - `feature/social` – lokalny branch zbiorczy systemu społecznościowego (task 68, subtaski 69–91, D80), z `develop`. Branche subtasków z niego i merge do niego; nie jest pushowany, do `develop` merguje użytkownik po przeglądzie. `develop` mergujemy do niego okresowo.
+- `fix/ui` – lokalny branch zbiorczy poprawy UX i UI (task 51, subtaski 93–107, D83), z `feature/social`. Branche subtasków `feature/NN-<slug>` z niego i merge do niego; nie jest pushowany, dalej merguje użytkownik.
 - Task zbiorczy (np. 66): jego branch z `develop`, a branch każdego subtasku z brancha zbiorczego; subtask merge'ujemy do brancha zbiorczego, a ten do `develop` dopiero po wszystkich subtaskach.
 
 ## Definicja „zrobione” (każdy task)

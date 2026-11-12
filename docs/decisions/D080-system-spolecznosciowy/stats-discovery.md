@@ -1,6 +1,6 @@
 # D80 – Statystyki i odkrywanie (2026-11-10)
 
-Status: aktualna. Część D80, spis w [index.md](index.md).
+Status: aktualna. Zmieniona w D83 (bez „Od obserwowanych”). Część D80, spis w [index.md](index.md).
 
 - Statystyki autora (`/stats`): unikalni czytelnicy na dobę (zalogowany po koncie, gość po HMAC IP jak D40/D74, bez jawnego IP), reakcje, oceny, komentarze, obserwujący, dodania do bibliotek; per rozdział i w czasie (wykresy `recharts`). Wpisy „kto czytał” (rozdział, dzień, czytelnik) z unikalnym indeksem i TTL 30 dni; udany zapis nowego wpisu zwiększa dzienny licznik (rozdział, dzień), który zostaje na zawsze.
 - Strona główna (obok „Recently published”, D54): popularne tygodnia (unikalni czytelnicy z 7 dni), najwyżej oceniane (średnia bayesowska książek z co najmniej 5 ocenami), od obserwowanych (zalogowany), popularne w predefiniowanych kategoriach (D79). Wyniki w kolekcji `rankings`, przeliczane leniwie raz na godzinę. Treści 18+ ze znaczkiem.

@@ -1,6 +1,6 @@
 # D17 – Tryby sortowania (2026-10-20)
 
-Status: aktualna. Zmieniona w D24 (miejsce zapisu), D55.
+Status: aktualna. Zmieniona w D24 (miejsce zapisu), D55, D83 (created od najstarszego).
 
 - Tryb folderów (`settings.folders.sort`, D24; pierwotnie `users.folderSort`): `updated` (domyślny, `lastActivityAt` malejąco) | `manual` | `alpha`. `folders.chapterSort`: `created` (domyślny, `createdAt` malejąco) | `manual` | `alpha`. Remis rozstrzyga `_id`. Specyfikacje sortowania w `lib/folders/sort.ts` (`folderOrder`, `chapterOrder`); kolejność rozdziałów w eksporcie, udostępnieniu i panelu Chapters (04, 05) bierze się z `chapterOrder` i `findChaptersInOrder`.
 - `alpha`: kolacja `{ locale: "pl", strength: 2 }` – siła 2 ignoruje wielkość liter („a” = „A”, remis po `_id`), domyślna 3 tylko ustawia je obok siebie.

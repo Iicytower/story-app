@@ -1,6 +1,6 @@
 # D27 – Pozycja przewijania przy przełączaniu widoków (2026-10-30, zmienione 2026-11-01 w D41)
 
-Status: aktualna. Zmieniona w D41.
+Status: aktualna. Zmieniona w D41, D83 (górny odstęp).
 
 - Preview ↔ Source: dopasowanie po bloku. `blockStarts` (`lib/editor/source-blocks.ts`) wylicza, gdzie w markdownie zaczyna się każdy węzeł najwyższego poziomu (tokeny lexera `MarkdownManager`, w tym puste akapity z dodatkowych pustych linii, jak w `@tiptap/markdown`). Przy przełączeniu zapamiętywany jest blok przy górnej krawędzi widoku i ułamek jego wysokości; nowy widok przewija się do tego samego miejsca przed odmalowaniem (`useLayoutEffect`). Wysokość linii w textarea (z zawijaniem) mierzy ukryta kopia pola. Widok przewinięty na sam początek zostaje na początku.
 - Zakładki Notes / Chapters (desktop, bez Split) i Story / Notes / Chapters (wąski ekran) są zamontowane jednocześnie; nieaktywne mają `visibility: hidden` (nie `display: none`, które może wyzerować przewinięcie). Zostaje więc też tryb Preview/Source i historia Undo. Przy Split i Hide/Show grupa kolumn nadal się remontuje, a pozycję przywraca pamięć opisana niżej.

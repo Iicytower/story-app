@@ -1,6 +1,6 @@
 # D80 – Interakcje z tekstem (2026-11-10)
 
-Status: aktualna. Część D80, spis w [index.md](index.md).
+Status: aktualna. Zmieniona w D83 (pasek reakcji). Część D80, spis w [index.md](index.md).
 
 - Komentarze pod publicznym rozdziałem i osobny wątek pod publicznym spisem książki; komentarz i jeden poziom odpowiedzi. Autor wyłącza komentarze per książka lub rozdział (istniejące zostają, ukryte).
 - Reakcje: ❤️ 😂 😮 😢 🔥 👏, jedna na obiekt od użytkownika (wybór innej nadpisuje, ponowny klik zdejmuje). Ten sam mechanizm dla rozdziału, komentarza i posta forum. Reakcje jawne: klik w licznik pokazuje listę nicków.

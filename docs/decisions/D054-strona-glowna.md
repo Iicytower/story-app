@@ -1,6 +1,6 @@
 # D54 – Strona główna z hero i ostatnio opublikowanymi (2026-11-04)
 
-Status: aktualna. Zmienia D38, D42, D46.
+Status: aktualna. Zmienia D38, D42, D46. Zmieniona w D83 (sekcje, skrót do pisania).
 
 - Zmienia D38, D42 i D46 (task 49). `/` zostaje jedną stroną dla gościa i zalogowanego, wyszukiwarka zostaje na `/`. Gość widzi hero (nagłówek, opis, „Create account” i „Log in”), potem wyszukiwarkę i „Recently published”; zalogowany to samo bez hero, z sidebarem. Sidebar traci pozycję Search, zostaje Home (decyzje użytkownika).
 - Dialog logowania z D42 bez zmian; przycisk w prawym górnym rogu i CTA hero otwierają ten sam dialog, CTA w trybie rejestracji albo logowania.
