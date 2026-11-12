@@ -21,6 +21,7 @@ import { ownsPlace } from "@/lib/social/visibility";
 import { stripComments } from "@/lib/stories/strip-comments";
 import { ReportButton } from "@/components/report-dialog";
 import { BlurredCover } from "../adult-cover";
+import { PublicBreadcrumb } from "../../breadcrumb";
 import { Comments } from "../comments";
 import { ChapterReactions } from "../reactions";
 import { RatingSection } from "../ratings";
@@ -122,12 +123,10 @@ export default async function PublishedChapterPage({
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10">
-      <p className="text-muted-foreground text-sm">
-        {t("folderBy", {
-          folder: chapter.folderName,
-          nickname: chapter.nickname,
-        })}
-      </p>
+      <PublicBreadcrumb
+        nickname={chapter.nickname}
+        folder={{ name: chapter.folderName, path: chapter.folderPath }}
+      />
       <div className="-mt-6 flex items-center gap-3">
         <h1 className="text-3xl font-bold [overflow-wrap:anywhere]">
           {chapter.title}
@@ -174,9 +173,7 @@ export default async function PublishedChapterPage({
           />
           {!own && (
             <ReportButton
-              target={
-                viewer.ok ? { type: "story", id: place.storyId } : null
-              }
+              target={viewer.ok ? { type: "story", id: place.storyId } : null}
               label={tReports("reportChapter")}
               callbackUrl={`/${await getLocale()}${chapter.path}`}
             />
