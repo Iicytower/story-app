@@ -6,6 +6,7 @@ import { Link, redirect } from "@/i18n/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { listConversations } from "@/lib/social/direct-messages";
 import { cn } from "@/lib/utils";
+import { NewMessageButton } from "./new-message-button";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -21,7 +22,10 @@ export default async function MessagesPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <h1 className="text-2xl font-semibold">{t("title")}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+        <NewMessageButton />
+      </div>
       {conversations.length === 0 ? (
         <p className="text-muted-foreground">{t("empty")}</p>
       ) : (
