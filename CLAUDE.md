@@ -23,7 +23,7 @@ Web app for writing stories (to become public, D46) in markdown (Next.js App Rou
 4. Write the tests from the task's "Testy" section together with the code (not at the end). Every acceptance criterion must have a test or be marked `manual`.
 5. `npm run verify` must pass. Do not close a task with red or skipped tests.
 6. In the reply to the user, give the mapping: acceptance criterion → test (or the result of the `manual` check).
-7. Status `[x]`, move the task file to `docs/tasks/done/` (`git mv`) and fix the link in the table, then one commit per task on the task branch (message: `NN: <short description>`). Merge into `develop` when the task is finished; push `develop` only when the user asks. Commit messages and PR titles and descriptions are in English. **Never merge into `staging` or `main` and never push to `staging`, `main` or `master`** – only the user does that, also when asked for tests on staging (D45).
+7. Status `[x]`, move the task file to `docs/tasks/done/` (`git mv`) and fix the link in the table, then one commit per task on the task branch (message: `NN: <short description>`). Merge into `develop` when the task is finished; push `develop` only when the user asks. Commit messages and PR titles are in English; PR descriptions are in Polish. **Never merge into `staging` or `main` and never push to `staging`, `main` or `master`** – only the user does that, also when asked for tests on staging (D45).
 
 ## Commands
 
