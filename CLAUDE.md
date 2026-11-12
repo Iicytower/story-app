@@ -7,7 +7,7 @@ Aplikacja webowa do pisania opowiadań (docelowo publiczna, D46) w markdown (Nex
 ## Dokumentacja
 
 - `docs/spec.md` – specyfikacja funkcjonalna (kopia dokumentu z Claude Docs, nie edytować bez prośby).
-- `docs/decisions.md` – decyzje i odstępstwa od spec; **ma pierwszeństwo nad spec**. Nową decyzję dopisz tutaj.
+- `docs/decisions.md` – decyzje i odstępstwa od spec; **ma pierwszeństwo nad spec**. Nową decyzję dopisz tutaj. Duże decyzje mają własne pliki w `docs/decisions/` (D80: `docs/decisions/d80/<obszar>.md`, w `decisions.md` tylko indeks) – czytaj tylko pliki potrzebne do taska.
 - `docs/testing.md` – strategia testów (unit / integracyjne z MongoDB w Dockerze / E2E Playwright). **Obowiązkowa przy każdym tasku.**
 - `docs/tasks/README.md` – lista tasków ze statusami, branche i definicja „zrobione”; szczegóły otwartych tasków w `docs/tasks/NN-*.md` (sekcje Zakres, Kryteria akceptacji, Testy), zakończonych w `docs/tasks/done/`. Otwarte taski są w tabeli w kolejności realizacji.
 - `README.md` (po angielsku) – krótki, marketingowy opis aplikacji, stack, proces pracy z Claude Code i uruchamianie lokalne (ręcznie i skillem `/local-setup`). Aktualizuj go w ramach taska, który zmienia coś z tych sekcji (np. stack, komendy, wymagania, kroki uruchomienia, skille, hooki); przy zmianie kroków uruchomienia popraw też `.claude/skills/local-setup/SKILL.md`. Opis domenowy zostaje ogólny (kilka zdań), bez listy funkcji.
@@ -58,5 +58,5 @@ Aplikacja webowa do pisania opowiadań (docelowo publiczna, D46) w markdown (Nex
 - Hook SubagentStop: ten sam `tsc --noEmit` po agentach `implementer`, `verifier`, `merger`.
 - Hooki trybu `/autorun` (aktywne tylko z plikiem `.claude/autorun.lock`): `autorun-guard.sh` odrzuca `AskUserQuestion` i instalację pakietów, `autorun-continue.sh` nie pozwala zakończyć przed domknięciem subtasków, `autorun-state.sh` przywraca stan po kompakcji.
 - Skille dla agentów: `test-patterns` (wczytany w `implementer` i `verifier`), `social-checklist` (taski 68–91).
-- Agenci (`.claude/agents/`): `researcher`, `implementer`, `verifier`, `reviewer`, `ui-checker`, `security-auditor`, `docs-keeper`, `merger`. Główna sesja steruje, pracę (research, kod, testy, przegląd) zleca agentom, żeby oszczędzać kontekst. Agenci zapisujący pliki pracują pojedynczo (jedno drzewo robocze).
+- Agenci (`.claude/agents/`): `researcher`, `implementer`, `verifier`, `reviewer`, `ui-checker`, `security-auditor`, `docs-keeper`, `merger`. Główna sesja steruje, pracę (research, kod, testy, przegląd) zleca agentom, żeby oszczędzać kontekst. Agenci zapisujący pliki pracują pojedynczo (jedno drzewo robocze). Modele: Opus dla `implementer`, `reviewer`, `security-auditor`; Sonnet dla pozostałych. Drobne zmiany (kilka plików, bez nowej logiki uprawnień) główna sesja robi sama, bez agenta.
 - Skill `/autorun <task zbiorczy>`: przebieg tasków bez udziału użytkownika (D80, „Przebieg i branche”).

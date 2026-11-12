@@ -4,7 +4,7 @@
 
 ## Zakres
 
-1. Przegląd D80, sekcja „Rozstrzygnięcia Claude'a do potwierdzenia”; zmiany zgłosić jako osobne poprawki.
+1. Przegląd sekcji „Rozstrzygnięcia Claude'a do potwierdzenia” we wszystkich plikach [`docs/decisions/d80/`](../decisions/d80/); zmiany zgłosić jako osobne poprawki.
 2. Backup bazy (`scripts/backup.sh`) przed merge'em.
 3. Merge `feature/social` → `develop`.
 4. Serwer narzędzi: `npm run tools:remote` (nowa usługa `realtime`, klasyfikator z `?size=256x256` dla avatarów – bez tego upload avatara zwraca `TOOL_UNAVAILABLE`). Sprawdzić, że obraz `node:24.22.2-alpine` istnieje i usługa wstaje.
