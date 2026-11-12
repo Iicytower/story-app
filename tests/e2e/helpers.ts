@@ -167,7 +167,7 @@ export async function sidebarAction(page: Page, name: string) {
   if (await menu.isVisible()) await menu.click();
   await page
     .getByRole("navigation", { name: "Main" })
-    .getByRole(name === "Folders" ? "link" : "button", { name, exact: true })
+    .getByRole(name === "Books" ? "link" : "button", { name, exact: true })
     .click();
 }
 

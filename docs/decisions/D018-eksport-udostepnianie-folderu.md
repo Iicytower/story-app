@@ -1,6 +1,6 @@
 # D18 – Eksport i udostępnianie folderu (2026-10-20)
 
-Status: aktualna. Część o udostępnianiu zastąpiona przez D38.
+Status: aktualna. Część o udostępnianiu zastąpiona przez D38. Zmieniona w D83 (adresy).
 
 - `GET /folders/[id]/export`: zip budowany w pamięci przez `fflate` (`zipSync`). Rozdziały w kolejności `chapterSort` jako `NN-<nazwa>.md` (numer od 1, dopełniony zerami do liczby cyfr liczby rozdziałów, min. 2; nazwa jak w D10, fallback `chapter`), frontmatter jak w D10. Numer rozróżnia też rozdziały o tej samej nazwie pliku.
 - `notes.md`: frontmatter `title` (nazwa folderu), `createdAt` (folderu), `updatedAt` (`notesUpdatedAt`), potem notatki folderu bez zmian. Archiwum: `<nazwa folderu>.zip` (fallback `folder.zip`). Komentarze HTML zostają w eksporcie, jak w D10.

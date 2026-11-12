@@ -1,10 +1,10 @@
 import { Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { saveFolderNotes } from "@/app/[locale]/(protected)/folders/actions";
+import { saveFolderNotes } from "@/app/[locale]/(protected)/books/actions";
 import {
   importStories,
   saveStory,
-} from "@/app/[locale]/(protected)/stories/actions";
+} from "@/app/[locale]/(protected)/chapters/actions";
 import { requireUser } from "@/lib/auth/session";
 import { MAX_CONTENT_LENGTH, MAX_NOTES_LENGTH } from "@/lib/limits";
 import { Folder } from "@/lib/models/folder";

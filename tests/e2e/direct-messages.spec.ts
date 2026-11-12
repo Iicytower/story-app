@@ -104,7 +104,7 @@ test.describe("signed in", () => {
     page,
   }) => {
     const erin = await loginAs(browser, "erin");
-    await erin.page.goto("/en/stories");
+    await erin.page.goto("/en/books");
     const dialog = await openSettings(erin.page);
     const nobody = dialog
       .getByRole("group", { name: en.settings.dmFrom })

@@ -57,7 +57,7 @@ test("a new message and notification reach the open tab without polling (3)", as
   await realtime("up");
   await page.clock.install();
   const opened = streamOpened(page);
-  await page.goto("/en/stories");
+  await page.goto("/en/books");
   await opened;
   await expect(messagesLink(page)).toBeVisible();
   // With the stream up the counters do not poll.
@@ -93,7 +93,7 @@ test("polls while the realtime service is down or goes down (4)", async ({
   browser,
 }) => {
   await page.clock.install();
-  await page.goto("/en/stories");
+  await page.goto("/en/books");
   await expect(messagesLink(page)).toBeVisible();
 
   const first = await daveWrites(browser, "While it is down");

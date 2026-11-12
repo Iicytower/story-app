@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { importStories } from "@/app/[locale]/(protected)/stories/actions";
+import { importStories } from "@/app/[locale]/(protected)/chapters/actions";
 import type { ActionError } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import {

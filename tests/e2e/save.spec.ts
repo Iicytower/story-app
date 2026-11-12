@@ -27,7 +27,7 @@ function editor(page: Page) {
 test("autosaves 20 seconds after the last keystroke", async ({ page }) => {
   const id = await seedStory("alice", { title: "Autosave" });
   await page.clock.install();
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { title, content, notes, status } = editor(page);
 
   await content.fill("Once upon a time");
@@ -50,7 +50,7 @@ test("typing with pauses shorter than 20 seconds does not save", async ({
 }) => {
   const id = await seedStory("alice", { title: "Pauses" });
   await page.clock.install();
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { content, status } = editor(page);
   const requests = countSaveRequests(page);
 
@@ -72,7 +72,7 @@ test("hiding the tab saves at once, and only when something changed", async ({
 }) => {
   const id = await seedStory("alice", { title: "Hidden" });
   await page.clock.install();
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { content, status } = editor(page);
   const requests = countSaveRequests(page);
 
@@ -88,7 +88,7 @@ test("hiding the tab saves at once, and only when something changed", async ({
 
 test("Ctrl+S saves immediately", async ({ page }) => {
   const id = await seedStory("alice", { title: "Shortcut" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { content, status } = editor(page);
 
   await content.fill("Saved right away");
@@ -104,8 +104,8 @@ test("shows a conflict when the story was saved in another tab", async ({
 }) => {
   const id = await seedStory("alice", { title: "Two tabs" });
   const other = await context.newPage();
-  await page.goto(`/stories/${id}`);
-  await other.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
+  await other.goto(`/chapters/${id}`);
 
   await editor(page).content.fill("From the first tab");
   await page.keyboard.press("Control+s");
@@ -125,7 +125,7 @@ test("does not save with an empty title and saves once a title is entered", asyn
 }) => {
   const id = await seedStory("alice", { title: "Untitled soon" });
   await page.clock.install();
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { title, content, status } = editor(page);
 
   await title.fill("");
@@ -152,7 +152,7 @@ test("does not save with an empty title and saves once a title is entered", asyn
 test("shows an error for a duplicate title", async ({ page }) => {
   await seedStory("alice", { title: "Taken" });
   const id = await seedStory("alice", { title: "Mine" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { title, content, status } = editor(page);
 
   await content.fill("New content");
@@ -160,7 +160,7 @@ test("shows an error for a duplicate title", async ({ page }) => {
   await page.keyboard.press("Control+s");
 
   await expect(status).toHaveText(
-    "A story with this title already exists in this folder.",
+    "A chapter with this title already exists in this book.",
   );
   expect(await findStoryById(id)).toMatchObject({ title: "Mine", content: "" });
 });
@@ -173,7 +173,7 @@ test("shows an error when the whole content is cleared and keeps the database in
     content: "Do not lose me",
   });
   const before = await findStoryById(id);
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { content, status } = editor(page);
 
   await content.fill("");
@@ -185,7 +185,7 @@ test("shows an error when the whole content is cleared and keeps the database in
 
 test("warns before closing the tab with unsaved changes", async ({ page }) => {
   const id = await seedStory("alice", { title: "Unsaved" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const dialogs: string[] = [];
   page.on("dialog", async (dialog) => {
     dialogs.push(dialog.type());
@@ -202,7 +202,7 @@ test("does not warn before closing the tab when everything is saved", async ({
   page,
 }) => {
   const id = await seedStory("alice", { title: "All saved" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const dialogs: string[] = [];
   page.on("dialog", async (dialog) => {
     dialogs.push(dialog.type());

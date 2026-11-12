@@ -24,10 +24,10 @@ async function expectPolish(field: Locator) {
 
 test("story text fields are spell checked in Polish", async ({ page }) => {
   const id = await seedStory("alice", { title: "Pisownia", folder: "Book" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
 
   await expectPolish(page.getByRole("textbox", { name: "Title" }));
-  for (const label of ["Content", "Notes", "Folder notes"]) {
+  for (const label of ["Content", "Notes", "Book notes"]) {
     const editor = markdownEditor(page, label);
     await expectPolish(editor.field);
     await editor.button("Source").click();
@@ -44,19 +44,19 @@ test("story text fields are spell checked in Polish", async ({ page }) => {
   await expectPolish(chapter.getByLabel("Title"));
   await chapter.getByRole("button", { name: "Cancel" }).click();
 
-  await page.goto(`/folders/${await seedFolder("alice", "Book")}`);
-  await expectPolish(markdownEditor(page, "Folder notes").field);
+  await page.goto(`/books/${await seedFolder("alice", "Book")}`);
+  await expectPolish(markdownEditor(page, "Book notes").field);
 
-  await page.goto("/stories");
-  await menuAction(page, "Actions", "New story");
-  const story = page.getByRole("dialog", { name: "New story" });
+  await page.goto("/books");
+  await menuAction(page, "Actions", "New chapter");
+  const story = page.getByRole("dialog", { name: "New chapter" });
   await expectPolish(story.getByLabel("Title"));
-  await expect(story.getByLabel("Folder")).not.toHaveAttribute("lang", "pl");
+  await expect(story.getByLabel("Book")).not.toHaveAttribute("lang", "pl");
 });
 
 test("the rest of the UI is not marked as Polish", async ({ page }) => {
   const id = await seedStory("alice", { title: "UI" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
 
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(
@@ -72,12 +72,12 @@ test("the rest of the UI is not marked as Polish", async ({ page }) => {
     await polish.evaluateAll((fields) =>
       fields.map((field) => field.getAttribute("aria-label")),
     ),
-  ).toEqual(["Title", "Content", "Folder notes", "Notes"]);
+  ).toEqual(["Title", "Content", "Book notes", "Notes"]);
 });
 
 test("the folder menu sets the folder's language", async ({ page }) => {
   const id = await seedStory("alice", { title: "Język", folder: "Lang" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   await page.getByRole("link", { name: "Lang" }).click();
 
   await openMenu(page.getByRole("button", { name: "Actions for Lang" }));
@@ -101,7 +101,7 @@ test("the folder menu sets the folder's language", async ({ page }) => {
     .toBe("pl");
 
   await page.reload();
-  await expectPolish(markdownEditor(page, "Folder notes").field);
+  await expectPolish(markdownEditor(page, "Book notes").field);
   await page.getByRole("link", { name: "Język" }).click();
   await expectPolish(page.getByRole("textbox", { name: "Title" }));
   await expectPolish(markdownEditor(page, "Content").field);

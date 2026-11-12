@@ -4,7 +4,7 @@ import { expect, menuAction, test } from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
-test("tags a folder and a chapter, then filters /stories with search", async ({
+test("tags a folder and a chapter, then filters /books with search", async ({
   page,
 }) => {
   const folderId = await seedFolder("alice", "Saga");
@@ -24,7 +24,7 @@ test("tags a folder and a chapter, then filters /stories with search", async ({
     content: "A dragon too.",
   });
 
-  await page.goto(`/folders/${folderId}`);
+  await page.goto(`/books/${folderId}`);
   await menuAction(page, "Actions for Saga", "Tags");
   const folderDialog = page.getByRole("dialog", { name: "Tags for Saga" });
   await folderDialog.getByLabel("Add tag").fill("Mythic");
@@ -60,7 +60,7 @@ test("tags a folder and a chapter, then filters /stories with search", async ({
     "drop me",
   );
 
-  await page.goto("/stories");
+  await page.goto("/books");
   const filter = page.getByRole("navigation", { name: "Filter by tag" });
   await filter.getByRole("link", { name: "mythic" }).click();
   const results = page.getByRole("list", { name: "Search results" });
@@ -73,8 +73,8 @@ test("tags a folder and a chapter, then filters /stories with search", async ({
   await filter.getByRole("link", { name: "draft" }).click();
   await expect(results.getByRole("listitem")).toHaveCount(2);
 
-  await page.getByLabel("Search stories").fill("dragon");
-  await page.getByLabel("Search stories").press("Enter");
+  await page.getByLabel("Search books").fill("dragon");
+  await page.getByLabel("Search books").press("Enter");
   await expect(page).toHaveURL(/q=dragon/);
   await expect(page).toHaveURL(/tag=mythic/);
   await expect(results.getByRole("listitem")).toHaveCount(1);
@@ -84,7 +84,7 @@ test("tags a folder and a chapter, then filters /stories with search", async ({
 
 test("does not suggest or filter by tags of another user", async ({ page }) => {
   await seedStory("bob", { title: "Bob's", folder: "Bob's", tags: ["secret"] });
-  await page.goto("/stories");
+  await page.goto("/books");
   await expect(
     page.getByRole("navigation", { name: "Filter by tag" }),
   ).toHaveCount(0);
@@ -124,7 +124,7 @@ test("picks a predefined tag by its label and filters by it as a category", asyn
       );
   });
 
-  await page.goto(`/folders/${folderId}`);
+  await page.goto(`/books/${folderId}`);
   await menuAction(page, "Actions for Stars", "Tags");
   const dialog = page.getByRole("dialog", { name: "Tags for Stars" });
   const categoryList = dialog.getByRole("list", { name: "Categories" });
@@ -160,7 +160,7 @@ test("picks a predefined tag by its label and filters by it as a category", asyn
   await expect(dialog).toBeHidden();
   await expect(page.getByTitle("Category")).toHaveText("Science fiction");
 
-  await page.goto("/stories");
+  await page.goto("/books");
   const categories = page.getByRole("navigation", {
     name: "Filter by category",
   });
@@ -171,7 +171,7 @@ test("picks a predefined tag by its label and filters by it as a category", asyn
   const results = page.getByRole("list", { name: "Search results" });
   await expect(results.getByRole("listitem")).toHaveText([/Orbit/]);
 
-  await page.goto("/pl/stories?q=Fantastyka+naukowa");
+  await page.goto("/pl/books?q=Fantastyka+naukowa");
   await expect(
     page.getByRole("navigation", { name: "Filtruj po kategorii" }),
   ).toHaveText("Fantastyka naukowa");

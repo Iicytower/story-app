@@ -23,15 +23,15 @@ test("switches between story, notes, chapters and tools on a narrow screen", asy
     createdAt: new Date("2026-01-02"),
   });
 
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const content = page.getByRole("textbox", { name: "Content", exact: true });
   const notes = page.getByRole("textbox", { name: "Notes", exact: true });
-  const folderNotes = page.getByRole("textbox", { name: "Folder notes" });
+  const folderNotes = page.getByRole("textbox", { name: "Book notes" });
   const chapters = page.getByRole("list", { name: "Chapters" });
   const tab = (name: string) =>
     page.getByRole("tablist", { name: "View" }).getByRole("tab", { name });
 
-  await expect(tab("Story")).toHaveAttribute("aria-selected", "true");
+  await expect(tab("Text")).toHaveAttribute("aria-selected", "true");
   await expect(content).toBeVisible();
   await expect(
     page.getByRole("group", { name: "Content editor" }).getByRole("button", {
@@ -72,7 +72,7 @@ test("switches between story, notes, chapters and tools on a narrow screen", asy
   await expect(dialog).toBeHidden();
   await expect(tools).toBeVisible();
 
-  await tab("Story").click();
+  await tab("Text").click();
   await expect(content).toHaveText("Changed");
 });
 
@@ -82,7 +82,7 @@ test("shows the story and the side panel side by side on a wide screen", async (
   await page.setViewportSize({ width: 1280, height: 800 });
   const id = await seedStory("alice", { title: "Desktop" });
 
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   await expect(page.getByRole("tablist", { name: "View" })).toBeHidden();
   await expect(
     page.getByRole("textbox", { name: "Content", exact: true }),
@@ -98,7 +98,7 @@ test("keeps toolbar buttons accessible by name on a narrow screen", async ({
 }) => {
   const id = await seedStory("alice", { title: "Toolbar" });
 
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   await expect(
     page.getByRole("button", { name: "Actions for Toolbar" }),
   ).toBeVisible();

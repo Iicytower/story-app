@@ -101,7 +101,7 @@ test("dave comments, erin replies, alice turns comments off; a guest reads", asy
 
   const alice = await loginAs(browser, "alice");
   const book = await findFolder("Book");
-  await alice.page.goto(`/en/folders/${book!._id.toString()}`);
+  await alice.page.goto(`/en/books/${book!._id.toString()}`);
   await alice.page
     .getByRole("button", { name: en.menu.actionsFor.replace("{name}", "Book") })
     .click();

@@ -22,9 +22,12 @@ export function inEnglish({ key, values }: ErrorMessage): string {
 // Headings of every language, so a file exported in one imports in another.
 const DOCUMENTS = [en.document, pl.document];
 export const NOTES_HEADINGS = DOCUMENTS.map((labels) => labels.notes);
-export const FOLDER_NOTES_HEADINGS = DOCUMENTS.map(
-  (labels) => labels.folderNotes,
-);
+// Files exported before D83 renamed folders to books still import.
+export const FOLDER_NOTES_HEADINGS = [
+  ...DOCUMENTS.map((labels) => labels.folderNotes),
+  "Folder notes",
+  "Notatki folderu",
+];
 
 export type DocumentLabels = {
   notes: string;

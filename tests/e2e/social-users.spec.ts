@@ -14,8 +14,8 @@ test("dave and erin are signed in side by side, each with their own data", async
       [dave, "Dave's book", "Erin's book"],
       [erin, "Erin's book", "Dave's book"],
     ] as const) {
-      await page.goto("/stories");
-      await expect(page).toHaveURL("/en/stories");
+      await page.goto("/books");
+      await expect(page).toHaveURL("/en/books");
       await expect(page.getByRole("link", { name: own })).toBeVisible();
       await expect(page.getByRole("link", { name: other })).toHaveCount(0);
     }
@@ -41,8 +41,8 @@ test("the admin account has the admin role and can sign in", async ({
 
   const admin = await loginAs(browser, "admin");
   try {
-    await admin.page.goto("/stories");
-    await expect(admin.page).toHaveURL("/en/stories");
+    await admin.page.goto("/books");
+    await expect(admin.page).toHaveURL("/en/books");
   } finally {
     await admin.context.close();
   }

@@ -45,7 +45,7 @@ test("alice invites erin, erin hides dave's comment, alice bans dave who sees wh
   ).toHaveCount(0);
 
   const alice = await loginAs(browser, "alice");
-  await alice.page.goto("/en/stories");
+  await alice.page.goto("/en/books");
   await alice.page.getByRole("link", { name: en.sidebar.moderation }).click();
   await expect(
     alice.page.getByRole("heading", { name: en.moderation.ownCommunity }),

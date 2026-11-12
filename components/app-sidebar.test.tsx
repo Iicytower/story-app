@@ -94,7 +94,7 @@ describe("AppSidebar", () => {
       "Strona główna",
       "Feed",
       "Biblioteka",
-      "Foldery",
+      "Książki",
       "Fora",
       "Wiadomości",
       "Powiadomienia",

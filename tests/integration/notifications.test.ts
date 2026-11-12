@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { saveSettings } from "@/app/[locale]/(protected)/actions";
-import { publishAllChapters } from "@/app/[locale]/(protected)/folders/actions";
+import { publishAllChapters } from "@/app/[locale]/(protected)/books/actions";
 import { addToLibrary } from "@/app/[locale]/(protected)/library/actions";
 import {
   acceptModeratorInvite,

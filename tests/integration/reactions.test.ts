@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { setFolderCommentsDisabled } from "@/app/[locale]/(protected)/folders/actions";
-import { moveStory } from "@/app/[locale]/(protected)/stories/actions";
+import { setFolderCommentsDisabled } from "@/app/[locale]/(protected)/books/actions";
+import { moveStory } from "@/app/[locale]/(protected)/chapters/actions";
 import {
   addComment,
   deleteComment,

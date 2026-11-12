@@ -58,12 +58,12 @@ test("a published folder is readable without logging in until it is unpublished"
   browser,
 }) => {
   const id = await seedBook();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await expect(
     page.getByRole("img", { name: "Not public" }).first(),
   ).toBeVisible();
   await menuAction(page, "Actions for Book", "Publish");
-  await confirm(page, "Publish folder?", "Publish");
+  await confirm(page, "Publish book?", "Publish");
   const link = page.getByRole("textbox", { name: "Public link" });
   await expect(link).toHaveValue(/\/p\/Alice\/book$/);
   const url = await link.inputValue();
@@ -84,7 +84,7 @@ test("a published folder is readable without logging in until it is unpublished"
   expect(response!.headers()["x-robots-tag"]).toBeUndefined();
 
   await menuAction(page, "Actions for Book", "Unpublish");
-  await confirm(page, "Unpublish folder?", "Unpublish");
+  await confirm(page, "Unpublish book?", "Unpublish");
   await expect(link).toBeHidden();
   expect((await visitor.goto(url))!.status()).toBe(404);
 });
@@ -94,7 +94,7 @@ test("a chapter published alone keeps the others unpublished, and Publish all re
   browser,
 }) => {
   const id = await seedBook();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await menuAction(page, "Actions for One", "Publish");
   await confirm(page, "Publish chapter?", "Publish");
   const link = page.getByRole("textbox", { name: "Public link" });
@@ -128,7 +128,7 @@ test("the editor publishes a chapter, and a deleted chapter gives 404", async ({
     folder: "Book",
     content: "Third text",
   });
-  await page.goto(`/stories/${story}`);
+  await page.goto(`/chapters/${story}`);
   await publishFromEditor(page);
   const link = page.getByRole("textbox", { name: "Public link" });
   await expect(link).toHaveValue(/\/p\/Alice\/book\/three$/);
@@ -143,7 +143,7 @@ test("the editor publishes a chapter, and a deleted chapter gives 404", async ({
     .getByRole("alertdialog")
     .getByRole("button", { name: "Delete" })
     .click();
-  await expect(page).toHaveURL(/\/folders\//);
+  await expect(page).toHaveURL(/\/books\//);
   expect((await visitor.goto(url))!.status()).toBe(404);
 });
 
@@ -153,7 +153,7 @@ test("the old address redirects after a title change", async ({
 }) => {
   await seedBook();
   const story = await seedStory("alice", { title: "Three", folder: "Book" });
-  await page.goto(`/stories/${story}`);
+  await page.goto(`/chapters/${story}`);
   await publishFromEditor(page);
   const link = page.getByRole("textbox", { name: "Public link" });
   await expect(link).toHaveValue(/three$/);

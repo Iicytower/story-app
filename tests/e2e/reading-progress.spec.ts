@@ -93,12 +93,12 @@ test("the library counts a newly published chapter until it is read", async ({
     page.getByText(count === 1 ? "1 new chapter" : `${count} new chapters`);
 
   await page.goto("/en/library");
-  await expect(page.getByRole("link", { name: "Book" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Book", exact: true })).toBeVisible();
   await expect(newChapters(1)).toBeHidden();
 
   const alice = await loginAs(browser, "alice");
   const folder = await findFolder("Book");
-  await alice.page.goto(`/folders/${folder!._id.toString()}`);
+  await alice.page.goto(`/books/${folder!._id.toString()}`);
   await menuAction(alice.page, "Actions for Two", "Publish");
   await alice.page
     .getByRole("alertdialog", { name: "Publish chapter?" })

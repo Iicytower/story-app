@@ -3,8 +3,8 @@ import { USERS, storageStatePath } from "./env";
 import { expect, test } from "./helpers";
 
 test.describe("signed out", () => {
-  test("visiting /stories opens the sign-in dialog", async ({ page }) => {
-    await page.goto("/stories");
+  test("visiting /books opens the sign-in dialog", async ({ page }) => {
+    await page.goto("/books");
     await expect(page).toHaveURL(/\/en\?callbackUrl=/);
     await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   });

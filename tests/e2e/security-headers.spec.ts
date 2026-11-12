@@ -52,7 +52,7 @@ test("the home page, the editor and a public page send the security headers", as
   expect(expectSecurityHeaders(await page.reload())).not.toBe(home);
 
   const id = await seedStory("alice", { title: "Headers", content: "Text" });
-  expectSecurityHeaders(await page.goto(`/stories/${id}`));
+  expectSecurityHeaders(await page.goto(`/chapters/${id}`));
   // The editor, Preview and Source run under the policy; the fixture fails on any violation.
   const content = markdownEditor(page, "Content");
   await content.setSource("**bold** and a [link](https://example.com)");

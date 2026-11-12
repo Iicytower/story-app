@@ -31,7 +31,7 @@ test("a follower sees the author's new chapter in the feed, others do not", asyn
   await expect(page.getByText(en.feed.emptyLink)).toBeVisible();
 
   const alice = await loginAs(browser, "alice");
-  await alice.page.goto(`/stories/${story}`);
+  await alice.page.goto(`/chapters/${story}`);
   await publishFromEditor(alice.page);
   await alice.context.close();
 

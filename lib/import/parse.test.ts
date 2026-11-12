@@ -134,10 +134,16 @@ describe("export → import", () => {
   );
 
   // A file exported in Polish imports in any language (D48).
-  it.each(STRUCTURED)("%s recognises Polish note headings", async (format) => {
+  it.each(
+    STRUCTURED.flatMap((format) =>
+      ["Notatki książki", "Notatki folderu"].map(
+        (folderNotes) => [format, folderNotes] as const,
+      ),
+    ),
+  )("%s recognises the Polish heading %s", async (format, folderNotes) => {
     const polish: DocumentLabels = {
       notes: "Notatki",
-      folderNotes: "Notatki folderu",
+      folderNotes,
       chapter: (number) => `Rozdział ${number}`,
     };
     const data = await buildExport(format, folder, true, polish);

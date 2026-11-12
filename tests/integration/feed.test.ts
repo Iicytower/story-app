@@ -3,11 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   publishAllChapters,
   setFolderPublished,
-} from "@/app/[locale]/(protected)/folders/actions";
+} from "@/app/[locale]/(protected)/books/actions";
 import {
   deleteStory,
   setChapterPublished,
-} from "@/app/[locale]/(protected)/stories/actions";
+} from "@/app/[locale]/(protected)/chapters/actions";
 import { requireUser } from "@/lib/auth/session";
 import { Activity, ACTIVITY_TTL_DAYS } from "@/lib/models/activity";
 import { Block } from "@/lib/models/block";

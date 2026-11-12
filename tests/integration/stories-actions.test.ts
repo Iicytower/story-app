@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createStory,
   deleteStory,
-} from "@/app/[locale]/(protected)/stories/actions";
+} from "@/app/[locale]/(protected)/chapters/actions";
 import type { ActionError } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import { Folder } from "@/lib/models/folder";

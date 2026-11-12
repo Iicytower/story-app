@@ -11,7 +11,7 @@ const intl = createMiddleware(routing);
 
 // Route Handlers stay outside the locale prefix (D46).
 const UNPREFIXED =
-  /^\/(api\/|(stories|folders)\/[^/]+\/export(\/|$)|(covers|avatars)\/[^/]+$)/;
+  /^\/(api\/|(chapters|books)\/[^/]+\/export(\/|$)|(covers|avatars)\/[^/]+$)/;
 // No page has a two-letter first segment, so this is a locale outside the list.
 const LOCALE_LIKE = /^\/[a-z]{2}(-[A-Za-z]{2})?(\/|$)/;
 

@@ -42,22 +42,22 @@ for (const { id, extension } of EXPORT_FORMATS) {
       title: "Źródło",
       content: "Tekst do importu",
     });
-    await page.goto(`/stories/${storyId}`);
+    await page.goto(`/chapters/${storyId}`);
     await editorAction(page, "Export as…");
     await page.getByLabel("Format").selectOption(id);
     const downloadPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Export", exact: true }).click();
     const file = await readFile(await (await downloadPromise).path());
 
-    await openImport(page, "/stories");
+    await openImport(page, "/books");
     await pick(page, `kopia.${extension}`, file);
     await expect(page.getByLabel("Title", { exact: true })).toHaveValue(
       "Źródło",
     );
-    await page.getByLabel("Folder", { exact: true }).fill("Importy");
+    await page.getByLabel("Book", { exact: true }).fill("Importy");
     await submit(page);
 
-    await expect(page).toHaveURL(/\/stories\/[0-9a-f]{24}$/);
+    await expect(page).toHaveURL(/\/chapters\/[0-9a-f]{24}$/);
     await expect(page.getByLabel("Title", { exact: true })).toHaveValue(
       "Źródło",
     );
@@ -71,7 +71,7 @@ test("a file with chapters makes a new folder, or one chapter when not split", a
   page,
 }) => {
   const markdown = "# Książka\n\n## Raz\n\nA\n\n## Dwa\n\nB\n";
-  await openImport(page, "/stories");
+  await openImport(page, "/books");
   await pick(page, "a.md", markdown);
   const list = page.getByRole("list", { name: "Chapters to import" });
   await expect(list.getByRole("listitem")).toHaveText(["Raz", "Dwa"]);
@@ -83,9 +83,9 @@ test("a file with chapters makes a new folder, or one chapter when not split", a
   );
   await page.getByLabel("Split into 2 chapters").check();
 
-  await expect(page.getByLabel("New folder")).toHaveValue("Książka");
+  await expect(page.getByLabel("New book")).toHaveValue("Książka");
   await submit(page);
-  await expect(page).toHaveURL(/\/folders\/[0-9a-f]{24}$/);
+  await expect(page).toHaveURL(/\/books\/[0-9a-f]{24}$/);
   await expect(
     page.getByRole("heading", { name: "Książka", level: 1 }),
   ).toBeVisible();
@@ -97,9 +97,9 @@ test("a file with chapters makes a new folder, or one chapter when not split", a
 test("a folder's page adds the chapters to that folder", async ({ page }) => {
   await seedStory("alice", { title: "Istniejący", folder: "Moje" });
   const folder = await findFolder("Moje");
-  await openImport(page, `/folders/${folder?._id}`);
+  await openImport(page, `/books/${folder?._id}`);
   await pick(page, "a.md", "# T\n\n## Istniejący\n\nA\n\n## Nowy\n\nB\n");
-  await expect(page.getByLabel("New folder")).toBeHidden();
+  await expect(page.getByLabel("New book")).toBeHidden();
   await submit(page);
 
   const chapters = page.getByRole("list", { name: "Chapters" });
@@ -120,18 +120,18 @@ test("imports text just below the limit", async ({ page }) => {
     { length: 8 },
     (_, index) => `## R${index}\n\n${prose(3.4 / 8)}`,
   ).join("");
-  await openImport(page, "/stories");
+  await openImport(page, "/books");
   await pick(page, "a.md", `# T\n\n${chapters}`);
-  await expect(page.getByLabel("New folder")).toHaveValue("T");
+  await expect(page.getByLabel("New book")).toHaveValue("T");
   await submit(page);
-  await expect(page).toHaveURL(/\/folders\/[0-9a-f]{24}$/);
+  await expect(page).toHaveURL(/\/books\/[0-9a-f]{24}$/);
   await expect(
     page.getByRole("list", { name: "Chapters" }).getByRole("listitem"),
   ).toHaveCount(8);
 });
 
 test("refuses a chapter over the chapter limit", async ({ page }) => {
-  await openImport(page, "/stories");
+  await openImport(page, "/books");
   await pick(
     page,
     "a.md",
@@ -144,7 +144,7 @@ test("refuses a chapter over the chapter limit", async ({ page }) => {
 });
 
 test("refuses text over the limit", async ({ page }) => {
-  await openImport(page, "/stories");
+  await openImport(page, "/books");
   await pick(page, "a.md", `# T\n\n${prose(3.6)}`);
   await submit(page);
   await expect(page.getByRole("alert")).toHaveText(
@@ -154,20 +154,20 @@ test("refuses text over the limit", async ({ page }) => {
 
 test("warns that a PDF loses its formatting", async ({ page }) => {
   const id = await seedStory("alice", { title: "P", content: "Tekst" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   await editorAction(page, "Export as…");
   await page.getByLabel("Format").selectOption("pdf");
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export", exact: true }).click();
   const file = await readFile(await (await downloadPromise).path());
 
-  await openImport(page, "/stories");
+  await openImport(page, "/books");
   await pick(page, "a.pdf", file);
   await expect(page.getByText("Formatting cannot be kept")).toBeVisible();
 });
 
 test("explains why a file cannot be imported", async ({ page }) => {
-  await openImport(page, "/stories");
+  await openImport(page, "/books");
   await pick(page, "a.exe", "x");
   await expect(page.getByRole("alert")).toHaveText(
     "Unsupported file type: .exe.",

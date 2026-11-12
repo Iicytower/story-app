@@ -1,18 +1,18 @@
 import { Types } from "mongoose";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET as getCover } from "@/app/covers/[id]/route";
-import { GET as exportFolderZip } from "@/app/folders/[id]/export/route";
+import { GET as exportFolderZip } from "@/app/books/[id]/export/route";
 import {
   dismissCoverRejection,
   removeFolderCover,
   setCoverAdult,
   setFolderCover,
-} from "@/app/[locale]/(protected)/folders/[id]/cover-actions";
+} from "@/app/[locale]/(protected)/books/[id]/cover-actions";
 import {
   deleteFolder,
   setFolderAdult,
   setFolderPublished,
-} from "@/app/[locale]/(protected)/folders/actions";
+} from "@/app/[locale]/(protected)/books/actions";
 import { requireUser } from "@/lib/auth/session";
 import { classifyCover } from "@/lib/covers/classify";
 import { COVERS_PER_ACCOUNT } from "@/lib/covers/covers";

@@ -16,7 +16,7 @@ async function openRhymes(page: Page) {
     title: "Verses",
     content: "Ala ma kota.",
   });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   await page
     .getByRole("tablist", { name: "Side panel" })
     .getByRole("tab", { name: "Tools" })

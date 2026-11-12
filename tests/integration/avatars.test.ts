@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET as getAvatar } from "@/app/avatars/[id]/route";
-import { setFolderCover } from "@/app/[locale]/(protected)/folders/[id]/cover-actions";
+import { setFolderCover } from "@/app/[locale]/(protected)/books/[id]/cover-actions";
 import {
   getMyProfile,
   removeAvatar,

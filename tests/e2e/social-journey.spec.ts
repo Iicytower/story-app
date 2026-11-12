@@ -70,7 +70,7 @@ test.describe("a reader", () => {
 
     // Publication and the feed.
     const alice = await loginAs(browser, "alice");
-    await alice.page.goto(`/stories/${two}`);
+    await alice.page.goto(`/chapters/${two}`);
     await publishFromEditor(alice.page);
     await page.goto("/en/feed");
     const entries = page.getByRole("list", { name: en.feed.entries });
@@ -84,7 +84,7 @@ test.describe("a reader", () => {
       .click();
     await page.keyboard.press("Escape");
     await page.goto("/en/library");
-    await expect(page.getByRole("link", { name: "Book" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Book", exact: true })).toBeVisible();
     await seedReadingProgress("dave", "alice", "Book", "One");
     await page.goto(BOOK);
     await page
@@ -113,13 +113,13 @@ test.describe("a reader", () => {
     await expect(page.getByText("4.0 average from 1 rating")).toBeVisible();
 
     // Notifications: the new chapter for dave, the mention for erin, the follower for alice.
-    await page.goto("/en/stories");
+    await page.goto("/en/books");
     await bell(page).click();
     await expect(
       notification(page, /Alice published a new chapter in “Book”/),
     ).toBeVisible();
     const erin = await loginAs(browser, "erin");
-    await erin.page.goto("/en/stories");
+    await erin.page.goto("/en/books");
     await bell(erin.page).click();
     await notification(
       erin.page,
@@ -129,7 +129,7 @@ test.describe("a reader", () => {
       /\/en\/p\/Alice\/book\/one#comment-[0-9a-f]{24}$/,
     );
     await erin.context.close();
-    await alice.page.goto("/en/stories");
+    await alice.page.goto("/en/books");
     await bell(alice.page).click();
     await expect(
       notification(alice.page, /Dave started following you/),
@@ -352,7 +352,7 @@ test.describe("a new account", () => {
     await page.goto(CHAPTER);
     await comment(page, "Hello from Grace");
 
-    await page.goto("/en/stories");
+    await page.goto("/en/books");
     const settings = await openSettings(page);
     await settings
       .getByRole("button", { name: en.settings.deleteAccount })
