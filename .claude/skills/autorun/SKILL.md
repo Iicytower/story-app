@@ -39,7 +39,7 @@ Argument: numer taska zbiorczego (np. `68`) albo lista numerów. Ty (główna se
    9. Commit na branchu taska: `git add -A && git commit` z wiadomością `NN: <short english description>` i stopką atrybucji z system-reminder.
    10. Merge sam: `git switch <branch zbiorczy> && git merge --no-ff feature/NN-<slug>`. Konflikt → `git merge --abort` i `merger`.
    11. Co 3–4 taski i przed końcowym audytem (punkt 3): `verifier` z pełnym `npm run verify` na branchu zbiorczym. Czerwono → `implementer` z diagnozą → `verifier` (do 3 rund; potem blokada taska, który zepsuł).
-       `docs-keeper` tylko przy sekcjach „Blokada”/„Pominięty” albo większych zmianach `README.md`, `docs/deploy.md` i skilla `local-setup`.
+       `docs-keeper` tylko przy sekcjach „Blokada”/„Pominięty” albo większych zmianach `README.md`, `docs/deploy.md` (z częściami w `docs/deploy/`) i skilla `local-setup`.
 3. Na końcu (po wszystkich subtaskach): `security-auditor` dla `git diff develop...<branch zbiorczy>`; znaleziska krytyczne i wysokie → implementer/verifier jak w taskach (osobny commit `NN: security fixes`). Potem zamknij task zbiorczy (sam albo `docs-keeper`, commit), ale nie merguj go do `develop` – robi to użytkownik.
 4. Raport końcowy dla użytkownika: tabela task → status (zrobiony / zablokowany z powodem / pominięty), lista rozstrzygnięć do potwierdzenia, co musi zrobić użytkownik przed wydaniem.
 

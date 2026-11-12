@@ -56,7 +56,7 @@ function backups() {
   return fs.existsSync(backupDir) ? fs.readdirSync(backupDir).sort() : [];
 }
 
-// Same commands as in docs/deploy.md ("Backup bazy").
+// Same commands as in docs/deploy/backup.md.
 function restoreArchive(backup: string, db: string) {
   execFileSync(
     "docker",

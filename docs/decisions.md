@@ -1,6 +1,6 @@
 # Decyzje i odstępstwa od specyfikacji
 
-Ustalenia podjęte po napisaniu `spec.md`. W razie sprzeczności ten plik ma pierwszeństwo.
+Ustalenia podjęte po napisaniu `spec.md`. W razie sprzeczności ten plik ma pierwszeństwo. Spis z jednym zdaniem na decyzję i statusem (zmieniona / zastąpiona): [`decisions/index.md`](decisions/index.md) – nową decyzję dopisz też tam.
 
 ## D1 – Konta w kolekcji `users`, wielu użytkowników (2026-10-06)
 
