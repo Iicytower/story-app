@@ -11,6 +11,7 @@ import { Link, redirect } from "@/i18n/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { retryDueCovers } from "@/lib/covers/mutations";
 import { getFeed, parseFeedCursor } from "@/lib/social/feed";
+import { PageContainer } from "@/components/page-container";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -35,7 +36,7 @@ export default async function FeedPage({
   const tCovers = await getTranslations("covers");
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">
+    <PageContainer width="narrow">
       <h1 className="text-2xl font-semibold">{t("title")}</h1>
       {entries.length === 0 && !cursor && !next ? (
         <p className="text-muted-foreground">
@@ -191,6 +192,6 @@ export default async function FeedPage({
           )}
         </nav>
       )}
-    </div>
+    </PageContainer>
   );
 }

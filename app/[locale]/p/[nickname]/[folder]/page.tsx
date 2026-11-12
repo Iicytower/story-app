@@ -8,7 +8,9 @@ import { retryDueCovers } from "@/lib/covers/mutations";
 import { requestOrigin } from "@/i18n/request-origin";
 import { languageAlternates } from "@/i18n/routing";
 import { AdultBadge } from "@/components/adult";
+import { AppShell } from "@/components/app-shell";
 import { CoverImage } from "@/components/cover";
+import { PageContainer } from "@/components/page-container";
 import { Button } from "@/components/ui/button";
 import { ADULT_COOKIE } from "@/lib/adult/gate";
 import { requireUser } from "@/lib/auth/session";
@@ -119,8 +121,8 @@ export default async function PublishedFolderPage({
   });
   const tReports = await getTranslations("reports");
 
-  return (
-    <main className="mx-auto w-full max-w-3xl px-6 py-10">
+  const content = (
+    <PageContainer width="narrow" className="gap-0">
       <div className="mb-6">
         <PublicBreadcrumb nickname={folder.nickname} />
       </div>
@@ -212,6 +214,12 @@ export default async function PublishedFolderPage({
           after={query[COMMENTS_PARAM]}
         />
       </div>
-    </main>
+    </PageContainer>
+  );
+
+  return viewer.ok ? (
+    <AppShell userId={viewer.userId}>{content}</AppShell>
+  ) : (
+    <main className="flex flex-1 flex-col">{content}</main>
   );
 }

@@ -16,6 +16,7 @@ import {
   getPublicProfile,
   listFollows,
 } from "@/lib/profiles/queries";
+import { PageContainer } from "@/components/page-container";
 
 async function viewerId(): Promise<string | null> {
   const user = await requireUser();
@@ -81,7 +82,7 @@ export async function FollowList({
   const heading = side === "followers" ? t("followers") : t("followedAccounts");
 
   const content = (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-10">
+    <PageContainer width="narrow">
       <header className="flex flex-col gap-1">
         <Button variant="link" asChild className="self-start px-0">
           <Link href={profilePath(profile.nickname)}>
@@ -140,7 +141,7 @@ export async function FollowList({
           )}
         </nav>
       )}
-    </div>
+    </PageContainer>
   );
 
   return viewer ? (

@@ -1,6 +1,6 @@
 # 96 – Szerokości treści i sidebar na stronach publicznych
 
-Subtask 51. Podstawa: [D83](../decisions/D083-poprawa-ux-ui.md) i raport [`docs/ui-ux-report.md`](../ui-ux-report.md) (numery punktów w nawiasach). Branch `feature/96-layout-widths` z `fix/ui`, merge do `fix/ui`.
+Subtask 51. Podstawa: [D83](../../decisions/D083-poprawa-ux-ui.md) i raport [`docs/ui-ux-report.md`](../../ui-ux-report.md) (numery punktów w nawiasach). Branch `feature/96-layout-widths` z `fix/ui`, merge do `fix/ui`.
 
 ## Zakres
 

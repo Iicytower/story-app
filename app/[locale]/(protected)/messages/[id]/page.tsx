@@ -8,6 +8,7 @@ import { Link, redirect } from "@/i18n/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { getConversation, listMessages } from "@/lib/social/direct-messages";
 import { Thread } from "./thread";
+import { PageContainer } from "@/components/page-container";
 
 export async function generateMetadata({
   params,
@@ -43,7 +44,7 @@ export default async function ConversationPage({
   const nickname = conversation.nickname ?? t("deletedAccount");
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl min-w-0 flex-col gap-4 px-4 py-8 sm:px-6">
+    <PageContainer width="narrow" className="gap-4">
       <Link
         href="/messages"
         className="text-muted-foreground self-start text-sm hover:underline"
@@ -68,6 +69,6 @@ export default async function ConversationPage({
         initialHasOlder={page!.hasOlder}
         initialClosed={conversation.closed}
       />
-    </div>
+    </PageContainer>
   );
 }

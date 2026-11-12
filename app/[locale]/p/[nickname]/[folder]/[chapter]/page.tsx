@@ -8,8 +8,10 @@ import { retryDueCovers } from "@/lib/covers/mutations";
 import { requestOrigin } from "@/i18n/request-origin";
 import { languageAlternates } from "@/i18n/routing";
 import { AdultBadge } from "@/components/adult";
+import { AppShell } from "@/components/app-shell";
 import { CoverImage } from "@/components/cover";
 import { MarkdownPreview } from "@/components/markdown-preview";
+import { PageContainer } from "@/components/page-container";
 import { ADULT_COOKIE } from "@/lib/adult/gate";
 import { requireUser } from "@/lib/auth/session";
 import { getPublishedChapter, publishedChapterId } from "@/lib/publish/queries";
@@ -121,8 +123,8 @@ export default async function PublishedChapterPage({
     after(() => recordRead({ storyId, folderId, authorId, reader }));
   }
 
-  return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10">
+  const content = (
+    <PageContainer width="narrow" className="gap-8">
       <PublicBreadcrumb
         nickname={chapter.nickname}
         folder={{ name: chapter.folderName, path: chapter.folderPath }}
@@ -209,6 +211,12 @@ export default async function PublishedChapterPage({
           after={query[COMMENTS_PARAM]}
         />
       )}
-    </main>
+    </PageContainer>
+  );
+
+  return viewer.ok ? (
+    <AppShell userId={viewer.userId}>{content}</AppShell>
+  ) : (
+    <main className="flex flex-1 flex-col">{content}</main>
   );
 }

@@ -10,6 +10,7 @@ import {
   FORUMS_PATH,
   listForumCategories,
 } from "@/lib/social/forums";
+import { PageContainer } from "@/components/page-container";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -30,7 +31,7 @@ export default async function ForumsPage() {
   const lang = locale === "pl" ? "pl" : "en";
   return (
     <ForumShell viewerId={viewerId}>
-      <div className="mx-auto flex w-full max-w-3xl min-w-0 flex-col gap-6 px-4 py-8 sm:px-6">
+      <PageContainer width="narrow">
         <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <ul aria-label={t("categories")} className="flex flex-col divide-y">
           {categories.map((category) => (
@@ -44,7 +45,7 @@ export default async function ForumsPage() {
             </li>
           ))}
         </ul>
-      </div>
+      </PageContainer>
     </ForumShell>
   );
 }

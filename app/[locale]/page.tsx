@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import { AppShell } from "@/components/app-shell";
+import { PageContainer } from "@/components/page-container";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { AuthDialog } from "./auth/auth-dialog";
@@ -17,9 +18,6 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("home"), description: tHome("heroDescription") };
 }
 
-const COLUMN =
-  "mx-auto flex w-full max-w-3xl flex-col gap-10 px-4 py-8 sm:px-6";
-
 export default async function HomePage({
   params,
   searchParams,
@@ -30,11 +28,11 @@ export default async function HomePage({
   if (userId) {
     return (
       <AppShell userId={userId}>
-        <div className={COLUMN}>
+        <PageContainer width="narrow" className="gap-10">
           <PublicSearch q={q} tag={tag} heading="h1" />
           <RecentlyPublished />
           <Rankings viewerId={userId} />
-        </div>
+        </PageContainer>
       </AppShell>
     );
   }
@@ -56,7 +54,7 @@ export default async function HomePage({
           callbackUrl={afterLogin}
         />
       </div>
-      <div className={COLUMN}>
+      <PageContainer width="narrow" className="gap-10">
         <section className="flex flex-col gap-4 pt-4 sm:pt-8">
           <h1 className="text-3xl font-semibold text-balance sm:text-4xl">
             {t("heroTitle")}
@@ -83,7 +81,7 @@ export default async function HomePage({
         <PublicSearch q={q} tag={tag} heading="h2" />
         <RecentlyPublished />
         <Rankings viewerId={null} />
-      </div>
+      </PageContainer>
     </main>
   );
 }

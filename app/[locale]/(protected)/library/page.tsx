@@ -21,6 +21,7 @@ import { LibraryPicker } from "./library-picker";
 import { LibraryPublic } from "./library-public";
 import { ManageShelves } from "./manage-shelves";
 import { seedShelves } from "./starter";
+import { PageContainer } from "@/components/page-container";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -123,7 +124,7 @@ export default async function LibraryPage({
   ];
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-8">
+    <PageContainer width="narrow">
       <div className="flex flex-wrap items-start gap-4">
         <h1 className="mr-auto text-2xl font-semibold">{t("title")}</h1>
         <ManageShelves shelves={shelves} />
@@ -218,6 +219,6 @@ export default async function LibraryPage({
           ))}
         </ul>
       )}
-    </div>
+    </PageContainer>
   );
 }
