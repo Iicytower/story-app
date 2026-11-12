@@ -26,7 +26,7 @@ The main architectural rules:
 The app is developed with [Claude Code](https://claude.com/claude-code) following a written, test-first process. The documentation in `docs/` is the source of truth for both the human and the agent:
 
 - **`docs/spec.md`**: the original functional specification.
-- **`docs/decisions.md`**: numbered decisions (D1, D2, …) recording every change to the spec and every non-obvious choice. Decisions override the spec; large ones live in `docs/decisions/` (e.g. the social system in `docs/decisions/d80/`).
+- **`docs/decisions/`**: numbered decisions (D1, D2, …), one file each, recording every change to the spec and every non-obvious choice. Decisions override the spec; `index.md` lists them with a one-line summary, split into current and archived.
 - **`docs/tasks/`**: one file per task with scope, acceptance criteria and the tests that cover them. Each task runs on its own `feature/NN-<slug>` branch from `develop` and ends with a single commit.
 - **`docs/testing.md`**: every acceptance criterion maps to a unit, integration or E2E test, or is explicitly marked `manual`. A task is done only when `npm run verify` (lint, typecheck, Vitest, Playwright) passes.
 - **`docs/deploy.md`**: environments and releases; migrations, the tools server and backups in `docs/deploy/`.

@@ -27,7 +27,7 @@ Never push to `main` or `staging` and never merge these PRs: the user does that.
 
    `staging` and `main` receive squash merges, so `git log A..B` and the diff shown in a PR also list work that is already there. An empty `git diff` means both branches hold the same files. Skip a PR only when both of its branches are identical and nothing is waiting on the branch before it.
 
-3. Work out the task list from `git diff --stat` and `docs/tasks/README.md`: take only tasks whose changes are really in the diff. Use the decision numbers from `docs/decisions.md`.
+3. Work out the task list from `git diff --stat` and `docs/tasks/README.md`: take only tasks whose changes are really in the diff. Use the decision numbers from `docs/decisions/index.md`.
 
 4. Create the PRs in this order, with descriptions in Polish:
 

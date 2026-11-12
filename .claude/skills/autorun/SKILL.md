@@ -9,7 +9,7 @@ Argument: numer taska zbiorczego (np. `68`) albo lista numerów. Ty (główna se
 
 ## Zasady przebiegu (bez udziału użytkownika)
 
-- Nie pytaj użytkownika. Decyzja spoza `docs/decisions.md` i pliku taska: wybierz najprostsze rozwiązanie spójne z decyzjami i implementer dopisuje je do sekcji „Rozstrzygnięcia Claude'a do potwierdzenia” decyzji taska zbiorczego (dla 68: plik obszaru w `docs/decisions/d80/`).
+- Nie pytaj użytkownika. Decyzja spoza `docs/decisions/` i pliku taska: wybierz najprostsze rozwiązanie spójne z decyzjami i implementer dopisuje je do sekcji „Rozstrzygnięcia Claude'a do potwierdzenia” decyzji taska zbiorczego (dla 68: plik obszaru w `docs/decisions/D080-system-spolecznosciowy/`).
 - Bez pushów, PR-ów, merge do `staging`/`main` (hooki `autorun-guard.sh` i `protect-branches.sh`). Pakiety npm tylko z listy w decyzji.
 - Agentów wołaj na pierwszym planie (bez `run_in_background`), żeby hook Stop nie przerywał oczekiwania. Agenci piszący kod (`implementer`, `verifier`, `merger`, `docs-keeper`) pracują pojedynczo na jednym drzewie roboczym – nigdy dwóch naraz. Równolegle wolno puszczać tylko agentów bez zapisu (`researcher`, `reviewer`, `security-auditor`, `ui-checker`). Bez `isolation: worktree` (worktree powstaje z `main`).
 - Czerwone testy po 3 rundach poprawek: zostaw zmiany na branchu taska, zacommituj je jako `NN: WIP (blocked)`, zleć `docs-keeper` sekcję „Blokada”, status zostaje `[~]`, wróć na branch zbiorczy bez merge i przejdź do następnego taska, który od zablokowanego nie zależy (bezpośrednio ani pośrednio).
@@ -32,7 +32,7 @@ Argument: numer taska zbiorczego (np. `68`) albo lista numerów. Ty (główna se
    2. Co 4 taski (i przed pierwszym): `git log <branch zbiorczy>..develop`; gdy są nowe commity, merge `develop` → branch zbiorczy (sam, `merger` przy konflikcie).
    3. Utwórz `feature/NN-<slug>` z brancha zbiorczego, ustaw `[~]` w tabeli.
    4. Gdy task wymaga rozpoznania (sekcja Zakres mówi o researchu albo nowym API), najpierw `researcher` z konkretnymi pytaniami; wynik przekaż implementerowi w zleceniu.
-   5. `implementer` (krótkie zlecenie): numer taska, branch, branch bazowy, pliki decyzji do przeczytania (dla 68: `scope.md`, `roles-bans-blocks.md` i plik obszaru taska z `docs/decisions/d80/`), wyniki researchu, „domknij task” (status `[x]`, `git mv` do `done/`, rozstrzygnięcia w pliku decyzji). Implementer uruchamia typecheck, lint, `npx vitest related <zmienione pliki> --run` i specy E2E dotkniętych stron.
+   5. `implementer` (krótkie zlecenie): numer taska, branch, branch bazowy, pliki decyzji do przeczytania (dla 68: `scope.md`, `roles-bans-blocks.md` i plik obszaru taska z `docs/decisions/D080-system-spolecznosciowy/`), wyniki researchu, „domknij task” (status `[x]`, `git mv` do `done/`, rozstrzygnięcia w pliku decyzji). Implementer uruchamia typecheck, lint, `npx vitest related <zmienione pliki> --run` i specy E2E dotkniętych stron.
    6. `reviewer` (baza: branch zbiorczy) tylko przy taskach ryzykownych: uprawnienia, bany i blokady, izolacja danych, widoczność publiczna, limity, usuwanie lub przenoszenie danych, wyścigi, bezpieczeństwo. Przy prostym UI, tekstach i dokumentacji – bez przeglądu.
    7. `ui-checker` tylko przy nowej stronie albo dużej zmianie UI: na działającym serwerze (bez buildu), dwa warianty (1280 jasny `/en`, 375 ciemny `/pl`). Może iść równolegle z `reviewer`.
    8. Uwagi blokujące z 6–7 → jedno zlecenie dla `implementer` ze wszystkimi uwagami naraz.

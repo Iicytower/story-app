@@ -1,0 +1,9 @@
+# D35 – Wyszukiwanie i zamiana w polu (2026-10-30)
+
+Status: aktualna.
+
+- Zmienia D20 (skróty). Ctrl/Cmd+F otwiera panel Find, Ctrl/Cmd+H także wiersz zamiany, tylko gdy fokus jest w tym `MarkdownEditor` (pole, jego pasek, panel). Poza nim zostają skróty przeglądarki. Przycisk „Find and replace” w pasku działa w obu trybach, także na wąskim ekranie. Zaznaczony tekst (jedna linia) staje się zapytaniem. Enter: następne, Shift+Enter: poprzednie, Esc: zamyka i zaznacza bieżące trafienie w polu. Cmd+H na macOS przechwytuje system.
+- Opcje: Match case (domyślnie bez rozróżniania), Whole word, Regular expression (`$1` w zamianie, także `^`/`$` na linię). Whole word liczy granice po literach Unicode, bo `\\b` nie zna polskich znaków. Bez trybu regex `$` w zamianie jest zwykłym znakiem. Puste dopasowania (`a*`) są pomijane.
+- Preview szuka w tekście widocznym, osobno w każdym bloku (bez znaczników markdown, także w komentarzach), dekoracjami ProseMirror (`lib/editor/find-highlight.ts`). Złamanie linii to `\n`, trafienie nie przechodzi między blokami. Zamiana przejmuje formatowanie pierwszego zastąpionego znaku. Source szuka w surowym markdownie, więc liczba trafień może się różnić między trybami. Textarea nie stylizuje fragmentów, więc pod nią leży kopia tekstu z niewidocznymi literami i `<mark>`.
+- Undo: „Replace” i „Replace all” to jeden krok, także zaraz po pisaniu (`closeHistory` w Preview). W Source zamiana idzie przez `document.execCommand`, który jako jedyny zachowuje natywne Undo textarea, a „Replace all” podmienia cały tekst jednym poleceniem. Metoda jest przestarzała, ale nie ma zamiennika.
+- Po zamianie bieżącym trafieniem jest następne za nowym tekstem, więc „kot” → „kotek” nie trafia ponownie w to samo miejsce. Fokus wraca do pola Find, bo przyciski stają się nieaktywne, gdy nie ma trafień. Zmiana idzie zwykłą ścieżką edycji, więc autozapis działa bez zmian (D22).

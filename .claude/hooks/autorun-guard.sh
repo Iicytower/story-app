@@ -6,7 +6,7 @@ lock="$CLAUDE_PROJECT_DIR/.claude/autorun.lock"
 input=$(cat)
 tool=$(jq -r '.tool_name' <<<"$input")
 if [[ $tool == AskUserQuestion ]]; then
-  echo "Autorun: the user is away. Decide yourself (simplest option consistent with docs/decisions.md) and report it as a decision to log." >&2
+  echo "Autorun: the user is away. Decide yourself (simplest option consistent with docs/decisions/) and report it as a decision to log." >&2
   exit 2
 fi
 command=$(jq -r '.tool_input.command // ""' <<<"$input")

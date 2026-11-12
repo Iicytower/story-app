@@ -1,0 +1,13 @@
+# D42 – Publiczna wyszukiwarka, strona główna i sidebar (2026-11-01, zmienione 2026-11-04 w D54)
+
+Status: aktualna. Zmieniona w D54, D50, D80.
+
+- Zmienia D1, D4, D29, D36, D38 i D40. Strona `/` to publiczna wyszukiwarka i widok domyślny po zalogowaniu (logowanie, rejestracja i Home prowadzą na `/`). Zalogowany widzi tę samą stronę z sidebarem.
+- Treść: regex bez rozróżniania wielkości liter, jak na `/stories`. `$text` nie zna polskiego, Atlas Search wymagałby innego obrazu Dockera i indeksu poza `syncIndexes()`, a embeddingi wysyłają tekst do dostawcy i kosztują. Regex nie zna odmiany („ręka” nie znajdzie „ręce”), nie widzi tekstu rozdzielonego znacznikami (`**a** b` dla „a b”) i przegląda wszystkie publiczne rozdziały. Przy dużej liczbie tekstów trzeba wrócić do Atlas Search.
+- `content` zawiera komentarze, więc zapytanie do bazy tylko zawęża kandydatów, a `matchesPublicText` sprawdza tekst po `stripComments`. Fragment też powstaje z tego tekstu. Tekst złączony po usunięciu komentarza może dać trafienie, którego czytelnik widzi jako jedno miejsce. Notatek nie ma w `select`.
+- Pole tekstowe szuka w tytule rozdziału, nazwie folderu (tytuł książki; pasują wszystkie jego publiczne rozdziały), treści i tagach (cały tag po normalizacji). Kliknięte tagi (`?tag=`) są obowiązkowe (AND, jak D36), a tag folderu jest dziedziczony. Lista tagów bierze tylko publiczne rozdziały i ich foldery. Tag z wejścia to najwyżej `MAX_TAGS`, zapytanie to najwyżej 100 znaków.
+- Wyniki: do 50 (po sprawdzeniu komentarzy), od ostatnio zmienionych. Adresy z tych samych slugów co strony czytania, więc liczą się też ukryte rozdziały i prywatne foldery. Autorzy bez nicku (D37) są pomijani, bo nie mają publicznego adresu.
+- Limit: 30 wyszukiwań na minutę z IP (`SEARCH_LIMIT`, D40). Pusta strona nie zużywa limitu, a generowanie metadanych go nie liczy. Linki tagów mają `prefetch={false}`, żeby prefetch nie zużywał prób.
+- Strona jest indeksowana (decyzja użytkownika), także adresy z `?q=`, więc roboty mogą zużywać limit swojego adresu. Bez sitemap.
+- `/login` i `/register` usunięte (decyzja użytkownika), adresy dają 404 i są na liście publicznych, żeby nie otwierać dialogu, który po zalogowaniu wróciłby na 404. Dialog na `/` przełącza logowanie i rejestrację. Otwiera go przycisk, `?auth=login` albo `callbackUrl` z proxy (`pages.signIn: "/"`). Akcje i formularze w `app/auth/`.
+- Sidebar (`components/app-sidebar.tsx`) zastępuje menu konta i ikonę Home z D29, na każdej stronie zalogowanego, także w edytorze. Pozycje: Home, Search, Folders, Toggle theme, Change password, Log out. Na desktopie zwijany do paska ikon (`appearance.sidebarCollapsed`, D24), poniżej `md` wysuwana szuflada otwierana przyciskiem „Menu”.
