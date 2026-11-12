@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PostToolUse (Edit|Write): formatuje edytowany plik. Cicho pomija, dopóki narzędzia nie są zainstalowane.
+# PostToolUse (Edit|Write): formats the edited file. Skips silently until the tools are installed.
 file=$(jq -r '.tool_input.file_path // empty')
 cd "$CLAUDE_PROJECT_DIR" || exit 0
 [[ -z "$file" || ! -f "$file" ]] && exit 0
