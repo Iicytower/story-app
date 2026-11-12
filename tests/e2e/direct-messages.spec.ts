@@ -127,3 +127,43 @@ test.describe("signed in", () => {
     await expect(page).toHaveURL("/en/p/Erin");
   });
 });
+
+test.describe("new message", () => {
+  test.use({ storageState: storageStatePath("dave") });
+
+  test("starts a conversation from the messages page with a suggested nickname", async ({
+    page,
+  }) => {
+    await page.goto("/en/messages");
+    await page.getByRole("button", { name: en.messages.new }).click();
+    const dialog = page.getByRole("dialog", { name: en.messages.new });
+    const recipient = dialog.getByRole("combobox", {
+      name: en.messages.recipient,
+    });
+    await recipient.fill("Er");
+    await dialog.getByRole("option", { name: "Erin" }).click();
+    await expect(recipient).toHaveValue("Erin");
+    await dialog
+      .getByRole("textbox", { name: en.messages.newLabel })
+      .fill("Hello from the messages page");
+    await dialog.getByRole("button", { name: en.messages.send }).click();
+    await expect(page).toHaveURL(/\/en\/messages\/[0-9a-f]{24}$/);
+    await expect(
+      page.getByRole("log").getByText("Hello from the messages page"),
+    ).toBeVisible();
+  });
+
+  test("an unknown nickname shows an error", async ({ page }) => {
+    await page.goto("/en/messages");
+    await page.getByRole("button", { name: en.messages.new }).click();
+    const dialog = page.getByRole("dialog", { name: en.messages.new });
+    await dialog
+      .getByRole("combobox", { name: en.messages.recipient })
+      .fill("NoSuchUser");
+    await dialog
+      .getByRole("textbox", { name: en.messages.newLabel })
+      .fill("Hello?");
+    await dialog.getByRole("button", { name: en.messages.send }).click();
+    await expect(dialog.getByRole("alert")).toHaveText(en.errors.userNotFound);
+  });
+});

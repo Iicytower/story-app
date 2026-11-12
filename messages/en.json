@@ -1350,7 +1350,9 @@
   },
   "messages": {
     "title": "Messages",
-    "empty": "No conversations yet. Use Message on someone’s profile to start one.",
+    "empty": "No conversations yet. Start one with New message or Message on someone’s profile.",
+    "new": "New message",
+    "recipient": "To",
     "list": "Conversations",
     "unread": "Unread",
     "closed": "Closed",

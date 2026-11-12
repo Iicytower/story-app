@@ -1350,7 +1350,9 @@
   },
   "messages": {
     "title": "Wiadomości",
-    "empty": "Nie masz jeszcze rozmów. Zacznij ją przyciskiem Wiadomość na czyimś profilu.",
+    "empty": "Nie masz jeszcze rozmów. Zacznij ją przyciskiem Nowa wiadomość albo Wiadomość na czyimś profilu.",
+    "new": "Nowa wiadomość",
+    "recipient": "Do",
     "list": "Rozmowy",
     "unread": "Nieprzeczytana",
     "closed": "Zamknięta",
