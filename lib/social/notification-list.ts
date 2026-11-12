@@ -45,6 +45,8 @@ export interface NotificationView {
   onThread: boolean;
   // The author of a pending invitation (moderatorInvite), for Accept and Decline.
   inviteFrom: string | null;
+  // The terms of a global ban (globalBan); until null is a ban without end.
+  ban: { until: string | null; reason: string } | null;
 }
 
 // Ratings are anonymous (D80), reports keep the reporter from the community (task 80) and
@@ -52,6 +54,8 @@ export interface NotificationView {
 const ANONYMOUS: readonly NotificationType[] = [
   "rating",
   "ban",
+  "globalBan",
+  "globalBanLifted",
   "hidden",
   "report",
   "reportResolved",
@@ -270,6 +274,8 @@ export async function listNotifications(
     } else if (
       entry.type === "moderatorInvite" ||
       entry.type === "moderatorRemoved" ||
+      entry.type === "globalBan" ||
+      entry.type === "globalBanLifted" ||
       entry.type === "reportResolved" ||
       entry.type === "reportDismissed"
     ) {
@@ -296,6 +302,12 @@ export async function listNotifications(
         pending.has(entry.authorId.toString())
           ? entry.authorId.toString()
           : null,
+      ban: entry.ban
+        ? {
+            until: entry.ban.until?.toISOString() ?? null,
+            reason: entry.ban.reason,
+          }
+        : null,
     };
   });
 }

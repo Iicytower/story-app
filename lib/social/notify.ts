@@ -35,6 +35,8 @@ export interface NotifyEvent {
   threadId?: Id;
   postId?: Id;
   count?: number;
+  // The terms of a global ban as given, kept in the notification.
+  ban?: { until: Date | null; reason: string };
 }
 
 const toId = (id: Id) => new Types.ObjectId(id.toString());
@@ -63,6 +65,7 @@ export function notificationFields(event: NotifyEvent) {
     }),
     ...(event.threadId && { threadId: toId(event.threadId) }),
     ...(event.postId && { postId: toId(event.postId) }),
+    ...(event.ban && { ban: event.ban }),
   };
 }
 
