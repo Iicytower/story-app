@@ -1,4 +1,5 @@
 import { getLocale, getTranslations } from "next-intl/server";
+import { LocalDate } from "@/components/local-date";
 import { CommentMenu } from "@/components/moderation-controls";
 import { SocialMarkdown } from "@/components/social-markdown";
 import { Button } from "@/components/ui/button";
@@ -49,17 +50,11 @@ async function CommentItem({
   const locale = await getLocale();
   const created = new Date(comment.createdAt);
   const time = (
-    <time
-      dateTime={comment.createdAt}
-      title={new Intl.DateTimeFormat(locale, {
-        dateStyle: "long",
-        timeStyle: "long",
-        timeZone: "UTC",
-      }).format(created)}
+    <LocalDate
+      iso={comment.createdAt}
+      relative
       className="text-muted-foreground text-xs"
-    >
-      {formatPublishedAt(created, now, locale)}
-    </time>
+    />
   );
   if (!comment.author || comment.body === null) {
     return (

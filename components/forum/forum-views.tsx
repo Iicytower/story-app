@@ -9,6 +9,7 @@ import {
   PostControls,
   RestoreButton,
 } from "@/components/forum/forum-forms";
+import { LocalDate } from "@/components/local-date";
 import { CommentMenu } from "@/components/moderation-controls";
 import { PlainMarkdown, SocialMarkdown } from "@/components/social-markdown";
 import { Button } from "@/components/ui/button";
@@ -29,21 +30,9 @@ import { activeCommunityBan } from "@/lib/social/moderation";
 import { getReactionSummaries } from "@/lib/social/reaction-summary";
 import { EMPTY_SUMMARY, type ReactionSummary } from "@/lib/social/reactions";
 
-async function DateText({ value, now }: { value: string; now: Date }) {
-  const locale = await getLocale();
-  const date = new Date(value);
+function DateText({ value }: { value: string }) {
   return (
-    <time
-      dateTime={value}
-      title={new Intl.DateTimeFormat(locale, {
-        dateStyle: "long",
-        timeStyle: "long",
-        timeZone: "UTC",
-      }).format(date)}
-      className="text-muted-foreground text-xs"
-    >
-      {formatPublishedAt(date, now, locale)}
-    </time>
+    <LocalDate iso={value} relative className="text-muted-foreground text-xs" />
   );
 }
 
@@ -61,7 +50,6 @@ export async function ThreadList({
 }) {
   const t = await getTranslations("forums");
   const locale = await getLocale();
-  const now = new Date();
   const [threads, writable, ban] = await Promise.all([
     listThreads(viewerId, place),
     canWriteIn(viewerId, place),
@@ -127,7 +115,7 @@ export async function ThreadList({
                 <span>{t("posts", { count: thread.postCount })}</span>
                 <span>
                   {t("lastPost")}{" "}
-                  <DateText value={thread.lastPostAt} now={now} />
+                  <DateText value={thread.lastPostAt} />
                 </span>
                 {thread.hidden && <span>{t("threadHidden")}</span>}
               </p>
@@ -196,7 +184,7 @@ async function PostItem({
             ) : (
               <UserLink nickname={name} className="[overflow-wrap:anywhere]" />
             )}
-            <DateText value={post.createdAt} now={now} />
+            <DateText value={post.createdAt} />
             {post.edited && (
               <span className="text-muted-foreground text-xs">
                 {t("edited")}

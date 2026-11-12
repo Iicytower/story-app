@@ -508,7 +508,8 @@ export function seedDailyStats(
     const story = await connection
       .collection("stories")
       .findOne({ userId: owner, folderId: folderDoc?._id, title });
-    if (!folderDoc || !story) throw new Error(`No chapter ${title} in ${folder}`);
+    if (!folderDoc || !story)
+      throw new Error(`No chapter ${title} in ${folder}`);
     await connection.collection("dailyStats").insertMany(
       days.map(({ daysAgo, readers }) => ({
         storyId: story._id,
@@ -621,6 +622,45 @@ export function seedChapterReport(
       details: "No warning",
       state: "open",
       createdAt: new Date(),
+    });
+  });
+}
+
+// A saved version of a book without chapters, saved at a given moment.
+export function seedFolderVersion(
+  user: UserName,
+  folder: string,
+  version: { number: number; name: string; createdAt: Date },
+): Promise<string> {
+  return withE2EDb(async (connection) => {
+    const folderId = await ensureFolder(connection, user, folder);
+    await connection.collection("folderVersions").insertOne({
+      userId: await userId(connection, user),
+      folderId,
+      chapterSort: "created",
+      chapters: [],
+      ...version,
+    });
+    return folderId.toString();
+  });
+}
+
+// A ban in the author's community, written in the log at a given moment.
+export function seedModerationLog(
+  author: UserName,
+  target: UserName,
+  createdAt: Date,
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const authorId = await userId(connection, author);
+    await connection.collection("moderationLog").insertOne({
+      authorId,
+      actorId: authorId,
+      action: "ban",
+      targetType: "user",
+      targetUserId: await userId(connection, target),
+      reason: "Spam",
+      createdAt,
     });
   });
 }

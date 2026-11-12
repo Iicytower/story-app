@@ -3,17 +3,18 @@ const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 export const RELATIVE_DAYS = 7;
 
-// Rendered on the server, which does not know the viewer's time zone, so older dates are in UTC.
+// On the server, which does not know the viewer's time zone, older dates are in UTC.
 export function formatPublishedAt(
   date: Date,
   now: Date,
   locale: string,
+  timeZone = "UTC",
 ): string {
   const ago = Math.max(0, now.getTime() - date.getTime());
   if (ago >= RELATIVE_DAYS * DAY) {
     return new Intl.DateTimeFormat(locale, {
       dateStyle: "medium",
-      timeZone: "UTC",
+      timeZone,
     }).format(date);
   }
   const relative = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
