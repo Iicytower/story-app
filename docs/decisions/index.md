@@ -124,7 +124,7 @@ Decyzje i odstępstwa od `docs/spec.md` – mają pierwszeństwo nad spec, a prz
 Nie obowiązują albo opisują zamknięty etap; czytaj tylko przy pytaniu o historię lub gdy status wskazuje część nadal aktualną.
 
 - [**D11**](D011-udostepnianie.md) Szczegóły udostępniania – zastąpiona przez D38 (publikacja zamiast linków).
-- [**D13**](D013-branche-po-1-0.md) Branche i środowiska po wersji 1.0 – przepływ branchy zastąpiony przez D15 i D45; tag `v1.0.0` i baza stagingu opisuje `docs/deploy.md`.
+- [**D13**](D013-branche-po-1-0.md) Branche i środowiska po wersji 1.0 – przepływ branchy zastąpiony przez D15 i D45; bazę stagingu opisuje `docs/deploy.md`, a tag `v1.0.0` oznacza wersję 1.0.
 - [**D29**](D029-menu-konta.md) Menu konta zamiast górnego paska – górny pasek i menu konta zastąpione sidebarem z D42.
 - [**D44**](D044-jezyk-folderu-languagetool.md) Język folderu w tasku LanguageTool – zakres taska 31 wchłonięty przez task 29, zastąpiona przez D58.
 - [**D59**](D059-korekta-w-dialogu.md) Korekta w dialogu w stylu propozycji zmian – dialog, panel i „Accept” zastąpiła korekta w głównym edytorze (D66); sprawdzanie, mapowanie pozycji, zakreślenia i reguły obowiązują dalej.
