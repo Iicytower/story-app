@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { connection } from "next/server";
 import type { ReactNode } from "react";
+import { LocalDate } from "@/components/local-date";
+import { localDateTag } from "@/components/local-date-tag";
 import { Button } from "@/components/ui/button";
 import { ReportModerationButtons } from "@/components/moderation-controls";
 import { UserLink } from "@/components/user-link";
@@ -86,6 +88,7 @@ export default async function ModerationPage({
     timeStyle: "short",
     timeZone: "UTC",
   });
+  // Labels of buttons are strings: they keep the server's UTC.
   const date = (value: string) => fullDate.format(new Date(value));
   const href = (authorId: string, next: ModerationTab) =>
     `${PATH}?community=${authorId}&tab=${next}`;
@@ -112,9 +115,9 @@ export default async function ModerationPage({
               {comment.body}
             </p>
             <p className="text-muted-foreground">
-              {t("hiddenBy", {
+              {t.rich("hiddenBy", {
                 nickname: comment.hiddenBy ?? t("deletedAccount"),
-                date: date(comment.hiddenAt),
+                date: localDateTag(comment.hiddenAt),
               })}
             </p>
             {comment.reason && (
@@ -124,7 +127,9 @@ export default async function ModerationPage({
             )}
             {comment.purgeAt && (
               <p className="text-muted-foreground">
-                {t("purgeAt", { date: date(comment.purgeAt) })}
+                {t.rich("purgeAt", {
+                  date: localDateTag(comment.purgeAt),
+                })}
               </p>
             )}
             <div className="flex flex-wrap items-start gap-2">
@@ -182,9 +187,9 @@ export default async function ModerationPage({
                 </p>
               )}
               <p className="text-muted-foreground">
-                <time dateTime={report.createdAt}>
-                  {t("reportedAt", { date: at })}
-                </time>
+                {t.rich("reportedAt", {
+                  date: localDateTag(report.createdAt),
+                })}
               </p>
               <div className="flex flex-wrap items-start gap-2">
                 <ModerationButton
@@ -240,7 +245,9 @@ export default async function ModerationPage({
               </p>
               <p>
                 {ban.until
-                  ? t("bannedUntil", { date: date(ban.until) })
+                  ? t.rich("bannedUntil", {
+                      date: localDateTag(ban.until),
+                    })
                   : t("bannedForever")}
               </p>
               <p className="[overflow-wrap:anywhere] whitespace-pre-wrap">
@@ -337,12 +344,11 @@ export default async function ModerationPage({
                 {t("reason", { reason: entry.reason })}
               </p>
             )}
-            <time
-              dateTime={entry.createdAt}
+            <LocalDate
+              iso={entry.createdAt}
+              withTime
               className="text-muted-foreground text-xs"
-            >
-              {date(entry.createdAt)}
-            </time>
+            />
           </li>
         ))}
       </Section>

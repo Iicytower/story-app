@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { connection } from "next/server";
 import type { ReactNode } from "react";
+import { LocalDate } from "@/components/local-date";
+import { localDateTag } from "@/components/local-date-tag";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -77,6 +79,7 @@ export default async function AdminPage({
     timeStyle: "short",
     timeZone: "UTC",
   });
+  // Labels of buttons are strings: they keep the server's UTC.
   const date = (value: string) => fullDate.format(new Date(value));
   const deleted = tModeration("deletedAccount");
 
@@ -122,12 +125,10 @@ export default async function AdminPage({
                 </p>
               )}
               <p className="text-muted-foreground [overflow-wrap:anywhere]">
-                <time dateTime={report.createdAt}>
-                  {t("reportedBy", {
-                    nickname: report.reporter ?? deleted,
-                    date: at,
-                  })}
-                </time>
+                {t.rich("reportedBy", {
+                  nickname: report.reporter ?? deleted,
+                  date: localDateTag(report.createdAt),
+                })}
               </p>
               <div className="flex flex-wrap items-start gap-2">
                 <AdminButton
@@ -163,7 +164,7 @@ export default async function AdminPage({
                     asChild
                     size="sm"
                     variant="ghost"
-                    className="h-auto max-w-full whitespace-normal [overflow-wrap:anywhere]"
+                    className="h-auto max-w-full [overflow-wrap:anywhere] whitespace-normal"
                   >
                     <Link
                       href={`/admin?tab=bans&nickname=${encodeURIComponent(report.target)}`}
@@ -203,7 +204,9 @@ export default async function AdminPage({
               </p>
               <p>
                 {ban.until
-                  ? tModeration("bannedUntil", { date: date(ban.until) })
+                  ? tModeration.rich("bannedUntil", {
+                      date: localDateTag(ban.until),
+                    })
                   : tModeration("bannedForever")}
               </p>
               <p className="[overflow-wrap:anywhere] whitespace-pre-wrap">
@@ -466,12 +469,11 @@ export default async function AdminPage({
                   {tModeration("reason", { reason: entry.reason })}
                 </p>
               )}
-              <time
-                dateTime={entry.createdAt}
+              <LocalDate
+                iso={entry.createdAt}
+                withTime
                 className="text-muted-foreground text-xs"
-              >
-                {date(entry.createdAt)}
-              </time>
+              />
             </li>
           ))}
         </List>

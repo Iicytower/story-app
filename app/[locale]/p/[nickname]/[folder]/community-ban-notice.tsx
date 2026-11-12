@@ -1,17 +1,11 @@
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
+import { localDateTag } from "@/components/local-date-tag";
 import type { BanNotice } from "@/lib/social/moderation";
 
 // Only the banned account sees it, with the reason and the end of the ban (D80).
 export async function CommunityBanNotice({ ban }: { ban: BanNotice | null }) {
   if (!ban) return null;
   const t = await getTranslations("moderation");
-  const locale = await getLocale();
-  const date = (value: string) =>
-    new Intl.DateTimeFormat(locale, {
-      dateStyle: "long",
-      timeStyle: "short",
-      timeZone: "UTC",
-    }).format(new Date(value));
   return (
     <div
       role="note"
@@ -26,7 +20,9 @@ export async function CommunityBanNotice({ ban }: { ban: BanNotice | null }) {
       </p>
       <p>
         {ban.until
-          ? t("bannedUntil", { date: date(ban.until) })
+          ? t.rich("bannedUntil", {
+              date: localDateTag(ban.until),
+            })
           : t("bannedForever")}
       </p>
       <p className="[overflow-wrap:anywhere] whitespace-pre-wrap">

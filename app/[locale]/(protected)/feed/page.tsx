@@ -3,13 +3,13 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { after, connection } from "next/server";
 import type { ReactNode } from "react";
 import { AdultBadge } from "@/components/adult";
+import { LocalDate } from "@/components/local-date";
 import { PublicCover } from "@/components/cover";
 import { Button } from "@/components/ui/button";
 import { profilePath } from "@/components/user-link";
 import { Link, redirect } from "@/i18n/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { retryDueCovers } from "@/lib/covers/mutations";
-import { formatPublishedAt } from "@/lib/publish/published-date";
 import { getFeed, parseFeedCursor } from "@/lib/social/feed";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -33,13 +33,6 @@ export default async function FeedPage({
   const { entries, next } = await getFeed(user.userId, cursor);
   const t = await getTranslations("feed");
   const tCovers = await getTranslations("covers");
-  const now = new Date();
-  const fullDate = new Intl.DateTimeFormat(locale, {
-    dateStyle: "long",
-    // The long time style names the zone: the server renders in UTC.
-    timeStyle: "long",
-    timeZone: "UTC",
-  });
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -60,13 +53,11 @@ export default async function FeedPage({
         <ul aria-label={t("entries")} className="flex flex-col gap-4">
           {entries.map((entry) => {
             const time = (
-              <time
-                dateTime={entry.createdAt.toISOString()}
-                title={fullDate.format(entry.createdAt)}
+              <LocalDate
+                iso={entry.createdAt.toISOString()}
+                relative
                 className="text-muted-foreground text-sm"
-              >
-                {formatPublishedAt(entry.createdAt, now, locale)}
-              </time>
+              />
             );
             if (entry.type === "forumThread") {
               const thread = entry.thread;

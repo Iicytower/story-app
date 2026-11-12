@@ -22,6 +22,7 @@ import {
   useRealtimeEvents,
 } from "@/components/realtime";
 import { useRouter } from "@/i18n/navigation";
+import { groupByDay } from "@/lib/social/notification-groups";
 import type { NotificationView } from "@/lib/social/notification-list";
 import { POLL_MS, SAFETY_POLL_MS } from "@/lib/social/notifications";
 import { cn } from "@/lib/utils";
@@ -251,7 +252,7 @@ function Item({
           <Message item={item} />
         </span>
         <span className="text-muted-foreground col-start-2 text-xs">
-          <LocalDate iso={item.updatedAt} withTime />
+          <LocalDate iso={item.updatedAt} relative />
         </span>
       </button>
       {item.inviteFrom && (
@@ -325,7 +326,7 @@ function PanelContent({
   onClose: () => void;
 }) {
   const t = useTranslations("notifications");
-  const list = useRef<HTMLUListElement>(null);
+  const list = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState<NotificationView[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -389,21 +390,34 @@ function PanelContent({
         <p className="text-muted-foreground">{t("empty")}</p>
       )}
       {items && items.length > 0 && (
-        <ul
+        <div
           ref={list}
           tabIndex={-1}
+          role="group"
           aria-label={t("list")}
-          className="-mx-1 overflow-y-auto outline-none"
+          className="-mx-1 flex flex-col gap-2 overflow-y-auto outline-none"
         >
-          {items.map((item) => (
-            <Item
-              key={item.id}
-              item={item}
-              onRead={markRead}
-              onClose={onClose}
-            />
+          {groupByDay(items, new Date()).map(({ group, items: grouped }) => (
+            <section key={group} aria-labelledby={`notifications-${group}`}>
+              <h3
+                id={`notifications-${group}`}
+                className="text-muted-foreground px-3 pb-1 text-xs font-medium"
+              >
+                {t(group)}
+              </h3>
+              <ul aria-labelledby={`notifications-${group}`}>
+                {grouped.map((item) => (
+                  <Item
+                    key={item.id}
+                    item={item}
+                    onRead={markRead}
+                    onClose={onClose}
+                  />
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       )}
       {error && (
         <p role="alert" className="text-destructive">

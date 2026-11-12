@@ -59,7 +59,7 @@ export default async function MessagesPage() {
                 )}
                 <span className="text-muted-foreground ml-auto text-sm">
                   <span className="sr-only">{t("lastMessage")}: </span>
-                  <LocalDate iso={conversation.lastMessageAt} withTime />
+                  <LocalDate iso={conversation.lastMessageAt} relative />
                 </span>
               </Link>
             </li>
