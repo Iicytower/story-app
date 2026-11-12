@@ -1,6 +1,6 @@
 // The real tools server (task 28): a VPS reached over SSH, set up by `npm run tools:remote` and
 // given the dictionary databases by `npm run dict:upload:remote`. Its settings and secrets live in
-// TOOLS_REMOTE_DIR (default .tools/mikrus, gitignored); docs/deploy.md describes remote.env.
+// TOOLS_REMOTE_DIR (default .tools/mikrus, gitignored); docs/deploy/tools.md describes remote.env.
 import { execFileSync, spawn, type StdioOptions } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -37,7 +37,7 @@ export function readRemote(): Remote {
   const missing = REQUIRED.filter((key) => !env[key]);
   if (missing.length > 0) {
     throw new Error(
-      `${file}: missing ${missing.join(", ")} (see docs/deploy.md, "Serwer narzędzi na Mikrusie").`,
+      `${file}: missing ${missing.join(", ")} (see docs/deploy/tools.md, "Serwer narzędzi na Mikrusie").`,
     );
   }
   return {

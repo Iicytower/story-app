@@ -60,7 +60,13 @@
     ],
     "deny": [
       "Bash(npm run tools:remote*)",
-      "Bash(npm run dict:upload:remote*)"
+      "Bash(npm run dict:upload:remote*)",
+      "Read(./.next/**)",
+      "Read(./.next-*/**)",
+      "Read(./playwright-report/**)",
+      "Read(./test-results/**)",
+      "Read(./package-lock.json)",
+      "Read(./coverage/**)"
     ],
     "ask": [
       "Bash(npm install*)",

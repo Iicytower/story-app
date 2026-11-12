@@ -39,7 +39,7 @@ Never push to `main` or `staging` and never merge these PRs: the user does that.
    Each description has:
    - `## Zmiany`: one line per task with its decision number, then whether there are new migrations and dependencies.
    - `## Weryfikacja` (to `staging`): the last `npm run verify` result, only if it really ran on this code, and the smoke test to do.
-   - `## Przed mergem` (to `main`): the PR to `staging` merged, smoke test, for new migrations `Applying <id>` and `Indexes synced` in the staging build log (`docs/deploy.md`), merge and tag `vX.Y.Z` by the user.
+   - `## Przed mergem` (to `main`): the PR to `staging` merged, smoke test, for new migrations `Applying <id>` and `Indexes synced` in the staging build log (`docs/deploy/migrations.md`), merge and tag `vX.Y.Z` by the user.
 
    If `staging` and `main` are identical, start the second description with: merge only after the PR to `staging`, what it will release, and why the diff shown now is not real.
 
