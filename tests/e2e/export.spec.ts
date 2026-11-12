@@ -15,7 +15,7 @@ test("does not download when saving fails and shows the error", async ({
 }) => {
   await seedStory("alice", { title: "Taken" });
   const id = await seedStory("alice", { title: "Mine" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   let downloaded = false;
   page.on("download", () => {
     downloaded = true;
@@ -25,7 +25,7 @@ test("does not download when saving fails and shows the error", async ({
   await submitExport(page);
 
   await expect(page.getByRole("status")).toHaveText(
-    "A story with this title already exists in this folder.",
+    "A chapter with this title already exists in this book.",
   );
   await page.waitForTimeout(1000);
   expect(downloaded).toBe(false);
@@ -37,8 +37,8 @@ test("does not download when the story was saved in another tab", async ({
 }) => {
   const id = await seedStory("alice", { title: "Two tabs" });
   const other = await context.newPage();
-  await page.goto(`/stories/${id}`);
-  await other.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
+  await other.goto(`/chapters/${id}`);
   let downloaded = false;
   page.on("download", () => {
     downloaded = true;
@@ -60,7 +60,7 @@ test("does not download when the story was saved in another tab", async ({
 
 test("does not download with an empty title", async ({ page }) => {
   const id = await seedStory("alice", { title: "Untitled soon" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   let downloaded = false;
   page.on("download", () => {
     downloaded = true;
@@ -76,7 +76,7 @@ test("does not download with an empty title", async ({ page }) => {
 
 test("returns 404 for another user's story", async ({ page }) => {
   const id = await seedStory("bob", { title: "Bob's" });
-  const response = await page.request.get(`/stories/${id}/export`);
+  const response = await page.request.get(`/chapters/${id}/export`);
   expect(response.status()).toBe(404);
 });
 
@@ -85,6 +85,6 @@ test("folder export returns 404 for another user's folder", async ({
 }) => {
   await seedStory("bob", { title: "Bob's", folder: "Bob's book" });
   const folder = await findFolder("Bob's book");
-  const response = await page.request.get(`/folders/${folder!._id}/export`);
+  const response = await page.request.get(`/books/${folder!._id}/export`);
   expect(response.status()).toBe(404);
 });

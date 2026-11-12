@@ -50,7 +50,7 @@ test("dave starts a thread in the workshop, erin quotes it and dave is notified"
   await expect(posts.getByText("Quoting Dave")).toBeVisible();
   await erin.context.close();
 
-  await page.goto("/en/stories");
+  await page.goto("/en/books");
   await bell(page, 1).click();
   const item = page
     .getByRole("dialog", { name: en.notifications.title })

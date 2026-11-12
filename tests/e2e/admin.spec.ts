@@ -15,7 +15,7 @@ test("only the admin has the panel and its sidebar entry", async ({
   page,
   browser,
 }) => {
-  await page.goto("/en/stories");
+  await page.goto("/en/books");
   await expect(
     page.getByRole("link", { name: en.sidebar.admin, exact: true }),
   ).toBeVisible();
@@ -25,7 +25,7 @@ test("only the admin has the panel and its sidebar entry", async ({
   });
   const davePage = await dave.newPage();
   expect((await davePage.goto("/en/admin"))!.status()).toBe(404);
-  await davePage.goto("/en/stories");
+  await davePage.goto("/en/books");
   await expect(
     davePage.getByRole("link", { name: en.sidebar.admin, exact: true }),
   ).toHaveCount(0);

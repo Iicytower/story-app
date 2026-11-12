@@ -37,7 +37,7 @@ test("the chapter row ⋮ and publication icon show their name on hover and on k
   page,
 }) => {
   const { folderId } = await seedChapter();
-  await page.goto(`/folders/${folderId}`);
+  await page.goto(`/books/${folderId}`);
   const menu = page.getByRole("button", { name: "Actions for Dragon tale" });
   const status = page
     .getByRole("list", { name: "Chapters" })
@@ -57,7 +57,7 @@ test("the chapter row ⋮ and publication icon show their name on hover and on k
 
 test("menu items have a visible label and no tooltip", async ({ page }) => {
   const { folderId } = await seedChapter();
-  await page.goto(`/folders/${folderId}`);
+  await page.goto(`/books/${folderId}`);
   await page.getByRole("button", { name: "Actions for Dragon tale" }).click();
   const tags = page.getByRole("menuitem", { name: "Tags", exact: true });
   await expect(tags).toBeVisible();
@@ -70,7 +70,7 @@ test("closing a dialog opened from the menu leaves the page usable and shows no 
   page,
 }) => {
   const { folderId } = await seedChapter();
-  await page.goto(`/folders/${folderId}`);
+  await page.goto(`/books/${folderId}`);
   const menu = page.getByRole("button", { name: "Actions for Dragon tale" });
   await menu.click();
   await page.getByRole("menuitem", { name: "Tags", exact: true }).click();
@@ -87,7 +87,7 @@ test("closing a dialog opened from the menu leaves the page usable and shows no 
 
 test("the editor toolbar shows Bold as a tooltip", async ({ page }) => {
   const { id } = await seedChapter();
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const bold = markdownEditor(page, "Content").button("Bold");
   await expect(bold).not.toHaveAttribute("title");
   await bold.hover();
@@ -97,7 +97,7 @@ test("the editor toolbar shows Bold as a tooltip", async ({ page }) => {
 test("the collapsed sidebar shows tooltips, the expanded one does not", async ({
   page,
 }) => {
-  await page.goto("/stories");
+  await page.goto("/books");
   const nav = page.getByRole("navigation", { name: "Main" });
   await nav.getByRole("button", { name: "Settings" }).hover();
   await expectNoTooltip(page);
@@ -113,7 +113,7 @@ test("the collapsed sidebar shows tooltips, the expanded one does not", async ({
 
 test("tooltips and menu items are in Polish on /pl", async ({ page }) => {
   const { folderId } = await seedChapter();
-  await page.goto(`/pl/folders/${folderId}`);
+  await page.goto(`/pl/books/${folderId}`);
   const menu = page.getByRole("button", { name: "Akcje: Dragon tale" });
   await menu.hover();
   await expect(tooltip(page)).toHaveText(["Akcje: Dragon tale"]);

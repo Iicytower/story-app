@@ -40,14 +40,14 @@ test("the desktop layout is restored in another browser and rendered by the serv
   browser,
 }) => {
   const id = await seedChapter();
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   await sideTab(page, "Chapters").click();
   await expect
     .poll(async () => (await findSettings("alice"))?.editor?.layout)
     .toMatchObject({ tab: "chapters" });
 
   const other = await newBrowser(browser, "alice");
-  await other.page.goto(`/stories/${id}`);
+  await other.page.goto(`/chapters/${id}`);
   await expect(sideTab(other.page, "Chapters")).toHaveAttribute(
     "aria-selected",
     "true",
@@ -58,7 +58,7 @@ test("the desktop layout is restored in another browser and rendered by the serv
   const noScript = await newBrowser(browser, "alice", {
     javaScriptEnabled: false,
   });
-  await noScript.page.goto(`/stories/${id}`);
+  await noScript.page.goto(`/chapters/${id}`);
   await expect(sideTab(noScript.page, "Chapters")).toHaveAttribute(
     "aria-selected",
     "true",
@@ -74,7 +74,7 @@ test("another user keeps the default layout and theme", async ({
   browser,
 }) => {
   const id = await seedChapter();
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   await sideTab(page, "Chapters").click();
   await saveTheme(page, "Dark");
   await expect
@@ -86,7 +86,7 @@ test("another user keeps the default layout and theme", async ({
 
   const bobId = await seedStory("bob", { title: "Bob's", folder: "Bob" });
   const bob = await newBrowser(browser, "bob");
-  await bob.page.goto(`/stories/${bobId}`);
+  await bob.page.goto(`/chapters/${bobId}`);
   await expect(sideTab(bob.page, "Notes")).toHaveAttribute(
     "aria-selected",
     "true",
@@ -99,7 +99,7 @@ test("the theme follows the settings in another browser, from the first paint", 
   page,
   browser,
 }) => {
-  await page.goto("/stories");
+  await page.goto("/books");
   await saveTheme(page, "Dark");
   await expect
     .poll(async () => (await findSettings("alice"))?.appearance?.theme)
@@ -107,9 +107,9 @@ test("the theme follows the settings in another browser, from the first paint", 
 
   const other = await newBrowser(browser, "alice");
   // The saved theme is in the server HTML, applied by the script in <head>.
-  const response = await other.page.request.get("/stories");
+  const response = await other.page.request.get("/books");
   expect(await response.text()).toMatch(/<html[^>]*data-theme="dark"/);
-  await other.page.goto("/stories");
+  await other.page.goto("/books");
   await expect(html(other.page)).toHaveClass(/\bdark\b/);
   // The browser keeps a copy for pages without a session.
   expect(await other.page.evaluate(() => localStorage.getItem("theme"))).toBe(
@@ -122,12 +122,12 @@ test("a signed-in user without a saved theme follows the system", async ({
   browser,
 }) => {
   const dark = await newBrowser(browser, "alice", { colorScheme: "dark" });
-  await dark.page.goto("/stories");
+  await dark.page.goto("/books");
   await expect(html(dark.page)).toHaveClass(/\bdark\b/);
   await dark.context.close();
 
   const light = await newBrowser(browser, "alice", { colorScheme: "light" });
-  await light.page.goto("/stories");
+  await light.page.goto("/books");
   await expect(html(light.page)).not.toHaveClass(/\bdark\b/);
   await light.context.close();
 });
@@ -153,7 +153,7 @@ test("the accent color is picked from swatches and kept for the user", async ({
   page,
   browser,
 }) => {
-  await page.goto("/stories");
+  await page.goto("/books");
   const primary = () =>
     page.evaluate(() =>
       getComputedStyle(document.body).getPropertyValue("--primary"),
@@ -193,7 +193,7 @@ test("the dark theme sets a dark color-scheme for native controls", async ({
 }) => {
   for (const colorScheme of ["dark", "light"] as const) {
     const user = await newBrowser(browser, "alice", { colorScheme });
-    await user.page.goto("/stories");
+    await user.page.goto("/books");
     await expect
       .poll(() =>
         user.page.evaluate(
@@ -207,7 +207,7 @@ test("the dark theme sets a dark color-scheme for native controls", async ({
 
 test("dragging a separator sends only a few saves", async ({ page }) => {
   const id = await seedChapter();
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const separator = page.getByRole("separator", {
     name: "Resize notes column",
   });
@@ -237,7 +237,7 @@ test.describe("on a narrow screen", () => {
     browser,
   }) => {
     const id = await seedChapter();
-    await page.goto(`/stories/${id}`);
+    await page.goto(`/chapters/${id}`);
     const tab = (p: Page, name: string) =>
       p.getByRole("tablist", { name: "View" }).getByRole("tab", { name });
 
@@ -252,7 +252,7 @@ test.describe("on a narrow screen", () => {
     );
 
     const desktop = await newBrowser(browser, "alice");
-    await desktop.page.goto(`/stories/${id}`);
+    await desktop.page.goto(`/chapters/${id}`);
     await expect(
       desktop.page
         .getByRole("tablist", { name: "Side panel" })

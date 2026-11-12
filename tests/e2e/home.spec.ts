@@ -70,7 +70,7 @@ test("a visitor sees the hero in both languages", async ({ page: visitor }) => {
   await expect(
     visitor.getByRole("heading", {
       level: 1,
-      name: "Twoje opowiadania od pierwszego zdania do pierwszego czytelnika",
+      name: "Twoje książki od pierwszego zdania do pierwszego czytelnika",
     }),
   ).toBeVisible();
   await expect(
@@ -79,7 +79,7 @@ test("a visitor sees the hero in both languages", async ({ page: visitor }) => {
   await expect(
     visitor.getByRole("button", { name: "Zaloguj się", exact: true }),
   ).toBeVisible();
-  await expect(visitor).toHaveTitle("Story App – pisz i publikuj opowiadania");
+  await expect(visitor).toHaveTitle("Story App – pisz i publikuj książki");
 });
 
 test("the hero buttons open the dialog in the right mode", async ({
@@ -269,7 +269,7 @@ test.describe("signed in", () => {
       "aria-current",
       "page",
     );
-    await page.goto("/stories");
+    await page.goto("/books");
     await nav.getByRole("link", { name: "Home" }).click();
     await expect(page).toHaveURL("/en");
   });

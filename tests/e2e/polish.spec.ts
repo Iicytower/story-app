@@ -21,7 +21,7 @@ test("switching to Polish keeps the page, survives a reload and is saved", async
   // A session of its own: the test logs out, and the saved one is for other tests (D75).
   await page.context().clearCookies();
   await login(page, "bob");
-  await page.goto("/en/stories?q=dragon");
+  await page.goto("/en/books?q=dragon");
   await page
     .getByRole("navigation", { name: "Main" })
     .getByRole("button", { name: "Settings" })
@@ -30,7 +30,7 @@ test("switching to Polish keeps the page, survives a reload and is saved", async
   await dialog.getByLabel("Interface language").selectOption("pl");
   await dialog.getByRole("button", { name: "Save" }).click();
 
-  await expect(page).toHaveURL("/pl/stories?q=dragon");
+  await expect(page).toHaveURL("/pl/books?q=dragon");
   // The dialog stays open, now in Polish.
   await expect(
     dialog.getByRole("heading", { name: "Ustawienia" }),
@@ -51,17 +51,17 @@ test("switching to Polish keeps the page, survives a reload and is saved", async
   await page.keyboard.press("Escape");
   await expect(page.locator("html")).toHaveAttribute("lang", "pl");
   await expect(
-    page.getByRole("searchbox", { name: "Szukaj opowiadań" }),
+    page.getByRole("searchbox", { name: "Szukaj w książkach" }),
   ).toBeVisible();
   expect((await findSettings("bob"))?.appearance).toMatchObject({
     locale: "pl",
   });
 
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Foldery" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Książki" })).toBeVisible();
   // An address without a locale follows the cookie set by the switch.
-  await page.goto("/stories");
-  await expect(page).toHaveURL("/pl/stories");
+  await page.goto("/books");
+  await expect(page).toHaveURL("/pl/books");
 
   await page
     .getByRole("navigation", { name: "Główna" })
@@ -86,14 +86,14 @@ test("signing in on another device brings the saved language", async ({
   await seedSettings("bob", { appearance: { locale: "pl" } });
   const context = await browser.newContext({ locale: "en-US" });
   const page = await context.newPage();
-  await page.goto("/stories");
+  await page.goto("/books");
   await expect(page).toHaveURL(/^[^?]*\/en\?callbackUrl=/);
 
   await page.getByLabel("Nickname").fill(USERS.bob.nickname);
   await page.getByLabel("Password").fill(USERS.bob.password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL("/pl/stories");
-  await expect(page.getByRole("heading", { name: "Foldery" })).toBeVisible();
+  await expect(page).toHaveURL("/pl/books");
+  await expect(page.getByRole("heading", { name: "Książki" })).toBeVisible();
 
   // The cookie now holds the setting.
   await page.goto("/");
@@ -127,12 +127,12 @@ test("a Server Action error is in Polish on /pl", async ({ browser }) => {
 
 test("a signed-in action error is in Polish on /pl", async ({ browser }) => {
   const page = await signedIn(browser);
-  await page.goto("/pl/stories");
+  await page.goto("/pl/books");
   await page.getByRole("button", { name: "Akcje", exact: true }).click();
-  await page.getByRole("menuitem", { name: "Nowy folder" }).click();
+  await page.getByRole("menuitem", { name: "Nowa książka" }).click();
   await page.getByRole("button", { name: "Utwórz" }).click();
   await expect(page.getByRole("alert")).toHaveText(
-    "Nazwa folderu jest wymagana.",
+    "Nazwa książki jest wymagana.",
   );
   await page.context().close();
 });

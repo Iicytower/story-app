@@ -21,36 +21,36 @@ describe("locale routing", () => {
 
   it("takes the locale from Accept-Language", () => {
     expect(
-      location("/stories", { "accept-language": "pl-PL,pl;q=0.9,en;q=0.8" }),
-    ).toBe("http://localhost/pl/stories");
+      location("/books", { "accept-language": "pl-PL,pl;q=0.9,en;q=0.8" }),
+    ).toBe("http://localhost/pl/books");
   });
 
   it("prefers the cookie over Accept-Language", () => {
     expect(
-      location("/stories", {
+      location("/books", {
         "accept-language": "pl-PL,pl;q=0.9",
         cookie: "NEXT_LOCALE=en",
       }),
-    ).toBe("http://localhost/en/stories");
+    ).toBe("http://localhost/en/books");
   });
 
   it("falls back to English", () => {
-    expect(location("/stories", { "accept-language": "de-DE,de" })).toBe(
-      "http://localhost/en/stories",
+    expect(location("/books", { "accept-language": "de-DE,de" })).toBe(
+      "http://localhost/en/books",
     );
   });
 
   it("leaves a prefixed path alone", () => {
-    expect(location("/en/stories")).toBeNull();
+    expect(location("/en/books")).toBeNull();
   });
 });
 
 describe("withLocale", () => {
   it.each([
-    ["/en/stories?q=a", "pl", "/pl/stories?q=a"],
+    ["/en/books?q=a", "pl", "/pl/books?q=a"],
     ["/pl", "en", "/en"],
     ["/en/", "pl", "/pl/"],
-    ["/stories/1", "pl", "/pl/stories/1"],
+    ["/chapters/1", "pl", "/pl/chapters/1"],
     ["/", "pl", "/pl"],
     ["/en/p/Alice/book", "pl", "/pl/p/Alice/book"],
   ] as const)("%s in %s is %s", (path, locale, expected) => {

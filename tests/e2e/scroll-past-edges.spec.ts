@@ -80,7 +80,7 @@ for (const mode of ["Preview", "Source"] as const)
           page,
         }) => {
           const id = await seed(text);
-          await page.goto(`/stories/${id}`);
+          await page.goto(`/chapters/${id}`);
           const editor = markdownEditor(page, label);
           await expect(
             editor.field.getByText("Line 0", { exact: true }),
@@ -91,7 +91,7 @@ for (const mode of ["Preview", "Source"] as const)
 
     test("the limits follow window and panel size", async ({ page }) => {
       const id = await seed(LONG);
-      await page.goto(`/stories/${id}`);
+      await page.goto(`/chapters/${id}`);
       const editor = markdownEditor(page, "Content");
       await expect(editor.field).toBeVisible();
       if (mode === "Source") await editor.button("Source").click();
@@ -113,7 +113,7 @@ for (const mode of ["Preview", "Source"] as const)
 
 test("opens with the first line halfway down the view", async ({ page }) => {
   const id = await seed(LONG);
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { field } = markdownEditor(page, "Content");
   await expect(field.getByText("Line 0", { exact: true })).toBeVisible();
 
@@ -126,7 +126,7 @@ test("opens with the first line halfway down the view", async ({ page }) => {
 
 test("the last line stays in view across switching modes", async ({ page }) => {
   const id = await seed(LONG);
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const editor = markdownEditor(page, "Content");
   await expect(editor.field).toBeVisible();
   await scrollToEnd("Preview", editor.field, "bottom");
@@ -148,7 +148,7 @@ test("Source: clicking the empty space focuses the text, typing keeps the caret 
   page,
 }) => {
   const id = await seed(LONG);
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const editor = markdownEditor(page, "Content");
   await expect(editor.field).toBeVisible();
   await editor.button("Source").click();

@@ -5,11 +5,11 @@ import {
   deleteFolderVersion,
   restoreEntireVersion,
   restoreFolderVersion,
-} from "@/app/[locale]/(protected)/folders/[id]/versions/actions";
+} from "@/app/[locale]/(protected)/books/[id]/versions/actions";
 import {
   setCoverAdult,
   setFolderCover,
-} from "@/app/[locale]/(protected)/folders/[id]/cover-actions";
+} from "@/app/[locale]/(protected)/books/[id]/cover-actions";
 import {
   createFolder,
   deleteFolder,
@@ -23,7 +23,7 @@ import {
   setFolderPublished,
   setFolderSort,
   setFolderTags,
-} from "@/app/[locale]/(protected)/folders/actions";
+} from "@/app/[locale]/(protected)/books/actions";
 import {
   createStory,
   deleteStory,
@@ -34,7 +34,7 @@ import {
   setChapterPublished,
   setStoryAdult,
   setStoryTags,
-} from "@/app/[locale]/(protected)/stories/actions";
+} from "@/app/[locale]/(protected)/chapters/actions";
 import { login } from "@/app/[locale]/auth/login-actions";
 import { requireUser } from "@/lib/auth/session";
 import { Folder } from "@/lib/models/folder";

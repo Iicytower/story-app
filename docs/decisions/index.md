@@ -42,7 +42,7 @@ Decyzje i odstępstwa od `docs/spec.md` – mają pierwszeństwo nad spec, a prz
 - [**D17**](D017-sortowanie.md) Tryby sortowania – foldery: updated/manual/alpha; rozdziały: created/manual itd. Zmieniona w D24 (miejsce zapisu), D55, D83.
 - [**D23**](D023-ustawienia-uzytkownika.md) Ustawienia użytkownika – układ edytora i motyw w ustawieniach zamiast `localStorage`. Zmieniona w D24.
 - [**D24**](D024-kolekcja-settings.md) Kolekcja `settings` – jeden dokument ustawień na użytkownika (editor, appearance, folders). Zmienia D17 i D23.
-- [**D25**](D025-wersje-folderow.md) Wersje folderów – ręcznie zapisywane stany rozdziałów, przywracanie całości lub wybranych, `chapterContents`.
+- [**D25**](D025-wersje-folderow.md) Wersje folderów – ręcznie zapisywane stany rozdziałów, przywracanie całości lub wybranych, `chapterContents`. Zmieniona w D83 (adresy).
 - [**D36**](D036-tagi.md) Tagi – pole `tags` na folderach i rozdziałach, migracja `005-tags`. Częściowo zmieniona w D79 (wyszukiwanie).
 - [**D55**](D055-menu-akcji-przeciaganie.md) Menu akcji (⋮) i przeciąganie zamiast strzałek – akcje w menu, kolejność ręczna przez dnd-kit. Zmienia D17, D53.
 - [**D79**](D079-predefiniowane-tagi.md) Predefiniowane tagi – kolekcja `predefinedTags` (en/pl) jako podpowiedzi obok tagów własnych. Zmienia D36.
@@ -51,16 +51,16 @@ Decyzje i odstępstwa od `docs/spec.md` – mają pierwszeństwo nad spec, a prz
 
 - [**D38**](D038-publikacja.md) Publikacja zamiast udostępniania linkiem – `folders.published` i `stories.publication`, adresy `/p/<nick>/<folder>/<rozdział>`. Zmieniona w D54.
 - [**D42**](D042-publiczna-wyszukiwarka.md) Publiczna wyszukiwarka, strona główna i sidebar – `/` to wyszukiwarka i sidebar dla zalogowanych. Zmieniona w D54, D50, D80, D83.
-- [**D47**](D047-publiczny-link-bez-locale.md) Publiczny link bez prefiksu języka – link `/p/nick/folder` bez locale, język z przekierowania proxy.
+- [**D47**](D047-publiczny-link-bez-locale.md) Publiczny link bez prefiksu języka – link `/p/nick/folder` bez locale, język z przekierowania proxy. Zmieniona w D83 (adresy).
 - [**D54**](D054-strona-glowna.md) Strona główna z hero i ostatnio opublikowanymi – hero dla gościa, `stories.publishedAt`, wąski ekran. Zmienia D38, D42, D46. Zmieniona w D83.
 
 ### Eksport i import
 
 - [**D10**](D010-eksport-md.md) Format eksportu `.md` – frontmatter YAML generowany bez biblioteki, daty ISO.
-- [**D18**](D018-eksport-udostepnianie-folderu.md) Eksport i udostępnianie folderu – zip z rozdziałami przez `fflate`. Część o udostępnianiu zastąpiona przez D38.
-- [**D31**](D031-eksport-formaty.md) Eksport do nowych formatów w przeglądarce – docx, odt, pdf, epub, fb2, html, txt, md.
+- [**D18**](D018-eksport-udostepnianie-folderu.md) Eksport i udostępnianie folderu – zip z rozdziałami przez `fflate`. Część o udostępnianiu zastąpiona przez D38. Zmieniona w D83 (adresy).
+- [**D31**](D031-eksport-formaty.md) Eksport do nowych formatów w przeglądarce – docx, odt, pdf, epub, fb2, html, txt, md. Zmieniona w D83 (adresy).
 - [**D32**](D032-zip-rozdzialy.md) Zip z osobnym plikiem na rozdział – przełącznik „One file per chapter (.zip)” w dialogu eksportu.
-- [**D33**](D033-przycisk-export-as.md) Tylko przycisk „Export as…” – przyciski Export .md i .zip usunięte z UI.
+- [**D33**](D033-przycisk-export-as.md) Tylko przycisk „Export as…” – przyciski Export .md i .zip usunięte z UI. Zmieniona w D83 (adresy).
 - [**D34**](D034-import.md) Import opowiadań – formaty jak w eksporcie plus zip, plik do 50 MB, parsowanie w przeglądarce.
 
 ### UI i i18n
@@ -72,7 +72,7 @@ Decyzje i odstępstwa od `docs/spec.md` – mają pierwszeństwo nad spec, a prz
 - [**D50**](D050-dialog-ustawien.md) Dialog ustawień – motyw, język, hasło i wylogowanie w jednym dialogu „Settings”. Zmieniona w D80 (nowe ustawienia), D83.
 - [**D52**](D052-kontrast-motyw.md) Łagodniejszy kontrast i jeden motyw kolorystyczny – mniejszy kontrast przy zachowaniu WCAG AA.
 - [**D53**](D053-tooltipy.md) Tooltipy przy przyciskach z samą ikoną – shadcn Tooltip zamiast `title`. Częściowo zmieniona w D55.
-- [**D83**](D083-poprawa-ux-ui.md) Poprawa UX i UI (task 51, subtaski 93–107, branch `fix/ui`) – nazwy „Książka/Rozdział” i adresy `/books`, `/chapters`, blok konta, szerokości, edytor, strona główna, ustawienia z zakładkami, społeczność; zmienia D16, D17, D27, D30, D42, D50, D54, D80.
+- [**D83**](D083-poprawa-ux-ui.md) Poprawa UX i UI (task 51, subtaski 93–107, branch `fix/ui`) – nazwy „Książka/Rozdział” i adresy `/books`, `/chapters`, blok konta, szerokości, edytor, strona główna, ustawienia z zakładkami, społeczność; zmienia D16, D17, D18, D25, D27, D30, D31, D33, D42, D47, D50, D54, D80.
 
 ### Serwer narzędzi, korekta i słowniki
 

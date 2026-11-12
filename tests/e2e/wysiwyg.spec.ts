@@ -35,7 +35,7 @@ async function formatLine(
 
 test("each toolbar button produces the expected markdown", async ({ page }) => {
   const id = await seedStory("alice", { title: "Toolbar" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const content = markdownEditor(page, "Content");
   const click = (name: string) => () => content.button(name).click();
 
@@ -78,7 +78,7 @@ test("each toolbar button produces the expected markdown", async ({ page }) => {
 
 test("shortcuts format text and Ctrl+K adds a safe link", async ({ page }) => {
   const id = await seedStory("alice", { title: "Shortcuts" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
 
   expect(
     await formatLine(page, "text", () => page.keyboard.press("Control+b")),
@@ -109,7 +109,7 @@ test("Source and Preview keep the text and unsaved changes", async ({
     title: "Modes",
     content: "Start",
   });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const content = markdownEditor(page, "Content");
   await expect(content.button("Preview")).toHaveAttribute(
     "aria-pressed",
@@ -147,7 +147,7 @@ test("typed dialogue stays paragraphs in the editor, Source and on the public pa
   browser,
 }) => {
   const id = await seedStory("alice", { title: "Dialogue" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const content = markdownEditor(page, "Content");
   await content.field.click();
   await page.keyboard.type("- Hello.");
@@ -196,7 +196,7 @@ test("a list started with * still works and old - lists stay lists", async ({
     title: "Lists",
     content: "- Old one\n- Old two",
   });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const content = markdownEditor(page, "Content");
   await expect(content.field.getByRole("listitem")).toHaveText([
     "Old one",
@@ -217,7 +217,7 @@ test("opening a story without editing does not save it", async ({ page }) => {
     content: "Some __bold__ text\nwith a break",
     updatedAt: new Date("2026-01-01"),
   });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   await expect(
     markdownEditor(page, "Content").field.locator("strong"),
   ).toHaveText("bold");
@@ -238,7 +238,7 @@ test("a comment written in the editor is not on the public page", async ({
     title: "Public",
     content: "Public text",
   });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const content = markdownEditor(page, "Content");
   await content.field.getByText("Public text").click();
   await page.keyboard.press("End");
@@ -265,9 +265,9 @@ test("chapter and folder notes use the same editor with Preview and Source", asy
   page,
 }) => {
   const id = await seedStory("alice", { title: "Notes", folder: "Book" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
 
-  for (const label of ["Notes", "Folder notes"]) {
+  for (const label of ["Notes", "Book notes"]) {
     const notes = markdownEditor(page, label);
     await notes.field.click();
     await page.keyboard.type("idea");

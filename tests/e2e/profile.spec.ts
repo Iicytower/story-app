@@ -117,7 +117,7 @@ test.describe("as a user", () => {
   test("the owner edits the bio and finds it through My profile", async ({
     page,
   }) => {
-    await page.goto("/en/stories");
+    await page.goto("/en/books");
     const dialog = await openSettings(page);
     const bio = dialog.getByLabel("Bio", { exact: true });
     await expect(bio).toHaveValue("");
@@ -152,7 +152,7 @@ test.describe("as a user", () => {
       { title: "Night", publication: "public" },
     ]);
     const id = (await findFolder("Book"))!._id.toString();
-    await page.goto(`/en/folders/${id}`);
+    await page.goto(`/en/books/${id}`);
     await menuAction(page, "Actions for Book", "Cover");
     const dialog = page.getByRole("dialog", { name: "Cover of Book" });
     await classifier("adult");
@@ -197,7 +197,7 @@ test.describe("as a user", () => {
   test("an avatar rated safe shows on the profile, one rated 18+ is refused", async ({
     page,
   }) => {
-    await page.goto("/en/stories");
+    await page.goto("/en/books");
     const settings = await openSettings(page);
     await settings.getByRole("button", { name: "Avatar", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "Avatar", exact: true });

@@ -1,6 +1,6 @@
 # D83 – Poprawa UX i UI (2026-11-12)
 
-Status: aktualna. Zmienia D16, D17, D27, D30, D42, D50, D54 oraz części D80 `navigation.md`, `text-interactions.md`, `stats-discovery.md`.
+Status: aktualna. Zmienia D16, D17, D18, D25, D27, D30, D31, D33, D42, D47, D50, D54 oraz części D80 `navigation.md`, `text-interactions.md`, `stats-discovery.md`.
 
 - Task zbiorczy 51, subtaski 93–107, decyzje użytkownika z 2026-11-12 na podstawie raportu [`docs/ui-ux-report.md`](../ui-ux-report.md) (ocena 6/10, zrzuty w `docs/ui-ux-report/`). Numery w nawiasach (np. 3.1) to punkty raportu. Priorytet: funkcjonalność i wygoda, potem spójność, potem estetyka; prostota, mało animacji.
 
@@ -75,4 +75,10 @@ Status: aktualna. Zmienia D16, D17, D27, D30, D42, D50, D54 oraz części D80 `n
 
 ## Rozstrzygnięcia Claude'a do potwierdzenia
 
-(uzupełniane w przebiegu)
+- 93: pliki tras: lista i akcje folderów (`actions.ts`, `create-folder-dialog.tsx`, `folder-row-menu.tsx`, `stories-menu.tsx`, `import-dialog.tsx`) w `app/[locale]/(protected)/books/`, akcje i dialogi rozdziałów (`actions.ts`, `create-story-dialog.tsx`, `delete-story-dialog.tsx`) w `chapters/`; nazwy komponentów i funkcji bez zmian.
+- 93: zakładka edytora na wąskim ekranie `editor.views.story` to „Tekst” / „Text”, żeby „Rozdział” nie mylił się z panelem „Rozdziały”.
+- 93: „opowiadania” zostają tylko w publicznej wyszukiwarce (`search.title`, `search.label`, `search.none`, wyjątek z D83); hero, tytuł strony głównej i pusty feed mówią „książki”. Po angielsku „stories” zostaje w ogólnym znaczeniu (hero, tytuł strony głównej, wyszukiwarka publiczna). Wyszukiwarka na `/books`: „Szukaj w książkach” / „Search books”. Test słowników: `i18n/messages.test.ts` („naming (D83)”).
+- 93: pole i błędy mówią „nazwa książki” (nie „tytuł”), jak pole „Nazwa” w dialogach.
+- 93: import rozpoznaje też dawne nagłówki „Folder notes” / „Notatki folderu” (`FOLDER_NOTES_HEADINGS`), żeby pliki wyeksportowane przed zmianą wracały z notatkami książki.
+- 93: starsze decyzje opisujące adresy (D18, D25, D31, D33, D47; D16 już wcześniej) dostały „Zmieniona w D83 (adresy)”, treści nie przepisano (D82); `docs/spec.md` bez zmian. Ścieżki w skryptach `docs/security/exploits/` zmienione na nowe.
+- 93: powiadomienia nie prowadzą pod adresy prywatne (tylko strony publiczne, wiadomości, profil, moderacja); `routes.spec.ts` sprawdza przejście z powiadomienia o komentarzu.

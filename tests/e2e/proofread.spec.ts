@@ -59,7 +59,7 @@ test("asks first and sends nothing to LanguageTool until Check", async ({
   page,
 }) => {
   const id = await seedStory("alice", { title: "Ask", content: MD });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const dialog = await openTile(page);
   await expect(
     dialog.getByText("Do you want to use the proofreading tool?"),
@@ -88,7 +88,7 @@ test("marks the issues in the chapter's editor, where decisions and typing chang
   page,
 }) => {
   const id = await seedStory("alice", { title: "Proof", content: MD });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { text, bar, bubble, proposal, inline } = await check(page);
 
   await expect(text.locator("[data-proposal]")).toHaveCount(4);
@@ -152,7 +152,7 @@ test("comes back after a reload with the same issues and the same current one", 
   page,
 }) => {
   const id = await seedStory("alice", { title: "Again", content: MD });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { text, bar, bubble } = await check(page);
   await bubble.getByRole("button", { name: "Reject change" }).click();
   await bubble
@@ -202,7 +202,7 @@ test("a saved proofreading that no longer fits the text is dropped on opening", 
       selected: 0,
     },
   });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { bar, text } = proofreading(page);
   await expect(text).toBeVisible();
   await expect(bar).toBeHidden();
@@ -220,7 +220,7 @@ test("other tools work during proofreading, and Source is blocked until it ends"
   page,
 }) => {
   const id = await seedStory("alice", { title: "Tools", content: MD });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { bar, text, bubble } = await check(page);
   await expect(bubble).toBeVisible();
   await page.keyboard.press("Escape");
@@ -262,7 +262,7 @@ test("a check during proofreading asks and replaces the issues left", async ({
   page,
 }) => {
   const id = await seedStory("alice", { title: "Twice", content: MD });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { text, bubble } = await check(page);
   await bubble.getByRole("button", { name: "Reject change" }).click();
   await expect(text.locator("[data-proposal]")).toHaveCount(3);
@@ -285,7 +285,7 @@ test("saves unsaved edits before the check and drops an answer that comes after 
     title: "Slow",
     content: "POWOLI Napewno.",
   });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const content = markdownEditor(page, "Content");
   await content.field.click();
   await page.keyboard.press("End");
@@ -316,7 +316,7 @@ test("an unavailable tools server gives a message, can be tried again and change
     title: "Down",
     content: "AWARIA Napewno.",
   });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { dialog, bar } = await check(page);
   const message = "This tool is not available right now. Try again later.";
   await expect(dialog.getByRole("alert")).toHaveText(message);
@@ -337,7 +337,7 @@ test("a chapter without issues gives a message", async ({ page }) => {
     title: "Clean",
     content: "Ala ma kota.",
   });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { dialog, bar } = await check(page);
   await expect(dialog.getByRole("status")).toHaveText("No issues found.");
   await expect(bar).toBeHidden();
@@ -347,7 +347,7 @@ test("a chapter without issues gives a message", async ({ page }) => {
 
 test("a check from Source goes to Preview", async ({ page }) => {
   const id = await seedStory("alice", { title: "Source", content: MD });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const content = markdownEditor(page, "Content");
   await content.button("Source").click();
   const { text } = await check(page);
@@ -365,7 +365,7 @@ test.describe("on a narrow screen", () => {
     page,
   }) => {
     const id = await seedStory("alice", { title: "Mobile", content: MD });
-    await page.goto(`/stories/${id}`);
+    await page.goto(`/chapters/${id}`);
     await page
       .getByRole("tablist", { name: "View" })
       .getByRole("tab", { name: "Tools" })
@@ -381,7 +381,7 @@ test.describe("on a narrow screen", () => {
     const { bubble, text } = proofreading(page);
 
     await expect(
-      page.getByRole("tab", { name: "Story", selected: true }),
+      page.getByRole("tab", { name: "Text", selected: true }),
     ).toBeVisible();
     await bubble.getByRole("button", { name: "Apply change" }).click();
     await expect(text).toContainText("Na pewno");
@@ -397,7 +397,7 @@ test("a word added to the dictionary stays out of later checks until removed in 
 }) => {
   const content = "Napewno tą drogą, NAPEWNO.\n\nWogóle nie.";
   const id = await seedStory("alice", { title: "Dict", content });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { text, bubble, proposal } = await check(page);
   await expect(text.locator("[data-proposal]")).toHaveCount(4);
 

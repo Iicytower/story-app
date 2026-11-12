@@ -267,11 +267,11 @@ function NavItems({
       />
       {socialLinks(SOCIAL_ABOVE_FOLDERS)}
       <NavLink
-        href="/stories"
+        href="/books"
         label={t("folders")}
         icon={<FolderIcon />}
         compact={compact}
-        current={pathname === "/stories"}
+        current={pathname === "/books"}
         onClick={onDone}
       />
       {socialLinks(SOCIAL_BELOW_FOLDERS)}

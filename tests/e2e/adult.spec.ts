@@ -38,7 +38,7 @@ test("the owner marks a chapter and a folder as 18+ and removes the marks", asyn
   page,
 }) => {
   const id = await seedBook();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await expect(page.getByRole("img", { name: BADGE })).toHaveCount(0);
 
   await menuAction(page, "Actions for Night", "Mark as 18+", chapterRow(page));
@@ -48,7 +48,7 @@ test("the owner marks a chapter and a folder as 18+ and removes the marks", asyn
   ).toBeVisible();
 
   await menuAction(page, "Actions for Dark", "Mark as 18+");
-  await confirm(page, "Mark folder as 18+?", "Mark as 18+");
+  await confirm(page, "Mark book as 18+?", "Mark as 18+");
   await expect(page.getByRole("img", { name: BADGE })).toHaveCount(2);
 
   // The chapter is 18+ through the folder now, so its own switch is locked.
@@ -57,12 +57,12 @@ test("the owner marks a chapter and a folder as 18+ and removes the marks", asyn
   );
   const locked = page.getByRole("menuitem", { name: /Remove 18\+/ });
   await expect(locked).toBeDisabled();
-  await expect(locked).toContainText("Locked: the folder is 18+");
+  await expect(locked).toContainText("Locked: the book is 18+");
   await page.keyboard.press("Escape");
   await expect(page.getByRole("menu")).toHaveCount(0);
 
   await menuAction(page, "Actions for Dark", "Remove 18+");
-  await confirm(page, "Remove 18+ from folder?", "Remove 18+");
+  await confirm(page, "Remove 18+ from book?", "Remove 18+");
   await menuAction(page, "Actions for Night", "Remove 18+", chapterRow(page));
   await confirm(page, "Remove 18+ from chapter?", "Remove 18+");
   await expect(page.getByRole("img", { name: BADGE })).toHaveCount(0);
@@ -73,11 +73,11 @@ test("readers see the badge in search and a warning before reading", async ({
   browser,
 }) => {
   const id = await seedBook();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await menuAction(page, "Actions for Dark", "Publish");
-  await confirm(page, "Publish folder?", "Publish");
+  await confirm(page, "Publish book?", "Publish");
   await menuAction(page, "Actions for Dark", "Mark as 18+");
-  await confirm(page, "Mark folder as 18+?", "Mark as 18+");
+  await confirm(page, "Mark book as 18+?", "Mark as 18+");
 
   const visitor = await anonymous(browser);
   await visitor.goto("/");

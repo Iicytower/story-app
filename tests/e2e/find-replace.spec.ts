@@ -25,7 +25,7 @@ test("Ctrl+F finds matches in Preview and steps through them", async ({
     title: "Find",
     content: "kot i **Kot**\n\n<!-- kot w komentarzu -->\n\npies",
   });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const content = markdownEditor(page, "Content");
   await content.field.getByText("pies").click();
   await page.keyboard.press("Control+f");
@@ -57,7 +57,7 @@ test("options narrow the search and an invalid regex is reported", async ({
     title: "Options",
     content: "Kot kot kotek",
   });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const content = markdownEditor(page, "Content");
   await content.field.click();
   await page.keyboard.press("Control+f");
@@ -90,7 +90,7 @@ test("the selected text fills the query and Escape selects the match", async ({
     title: "Selection",
     content: "pierwszy drugi",
   });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const content = markdownEditor(page, "Content");
   await content.field.click();
   await page.keyboard.press("Home");
@@ -116,7 +116,7 @@ test("the shortcuts stay with the browser outside the field", async ({
   page,
 }) => {
   const id = await seedStory("alice", { title: "Outside", content: "tekst" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   await page.getByLabel("Title").click();
   await page.keyboard.press("Control+f");
   await expect(findBox(page)).toBeHidden();
@@ -130,7 +130,7 @@ test("Replace and Replace all in Preview, one Undo, autosave", async ({
     title: "Replace",
     content: "kot **kot**\n\n<!-- kot -->",
   });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const content = markdownEditor(page, "Content");
   await content.button("Find and replace").click();
 
@@ -167,7 +167,7 @@ test("Find and Replace all in Source, native Undo, autosave", async ({
     title: "Source",
     content: "kot **kot**\n\nkot",
   });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const content = markdownEditor(page, "Content");
   await content.button("Source").click();
   const textarea = content.group.getByRole("textbox", { name: "Content" });
@@ -207,7 +207,7 @@ test("works in chapter notes and folder notes", async ({ page }) => {
     content: "kot",
     notes: "kot w notatkach",
   });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const notes = markdownEditor(page, "Notes");
   await notes.field.getByText("kot w notatkach").click();
   await page.keyboard.press("Control+h");
@@ -218,7 +218,7 @@ test("works in chapter notes and folder notes", async ({ page }) => {
   await expect(notes.field).toHaveText("pies w notatkach");
   await expect(markdownEditor(page, "Content").field).toHaveText("kot");
 
-  const folderNotes = markdownEditor(page, "Folder notes");
+  const folderNotes = markdownEditor(page, "Book notes");
   await folderNotes.field.click();
   await page.keyboard.type("kot i kot");
   await page.keyboard.press("Control+h");

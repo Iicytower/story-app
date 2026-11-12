@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { addToLibrary } from "@/app/[locale]/(protected)/library/actions";
-import { setChapterPublished } from "@/app/[locale]/(protected)/stories/actions";
+import { setChapterPublished } from "@/app/[locale]/(protected)/chapters/actions";
 import { saveReadingPosition } from "@/app/[locale]/p/[nickname]/[folder]/[chapter]/actions";
 import { requireUser } from "@/lib/auth/session";
 import { Block } from "@/lib/models/block";

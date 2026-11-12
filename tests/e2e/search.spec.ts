@@ -161,10 +161,10 @@ test("unpublishing and deleting take a story out of the results", async ({
   await search(visitor, "dragon");
   await expect(results(visitor)).toHaveCount(1);
 
-  await page.goto(`/folders/${folderId}`);
+  await page.goto(`/books/${folderId}`);
   await menuAction(page, "Actions for Book", "Unpublish");
   await page
-    .getByRole("alertdialog", { name: "Unpublish folder?" })
+    .getByRole("alertdialog", { name: "Unpublish book?" })
     .getByRole("button", { name: "Unpublish" })
     .click();
   await expect(page.getByRole("textbox", { name: "Public link" })).toBeHidden();
@@ -174,7 +174,7 @@ test("unpublishing and deleting take a story out of the results", async ({
 
   await menuAction(page, "Actions for Book", "Publish");
   await page
-    .getByRole("alertdialog", { name: "Publish folder?" })
+    .getByRole("alertdialog", { name: "Publish book?" })
     .getByRole("button", { name: "Publish" })
     .click();
   await expect(
@@ -231,7 +231,7 @@ test("the search page can be indexed", async ({ browser }) => {
 
 test("a signed-in user searches in the sidebar view", async ({ page }) => {
   await seedPublished();
-  await page.goto("/stories");
+  await page.goto("/books");
   await page
     .getByRole("navigation", { name: "Main" })
     .getByRole("link", { name: "Home" })

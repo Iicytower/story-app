@@ -39,7 +39,7 @@ async function openStory(page: Page) {
     title: "Words",
     content: "Ala ma kota.",
   });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
 }
 
 test("an inflected form shows the synonyms of its lemma by sense, with labels and sources", async ({

@@ -56,7 +56,7 @@ test("dave comments; alice sees the counter after polling, the panel and the com
   browser,
 }) => {
   await page.clock.install();
-  await page.goto("/en/stories");
+  await page.goto("/en/books");
   await expect(bell(page)).toBeVisible();
 
   await daveComments(browser, "Lovely chapter");
@@ -85,7 +85,7 @@ test("dave comments; alice sees the counter after polling, the panel and the com
   );
   await expect(page.getByText("Lovely chapter")).toBeVisible();
   // The reader pages have no sidebar: the bell is back to no unread elsewhere.
-  await page.goto("/en/stories");
+  await page.goto("/en/books");
   await expect(bell(page)).toBeVisible();
 });
 
@@ -96,7 +96,7 @@ test("mark all as read, and the panel on a narrow screen", async ({
   await daveComments(browser, "First");
   await daveComments(browser, "Second");
   await page.setViewportSize({ width: 375, height: 700 });
-  await page.goto("/en/stories");
+  await page.goto("/en/books");
   const menu = (name: string) =>
     page.getByRole("button", { name, exact: true });
   await menu(en.sidebar.menuUnread).click();
@@ -126,7 +126,7 @@ test("a kind turned off in the settings creates no notification", async ({
   page,
   browser,
 }) => {
-  await page.goto("/en/stories");
+  await page.goto("/en/books");
   const settings = await openSettings(page);
   const comments = settings
     .getByRole("group", { name: en.settings.notificationGroups.interactions })
@@ -144,7 +144,7 @@ test("a kind turned off in the settings creates no notification", async ({
 
 test("polls only while the tab is visible", async ({ page, browser }) => {
   await page.clock.install();
-  await page.goto("/en/stories");
+  await page.goto("/en/books");
   await expect(bell(page)).toBeVisible();
   await hideTab(page);
   const requests = countActionRequests(page);

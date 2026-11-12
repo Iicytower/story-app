@@ -4,12 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   setFolderAdult,
   setFolderPublished,
-} from "@/app/[locale]/(protected)/folders/actions";
+} from "@/app/[locale]/(protected)/books/actions";
 import {
   moveStory,
   setStoryAdult,
-} from "@/app/[locale]/(protected)/stories/actions";
-import { setCoverAdult } from "@/app/[locale]/(protected)/folders/[id]/cover-actions";
+} from "@/app/[locale]/(protected)/chapters/actions";
+import { setCoverAdult } from "@/app/[locale]/(protected)/books/[id]/cover-actions";
 import { setAdminAdult } from "@/app/[locale]/(protected)/admin/actions";
 import { requireUser } from "@/lib/auth/session";
 import { coversOf } from "@/lib/covers/queries";
@@ -325,7 +325,7 @@ describe("the admin's 18+ mark", () => {
     const notFound = {
       ok: false,
       error: "NOT_FOUND",
-      message: "No public folder, chapter or cover has this address.",
+      message: "No public book, chapter or cover has this address.",
     };
     expect(
       await asAdmin(() => setAdminAdult("/p/Alice/ksiega", true)),
@@ -334,7 +334,7 @@ describe("the admin's 18+ mark", () => {
     expect(
       await asAdmin(() => setAdminAdult("/p/Alice/ksiega/nope", true)),
     ).toEqual(notFound);
-    expect(await asAdmin(() => setAdminAdult("/stories", true))).toEqual(
+    expect(await asAdmin(() => setAdminAdult("/books", true))).toEqual(
       notFound,
     );
   });

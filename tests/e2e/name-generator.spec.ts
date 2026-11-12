@@ -24,7 +24,7 @@ async function openGenerator(page: Page) {
     title: "Names",
     content: "Text",
   });
-  await page.goto(`/stories/${story}`);
+  await page.goto(`/chapters/${story}`);
   await openTile(page);
   const dialog = page.getByRole("dialog", { name: "Name generator" });
   await expect(dialog.getByRole("button", { name: "Generate" })).toBeVisible();

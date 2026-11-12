@@ -47,7 +47,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 35 | [Filtry rymów](done/35-rhyme-filters.md) | 34 | [x] |
 | 55 | [Korekta w głównym edytorze](done/55-inline-proofreading.md) | 23 | [x] |
 | 51 | [Poprawa UX i UI (zbiorczy)](51-ui-polish.md) | – | [ ] |
-| 93 | ↳ [Nazewnictwo „Książka/Rozdział” i nowe adresy](93-books-naming-routes.md) (subtask 51) | – | [ ] |
+| 93 | ↳ [Nazewnictwo „Książka/Rozdział” i nowe adresy](done/93-books-naming-routes.md) (subtask 51) | – | [x] |
 | 94 | ↳ [Daty w lokalnej strefie i czas względny](94-local-dates.md) (subtask 51) | 93 | [ ] |
 | 95 | ↳ [Sidebar: nazwa aplikacji, blok konta, pasek mobile](95-sidebar-account.md) (subtask 51) | 93 | [ ] |
 | 96 | ↳ [Szerokości treści i sidebar na stronach publicznych](96-layout-widths.md) (subtask 51) | 95 | [ ] |

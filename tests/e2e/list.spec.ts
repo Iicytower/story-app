@@ -5,8 +5,8 @@ import { expect, test } from "./helpers";
 test.use({ storageState: storageStatePath("alice") });
 
 test("shows a message when there are no folders", async ({ page }) => {
-  await page.goto("/stories");
-  await expect(page.getByText("No folders yet.")).toBeVisible();
+  await page.goto("/books");
+  await expect(page.getByText("No books yet.")).toBeVisible();
 });
 
 test("lists folders by last activity with chapter counts", async ({ page }) => {
@@ -15,9 +15,9 @@ test("lists folders by last activity with chapter counts", async ({ page }) => {
   await seedStory("alice", { title: "One", folder: "Older" });
   await seedStory("alice", { title: "Two", folder: "Older" });
 
-  await page.goto("/stories");
+  await page.goto("/books");
   const items = page
-    .getByRole("list", { name: "Folders" })
+    .getByRole("list", { name: "Books" })
     .getByRole("listitem");
   await expect(items).toHaveCount(2);
   await expect(items.nth(0)).toContainText("Newer");
@@ -36,12 +36,12 @@ test("searches on Enter, highlights the match and shows the folder", async ({
   });
   await seedStory("alice", { title: "Garden", content: "Flowers only." });
 
-  await page.goto("/stories");
-  const search = page.getByRole("searchbox", { name: "Search stories" });
+  await page.goto("/books");
+  const search = page.getByRole("searchbox", { name: "Search books" });
   await search.fill("dragon");
   await search.press("Enter");
 
-  await expect(page).toHaveURL("/en/stories?q=dragon");
+  await expect(page).toHaveURL("/en/books?q=dragon");
   const items = page
     .getByRole("list", { name: "Search results" })
     .getByRole("listitem");
@@ -54,11 +54,11 @@ test("searches on Enter, highlights the match and shows the folder", async ({
 test("shows a message when nothing matches", async ({ page }) => {
   await seedStory("alice", { title: "Knight", content: "No match here." });
 
-  await page.goto("/stories");
-  const search = page.getByRole("searchbox", { name: "Search stories" });
+  await page.goto("/books");
+  const search = page.getByRole("searchbox", { name: "Search books" });
   await search.fill("(unicorn");
   await search.press("Enter");
-  await expect(page.getByText('No stories match "(unicorn".')).toBeVisible();
+  await expect(page.getByText('No chapters match "(unicorn".')).toBeVisible();
 });
 
 test.describe("as bob", () => {
@@ -74,15 +74,15 @@ test.describe("as bob", () => {
     });
     await seedStory("bob", { title: "Bob story", folder: "Bob folder" });
 
-    await page.goto("/stories");
+    await page.goto("/books");
     await expect(page.getByText("Bob folder")).toBeVisible();
     await expect(page.getByText("Alice folder")).toHaveCount(0);
 
-    await page.goto("/stories?q=dragon");
-    await expect(page.getByText('No stories match "dragon".')).toBeVisible();
+    await page.goto("/books?q=dragon");
+    await expect(page.getByText('No chapters match "dragon".')).toBeVisible();
 
     const response = await page.goto(
-      `/folders/${await seedFolder("alice", "Alice folder")}`,
+      `/books/${await seedFolder("alice", "Alice folder")}`,
     );
     expect(response?.status()).toBe(404);
   });

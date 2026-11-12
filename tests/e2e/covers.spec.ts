@@ -49,10 +49,10 @@ test("the owner adds, replaces and removes a folder cover", async ({
   page,
 }) => {
   const id = await seedBook();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await menuAction(page, "Actions for Book", "Cover");
   await expect(
-    dialog(page).getByText("This folder has no cover yet."),
+    dialog(page).getByText("This book has no cover yet."),
   ).toBeVisible();
 
   await upload(page, [200, 40, 40]);
@@ -74,13 +74,13 @@ test("the owner adds, replaces and removes a folder cover", async ({
 
   await dialog(page).getByRole("button", { name: "Remove cover" }).click();
   await expect(
-    dialog(page).getByText("This folder has no cover yet."),
+    dialog(page).getByText("This book has no cover yet."),
   ).toBeVisible();
 });
 
 test("a cover rated 18+ locks the folder's 18+ mark", async ({ page }) => {
   const id = await seedBook();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await classifier("adult");
   await menuAction(page, "Actions for Book", "Cover");
   await upload(page, [10, 10, 10]);
@@ -101,7 +101,7 @@ test("a cover rated 18+ locks the folder's 18+ mark", async ({ page }) => {
 
 test("the owner marks a cover as 18+ by hand", async ({ page }) => {
   const id = await seedBook();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await menuAction(page, "Actions for Book", "Cover");
   await upload(page, [40, 40, 200]);
   const mark = dialog(page).getByRole("checkbox", {
@@ -121,7 +121,7 @@ test("without a verdict the new cover waits and the old one stays", async ({
   page,
 }) => {
   const id = await seedBook();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await menuAction(page, "Actions for Book", "Cover");
   await upload(page, [200, 40, 40]);
   await expect(currentCover(page)).toBeVisible();
@@ -139,7 +139,7 @@ test("a folder's cover is the title page of an EPUB export", async ({
   page,
 }) => {
   const id = await seedBook();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await menuAction(page, "Actions for Book", "Cover");
   await upload(page, [200, 40, 40]);
   await expect(currentCover(page)).toBeVisible();
@@ -161,7 +161,7 @@ test("importing a folder zip brings its cover.webp along", async ({ page }) => {
     "02-dwa.md": strToU8("Treść dwa"),
     "cover.webp": png(30, 45, [40, 40, 200]),
   });
-  await page.goto("/stories");
+  await page.goto("/books");
   await page
     .getByRole("button", { name: /^Actions/ })
     .first()
@@ -173,7 +173,7 @@ test("importing a folder zip brings its cover.webp along", async ({ page }) => {
     buffer: Buffer.from(zip),
   });
   await page.getByRole("button", { name: "Import", exact: true }).click();
-  await expect(page).toHaveURL(/\/folders\/[0-9a-f]{24}$/);
+  await expect(page).toHaveURL(/\/books\/[0-9a-f]{24}$/);
 
   await menuAction(page, "Actions for Book", "Cover");
   await expect(currentCover(page)).toBeVisible();
@@ -182,7 +182,7 @@ test("importing a folder zip brings its cover.webp along", async ({ page }) => {
 async function publishBook(page: Page) {
   await menuAction(page, "Actions for Book", "Publish");
   await page
-    .getByRole("alertdialog", { name: "Publish folder?" })
+    .getByRole("alertdialog", { name: "Publish book?" })
     .getByRole("button", { name: "Publish", exact: true })
     .click();
   await expect(page.getByRole("alertdialog")).toBeHidden();
@@ -201,7 +201,7 @@ test("the cover shows in the folder list and on the folder page, and changes wit
 }) => {
   const id = await seedBook();
   await seedStory("alice", { title: "Other", folder: "Plain" });
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   const onPage = page.getByRole("img", { name: "Cover of Book" });
   await expect(onPage).toHaveCount(0);
   await menuAction(page, "Actions for Book", "Cover");
@@ -211,7 +211,7 @@ test("the cover shows in the folder list and on the folder page, and changes wit
   await expect(onPage).toBeVisible();
   const first = await onPage.getAttribute("src");
 
-  await page.goto("/stories");
+  await page.goto("/books");
   await expect(
     page.getByRole("img", { name: "Cover of Book" }),
   ).toHaveAttribute("src", first!);
@@ -219,7 +219,7 @@ test("the cover shows in the folder list and on the folder page, and changes wit
     0,
   );
 
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await menuAction(page, "Actions for Book", "Cover");
   await upload(page, [40, 200, 40]);
   await expect(currentCover(page)).not.toHaveAttribute("src", first!);
@@ -240,7 +240,7 @@ test("readers see the cover on the contents page, chapter pages, in search and o
     content: "Moonlit",
   });
   const id = (await findFolder("Book"))!._id.toString();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await publishBook(page);
   await menuAction(page, "Actions for Book", "Cover");
   await upload(page, [200, 40, 40]);
@@ -290,7 +290,7 @@ test("an 18+ cover is a badge in search and blurred on the contents and chapter 
     content: "Moonlit",
   });
   const id = (await findFolder("Book"))!._id.toString();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await publishBook(page);
   await classifier("adult");
   await menuAction(page, "Actions for Book", "Cover");

@@ -1,6 +1,6 @@
 # D25 – Wersje folderów (2026-10-21)
 
-Status: aktualna.
+Status: aktualna. Zmieniona w D83 (adresy).
 
 - Zmienia spec („Brak historii wersji”). Wersja to stan rozdziałów folderu zapisany ręcznie („Save version” na stronie folderu, wymagana nazwa po `trim()`, maks. 100 znaków). Automatycznie powstaje tylko „Before restoring version N” przed każdym przywróceniem – jak reflog w gicie, więc każde przywrócenie (także usunięcie rozdziałów) da się cofnąć.
 - Notatki (rozdziałów i folderu) nie są częścią wersji: nie są zapisywane, porównywane ani przywracane.

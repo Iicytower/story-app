@@ -52,7 +52,7 @@ test("dave mentions @Erin from the suggestions; erin is notified and the link op
   ).toHaveCount(0);
 
   const reader = await loginAs(browser, "erin");
-  await reader.page.goto("/en/stories");
+  await reader.page.goto("/en/books");
   await reader.page
     .getByRole("button", { name: "Notifications, 1 unread", exact: true })
     .click();

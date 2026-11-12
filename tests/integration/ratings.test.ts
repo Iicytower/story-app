@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { moveStory } from "@/app/[locale]/(protected)/stories/actions";
+import { moveStory } from "@/app/[locale]/(protected)/chapters/actions";
 import {
   rate,
   removeRating,

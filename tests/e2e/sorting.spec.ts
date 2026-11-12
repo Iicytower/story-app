@@ -48,8 +48,8 @@ test("switches folder sort modes and drags a folder in manual mode", async ({
   await seedFolder("alice", "Apple", new Date("2026-01-01"));
   await seedFolder("alice", "cherry", new Date("2026-01-02"));
 
-  await page.goto("/stories");
-  const folders = page.getByRole("list", { name: "Folders" });
+  await page.goto("/books");
+  const folders = page.getByRole("list", { name: "Books" });
   const names = folders.getByRole("listitem").locator("a > span:first-child");
   await expectSort(page, "Actions", "Last updated");
   await expect(names).toHaveText(["banana", "cherry", "Apple"]);
@@ -101,10 +101,10 @@ test("switches chapter sort modes and drags a chapter in manual mode", async ({
     createdAt: day(2),
   });
 
-  await page.goto("/stories");
-  await page.getByRole("link", { name: /^Book/ }).click();
+  await page.goto("/books");
+  await page.getByRole("link", { name: /^Book \d/ }).click();
   // The folder list row has its own "Actions for Book" menu; wait for the folder page.
-  await expect(page).toHaveURL(/\/folders\//);
+  await expect(page).toHaveURL(/\/books\//);
   const titles = page
     .getByRole("list", { name: "Chapters" })
     .getByRole("listitem")

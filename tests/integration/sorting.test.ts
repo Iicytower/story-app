@@ -5,13 +5,13 @@ import {
   moveFolder,
   setChapterSort,
   setFolderSort,
-} from "@/app/[locale]/(protected)/folders/actions";
+} from "@/app/[locale]/(protected)/books/actions";
 import {
   createStory,
   moveChapter,
   moveStory,
   saveStory,
-} from "@/app/[locale]/(protected)/stories/actions";
+} from "@/app/[locale]/(protected)/chapters/actions";
 import { requireUser } from "@/lib/auth/session";
 import { getFolder, listFolders } from "@/lib/folders/queries";
 import { Folder } from "@/lib/models/folder";

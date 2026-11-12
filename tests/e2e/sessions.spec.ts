@@ -33,10 +33,10 @@ test("changing the password in one browser signs out the other", async ({
     here.page.getByText("Your password has been changed."),
   ).toBeVisible();
 
-  await other.page.goto("/stories");
+  await other.page.goto("/books");
   await expectSignedOut(other.page);
-  await here.page.goto("/stories");
-  await expect(here.page).toHaveURL("/en/stories");
+  await here.page.goto("/books");
+  await expect(here.page).toHaveURL("/en/books");
 });
 
 test("Log out other devices keeps this one signed in", async ({ browser }) => {
@@ -53,10 +53,10 @@ test("Log out other devices keeps this one signed in", async ({ browser }) => {
     settings.getByText("Other devices are logged out."),
   ).toBeVisible();
 
-  await other.page.goto("/stories");
+  await other.page.goto("/books");
   await expectSignedOut(other.page);
-  await here.page.goto("/stories");
-  await expect(here.page).toHaveURL("/en/stories");
+  await here.page.goto("/books");
+  await expect(here.page).toHaveURL("/en/books");
 });
 
 test("a cookie copied before logging out does not work after it", async ({
@@ -73,6 +73,6 @@ test("a cookie copied before logging out does not work after it", async ({
     storageState: { cookies, origins: [] },
   });
   const page = await thief.newPage();
-  await page.goto("/stories");
+  await page.goto("/books");
   await expectSignedOut(page);
 });
