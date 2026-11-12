@@ -56,7 +56,10 @@
       "Bash(npm view*)",
       "Bash(npm outdated*)",
       "WebFetch",
-      "WebSearch"
+      "WebSearch",
+      "Bash(npm run seed*)",
+      "mcp__playwright",
+      "mcp__shadcn"
     ],
     "deny": [
       "Bash(npm run tools:remote*)",
