@@ -28,6 +28,7 @@ import { ReportButton } from "@/components/report-dialog";
 import { ownsPlace } from "@/lib/social/visibility";
 import { GuestLibraryButton } from "./guest-library-button";
 import { RatingSection } from "./ratings";
+import { PublicBreadcrumb } from "../breadcrumb";
 
 // The picker needs the reader's shelves, so its first opening of a book page creates them too.
 async function libraryPicker(userId: string, nickname: string, slug: string) {
@@ -120,6 +121,9 @@ export default async function PublishedFolderPage({
 
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-10">
+      <div className="mb-6">
+        <PublicBreadcrumb nickname={folder.nickname} />
+      </div>
       {cover && (
         <div className="mb-6">
           {cover.adult && !confirmed ? (

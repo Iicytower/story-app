@@ -1,5 +1,5 @@
 import type { Browser, Page } from "@playwright/test";
-import { findFolder, seedStory, withE2EDb } from "./db";
+import { findFolder, seedPublished, seedStory, withE2EDb } from "./db";
 import { storageStatePath } from "./env";
 import {
   editorAction,
@@ -169,4 +169,25 @@ test("the old address redirects after a title change", async ({
 
 test("the old share addresses are gone", async ({ page }) => {
   expect((await page.goto("/s/abc123456789"))!.status()).toBe(404);
+});
+
+test("the breadcrumb leads from a chapter to its folder, the author and home", async ({
+  browser,
+}) => {
+  await seedPublished("alice", "Book", [
+    { title: "One", publication: "public" },
+  ]);
+  const visitor = await anonymous(browser);
+  const breadcrumb = visitor.getByRole("navigation", { name: "Breadcrumb" });
+
+  await visitor.goto("/en/p/Alice/book/one");
+  await breadcrumb.getByRole("link", { name: "Book" }).click();
+  await expect(visitor).toHaveURL(/\/en\/p\/Alice\/book$/);
+  await expect(breadcrumb.getByRole("link", { name: "Book" })).toBeHidden();
+  await breadcrumb.getByRole("link", { name: "Alice" }).click();
+  await expect(visitor).toHaveURL(/\/en\/p\/Alice$/);
+
+  await visitor.goto("/en/p/Alice/book");
+  await breadcrumb.getByRole("link", { name: "Home" }).click();
+  await expect(visitor).toHaveURL(/\/en$/);
 });
