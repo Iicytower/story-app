@@ -107,6 +107,7 @@ Spis pomaga wybrać decyzję do otwarcia; nie zastępuje jej treści. Znajdź wi
 - **D15** Branch `develop` – przepływ feature → `develop` → `staging` → `main`. Częściowo zmieniona w D45.
 - **D26** Lokalny backup bazy – `scripts/backup.sh` (bash + Docker) zamiast skryptu `tsx`.
 - **D45** Claude nie merguje do `staging` i `main` – merge i push na te branche robi tylko użytkownik. Zmienia D15.
+- **D81** Narzędzia Claude do UX i UI – skille `frontend-design`, `ux-heuristics`, `web-design-guidelines`, MCP `shadcn` i `playwright`, bez Claude in Chrome.
 
 ## System społecznościowy
 

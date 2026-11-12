@@ -56,6 +56,7 @@ Aplikacja webowa do pisania opowiadań (docelowo publiczna, D46) w markdown (Nex
 - Hooki: PostToolUse – ESLint `--fix` + Prettier na edytowanym pliku; Stop i SubagentStop (`implementer`, `verifier`, `merger`) – `tsc --noEmit` przy zmienionych plikach TS, błędy trzeba naprawić; PreToolUse – `protect-branches.sh` (D45). Hooki trybu `/autorun` opisuje skill `autorun`.
 - Agenci (`.claude/agents/`): `researcher`, `implementer`, `verifier`, `reviewer`, `ui-checker`, `security-auditor`, `docs-keeper`, `merger`; skille `test-patterns` (w `implementer` i `verifier`) i `social-checklist` (taski 68–91). Agenci zapisujący pliki pracują pojedynczo (jedno drzewo robocze). Modele: Opus dla `implementer`, `reviewer`, `security-auditor`; Sonnet dla pozostałych. Drobne zmiany (kilka plików, bez nowej logiki uprawnień) główna sesja robi sama, bez agenta.
 - Skill `/autorun <task zbiorczy>`: przebieg tasków bez udziału użytkownika.
+- Design (D81): skille `frontend-design`, `ux-heuristics`, `web-design-guidelines` (reguły przypięte w `guidelines.md`, bez pobierania); MCP `shadcn` i `playwright` w `.mcp.json`. Claude in Chrome zablokowany w projekcie – przeglądarka przez Playwright MCP.
 
 ## Oszczędzanie kontekstu
 

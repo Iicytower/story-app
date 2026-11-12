@@ -55,3 +55,6 @@ next-env.d.ts
 /.tools/
 .claude/autorun.lock
 .claude/autorun.last-stop
+
+# Playwright MCP snapshots and screenshots (D81)
+/.playwright-mcp/

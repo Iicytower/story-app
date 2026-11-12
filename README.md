@@ -36,6 +36,7 @@ The agent is constrained by project configuration in `.claude/`:
 - **`CLAUDE.md` / `AGENTS.md`**: project rules, workflow and commands.
 - **Hooks**: ESLint and Prettier run after every edit, `tsc` runs before the agent finishes, and a guard blocks merges and pushes to `staging` and `main`. Releases (`develop` → `staging` → `main`) are made only by the human.
 - **Skills**: repeatable procedures such as `/tasks`, `/release-prs`, `/resolve-pr-conflicts`, `/local-setup` and `/autorun`, which works through a group of tasks unattended.
+- **Design tooling**: vendored, reviewed skills `frontend-design`, `ux-heuristics` and `web-design-guidelines` for UI and UX audits, plus `shadcn` and Playwright MCP servers (`.mcp.json`) for the component registry and checking the rendered app.
 - **Subagents** (`.claude/agents/`): researcher, implementer, verifier, reviewer, UI checker, security auditor, docs keeper and merger. The main session orchestrates and delegates the work to keep its context small; Opus for implementation, review and security audit, Sonnet for the rest.
 
 ## Running locally
