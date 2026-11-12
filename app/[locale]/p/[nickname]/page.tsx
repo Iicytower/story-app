@@ -21,6 +21,7 @@ import { MessageButton } from "./message-button";
 import { ReportButton } from "@/components/report-dialog";
 import { activeCommunityBan } from "@/lib/social/moderation";
 import { CommunityBanNotice } from "./[folder]/community-ban-notice";
+import { PageContainer } from "@/components/page-container";
 
 async function viewerId(): Promise<string | null> {
   const user = await requireUser();
@@ -65,7 +66,7 @@ export default async function ProfilePage({
   const tReports = await getTranslations("reports");
 
   const content = (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10">
+    <PageContainer width="narrow" className="gap-8">
       <header className="flex flex-wrap items-center gap-4">
         <UserAvatar
           nickname={profile.nickname}
@@ -198,7 +199,7 @@ export default async function ProfilePage({
           )}
         </section>
       )}
-    </div>
+    </PageContainer>
   );
 
   return viewer ? (

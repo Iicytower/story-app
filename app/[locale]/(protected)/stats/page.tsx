@@ -14,6 +14,7 @@ import {
 } from "@/lib/social/author-stats";
 import { ratingAverage } from "@/lib/social/ratings";
 import { StatsChart } from "./stats-chart";
+import { PageContainer } from "@/components/page-container";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -62,7 +63,7 @@ export default async function StatsPage({
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-6 px-4 py-8 sm:px-6">
+    <PageContainer width="wide">
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
         <h1 className="mr-auto text-2xl font-semibold">{t("title")}</h1>
         <p className="text-muted-foreground text-sm">
@@ -181,6 +182,6 @@ export default async function StatsPage({
           </table>
         </div>
       </section>
-    </div>
+    </PageContainer>
   );
 }

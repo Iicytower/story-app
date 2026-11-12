@@ -296,3 +296,76 @@ test("the 404 outside a locale follows the system theme", async ({ page }) => {
     );
   }
 });
+
+test.describe("at 1280 px", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("pages of one width variant start their heading at the same place (D83)", async ({
+    page,
+    browser,
+  }) => {
+    await seedPublished("alice", "Widths", [
+      { title: "Wide", publication: "public", content: "Text" },
+    ]);
+    const heading = async (target: typeof page, path: string) => {
+      await target.goto(path);
+      return (await target.getByRole("heading", { level: 1 }).boundingBox())!;
+    };
+    const narrow = [];
+    for (const path of ["/feed", "/messages", "/library", "/forums", "/"])
+      narrow.push(await heading(page, path));
+    const wide = [];
+    for (const path of ["/books", "/stats"])
+      wide.push(await heading(page, path));
+    const admin = await browser.newContext({
+      storageState: storageStatePath("admin"),
+    });
+    wide.push(await heading(await admin.newPage(), "/admin"));
+    await admin.close();
+
+    for (const boxes of [narrow, wide])
+      for (const box of boxes) {
+        expect(box.x).toBeCloseTo(boxes[0].x, 0);
+        expect(box.y).toBeCloseTo(boxes[0].y, 0);
+      }
+    expect(wide[0].x).toBeLessThan(narrow[0].x);
+    // Below a breadcrumb the heading of a public book still lines up.
+    expect((await heading(page, "/p/Alice/widths")).x).toBeCloseTo(
+      narrow[0].x,
+      0,
+    );
+  });
+});
+
+test("a signed-in reader keeps the sidebar on a public book and chapter, a guest has none", async ({
+  browser,
+}) => {
+  await seedPublished("alice", "Sidebar", [
+    { title: "Night", publication: "public", content: "Text" },
+  ]);
+  const reader = await browser.newContext({
+    storageState: storageStatePath("bob"),
+  });
+  const guest = await browser.newContext({
+    storageState: { cookies: [], origins: [] },
+  });
+  for (const path of ["/p/Alice/sidebar", "/p/Alice/sidebar/night"]) {
+    const signedIn = await reader.newPage();
+    await signedIn.goto(path);
+    await expect(signedIn.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(
+      signedIn
+        .getByRole("navigation", { name: "Main" })
+        .getByRole("button", { name: "Account menu, Bob" }),
+    ).toBeVisible();
+
+    const visitor = await guest.newPage();
+    await visitor.goto(path);
+    await expect(visitor.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(
+      visitor.getByRole("navigation", { name: "Main" }),
+    ).toHaveCount(0);
+  }
+  await reader.close();
+  await guest.close();
+});

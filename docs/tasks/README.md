@@ -50,7 +50,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 93 | ↳ [Nazewnictwo „Książka/Rozdział” i nowe adresy](done/93-books-naming-routes.md) (subtask 51) | – | [x] |
 | 94 | ↳ [Daty w lokalnej strefie i czas względny](done/94-local-dates.md) (subtask 51) | 93 | [x] |
 | 95 | ↳ [Sidebar: nazwa aplikacji, blok konta, pasek mobile](done/95-sidebar-account.md) (subtask 51) | 93 | [x] |
-| 96 | ↳ [Szerokości treści i sidebar na stronach publicznych](96-layout-widths.md) (subtask 51) | 95 | [ ] |
+| 96 | ↳ [Szerokości treści i sidebar na stronach publicznych](done/96-layout-widths.md) (subtask 51) | 95 | [x] |
 | 97 | ↳ [Główne akcje i kolejność rozdziałów](97-book-actions-order.md) (subtask 51) | 93 | [ ] |
 | 98 | ↳ [Strona książki, opis i wersje](98-book-page.md) (subtask 51) | 97 | [ ] |
 | 99 | ↳ [Edytor: odstęp, układ mobile, paski, nazwy trybów](99-editor-ux.md) (subtask 51) | 95 | [ ] |

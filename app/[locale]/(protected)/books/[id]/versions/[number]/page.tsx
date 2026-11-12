@@ -6,6 +6,7 @@ import { LocalDate } from "@/components/local-date";
 import { requireUser } from "@/lib/auth/session";
 import { getFolderVersion } from "@/lib/versions/queries";
 import { RestoreForm } from "./restore-form";
+import { PageContainer } from "@/components/page-container";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -26,7 +27,7 @@ export default async function FolderVersionPage({
   const t = await getTranslations("versions");
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
+    <PageContainer width="wide">
       <div className="flex flex-col gap-1">
         <Link
           href={`/books/${version.folder.id}`}
@@ -48,6 +49,6 @@ export default async function FolderVersionPage({
         number={version.number}
         comparison={version.comparison}
       />
-    </div>
+    </PageContainer>
   );
 }

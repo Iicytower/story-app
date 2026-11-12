@@ -30,6 +30,7 @@ import {
   GlobalBanForm,
   TagForm,
 } from "./admin-forms";
+import { PageContainer } from "@/components/page-container";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -496,7 +497,7 @@ export default async function AdminPage({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">
+    <PageContainer width="wide">
       <h1 className="text-2xl font-semibold">{t("title")}</h1>
       <nav
         aria-label={t("tabs")}
@@ -519,6 +520,6 @@ export default async function AdminPage({
         ))}
       </nav>
       {content}
-    </div>
+    </PageContainer>
   );
 }

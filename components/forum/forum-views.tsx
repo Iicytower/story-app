@@ -10,6 +10,7 @@ import {
   RestoreButton,
 } from "@/components/forum/forum-forms";
 import { LocalDate } from "@/components/local-date";
+import { PageContainer } from "@/components/page-container";
 import { CommentMenu } from "@/components/moderation-controls";
 import { PlainMarkdown, SocialMarkdown } from "@/components/social-markdown";
 import { Button } from "@/components/ui/button";
@@ -59,7 +60,7 @@ export async function ThreadList({
   ]);
   const basePath = threadPath(place, "").replace(/\/$/, "");
   return (
-    <div className="mx-auto flex w-full max-w-3xl min-w-0 flex-col gap-6 px-4 py-8 sm:px-6">
+    <PageContainer width="narrow">
       <nav aria-label={t("breadcrumbs")} className="text-sm">
         <Link
           href={place.scope === "global" ? "/forums" : `/p/${place.nickname}`}
@@ -123,7 +124,7 @@ export async function ThreadList({
           ))}
         </ul>
       )}
-    </div>
+    </PageContainer>
   );
 }
 
@@ -282,9 +283,10 @@ export async function ThreadPage({
       : `/p/${place.nickname}/forum`;
   const [first] = thread.posts;
   return (
-    <article
+    <PageContainer
       aria-labelledby="thread-title"
-      className="mx-auto flex w-full max-w-3xl min-w-0 flex-col gap-6 px-4 py-8 sm:px-6"
+      width="narrow"
+      as="article"
     >
       <nav aria-label={t("breadcrumbs")} className="text-sm">
         <Link
@@ -383,6 +385,6 @@ export async function ThreadPage({
           />
         )
       )}
-    </article>
+    </PageContainer>
   );
 }

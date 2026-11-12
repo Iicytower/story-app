@@ -22,6 +22,7 @@ import { parseTagFilter } from "@/lib/tags/tags";
 import { moveFolder } from "./actions";
 import { FolderRowMenu } from "./folder-row-menu";
 import { StoriesMenu } from "./stories-menu";
+import { PageContainer } from "@/components/page-container";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -60,7 +61,7 @@ export default async function StoriesPage({
   const t = await getTranslations("folders");
   const tCovers = await getTranslations("covers");
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
+    <PageContainer width="wide">
       <div className="flex items-center gap-2">
         <h1 className="mr-auto text-2xl font-semibold">{t("title")}</h1>
         <StoriesMenu
@@ -142,7 +143,7 @@ export default async function StoriesPage({
           }))}
         />
       )}
-    </div>
+    </PageContainer>
   );
 }
 

@@ -23,6 +23,7 @@ import { FolderMenu } from "./folder-menu";
 import { FolderNotes } from "./folder-notes";
 import { FolderPublicLink } from "./folder-public-link";
 import { FolderVersions } from "./versions/folder-versions";
+import { PageContainer } from "@/components/page-container";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -57,7 +58,7 @@ export default async function FolderPage({
   const tCovers = await getTranslations("covers");
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
+    <PageContainer width="wide">
       <div className="flex gap-4">
         {folder.cover && (
           <CoverImage
@@ -173,6 +174,6 @@ export default async function FolderPage({
           <FolderVersions folderId={folder.id} versions={versions} />
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }
