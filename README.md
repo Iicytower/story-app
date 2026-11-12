@@ -65,10 +65,11 @@ openssl rand -base64 32
 
 npm run db:up      # MongoDB 8 in Docker on 127.0.0.1:27017
 npm run migrate    # collections and indexes (the app does not create indexes itself)
+npm run seed       # optional: sample accounts, books and social data (local database only)
 npm run dev        # http://localhost:3000
 ```
 
-Create an account with "Log in / Create account" on the home page, or from the terminal with `npm run create-account`. Run `npm run migrate` again after pulling changes that touch schemas or `migrations/`. The list of predefined tags (genres and forms) comes with the migrations; `npm run tags -- list|set|remove` changes it. `npm run admin -- list|add <nick>|remove <nick>` lists, grants or revokes the admin role (database from `.env.local`).
+Create an account with "Log in / Create account" on the home page, or from the terminal with `npm run create-account`. Run `npm run migrate` again after pulling changes that touch schemas or `migrations/`. The list of predefined tags (genres and forms) comes with the migrations; `npm run tags -- list|set|remove` changes it. `npm run admin -- list|add <nick>|remove <nick>` lists, grants or revokes the admin role (database from `.env.local`). `npm run seed` fills a local database with `seed_*` accounts (one admin), books, comments, forums, messages and statistics; it refuses any host other than `127.0.0.1`/`localhost`, replaces only its own accounts' data on every run and prints the shared password.
 
 ### Everything at once, with the tools server
 

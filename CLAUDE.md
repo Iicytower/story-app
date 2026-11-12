@@ -32,6 +32,7 @@ Aplikacja webowa do pisania opowiadań (docelowo publiczna, D46) w markdown (Nex
 - `npm run up` / `down` – całość lokalnie: MongoDB, Coolify i serwer narzędzi w Dockerze (task 54, `docs/deploy/tools.md`); `up` dopisuje `TOOLS_API_URL` i `TOOLS_API_SECRET` do `.env.local`. Sekrety w `.tools/` – nigdy ich nie wypisuj.
 - `npm run tools:remote` / `dict:upload:remote` – serwer narzędzi na Mikrusie przez SSH (task 28, konfiguracja w `.tools/mikrus/remote.env`, instrukcja w `docs/deploy/tools.md`).
 - `npm run migrate` – migracje bazy z `.env.local` (`migrations/`, D14). Na Vercelu uruchamiane automatycznie w buildzie produkcji i stagingu.
+- `npm run seed` – dane do ręcznych testów: konta `seed_*` (jeden admin) ze wspólnym hasłem, książki i dane społecznościowe; tylko lokalna baza (`127.0.0.1`/`localhost`), przy każdym uruchomieniu odtwarza wyłącznie dane kont seeda.
 - `npm run create-account` – interaktywny skrypt dodający konto (uruchamia użytkownik, nie Claude).
 - `npm run tags -- list|set <klucz> <en> <pl>|remove <klucz>` – lista predefiniowanych tagów w bazie z `.env.local` (D79; zmiany uruchamia użytkownik).
 - `npm run admin -- list|add <nick>|remove <nick>` – lista adminów (`User.role`, D80) w bazie z `.env.local` (zmiany uruchamia użytkownik).

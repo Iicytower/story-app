@@ -23,6 +23,7 @@
     "migrate": "tsx --env-file=.env.local scripts/migrate.ts",
     "tags": "tsx --env-file=.env.local scripts/predefined-tags.ts",
     "admin": "tsx --env-file=.env.local scripts/admin.ts",
+    "seed": "tsx --env-file=.env.local scripts/seed.ts",
     "backup": "bash scripts/backup.sh"
   },
   "dependencies": {
