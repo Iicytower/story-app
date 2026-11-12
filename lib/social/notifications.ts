@@ -10,6 +10,9 @@ export const NOTIFICATION_GROUPS = {
     "moderatorResigned",
     "moderatorRemoved",
     "ban",
+    // An admin's ban of the whole account (task 88); the admin is never named.
+    "globalBan",
+    "globalBanLifted",
     "hidden",
     "report",
     "reportResolved",

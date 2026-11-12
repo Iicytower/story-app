@@ -27,6 +27,8 @@ export interface NotificationFields {
   // A forum post and its thread (task 87).
   threadId?: Types.ObjectId;
   postId?: Types.ObjectId;
+  // A global ban (task 88): until null is a ban without end.
+  ban?: { until: Date | null; reason: string };
   readAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -51,6 +53,13 @@ const notificationSchema = new Schema<NotificationFields>(
     conversationId: { type: Schema.Types.ObjectId, ref: "Conversation" },
     threadId: { type: Schema.Types.ObjectId, ref: "ForumThread" },
     postId: { type: Schema.Types.ObjectId, ref: "ForumPost" },
+    ban: {
+      type: new Schema(
+        { until: { type: Date, default: null }, reason: String },
+        { _id: false },
+      ),
+      default: undefined,
+    },
     readAt: { type: Date, default: null },
   },
   { timestamps: true, versionKey: false },

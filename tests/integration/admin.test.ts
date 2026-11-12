@@ -14,6 +14,11 @@ import {
   setGlobalBan,
 } from "@/app/[locale]/(protected)/admin/actions";
 import { resolveReport } from "@/app/[locale]/(protected)/moderation/actions";
+import {
+  getNotifications,
+  markAllNotificationsRead,
+  unreadCounts,
+} from "@/app/[locale]/(protected)/notifications/actions";
 import { GET as getAvatar } from "@/app/avatars/[id]/route";
 import { GET as getCover } from "@/app/covers/[id]/route";
 import { addComment } from "@/app/[locale]/p/[nickname]/[folder]/comment-actions";
@@ -23,6 +28,7 @@ import { requireUser } from "@/lib/auth/session";
 import { getPublicProfile } from "@/lib/profiles/queries";
 import { Activity } from "@/lib/models/activity";
 import { Avatar } from "@/lib/models/avatar";
+import { Block } from "@/lib/models/block";
 import { Comment } from "@/lib/models/comment";
 import { Cover } from "@/lib/models/cover";
 import { Folder } from "@/lib/models/folder";
@@ -35,6 +41,7 @@ import { ModerationLog } from "@/lib/models/moderation-log";
 import { Notification } from "@/lib/models/notification";
 import { PredefinedTag } from "@/lib/models/predefined-tag";
 import { Profile } from "@/lib/models/profile";
+import { Settings } from "@/lib/models/settings";
 import { Ranking } from "@/lib/models/ranking";
 import { Story } from "@/lib/models/story";
 import { User } from "@/lib/models/user";
@@ -62,6 +69,7 @@ import {
 } from "@/lib/social/forums";
 import { recordChaptersPublished } from "@/lib/social/activity";
 import { listNotifications } from "@/lib/social/notification-list";
+import { OPTIONAL_NOTIFICATION_TYPES } from "@/lib/social/notifications";
 import { reportRecipients } from "@/lib/social/notify";
 import { canInteract } from "@/lib/social/permissions";
 import { getHomeRankings } from "@/lib/social/ranking-queries";
@@ -263,6 +271,71 @@ describe("global ban (criterion 2)", () => {
     expect(await as(root, () => liftGlobalBan("erin"))).toEqual(OK);
     expect((await User.findById(erin).lean())!.globalBan).toBeUndefined();
     expect(await listGlobalBans()).toEqual([]);
+  });
+
+  it("notifies the banned account of the ban, its change and its lift without naming the admin", async () => {
+    await Settings.create({
+      userId: erin,
+      notifications: Object.fromEntries(
+        OPTIONAL_NOTIFICATION_TYPES.map((type) => [type, false]),
+      ),
+    });
+    await Block.create({ blockerId: erin, blockedId: root });
+    expect(await banErin(7)).toEqual(OK);
+    await flushAfter();
+    const banned = await User.findById(erin).lean();
+    expect(await listNotifications(erin.toString())).toMatchObject([
+      {
+        type: "globalBan",
+        actors: [],
+        author: null,
+        href: null,
+        ban: {
+          until: banned!.globalBan!.until!.toISOString(),
+          reason: "Spam everywhere",
+        },
+      },
+    ]);
+
+    expect(
+      await as(root, () => setGlobalBan("Erin", null, "Still spamming")),
+    ).toEqual(OK);
+    await flushAfter();
+    expect((await listNotifications(erin.toString()))[0]).toMatchObject({
+      type: "globalBan",
+      ban: { until: null, reason: "Still spamming" },
+    });
+
+    expect(await as(root, () => liftGlobalBan("Erin"))).toEqual(OK);
+    await flushAfter();
+    const views = await listNotifications(erin.toString());
+    expect(views.map(({ type }) => type)).toEqual([
+      "globalBanLifted",
+      "globalBan",
+      "globalBan",
+    ]);
+    expect(views[0]).toMatchObject({ actors: [], ban: null, href: null });
+    const stored = await Notification.find({ userId: erin }).lean();
+    expect(stored.every(({ actorIds }) => actorIds.length === 0)).toBe(true);
+    expect(JSON.stringify(stored)).not.toContain(root.toString());
+    expect(JSON.stringify(views)).not.toMatch(/Root/);
+    expect(await Notification.countDocuments({ userId: root })).toBe(0);
+
+    signInAs(erin);
+    expect(await unreadCounts()).toMatchObject({ ok: true, notifications: 3 });
+  });
+
+  it("lets a globally banned account read its notifications", async () => {
+    await banErin(null);
+    await flushAfter();
+    signInAs(erin);
+    expect(await unreadCounts()).toMatchObject({ ok: true, notifications: 1 });
+    expect(await getNotifications()).toMatchObject({
+      ok: true,
+      unread: 1,
+      notifications: [{ type: "globalBan", ban: { until: null } }],
+    });
+    expect(await markAllNotificationsRead()).toEqual(OK);
   });
 
   it("still lets the admin mark a banned author's chapter as 18+", async () => {
@@ -533,7 +606,10 @@ describe("report queue", () => {
       { _id: folderId },
       { published: true, deletedAt: new Date() },
     );
-    expect((await listAdminQueue())[0]).toMatchObject({ text: null, path: null });
+    expect((await listAdminQueue())[0]).toMatchObject({
+      text: null,
+      path: null,
+    });
   });
 
   it("links the admins' report notification to the queue", async () => {
@@ -578,9 +654,9 @@ describe("forum categories (criterion 4)", () => {
 
   it("refuses a key of dots and the key of a deleted category with threads", async () => {
     signInAs(root);
-    expect(await saveCategory(null, { en: "...", pl: "Kropki" }, false)).toEqual(
-      error("INVALID_INPUT", "categoryKeyTaken"),
-    );
+    expect(
+      await saveCategory(null, { en: "...", pl: "Kropki" }, false),
+    ).toEqual(error("INVALID_INPUT", "categoryKeyTaken"));
     const thread = await as(dave, () =>
       createThread({ category: "workshop" }, "Kept", "x"),
     );
@@ -832,9 +908,7 @@ describe("log (criterion 6)", () => {
     expect(
       (await listAdminLog({ author: "alice", page: 0 })).entries,
     ).toMatchObject([{ action: "hide", community: "Alice" }]);
-    expect(
-      (await listAdminLog({ page: 1e9 })).entries,
-    ).toEqual([]);
+    expect((await listAdminLog({ page: 1e9 })).entries).toEqual([]);
     expect(await listAdminLog({ author: "Nobody", page: 0 })).toEqual({
       entries: [],
       more: false,
@@ -887,9 +961,9 @@ describe("audit fixes (task 91)", () => {
     await User.updateOne({ _id: other }, { $set: { deletedAt: new Date() } });
     await banErin(null);
     expect(
-      (
-        await reportRecipients({ authorId: alice, targetUserId: dave })
-      ).map(String),
+      (await reportRecipients({ authorId: alice, targetUserId: dave })).map(
+        String,
+      ),
     ).toEqual([alice.toString()]);
     await User.updateOne(
       { _id: alice },

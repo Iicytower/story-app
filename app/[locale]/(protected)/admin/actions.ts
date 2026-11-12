@@ -32,6 +32,7 @@ import {
   findForumContent,
 } from "@/lib/social/forum-moderation";
 import { logModeration } from "@/lib/social/moderation";
+import { notifyLater } from "@/lib/social/notify";
 import { isAdmin, isBanActive } from "@/lib/social/permissions";
 import { removePredefinedTag, savePredefinedTag } from "@/lib/tags/mutations";
 import { normalizeTag } from "@/lib/tags/tags";
@@ -103,6 +104,8 @@ export async function setGlobalBan(
     targetUserId: target._id,
     reason: text,
   });
+  // Without the admin as actor: the banned account never learns who it was (D80).
+  notifyLater(target._id, { type: "globalBan", ban: { until, reason: text } });
   refresh();
   return { ok: true };
 }
@@ -127,6 +130,7 @@ export async function liftGlobalBan(nickname: string): Promise<ActionResult> {
     targetId: target._id,
     targetUserId: target._id,
   });
+  notifyLater(target._id, { type: "globalBanLifted" });
   refresh();
   return { ok: true };
 }

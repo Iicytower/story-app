@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
@@ -13,7 +13,7 @@ import {
   markNotificationRead,
   unreadCounts,
 } from "@/app/[locale]/(protected)/notifications/actions";
-import { LocalDate } from "@/components/local-date";
+import { formatDate, LocalDate } from "@/components/local-date";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -121,6 +121,21 @@ export function useUnreadNotifications(
 
 function Message({ item }: { item: NotificationView }) {
   const t = useTranslations("notifications");
+  const locale = useLocale();
+  if (item.type === "globalBan" && item.ban) {
+    const { until, reason } = item.ban;
+    // Loaded by the client only, so the viewer's own time zone.
+    return (
+      <>
+        {until
+          ? t("types.globalBan", {
+              date: formatDate(until, locale, true),
+              reason,
+            })
+          : t("types.globalBanForever", { reason })}
+      </>
+    );
+  }
   const target = item.title
     ? t("target", { title: item.title })
     : t("unavailable");
