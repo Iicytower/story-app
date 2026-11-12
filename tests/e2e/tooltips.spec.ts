@@ -99,14 +99,16 @@ test("the collapsed sidebar shows tooltips, the expanded one does not", async ({
 }) => {
   await page.goto("/books");
   const nav = page.getByRole("navigation", { name: "Main" });
-  await nav.getByRole("button", { name: "Settings" }).hover();
+  await nav.getByRole("link", { name: "Books" }).hover();
   await expectNoTooltip(page);
 
   await nav.getByRole("button", { name: "Collapse sidebar" }).click();
-  const settings = nav.getByRole("button", { name: "Settings" });
-  await expect(settings).not.toHaveAttribute("title");
-  await settings.hover();
-  await expect(tooltip(page)).toHaveText(["Settings"]);
+  const books = nav.getByRole("link", { name: "Books" });
+  await expect(books).not.toHaveAttribute("title");
+  await books.hover();
+  await expect(tooltip(page)).toHaveText(["Books"]);
+  await nav.getByRole("button", { name: "Account menu, Bob" }).hover();
+  await expect(tooltip(page)).toHaveText(["Bob"]);
   await nav.getByRole("button", { name: "Expand sidebar" }).hover();
   await expect(tooltip(page)).toHaveText(["Expand sidebar"]);
 });

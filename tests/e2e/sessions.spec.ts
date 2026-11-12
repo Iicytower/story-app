@@ -1,7 +1,14 @@
 import type { Browser } from "@playwright/test";
 import { restorePassword } from "./db";
 import { USERS } from "./env";
-import { expect, expectSignedOut, login, openSettings, test } from "./helpers";
+import {
+  expect,
+  expectSignedOut,
+  login,
+  logOut,
+  openSettings,
+  test,
+} from "./helpers";
 
 // Carol only: ending sessions must not sign out the saved sessions other tests use.
 async function device(browser: Browser) {
@@ -65,8 +72,7 @@ test("a cookie copied before logging out does not work after it", async ({
   const here = await device(browser);
   const cookies = await here.context.cookies();
 
-  const settings = await openSettings(here.page);
-  await settings.getByRole("button", { name: "Log out", exact: true }).click();
+  await logOut(here.page);
   await expectSignedOut(here.page);
 
   const thief = await browser.newContext({

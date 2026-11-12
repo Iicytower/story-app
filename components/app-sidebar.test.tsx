@@ -60,7 +60,11 @@ const ITEMS: SocialNavItem[] = [
 
 function render(
   locale: "en" | "pl",
-  props: { hiddenItems?: SocialNavItem[]; profilePath?: string } = {},
+  props: {
+    hiddenItems?: SocialNavItem[];
+    nickname?: string | null;
+    defaultCollapsed?: boolean;
+  } = {},
 ) {
   return renderToStaticMarkup(
     <NextIntlClientProvider
@@ -68,7 +72,12 @@ function render(
       messages={locale === "en" ? en : pl}
     >
       <TooltipProvider>
-        <AppSidebar defaultCollapsed={false} toolsAvailable {...props} />
+        <AppSidebar
+          defaultCollapsed={false}
+          toolsAvailable
+          nickname="Alice"
+          {...props}
+        />
       </TooltipProvider>
     </NextIntlClientProvider>,
   );
@@ -87,24 +96,52 @@ describe("AppSidebar", () => {
     expect(labels(render("pl"))).toContain(pl.sidebar[item]);
   });
 
-  it("orders the entries as in D80", () => {
+  it("orders the entries as in D80 and D83", () => {
     expect(labels(render("pl"))).toEqual([
       "Menu",
       "Główna",
       "Strona główna",
-      "Feed",
+      "Aktualności",
       "Biblioteka",
       "Książki",
       "Fora",
       "Wiadomości",
       "Powiadomienia",
       "Mój profil",
-      "Moderacja",
       "Admin",
       "Statystyki",
-      "Ustawienia",
+      "Moderacja",
+      "Menu konta, Alice",
       "Zwiń pasek boczny",
     ]);
+  });
+
+  it("names the app at the top of the sidebar and of the mobile bar (task 95)", () => {
+    const html = render("en");
+    const home = [...html.matchAll(/<a href="\/"[^>]*>(.*?)<\/a>/g)].map(
+      (match) => match[1].replace(/<[^>]+>/g, ""),
+    );
+    expect(home).toEqual(["Story App", "Story App", "Home"]);
+    expect(labels(render("en", { defaultCollapsed: true }))).toContain(
+      "Story App",
+    );
+  });
+
+  it("shows the account's avatar and nickname in the account block (task 95)", () => {
+    const html = render("en");
+    expect(html).toMatch(
+      /aria-label="Account menu, Alice"[^>]*>.*?>A<\/span><span class="truncate">Alice<\/span><\/button>/,
+    );
+    expect(labels(html)).not.toContain(en.sidebar.settings);
+    const collapsed = render("en", { defaultCollapsed: true });
+    expect(collapsed).not.toContain('class="truncate">Alice');
+    expect(labels(collapsed)).toContain("Account menu, Alice");
+  });
+
+  it("calls an account without a nickname just Account", () => {
+    expect(labels(render("en", { nickname: null }))).toContain(
+      "Account menu, Account",
+    );
   });
 
   it("leaves out an entry hidden for this account (moderation, task 79)", () => {
@@ -181,10 +218,8 @@ describe("AppSidebar", () => {
     const current = (html: string) =>
       html.match(/aria-label="([^"]+)" aria-current="page"/)?.[1];
     location.pathname = "/p/alice";
-    expect(current(render("en", { profilePath: "/p/Alice" }))).toBe(
-      en.sidebar.profile,
-    );
+    expect(current(render("en"))).toBe(en.sidebar.profile);
     location.pathname = "/p/Bob";
-    expect(current(render("en", { profilePath: "/p/Alice" }))).toBeUndefined();
+    expect(current(render("en"))).toBeUndefined();
   });
 });

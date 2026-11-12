@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { expect, expectSignedOut, openSettings, test } from "./helpers";
+import { expect, expectSignedOut, logOut, test } from "./helpers";
 
 const PASSWORD = "Willow-lantern-2468!";
 const NEW_PASSWORD = "Harbor-candle-9753!";
@@ -43,9 +43,8 @@ async function reset(page: Page, code: string, password = NEW_PASSWORD) {
   await dialog.getByRole("button", { name: "Set new password" }).click();
 }
 
-async function logOut(page: Page) {
-  const settings = await openSettings(page);
-  await settings.getByRole("button", { name: "Log out", exact: true }).click();
+async function logOutAndCheck(page: Page) {
+  await logOut(page);
   await expectSignedOut(page);
 }
 
@@ -59,7 +58,7 @@ test("a forgotten password is reset with a recovery code, which then stops worki
   await dialog.getByLabel("Repeat password").fill(PASSWORD);
   await dialog.getByRole("button", { name: "Create account" }).click();
   const codes = await saveCodes(page);
-  await logOut(page);
+  await logOutAndCheck(page);
 
   // Typed by hand: lower case and without dashes.
   await reset(page, codes[4].toLowerCase().replace(/-/g, " "));
@@ -69,7 +68,7 @@ test("a forgotten password is reset with a recovery code, which then stops worki
   const fresh = await saveCodes(page);
   expect(fresh).toHaveLength(10);
   expect(fresh).not.toContain(codes[4]);
-  await logOut(page);
+  await logOutAndCheck(page);
 
   await signIn(page, PASSWORD);
   await expect(
@@ -79,7 +78,7 @@ test("a forgotten password is reset with a recovery code, which then stops worki
   ).toBeVisible();
   await signIn(page, NEW_PASSWORD);
   await expect(page).toHaveURL("/en");
-  await logOut(page);
+  await logOutAndCheck(page);
 
   await reset(page, codes[4], PASSWORD);
   await expect(

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
-import { myProfilePath } from "@/lib/profiles/queries";
+import { myAccount } from "@/lib/profiles/queries";
 import { getUserSettings } from "@/lib/settings/queries";
 import { hasPublication } from "@/lib/social/author-stats";
 import { isActiveAdmin } from "@/lib/social/admin";
@@ -26,7 +26,7 @@ export async function AppShell({
     unreadMessages,
     published,
     admin,
-    profilePath,
+    account,
   ] = await Promise.all([
     getUserSettings(userId),
     publication.then((value) => hasModerationAccess(userId, value)),
@@ -34,7 +34,7 @@ export async function AppShell({
     countUnreadConversations(userId),
     publication,
     isActiveAdmin(userId),
-    myProfilePath(userId),
+    myAccount(userId),
   ]);
   const hiddenItems = [
     ...(moderation ? [] : ["moderation" as const]),
@@ -47,12 +47,16 @@ export async function AppShell({
         defaultCollapsed={appearance.sidebarCollapsed}
         toolsAvailable={toolsConfig() !== null}
         hiddenItems={hiddenItems}
-        profilePath={profilePath}
+        nickname={account.nickname}
+        avatar={account.avatar}
         initialUnread={unread}
         initialUnreadMessages={unreadMessages}
         realtimeUrl={realtimeUrl()}
       />
-      <main className="flex min-w-0 flex-1 flex-col">{children}</main>
+      {/* Below md the fixed top bar of the sidebar covers the first 2.5rem. */}
+      <main className="flex min-w-0 flex-1 flex-col pt-10 md:pt-0">
+        {children}
+      </main>
     </div>
   );
 }

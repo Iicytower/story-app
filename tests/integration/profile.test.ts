@@ -17,6 +17,7 @@ import {
   FOLLOWS_PAGE_SIZE,
   getPublicProfile,
   listFollows,
+  myAccount,
   myProfilePath,
 } from "@/lib/profiles/queries";
 import { getPublishedFolder } from "@/lib/publish/queries";
@@ -172,6 +173,31 @@ describe("getPublicProfile", () => {
     });
     expect(await myProfilePath(insertedId.toString())).toBeNull();
     expect(await myProfilePath(alice.toString())).toBe("/p/Alice");
+  });
+
+  it("gives the sidebar the account's nickname and avatar (task 95)", async () => {
+    expect(await myAccount(alice.toString())).toEqual({
+      nickname: "Alice",
+      avatar: null,
+    });
+    const avatarId = new Types.ObjectId();
+    await Profile.updateOne(
+      { userId: alice },
+      { avatarId },
+      { upsert: true },
+    );
+    expect(await myAccount(alice.toString())).toEqual({
+      nickname: "Alice",
+      avatar: `/avatars/${avatarId}`,
+    });
+    const { insertedId } = await User.collection.insertOne({
+      passwordHash: "x",
+      createdAt: new Date(),
+    });
+    expect(await myAccount(insertedId.toString())).toEqual({
+      nickname: null,
+      avatar: null,
+    });
   });
 
   it("is hidden from others during a global ban, but not from the owner", async () => {

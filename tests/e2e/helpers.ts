@@ -156,8 +156,8 @@ export function countActionRequests(page: Page) {
   return requests;
 }
 
-// Views and the settings live in the sidebar, a drawer on narrow screens.
-export async function sidebarAction(page: Page, name: string) {
+// The sidebar, or the drawer on narrow screens.
+async function mainNav(page: Page) {
   // With unread notifications its label says so (task 81).
   const menu = page.getByRole("button", {
     name: /^Menu(, unread notifications)?$/,
@@ -165,16 +165,36 @@ export async function sidebarAction(page: Page, name: string) {
   // The drawer of a previous action may still be animating away.
   await expect(page.getByRole("dialog")).toBeHidden();
   if (await menu.isVisible()) await menu.click();
-  await page
-    .getByRole("navigation", { name: "Main" })
+  return page.getByRole("navigation", { name: "Main" });
+}
+
+// Views live in the sidebar, a drawer on narrow screens.
+export async function sidebarAction(page: Page, name: string) {
+  await (
+    await mainNav(page)
+  )
     .getByRole(name === "Books" ? "link" : "button", { name, exact: true })
     .click();
 }
 
-// Opens the settings dialog from the sidebar (D50).
+// Settings and logging out are in the account menu at the bottom of the sidebar (D83).
+export async function accountAction(
+  page: Page,
+  name: "My profile" | "Settings" | "Log out",
+) {
+  await openMenu(
+    (await mainNav(page)).getByRole("button", { name: /^Account menu, / }),
+  );
+  await page.getByRole("menuitem", { name, exact: true }).click();
+}
+
 export async function openSettings(page: Page) {
-  await sidebarAction(page, "Settings");
+  await accountAction(page, "Settings");
   return page.getByRole("dialog", { name: "Settings" });
+}
+
+export async function logOut(page: Page) {
+  await accountAction(page, "Log out");
 }
 
 // Picks a theme in the settings dialog and saves it; the dialog stays open.

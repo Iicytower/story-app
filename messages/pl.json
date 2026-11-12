@@ -19,7 +19,7 @@
     "expand": "Rozwiń pasek boczny",
     "collapse": "Zwiń pasek boczny",
     "settings": "Ustawienia",
-    "feed": "Feed",
+    "feed": "Aktualności",
     "library": "Biblioteka",
     "forums": "Fora",
     "messages": "Wiadomości",
@@ -31,7 +31,10 @@
     "notificationsUnread": "{count, plural, one {Powiadomienia, # nieprzeczytane} few {Powiadomienia, # nieprzeczytane} many {Powiadomienia, # nieprzeczytanych} other {Powiadomienia, # nieprzeczytanego}}",
     "menuUnread": "Menu, nieprzeczytane powiadomienia",
     "toasts": "Komunikaty",
-    "messagesUnread": "{count, plural, one {Wiadomości, # nieprzeczytana rozmowa} few {Wiadomości, # nieprzeczytane rozmowy} many {Wiadomości, # nieprzeczytanych rozmów} other {Wiadomości, # nieprzeczytanej rozmowy}}"
+    "messagesUnread": "{count, plural, one {Wiadomości, # nieprzeczytana rozmowa} few {Wiadomości, # nieprzeczytane rozmowy} many {Wiadomości, # nieprzeczytanych rozmów} other {Wiadomości, # nieprzeczytanej rozmowy}}",
+    "account": "Konto",
+    "accountMenu": "Menu konta, {name}",
+    "logOut": "Wyloguj"
   },
   "settings": {
     "title": "Ustawienia",
@@ -54,7 +57,6 @@
     "language": "Język interfejsu",
     "account": "Konto",
     "changePassword": "Zmień hasło",
-    "logOut": "Wyloguj",
     "dictionary": "Słownik korekty",
     "dictionaryHelp": "Słowa, których korekta nie oznacza jako błędy pisowni. Dodajesz je przyciskiem „Dodaj do słownika” w korekcie.",
     "dictionaryCount": "{count, plural, =0 {Brak słów.} one {# słowo} few {# słowa} many {# słów} other {# słowa}}",
@@ -439,7 +441,7 @@
     "version": "Wersja – Story App",
     "editor": "Edytor – Story App",
     "library": "Biblioteka – Story App",
-    "feed": "Feed – Story App",
+    "feed": "Aktualności – Story App",
     "moderation": "Moderacja – Story App",
     "stats": "Statystyki – Story App",
     "messages": "Wiadomości – Story App",
@@ -1113,7 +1115,7 @@
     "noteKind": "Notatka"
   },
   "feed": {
-    "title": "Feed",
+    "title": "Aktualności",
     "entries": "Aktywność obserwowanych autorów",
     "empty": "Na razie nic tu nie ma. Obserwuj autorów, których książki lubisz, a ich nowe rozdziały pojawią się tutaj.",
     "emptyLink": "Znajdź książki na stronie głównej",
