@@ -312,8 +312,10 @@ test.describe("at 1280 px", () => {
       return (await target.getByRole("heading", { level: 1 }).boundingBox())!;
     };
     const narrow = [];
-    for (const path of ["/feed", "/messages", "/library", "/forums", "/"])
+    for (const path of ["/feed", "/messages", "/library", "/forums"])
       narrow.push(await heading(page, path));
+    // The home page has the writing shortcut above its heading (D83).
+    const home = await heading(page, "/");
     const wide = [];
     for (const path of ["/books", "/stats"])
       wide.push(await heading(page, path));
@@ -328,6 +330,7 @@ test.describe("at 1280 px", () => {
         expect(box.x).toBeCloseTo(boxes[0].x, 0);
         expect(box.y).toBeCloseTo(boxes[0].y, 0);
       }
+    expect(home.x).toBeCloseTo(narrow[0].x, 0);
     expect(wide[0].x).toBeLessThan(narrow[0].x);
     // Below a breadcrumb the heading of a public book still lines up.
     expect((await heading(page, "/p/Alice/widths")).x).toBeCloseTo(

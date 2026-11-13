@@ -6,7 +6,7 @@ export interface RankingItem {
   score: number;
 }
 
-// Home page rankings (D80, task 84): `weekly`, `topRated` and `tag:<key>`, recomputed lazily.
+// Home page rankings (D80, task 84): `weekly` and `topRated`, recomputed lazily.
 // `computing` is the end of a claim's lease, so a crashed computation does not block the next.
 export interface RankingFields {
   _id: string;

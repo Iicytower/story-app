@@ -437,7 +437,7 @@
   },
   "metadata": {
     "stories": "Books – Story App",
-    "home": "Story App – write and publish stories",
+    "home": "Story App – write and publish books",
     "folder": "Book – Story App",
     "version": "Version – Story App",
     "editor": "Editor – Story App",
@@ -842,8 +842,9 @@
   },
   "search": {
     "title": "Search stories",
-    "placeholder": "Search titles, tags and text, press Enter",
+    "placeholder": "Search stories",
     "label": "Search published stories",
+    "submit": "Search",
     "filterByTag": "Filter by tag",
     "tooMany": "Too many searches. Try again in a minute.",
     "none": "No stories found.",
@@ -851,19 +852,18 @@
     "inFolderBy": "in {folder} by {nickname}"
   },
   "home": {
-    "heroTitle": "Your stories, from the first line to the first reader",
+    "heroTitle": "Your books, from the first line to the first reader",
     "heroDescription": "Write chapter by chapter with definitions, synonyms, rhymes and proofreading at hand. Go back to any earlier version whenever you like. When your text is ready, publish it with a single click.",
     "createAccount": "Create account",
     "logIn": "Log in",
+    "lastEdited": "Last edited: <strong>{chapter}</strong> ({book})",
+    "continue": "Continue",
     "recent": "Recently published",
     "showMore": "Show more",
     "recentNone": "Nothing has been published yet.",
     "weekly": "Popular this week",
     "topRated": "Top rated",
-    "followed": "From authors you follow",
-    "categories": "Popular in categories",
-    "byAuthor": "by {nickname}",
-    "chapterIn": "{book} by {nickname}"
+    "byAuthor": "by {nickname}"
   },
   "notFound": {
     "text": "404 | This page could not be found."

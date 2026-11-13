@@ -1,3 +1,4 @@
+import { ArrowRightIcon } from "lucide-react";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
@@ -5,6 +6,8 @@ import { AppShell } from "@/components/app-shell";
 import { PageContainer } from "@/components/page-container";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
+import { getLastEditedChapter } from "@/lib/stories/queries";
+import { NewBookButton } from "./(protected)/books/new-book-button";
 import { AuthDialog } from "./auth/auth-dialog";
 import { PublicSearch } from "./public-search";
 import { Rankings } from "./rankings";
@@ -18,6 +21,36 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("home"), description: tHome("heroDescription") };
 }
 
+// D83: the way back to writing; the user id comes from the session.
+async function WritingShortcut({ userId }: { userId: string }) {
+  const [chapter, t] = await Promise.all([
+    getLastEditedChapter(userId),
+    getTranslations("home"),
+  ]);
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      {chapter && (
+        <>
+          <p className="min-w-0 flex-1 basis-48 text-sm [overflow-wrap:anywhere]">
+            {t.rich("lastEdited", {
+              chapter: chapter.title,
+              book: chapter.bookName,
+              strong: (text) => <strong className="font-medium">{text}</strong>,
+            })}
+          </p>
+          <Button asChild>
+            <Link href={`/chapters/${chapter.id}`}>
+              {t("continue")}
+              <ArrowRightIcon />
+            </Link>
+          </Button>
+        </>
+      )}
+      <NewBookButton variant={chapter ? "outline" : "default"} />
+    </div>
+  );
+}
+
 export default async function HomePage({
   params,
   searchParams,
@@ -29,6 +62,7 @@ export default async function HomePage({
     return (
       <AppShell userId={userId}>
         <PageContainer width="narrow" className="gap-10">
+          <WritingShortcut userId={userId} />
           <PublicSearch q={q} tag={tag} heading="h1" />
           <RecentlyPublished />
           <Rankings viewerId={userId} />

@@ -36,35 +36,44 @@ export function TagFilter({
     .filter((tag) => labelOf(tag) === null)
     .map((tag) => ({ tag, text: tag }));
 
-  const group = (name: string, items: { tag: string; text: string }[]) =>
+  const group = (
+    heading: string,
+    name: string,
+    items: { tag: string; text: string }[],
+  ) =>
     items.length > 0 && (
-      <nav aria-label={name} className="flex flex-wrap gap-1">
-        {items.map(({ tag, text }) => {
-          const active = selected.includes(tag);
-          return (
-            <Link
-              key={tag}
-              prefetch={prefetch}
-              href={tagFilterHref(query, selected, tag, path)}
-              aria-current={active ? "true" : undefined}
-              className={`rounded-full px-2 py-0.5 text-xs ${
-                active
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted hover:bg-muted/70"
-              }`}
-            >
-              {text}
-            </Link>
-          );
-        })}
-      </nav>
+      <div className="flex items-baseline gap-2">
+        <span className="text-muted-foreground w-20 shrink-0 text-xs">
+          {heading}
+        </span>
+        <nav aria-label={name} className="flex flex-wrap gap-1">
+          {items.map(({ tag, text }) => {
+            const active = selected.includes(tag);
+            return (
+              <Link
+                key={tag}
+                prefetch={prefetch}
+                href={tagFilterHref(query, selected, tag, path)}
+                aria-current={active ? "true" : undefined}
+                className={`rounded-full px-2 py-0.5 text-xs ${
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted hover:bg-muted/70"
+                }`}
+              >
+                {text}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
     );
 
   if (all.length === 0) return null;
   return (
     <div className="flex flex-col gap-2">
-      {group(t("filterByCategory"), predefined)}
-      {group(label, own)}
+      {group(t("categories"), t("filterByCategory"), predefined)}
+      {group(t("tags"), label, own)}
     </div>
   );
 }

@@ -842,8 +842,9 @@
   },
   "search": {
     "title": "Szukaj opowiadań",
-    "placeholder": "Szukaj w tytułach, tagach i tekście, naciśnij Enter",
+    "placeholder": "Szukaj opowiadań",
     "label": "Szukaj opublikowanych opowiadań",
+    "submit": "Szukaj",
     "filterByTag": "Filtruj po tagu",
     "tooMany": "Za dużo wyszukiwań. Spróbuj ponownie za minutę.",
     "none": "Nie znaleziono opowiadań.",
@@ -855,15 +856,14 @@
     "heroDescription": "Pisz rozdział po rozdziale, mając pod ręką definicje, synonimy, rymy i korektę. Do wcześniejszych wersji wrócisz w każdej chwili. Gdy tekst będzie gotowy, opublikujesz go jednym kliknięciem.",
     "createAccount": "Załóż konto",
     "logIn": "Zaloguj się",
+    "lastEdited": "Ostatnio edytowane: <strong>{chapter}</strong> ({book})",
+    "continue": "Kontynuuj",
     "recent": "Ostatnio opublikowane",
     "showMore": "Pokaż więcej",
     "recentNone": "Nic jeszcze nie opublikowano.",
     "weekly": "Popularne w tym tygodniu",
     "topRated": "Najwyżej oceniane",
-    "followed": "Od obserwowanych",
-    "categories": "Popularne w kategoriach",
-    "byAuthor": "autor: {nickname}",
-    "chapterIn": "„{book}”, autor: {nickname}"
+    "byAuthor": "autor: {nickname}"
   },
   "notFound": {
     "text": "404 | Nie znaleziono tej strony."
