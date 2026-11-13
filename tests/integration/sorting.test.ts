@@ -175,13 +175,23 @@ describe("chapter sort modes", () => {
     await seedStory(folderId, "cherry", day(2));
   });
 
-  it("defaults to the newest chapter first", async () => {
+  it("defaults to the oldest chapter first", async () => {
     const folder = await getFolder(alice.toString(), folderId.toString());
     expect(folder?.chapterSort).toBe("created");
     expect(await chapterTitles(folderId)).toEqual([
-      "Apple",
-      "cherry",
       "banana",
+      "cherry",
+      "Apple",
+    ]);
+  });
+
+  it("breaks a createdAt tie by the older id first", async () => {
+    await seedStory(folderId, "date", day(2));
+    expect(await chapterTitles(folderId)).toEqual([
+      "banana",
+      "cherry",
+      "date",
+      "Apple",
     ]);
   });
 
@@ -204,9 +214,9 @@ describe("chapter sort modes", () => {
   it("keeps the shown order on the first switch to manual", async () => {
     await setChapterSort(folderId.toString(), "manual");
     expect(await chapterTitles(folderId)).toEqual([
-      "Apple",
-      "cherry",
       "banana",
+      "cherry",
+      "Apple",
     ]);
   });
 
@@ -221,15 +231,15 @@ describe("chapter sort modes", () => {
 
     expect(await moveChapter(last.id, 0)).toEqual({ ok: true });
     expect(await chapterTitles(folderId)).toEqual([
-      "banana",
       "Apple",
+      "banana",
       "cherry",
     ]);
     expect(await moveChapter(first.id, 10)).toEqual({ ok: true });
     expect(await chapterTitles(folderId)).toEqual([
-      "banana",
-      "cherry",
       "Apple",
+      "cherry",
+      "banana",
     ]);
     expect(await chapterTitles(other)).toEqual(["Outside"]);
   });
@@ -244,9 +254,9 @@ describe("chapter sort modes", () => {
     );
     await moveStory(elsewhere.toString(), folderId.toString());
     expect(await chapterTitles(folderId)).toEqual([
-      "Apple",
-      "cherry",
       "banana",
+      "cherry",
+      "Apple",
       "Zeta",
       "Omega",
     ]);

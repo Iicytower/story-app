@@ -123,8 +123,7 @@ test("a Server Action error is in Polish on /pl", async ({ browser }) => {
 test("a signed-in action error is in Polish on /pl", async ({ browser }) => {
   const page = await signedIn(browser);
   await page.goto("/pl/books");
-  await page.getByRole("button", { name: "Akcje", exact: true }).click();
-  await page.getByRole("menuitem", { name: "Nowa książka" }).click();
+  await page.getByRole("button", { name: "Nowa książka", exact: true }).click();
   await page.getByRole("button", { name: "Utwórz" }).click();
   await expect(page.getByRole("alert")).toHaveText(
     "Nazwa książki jest wymagana.",

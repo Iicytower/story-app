@@ -50,7 +50,7 @@ test("switches folder sort modes and drags a folder in manual mode", async ({
 
   await page.goto("/books");
   const folders = page.getByRole("list", { name: "Books" });
-  const names = folders.getByRole("listitem").locator("a > span:first-child");
+  const names = folders.getByRole("listitem").locator("a > span > span:first-child");
   await expectSort(page, "Actions", "Last updated");
   await expect(names).toHaveText(["banana", "cherry", "Apple"]);
   await expect(page.getByRole("button", { name: /^Move / })).toHaveCount(0);
@@ -109,8 +109,8 @@ test("switches chapter sort modes and drags a chapter in manual mode", async ({
     .getByRole("list", { name: "Chapters" })
     .getByRole("listitem")
     .locator("a > span:first-child");
-  await expectSort(page, "Actions for Book", "Newest first");
-  await expect(titles).toHaveText(["Apple", "cherry", "banana"]);
+  await expectSort(page, "Actions for Book", "Oldest first");
+  await expect(titles).toHaveText(["banana", "cherry", "Apple"]);
   await expect(page.getByRole("button", { name: /^Move / })).toHaveCount(0);
 
   await sortBy(page, "Actions for Book", "A–Z");

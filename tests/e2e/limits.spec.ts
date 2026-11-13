@@ -1,6 +1,6 @@
 import { seedStory } from "./db";
 import { storageStatePath } from "./env";
-import { expect, menuAction, test } from "./helpers";
+import { expect, test } from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
@@ -30,7 +30,7 @@ test("a title stored before the limit gives a message instead of saving", async 
 
 test("the new folder name takes at most 200 characters", async ({ page }) => {
   await page.goto("/books");
-  await menuAction(page, "Actions", "New book");
+  await page.getByRole("button", { name: "New book", exact: true }).click();
   await expect(
     page.getByRole("dialog", { name: "New book" }).getByLabel("Name"),
   ).toHaveAttribute("maxlength", "200");

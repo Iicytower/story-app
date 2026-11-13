@@ -29,7 +29,7 @@ beforeEach(() => signInAs(alice));
 
 const day = (n: number) => new Date(Date.UTC(2026, 0, n));
 
-// Chapters "First", "Second", "Third" created in that order, so newest first is reversed.
+// Chapters "First", "Second", "Third" created in that order (oldest first, D83).
 async function seedFolder(userId = alice) {
   const folder = await Folder.create({
     userId,
@@ -72,9 +72,9 @@ describe("GET /books/[id]/export", () => {
     );
     const files = unzipSync(new Uint8Array(await response.arrayBuffer()));
     expect(Object.keys(files)).toEqual([
-      "01-third.md",
+      "01-first.md",
       "02-second.md",
-      "03-first.md",
+      "03-third.md",
       "notes.md",
     ]);
   });

@@ -32,7 +32,7 @@ export function chapterOrder(mode: ChapterSort): Order {
     case "alpha":
       return { sort: { title: 1, _id: 1 }, collation: ALPHA_COLLATION };
     default:
-      return { sort: { createdAt: -1, _id: -1 } };
+      return { sort: { createdAt: 1, _id: 1 } };
   }
 }
 

@@ -289,7 +289,7 @@ test("Chapters panel saves before moving to another chapter", async ({
   await page.goto(`/chapters/${first}`);
   const e = editor(page);
   await e.sideTab("Chapters").click();
-  await expect(e.chapters.getByRole("link")).toHaveText(["Second", "First"]);
+  await expect(e.chapters.getByRole("link")).toHaveText(["First", "Second"]);
   await expect(e.chapters.getByRole("link", { name: "First" })).toHaveAttribute(
     "aria-current",
     "page",

@@ -62,7 +62,7 @@ export default async function StoriesPage({
   const tCovers = await getTranslations("covers");
   return (
     <PageContainer width="wide">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <h1 className="mr-auto text-2xl font-semibold">{t("title")}</h1>
         <StoriesMenu
           sort={sort}
@@ -117,16 +117,20 @@ export default async function StoriesPage({
                       size="sm"
                     />
                   )}
-                  <span className="mr-auto flex min-w-0 flex-wrap items-center gap-2">
-                    <span className="font-medium">{folder.name}</span>
-                    {folder.adult.adult && <AdultBadge />}
-                    <TagChips tags={folder.tags} />
-                  </span>
-                  <span className="text-muted-foreground text-sm">
-                    {t("chapterCount", { count: folder.chapterCount })}
-                  </span>
-                  <span className="text-muted-foreground w-28 text-right text-sm">
-                    <LocalDate iso={folder.lastActivityAt} />
+                  <span className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+                    <span className="mr-auto flex min-w-0 flex-wrap items-center gap-2">
+                      <span className="font-medium">{folder.name}</span>
+                      {folder.adult.adult && <AdultBadge />}
+                      <TagChips tags={folder.tags} />
+                    </span>
+                    <span className="text-muted-foreground flex gap-3 text-sm whitespace-nowrap sm:gap-4">
+                      <span>
+                        {t("chapterCount", { count: folder.chapterCount })}
+                      </span>
+                      <span className="sm:w-28 sm:text-right">
+                        <LocalDate iso={folder.lastActivityAt} />
+                      </span>
+                    </span>
                   </span>
                 </Link>
                 <FolderRowMenu

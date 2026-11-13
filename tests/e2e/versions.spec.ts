@@ -207,7 +207,7 @@ test("restores the entire version after confirmation, removing chapters added si
   await expect(page).toHaveURL(`/en/books/${folderId}`);
   await expect(
     page.getByRole("list", { name: "Chapters" }).getByRole("link"),
-  ).toHaveText([/^B/, /^A/]);
+  ).toHaveText([/^A/, /^B/]);
   expect(await findStoryById(a)).toMatchObject({
     content: "A content",
     notes: "A notes",
