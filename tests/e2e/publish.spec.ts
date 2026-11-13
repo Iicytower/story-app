@@ -1,4 +1,5 @@
 import type { Browser, Page } from "@playwright/test";
+import en from "@/messages/en.json";
 import { findFolder, seedPublished, seedStory, withE2EDb } from "./db";
 import { storageStatePath } from "./env";
 import {
@@ -80,7 +81,9 @@ test("a published folder is readable without logging in until it is unpublished"
   await visitor.getByRole("link", { name: "1. One" }).click();
   await expect(visitor).toHaveURL(/\/p\/Alice\/book\/one$/);
   await expect(visitor.getByText("First text")).toBeVisible();
-  await expect(visitor.getByRole("link", { name: "Two →" })).toBeVisible();
+  await expect(
+    visitor.getByRole("link", { name: en.public.next }),
+  ).toHaveAttribute("title", "Two");
   const html = await visitor.content();
   for (const secret of [SECRET_COMMENT, SECRET_NOTE, SECRET_FOLDER_NOTE]) {
     expect(html).not.toContain(secret);
@@ -196,4 +199,74 @@ test("the breadcrumb leads from a chapter to its folder, the author and home", a
   await visitor.goto("/en/p/Alice/book");
   await breadcrumb.getByRole("link", { name: "Home" }).click();
   await expect(visitor).toHaveURL(/\/en$/);
+});
+
+test("a public book shows its plain-text description and reading as the main action; the chapter navigation comes first under the text (D83)", async ({
+  browser,
+}) => {
+  await seedPublished("alice", "Book", [
+    {
+      title: "One",
+      publication: "public",
+      content: "First text",
+      createdAt: new Date(Date.UTC(2026, 0, 1)),
+    },
+    {
+      title: "Two",
+      publication: "public",
+      content: "Second text",
+      createdAt: new Date(Date.UTC(2026, 0, 2)),
+    },
+  ]);
+  const folder = await findFolder("Book");
+  await withE2EDb((connection) =>
+    connection
+      .collection("folders")
+      .updateOne(
+        { _id: folder!._id },
+        { $set: { description: "First line\n<b>Second</b> line" } },
+      ),
+  );
+  const visitor = await anonymous(browser);
+  await visitor.goto("/en/p/Alice/book");
+  await expect(
+    visitor.getByRole("button", { name: en.auth.openDialog }),
+  ).toBeVisible();
+  const description = visitor.getByText("First line");
+  expect(await description.innerText()).toBe("First line\n<b>Second</b> line");
+  await expect(visitor.locator("main b")).toHaveCount(0);
+  await expect(
+    visitor.getByRole("button", { name: en.library.add }),
+  ).not.toHaveClass(/bg-primary/);
+  const start = visitor.getByRole("link", { name: en.public.startReading });
+  await expect(start).toHaveClass(/bg-primary/);
+  await start.click();
+  await expect(visitor).toHaveURL(/\/en\/p\/Alice\/book\/one$/);
+
+  const top = async (locator: ReturnType<Page["locator"]>) =>
+    (await locator.boundingBox())!.y;
+  const textBottom = await visitor
+    .getByText("First text")
+    .boundingBox()
+    .then((box) => box!.y + box!.height);
+  const nav = visitor.getByRole("navigation", { name: en.public.chapters });
+  const navTop = await top(nav);
+  expect(navTop).toBeGreaterThan(textBottom);
+  for (const below of [
+    visitor.getByRole("group", { name: en.reactions.chapter }),
+    visitor.getByRole("group", { name: en.ratings.chapter }),
+    visitor.getByRole("button", { name: en.reports.reportChapter }),
+  ])
+    expect(await top(below)).toBeGreaterThan(navTop);
+  await expect(nav.getByRole("link", { name: en.public.previous })).toHaveCount(
+    0,
+  );
+  const next = nav.getByRole("link", { name: en.public.next });
+  await expect(next).toHaveClass(/bg-primary/);
+  await next.click();
+  await expect(visitor).toHaveURL(/\/en\/p\/Alice\/book\/two$/);
+  await expect(
+    nav.getByRole("link", { name: en.public.previous }),
+  ).toHaveAttribute("title", "One");
+  await expect(nav.getByRole("link", { name: en.public.next })).toHaveCount(0);
 });

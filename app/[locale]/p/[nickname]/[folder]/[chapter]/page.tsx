@@ -1,3 +1,4 @@
+import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 import type { Metadata } from "next";
 import { Link, redirect } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
@@ -12,6 +13,7 @@ import { AppShell } from "@/components/app-shell";
 import { CoverImage } from "@/components/cover";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { PageContainer } from "@/components/page-container";
+import { Button } from "@/components/ui/button";
 import { ADULT_COOKIE } from "@/lib/adult/gate";
 import { requireUser } from "@/lib/auth/session";
 import { getPublishedChapter, publishedChapterId } from "@/lib/publish/queries";
@@ -24,6 +26,7 @@ import { stripComments } from "@/lib/stories/strip-comments";
 import { ReportButton } from "@/components/report-dialog";
 import { BlurredCover } from "../adult-cover";
 import { PublicBreadcrumb } from "../../breadcrumb";
+import { GuestTopBar } from "../../guest-top-bar";
 import { Comments } from "../comments";
 import { ChapterReactions } from "../reactions";
 import { RatingSection } from "../ratings";
@@ -125,15 +128,17 @@ export default async function PublishedChapterPage({
 
   const content = (
     <PageContainer width="narrow" className="gap-8">
-      <PublicBreadcrumb
-        nickname={chapter.nickname}
-        folder={{ name: chapter.folderName, path: chapter.folderPath }}
-      />
-      <div className="-mt-6 flex items-center gap-3">
-        <h1 className="text-3xl font-bold [overflow-wrap:anywhere]">
-          {chapter.title}
-        </h1>
-        {chapter.adult && <AdultBadge />}
+      <div className="flex flex-col gap-3">
+        <PublicBreadcrumb
+          nickname={chapter.nickname}
+          folder={{ name: chapter.folderName, path: chapter.folderPath }}
+        />
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold [overflow-wrap:anywhere]">
+            {chapter.title}
+          </h1>
+          {chapter.adult && <AdultBadge />}
+        </div>
       </div>
       {cover &&
         (cover.adult && !confirmed ? (
@@ -161,16 +166,55 @@ export default async function PublishedChapterPage({
           <GuestMarks path={chapter.path} />
         </>
       )}
+      {reading && (
+        <ReadingTracker storyId={reading.storyId} resumeAt={reading.resumeAt} />
+      )}
+      {/* Right under the text, before the reactions and ratings (D83). */}
+      <nav
+        aria-label={t("chapters")}
+        className="flex flex-wrap items-center gap-x-4 gap-y-2"
+      >
+        {chapter.previous && (
+          <Button asChild variant="outline">
+            <Link
+              href={chapter.previous.path}
+              rel="prev"
+              title={chapter.previous.title}
+            >
+              <ArrowLeftIcon />
+              {t("previous")}
+            </Link>
+          </Button>
+        )}
+        <Link
+          href={chapter.folderPath}
+          className="text-muted-foreground hover:text-foreground text-sm"
+        >
+          {t("contents")}
+        </Link>
+        {chapter.next && (
+          <Button asChild className="ml-auto">
+            <Link
+              href={chapter.next.path}
+              rel="next"
+              title={chapter.next.title}
+            >
+              {t("next")}
+              <ArrowRightIcon />
+            </Link>
+          </Button>
+        )}
+      </nav>
       {place && (
-        <div className="flex flex-col gap-3">
-          <RatingSection
-            viewerId={viewer.ok ? viewer.userId : null}
-            target={{ type: "story", id: place.storyId }}
-            path={chapter.path}
-          />
+        <div className="flex flex-col gap-4">
           <ChapterReactions
             viewerId={viewer.ok ? viewer.userId : null}
             storyId={place.storyId}
+            path={chapter.path}
+          />
+          <RatingSection
+            viewerId={viewer.ok ? viewer.userId : null}
+            target={{ type: "story", id: place.storyId }}
             path={chapter.path}
           />
           {!own && (
@@ -182,27 +226,6 @@ export default async function PublishedChapterPage({
           )}
         </div>
       )}
-      {reading && (
-        <ReadingTracker storyId={reading.storyId} resumeAt={reading.resumeAt} />
-      )}
-      <nav
-        aria-label={t("chapters")}
-        className="text-muted-foreground flex items-center gap-4 text-sm"
-      >
-        {chapter.previous && (
-          <Link href={chapter.previous.path} rel="prev">
-            ← {chapter.previous.title}
-          </Link>
-        )}
-        <Link href={chapter.folderPath} className="mx-auto">
-          {t("contents")}
-        </Link>
-        {chapter.next && (
-          <Link href={chapter.next.path} rel="next">
-            {chapter.next.title} →
-          </Link>
-        )}
-      </nav>
       {place && (
         <Comments
           viewerId={viewer.ok ? viewer.userId : null}
@@ -217,6 +240,9 @@ export default async function PublishedChapterPage({
   return viewer.ok ? (
     <AppShell userId={viewer.userId}>{content}</AppShell>
   ) : (
-    <main className="flex flex-1 flex-col">{content}</main>
+    <main className="flex flex-1 flex-col">
+      <GuestTopBar path={chapter.path} />
+      {content}
+    </main>
   );
 }

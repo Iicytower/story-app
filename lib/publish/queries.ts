@@ -73,6 +73,7 @@ async function loadPublishedFolder(
       chapterSort: 1,
       adult: 1,
       coverId: 1,
+      description: 1,
     })
     .lean();
   const slugs = folderSlugs(folders);
@@ -123,6 +124,7 @@ async function loadPublishedFolder(
     authorId: userId,
     nickname: author.nickname,
     name: folder.name,
+    description: folder.description ?? "",
     adult: isAdult(folder.adult),
     cover: covers.get(folder._id.toString()) ?? null,
     path,
@@ -158,6 +160,7 @@ export const getPublishedFolder = cache(
     return {
       nickname: folder.nickname,
       name: folder.name,
+      description: folder.description,
       adult: folder.adult,
       cover: folder.cover,
       path: folder.path,

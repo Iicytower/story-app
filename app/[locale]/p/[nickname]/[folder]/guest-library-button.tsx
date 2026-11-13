@@ -11,7 +11,7 @@ export function GuestLibraryButton({ path }: { path: string }) {
   return (
     <AuthDialog
       callbackUrl={`/${locale}${path}`}
-      trigger={<Button>{t("add")}</Button>}
+      trigger={<Button variant="outline">{t("add")}</Button>}
     />
   );
 }

@@ -41,7 +41,7 @@ import {
 const HIGHLIGHT = "reader-note";
 
 export const TOOLBAR_CLASS =
-  "bg-background/95 sticky bottom-4 z-10 flex max-w-full flex-wrap justify-end gap-2 self-end rounded-lg border p-1 shadow-sm";
+  "bg-background/95 sticky bottom-4 z-10 flex max-w-full flex-wrap gap-2 self-start rounded-lg border p-1";
 
 type Selected = Omit<NoteInput, "text">;
 

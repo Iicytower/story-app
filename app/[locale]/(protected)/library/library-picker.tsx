@@ -63,9 +63,7 @@ export function LibraryPicker({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant={
-              saved && !bookName ? "outline" : bookName ? "ghost" : "default"
-            }
+            variant={bookName ? "ghost" : "outline"}
             size={bookName ? "sm" : "default"}
             disabled={busy}
             aria-label={

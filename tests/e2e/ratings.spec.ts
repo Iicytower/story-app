@@ -28,7 +28,7 @@ test("dave rates alice's chapter and book; a guest sees the averages and signs i
     "aria-pressed",
     "true",
   );
-  await expect(page.getByText("4.0 average from 1 rating")).toBeVisible();
+  await expect(page.getByText("4.0 · 1 rating")).toBeVisible();
   // Another value replaces it.
   await star(page, en.ratings.chapter, "2 stars").click();
   await expect(star(page, en.ratings.chapter, "2 stars")).toHaveAttribute(
@@ -40,34 +40,36 @@ test("dave rates alice's chapter and book; a guest sees the averages and signs i
     "false",
   );
   await page.reload();
-  await expect(page.getByText("2.0 average from 1 rating")).toBeVisible();
-  await expect(page.getByText("Your rating: 2 stars")).toBeVisible();
+  await expect(page.getByText("2.0 · 1 rating")).toBeVisible();
+  await expect(star(page, en.ratings.chapter, "2 stars")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
 
   await page.goto(BOOK);
   await star(page, en.ratings.book, "5 stars").click();
-  await expect(page.getByText("5.0 average from 1 rating")).toBeVisible();
+  await expect(page.getByText("5.0 · 1 rating")).toBeVisible();
+  await expect(
+    stars(page, en.ratings.book).locator("svg.fill-amber-400"),
+  ).toHaveCount(5);
 
   const erin = await loginAs(browser, "erin");
   await erin.page.goto(CHAPTER);
   await star(erin.page, en.ratings.chapter, "5 stars").click();
-  await expect(erin.page.getByText("3.5 average from 2 ratings")).toBeVisible();
+  await expect(erin.page.getByText("3.5 · 2 ratings")).toBeVisible();
   // The chosen star again takes the rating off; then she rates once more.
   await star(erin.page, en.ratings.chapter, "5 stars").click();
-  await expect(erin.page.getByText("2.0 average from 1 rating")).toBeVisible();
+  await expect(erin.page.getByText("2.0 · 1 rating")).toBeVisible();
   await star(erin.page, en.ratings.chapter, "5 stars").click();
-  await expect(erin.page.getByText("3.5 average from 2 ratings")).toBeVisible();
+  await expect(erin.page.getByText("3.5 · 2 ratings")).toBeVisible();
   await erin.context.close();
 
   // The author sees the average and cannot rate.
   const alice = await loginAs(browser, "alice");
   await alice.page.goto(CHAPTER);
-  await expect(
-    alice.page.getByText("3.5 average from 2 ratings"),
-  ).toBeVisible();
-  await expect(star(alice.page, en.ratings.chapter, "1 star")).toBeDisabled();
-  await expect(
-    stars(alice.page, en.ratings.chapter),
-  ).toHaveAccessibleDescription(en.ratings.own);
+  await expect(alice.page.getByText("3.5 · 2 ratings")).toBeVisible();
+  await expect(alice.page.getByText(en.ratings.own)).toBeVisible();
+  await expect(stars(alice.page, en.ratings.chapter)).toHaveCount(0);
   // Ratings are anonymous: not even the author's page names a rater.
   const raterIds = await withE2EDb(async (db) =>
     (
@@ -85,7 +87,7 @@ test("dave rates alice's chapter and book; a guest sees the averages and signs i
   const guestPage = await guest.newPage();
   await guestPage.setViewportSize({ width: 375, height: 800 });
   await guestPage.goto(CHAPTER);
-  await expect(guestPage.getByText("3.5 average from 2 ratings")).toBeVisible();
+  await expect(guestPage.getByText("3.5 · 2 ratings")).toBeVisible();
   const guestHtml = await guestPage.content();
   for (const raterId of raterIds) expect(guestHtml).not.toContain(raterId);
   expect(
@@ -101,7 +103,12 @@ test("dave rates alice's chapter and book; a guest sees the averages and signs i
   await expect(star(guestPage, en.ratings.chapter, "3 stars")).toBeFocused();
 
   await guestPage.goto(BOOK);
-  await expect(guestPage.getByText("5.0 average from 1 rating")).toBeVisible();
+  await expect(guestPage.getByText("5.0 · 1 rating")).toBeVisible();
+  // The stars stand for the reader's own rating only, never for the average (D83).
+  await expect(guestPage.getByText(en.ratings.yours)).toBeVisible();
+  await expect(
+    stars(guestPage, en.ratings.book).locator("svg.fill-amber-400"),
+  ).toHaveCount(0);
   await star(guestPage, en.ratings.book, "1 star").click();
   await expect(
     guestPage.getByRole("dialog", { name: en.auth.signIn }),
