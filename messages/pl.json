@@ -29,7 +29,7 @@
     "admin": "Admin",
     "stats": "Statystyki",
     "notificationsUnread": "{count, plural, one {Powiadomienia, # nieprzeczytane} few {Powiadomienia, # nieprzeczytane} many {Powiadomienia, # nieprzeczytanych} other {Powiadomienia, # nieprzeczytanego}}",
-    "menuUnread": "Menu, nieprzeczytane powiadomienia",
+    "menuUnread": "Menu, nieprzeczytane powiadomienia lub wiadomości",
     "toasts": "Komunikaty",
     "messagesUnread": "{count, plural, one {Wiadomości, # nieprzeczytana rozmowa} few {Wiadomości, # nieprzeczytane rozmowy} many {Wiadomości, # nieprzeczytanych rozmów} other {Wiadomości, # nieprzeczytanej rozmowy}}",
     "account": "Konto",
@@ -1128,13 +1128,13 @@
     "emptyLink": "Znajdź książki na stronie głównej",
     "older": "Starsze",
     "newest": "Najnowsze",
-    "chapterPublished": "<author>{nickname}</author> publikuje nowy rozdział <chapter>{title}</chapter> w książce <book>{bookName}</book>",
-    "chaptersPublished": "<author>{nickname}</author> publikuje {count, plural, one {# nowy rozdział} few {# nowe rozdziały} many {# nowych rozdziałów} other {# nowego rozdziału}} w książce <book>{bookName}</book>",
+    "chapterPublished": "<author>{nickname}</author>: nowy rozdział <chapter>{title}</chapter> w książce <book>{bookName}</book>",
+    "chaptersPublished": "<author>{nickname}</author>: {count, plural, one {# nowy rozdział} few {# nowe rozdziały} many {# nowych rozdziałów} other {# nowego rozdziału}} w książce <book>{bookName}</book>",
     "pages": "Strony",
     "noOlder": "Brak starszych wpisów.",
-    "authorReplyChapter": "<author>{nickname}</author> <comment>odpowiada na komentarz</comment> pod <chapter>{title}</chapter> w książce <book>{bookName}</book>",
-    "authorReplyBook": "<author>{nickname}</author> <comment>odpowiada na komentarz</comment> pod <book>{bookName}</book>",
-    "forumThread": "<author>{nickname}</author> zakłada wątek <thread>{title}</thread> na swoim forum"
+    "authorReplyChapter": "<author>{nickname}</author>: <comment>odpowiedź na komentarz</comment> pod <chapter>{title}</chapter> w książce <book>{bookName}</book>",
+    "authorReplyBook": "<author>{nickname}</author>: <comment>odpowiedź na komentarz</comment> pod <book>{bookName}</book>",
+    "forumThread": "<author>{nickname}</author>: nowy wątek <thread>{title}</thread> na forum autora"
   },
   "comments": {
     "title": "{count, plural, =0 {Komentarze} one {# komentarz} few {# komentarze} many {# komentarzy} other {# komentarza}}",

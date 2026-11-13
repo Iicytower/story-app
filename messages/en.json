@@ -29,7 +29,7 @@
     "admin": "Admin",
     "stats": "Statistics",
     "notificationsUnread": "{count, plural, one {Notifications, # unread} other {Notifications, # unread}}",
-    "menuUnread": "Menu, unread notifications",
+    "menuUnread": "Menu, unread notifications or messages",
     "toasts": "Alerts",
     "messagesUnread": "{count, plural, one {Messages, # unread conversation} other {Messages, # unread conversations}}",
     "account": "Account",

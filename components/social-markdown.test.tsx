@@ -1,6 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { PlainMarkdown, SocialMarkdown } from "./social-markdown";
+import {
+  MarkdownLine,
+  PlainMarkdown,
+  SocialMarkdown,
+} from "./social-markdown";
 
 vi.mock("@/i18n/navigation", () => ({
   Link: ({ href, children, className }: React.ComponentProps<"a">) => (
@@ -101,5 +105,21 @@ describe("PlainMarkdown", () => {
     );
     expect(html).not.toMatch(/<(ul|li)[ >]/);
     expect(html).toMatch(/<p>first<\/p>\s*<p>second<\/p>/);
+  });
+});
+
+describe("MarkdownLine (task 104)", () => {
+  it("keeps only the text, blocks and breaks as spaces", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownLine
+        content={
+          "**Bold** [link](https://x.y) `code`  \nnext\n\n> quote\n\n- one\n- two\n\n<b>raw</b> <script>alert(1)</script>"
+        }
+      />,
+    );
+    expect(html).not.toMatch(/<|&lt;/);
+    expect(html.replace(/\s+/g, " ").trim()).toBe(
+      "Bold link code next quote one two raw alert(1)",
+    );
   });
 });

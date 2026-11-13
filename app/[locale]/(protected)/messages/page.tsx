@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { connection } from "next/server";
 import { LocalDate } from "@/components/local-date";
+import { MarkdownLine } from "@/components/social-markdown";
 import { Link, redirect } from "@/i18n/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { listConversations } from "@/lib/social/direct-messages";
@@ -36,32 +37,49 @@ export default async function MessagesPage() {
               <Link
                 href={`/messages/${conversation.id}`}
                 className={cn(
-                  "hover:bg-accent flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md px-2 py-3",
+                  "hover:bg-accent flex flex-col gap-1 rounded-md px-2 py-3",
                   conversation.unread && "bg-accent/40",
                 )}
               >
-                <span
-                  className={cn(
-                    "min-w-0 [overflow-wrap:anywhere]",
-                    conversation.unread && "font-semibold",
+                <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  {conversation.unread && (
+                    <span
+                      aria-label={t("unread")}
+                      role="img"
+                      className="bg-primary size-2 shrink-0 rounded-full"
+                    />
                   )}
-                >
-                  {conversation.nickname ?? t("deletedAccount")}
+                  <span
+                    className={cn(
+                      "min-w-0 [overflow-wrap:anywhere]",
+                      conversation.unread && "font-semibold",
+                    )}
+                  >
+                    {conversation.nickname ?? t("deletedAccount")}
+                  </span>
+                  {conversation.closed && (
+                    <span className="text-muted-foreground rounded-full border px-2 text-xs leading-5">
+                      {t("closed")}
+                    </span>
+                  )}
+                  <span className="text-muted-foreground ml-auto text-sm">
+                    <span className="sr-only">{t("lastMessage")}: </span>
+                    <LocalDate iso={conversation.lastMessageAt} relative />
+                  </span>
                 </span>
-                {conversation.unread && (
-                  <span className="bg-primary text-primary-foreground rounded-full px-2 text-xs leading-5">
-                    {t("unread")}
+                {conversation.preview && (
+                  <span
+                    className={cn(
+                      "truncate text-sm",
+                      conversation.unread
+                        ? "text-foreground font-medium"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {conversation.preview.own && `${t("you")}: `}
+                    <MarkdownLine content={conversation.preview.body} />
                   </span>
                 )}
-                {conversation.closed && (
-                  <span className="text-muted-foreground rounded-full border px-2 text-xs leading-5">
-                    {t("closed")}
-                  </span>
-                )}
-                <span className="text-muted-foreground ml-auto text-sm">
-                  <span className="sr-only">{t("lastMessage")}: </span>
-                  <LocalDate iso={conversation.lastMessageAt} relative />
-                </span>
               </Link>
             </li>
           ))}

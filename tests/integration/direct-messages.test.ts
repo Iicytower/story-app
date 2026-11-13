@@ -24,6 +24,7 @@ import {
   listConversations,
   listMessages,
   MESSAGES_PAGE,
+  PREVIEW_LENGTH,
   setConversationClosed,
 } from "@/lib/social/direct-messages";
 import { listNotifications } from "@/lib/social/notification-list";
@@ -393,9 +394,9 @@ describe("limits (4)", () => {
       for (let i = 0; i < 10; i++) {
         await start(dave, `Reader${i}`, "Hi");
       }
-      expect(
-        await as(dave, () => startConversation("Reader10", "Hi")),
-      ).toEqual(RATE_LIMITED);
+      expect(await as(dave, () => startConversation("Reader10", "Hi"))).toEqual(
+        RATE_LIMITED,
+      );
       const id = await start(dave, "Reader0", "Again");
       const day = await RateLimit.findOne({ _id: /^conversation-day:/ }).lean();
       expect(day!.count).toBe(11);
@@ -539,5 +540,106 @@ describe("mentions (task 82)", () => {
     await start(dave, "Erin", "@Erin");
     await flushAfter();
     expect(await Notification.countDocuments({ userId: erin })).toBe(0);
+  });
+});
+
+describe("list preview and unread count (task 104)", () => {
+  const previews = async (viewer: Types.ObjectId) =>
+    (await listConversations(viewer.toString())).map(
+      ({ nickname, preview, unread }) => ({ nickname, preview, unread }),
+    );
+
+  it("shows the start of the last message of each conversation, own or not", async () => {
+    const id = await start(dave, "Erin", "First");
+    await as(erin, () => sendMessage(id, "Second **bold**"));
+    const long = `${"ą".repeat(PREVIEW_LENGTH)}tail`;
+    await start(frank, "Erin", long);
+
+    expect(await previews(erin)).toEqual([
+      {
+        nickname: "Frank",
+        preview: { body: "ą".repeat(PREVIEW_LENGTH), own: false },
+        unread: true,
+      },
+      {
+        nickname: "Dave",
+        preview: { body: "Second **bold**", own: true },
+        unread: false,
+      },
+    ]);
+    expect(await previews(dave)).toEqual([
+      {
+        nickname: "Erin",
+        preview: { body: "Second **bold**", own: false },
+        unread: true,
+      },
+    ]);
+    expect(await unreadMessages(erin)).toBe(1);
+    expect(await unreadMessages(dave)).toBe(1);
+  });
+
+  it("has no preview for a conversation without messages", async () => {
+    await Conversation.create({
+      participantIds: [dave, erin],
+      pairKey: [dave, erin].map(String).sort().join(":"),
+      lastMessageAt: new Date(),
+    });
+    expect(await previews(erin)).toEqual([
+      { nickname: "Dave", preview: null, unread: false },
+    ]);
+  });
+
+  it("shows and counts nothing of someone else's conversation", async () => {
+    const id = await start(dave, "Erin", "Private");
+    expect(await listConversations(frank.toString())).toEqual([]);
+    expect(await getConversation(frank.toString(), id)).toBeNull();
+    expect(await unreadMessages(frank)).toBe(0);
+  });
+
+  it("keeps the preview and the unread mark of a blocked or deleted party, as the thread does", async () => {
+    const blockedId = await start(dave, "Erin", "Before the block");
+    await Block.create({ blockerId: erin, blockedId: dave });
+    const deletedId = await start(frank, "Erin", "Before deletion");
+    await User.updateOne({ _id: frank }, { deletedAt: new Date() });
+
+    expect(await previews(erin)).toEqual([
+      {
+        nickname: null,
+        preview: { body: "Before deletion", own: false },
+        unread: true,
+      },
+      {
+        nickname: "Dave",
+        preview: { body: "Before the block", own: false },
+        unread: true,
+      },
+    ]);
+    for (const id of [blockedId, deletedId]) {
+      expect((await getConversation(erin.toString(), id))!.preview).toEqual(
+        (await listConversations(erin.toString())).find((c) => c.id === id)!
+          .preview,
+      );
+    }
+    // The counter matches the list, and reading the conversation takes it off.
+    expect(await unreadMessages(erin)).toBe(2);
+    await as(erin, () => markConversationRead(blockedId));
+    expect(await unreadMessages(erin)).toBe(1);
+  });
+
+  it("reads the last messages with one aggregation over the message index", async () => {
+    await start(dave, "Erin", "One");
+    await start(dave, "Frank", "Two");
+    const spy = vi.spyOn(Message, "aggregate");
+    const findOne = vi.spyOn(Message, "findOne");
+    await listConversations(dave.toString());
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(findOne).not.toHaveBeenCalled();
+    const pipeline = spy.mock.calls[0][0] as Parameters<
+      typeof Message.collection.aggregate
+    >[0];
+    const plan = await Message.collection.aggregate(pipeline).explain();
+    expect(JSON.stringify(plan)).toContain("DISTINCT_SCAN");
+    spy.mockRestore();
+    findOne.mockRestore();
   });
 });

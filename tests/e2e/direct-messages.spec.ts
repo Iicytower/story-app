@@ -64,10 +64,22 @@ test.describe("signed in", () => {
     const erin = await loginAs(browser, "erin");
     await erin.page.goto("/en/messages");
     await expect(messagesLink(erin.page, 1)).toBeVisible();
-    await erin.page
+    // The last message as plain text on one line, the conversation marked unread (task 104).
+    const row = erin.page
       .getByRole("list", { name: en.messages.list })
-      .getByRole("link", { name: /Dave/ })
-      .click();
+      .getByRole("link", { name: /Dave/ });
+    await expect(
+      row.getByRole("img", { name: en.messages.unread }),
+    ).toBeVisible();
+    await expect(row.getByText("Dave", { exact: true })).toHaveCSS(
+      "font-weight",
+      "600",
+    );
+    const preview = row.getByText(/^Hello Erin, a verylongword/);
+    await expect(preview).toBeVisible();
+    await expect(preview.locator("strong")).toHaveCount(0);
+    await expect(preview).toHaveCSS("text-overflow", "ellipsis");
+    await row.click();
     await expect(
       erin.page.getByRole("heading", { name: "Conversation with Dave" }),
     ).toBeVisible();
@@ -96,6 +108,13 @@ test.describe("signed in", () => {
     await page.clock.runFor(THREAD_POLL_MS * 3);
     expect(requests).toEqual([]);
     await expect(thread.getByText("Are you there?")).toBeHidden();
+    await erin.page.getByRole("link", { name: en.messages.back }).click();
+    await expect(
+      row.getByRole("img", { name: en.messages.unread }),
+    ).toHaveCount(0);
+    await expect(
+      row.getByText(`${en.messages.you}: Are you there?`),
+    ).toBeVisible();
     await erin.context.close();
   });
 

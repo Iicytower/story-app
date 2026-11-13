@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Markdown, { type Components } from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import { UserLink } from "@/components/user-link";
@@ -114,5 +115,24 @@ export function PlainMarkdown({ content }: { content: string }) {
         {content}
       </Markdown>
     </div>
+  );
+}
+
+const blockAsSpace = ({ children }: { children?: ReactNode }) => (
+  <>{children} </>
+);
+
+// The text alone on one line, for the message list preview (task 104): blocks and breaks become
+// spaces and every other element keeps only its text.
+export function MarkdownLine({ content }: { content: string }) {
+  return (
+    <Markdown
+      allowedElements={["p", "li", "br"]}
+      components={{ p: blockAsSpace, li: blockAsSpace, br: () => " " }}
+      unwrapDisallowed
+      skipHtml
+    >
+      {content}
+    </Markdown>
   );
 }
