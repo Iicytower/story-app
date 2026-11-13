@@ -169,7 +169,7 @@ test("Find and Replace all in Source, native Undo, autosave", async ({
   });
   await page.goto(`/chapters/${id}`);
   const content = markdownEditor(page, "Content");
-  await content.button("Source").click();
+  await content.mode("Markdown");
   const textarea = content.group.getByRole("textbox", { name: "Content" });
   await textarea.click();
   await page.keyboard.press("Control+Home");

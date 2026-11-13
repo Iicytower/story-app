@@ -34,7 +34,7 @@ test("autosaves 20 seconds after the last keystroke", async ({ page }) => {
   await notes.fill("A note");
   await title.fill("Autosave renamed");
   await runAutosaveDelay(page, 19_000);
-  await expect(status).toHaveText("");
+  await expect(status).toHaveText("Unsaved changes");
   expect((await findStoryById(id))?.title).toBe("Autosave");
   await runAutosaveDelay(page, 1000);
   await expect(status).toHaveText("Saved");
@@ -59,7 +59,7 @@ test("typing with pauses shorter than 20 seconds does not save", async ({
     await page.keyboard.type(word);
     await runAutosaveDelay(page, 10_000);
   }
-  await expect(status).toHaveText("");
+  await expect(status).toHaveText("Unsaved changes");
   expect(requests).toEqual([]);
 
   await runAutosaveDelay(page, 10_000);
@@ -134,7 +134,7 @@ test("does not save with an empty title and saves once a title is entered", asyn
   await hideTab(page);
   await runAutosaveDelay(page);
 
-  await expect(status).toHaveText("");
+  await expect(status).toHaveText("Unsaved changes");
   expect(await findStoryById(id)).toMatchObject({
     title: "Untitled soon",
     content: "",
@@ -215,4 +215,29 @@ test("does not warn before closing the tab when everything is saved", async ({
   await page.close({ runBeforeUnload: true });
 
   expect(dialogs).toEqual([]);
+});
+
+test("the footer always shows the save status next to the word count", async ({
+  page,
+}) => {
+  const id = await seedStory("alice", { title: "Status", content: "One" });
+  await page.clock.install();
+  await page.goto(`/chapters/${id}`);
+  const { content, status } = editor(page);
+  const stats = page.getByText(/^1 word/);
+
+  await expect(status).toHaveText("Saved");
+  await expect(stats).toBeVisible();
+  const statusBox = (await status.boundingBox())!;
+  const statsBox = (await stats.boundingBox())!;
+  expect(Math.abs(statusBox.y - statsBox.y)).toBeLessThan(statsBox.height);
+  expect(statusBox.y).toBeGreaterThan((await content.boundingBox())!.y);
+
+  await content.click();
+  await page.keyboard.press("Control+End");
+  await page.keyboard.type(" two");
+  await expect(status).toHaveText("Unsaved changes");
+  await runAutosaveDelay(page);
+  await expect(status).toHaveText("Saved");
+  expect((await findStoryById(id))?.content).toBe("One two");
 });

@@ -85,7 +85,7 @@ async function expectSameTextAfterSwitching(page: Page) {
   await expect(field.getByText("Paragraph 61", { exact: true })).toBeAttached();
 
   await scrollPreviewToText(field, "Paragraph 61");
-  await content.button("Source").click();
+  await content.mode("Markdown");
   const textarea = content.group.getByRole("textbox");
   expect(await sourceShowsLine(textarea, "Paragraph 61")).toBe(true);
   expect(await sourceShowsLine(textarea, "# Heading 0")).toBe(false);
@@ -99,7 +99,7 @@ async function expectSameTextAfterSwitching(page: Page) {
       scroller.getBoundingClientRect().top +
       line * parseFloat(getComputedStyle(element).lineHeight);
   }, line);
-  await content.button("Preview").click();
+  await content.mode("Text");
   await expect
     .poll(() =>
       isInView(
@@ -155,7 +155,7 @@ async function expectWrappedParagraphAfterSwitching(page: Page) {
   await expect(block).toBeAttached();
   await block.evaluate((element) => element.scrollIntoView({ block: "start" }));
 
-  await content.button("Source").click();
+  await content.mode("Markdown");
   const { offset, lineHeight } = await sourceLineOffset(
     content.group.getByRole("textbox"),
     "Long 25:",

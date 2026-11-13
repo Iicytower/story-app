@@ -30,9 +30,9 @@ test("story text fields are spell checked in Polish", async ({ page }) => {
   for (const label of ["Content", "Notes", "Book notes"]) {
     const editor = markdownEditor(page, label);
     await expectPolish(editor.field);
-    await editor.button("Source").click();
+    await editor.mode("Markdown");
     await expectPolish(editor.group.getByRole("textbox"));
-    await editor.button("Preview").click();
+    await editor.mode("Text");
   }
 
   await page

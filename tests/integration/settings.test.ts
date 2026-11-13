@@ -78,6 +78,7 @@ describe("saveSettings", () => {
       editor: { layout, mobileView: "notes" },
       appearance: {
         sidebarCollapsed: false,
+        editorSidebarCollapsed: true,
         theme: "dark",
         accent: "navy",
         locale: null,

@@ -103,7 +103,7 @@ test("shortcuts format text and Ctrl+K adds a safe link", async ({ page }) => {
   expect(source).toBe("[site](https://example.com)");
 });
 
-test("Source and Preview keep the text and unsaved changes", async ({
+test("Text and Markdown modes keep the text and unsaved changes", async ({
   page,
 }) => {
   const id = await seedStory("alice", {
@@ -112,10 +112,10 @@ test("Source and Preview keep the text and unsaved changes", async ({
   });
   await page.goto(`/chapters/${id}`);
   const content = markdownEditor(page, "Content");
-  await expect(content.button("Preview")).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  await expect(
+    content.group.getByRole("group", { name: "Mode" }).getByRole("button"),
+  ).toHaveText(["Text", "Markdown"]);
+  await expect(content.button("Text")).toHaveAttribute("aria-pressed", "true");
 
   await content.setSource("## From source\n\n- one\n- two");
   await expect(
@@ -137,10 +137,7 @@ test("Source and Preview keep the text and unsaved changes", async ({
   );
 
   await page.reload();
-  await expect(content.button("Preview")).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  await expect(content.button("Text")).toHaveAttribute("aria-pressed", "true");
 });
 
 test("typed dialogue stays paragraphs in the editor, Source and on the public page", async ({
@@ -164,7 +161,7 @@ test("typed dialogue stays paragraphs in the editor, Source and on the public pa
 
   const markdown = "– Hello.\n\n– Hi!";
   expect(await content.source()).toBe(markdown);
-  await content.button("Preview").click();
+  await content.mode("Text");
   await expect(content.field.locator("ul, li")).toHaveCount(0);
 
   await page.keyboard.press("Control+s");
@@ -222,7 +219,7 @@ test("opening a story without editing does not save it", async ({ page }) => {
   ).toHaveText("bold");
 
   await page.waitForTimeout(4000);
-  await expect(page.getByRole("status")).toHaveText("");
+  await expect(page.getByRole("status")).toHaveText("Saved");
   expect(await findStoryById(id)).toMatchObject({
     content: "Some __bold__ text\nwith a break",
     updatedAt: new Date("2026-01-01"),
@@ -258,7 +255,7 @@ test("a comment written in the editor is not on the public page", async ({
   await visitor.close();
 });
 
-test("chapter and folder notes use the same editor with Preview and Source", async ({
+test("chapter and folder notes use the same editor with Text and Markdown", async ({
   page,
 }) => {
   const id = await seedStory("alice", { title: "Notes", folder: "Book" });

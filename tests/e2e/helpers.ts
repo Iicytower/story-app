@@ -105,28 +105,35 @@ export async function expectSignedOut(page: Page) {
   ).toBeVisible();
 }
 
-// The rich text editor has no value; tests read and write its markdown through Source mode.
+// The rich text editor has no value; tests read and write its markdown through Markdown mode.
 export function markdownEditor(page: Page, label: string) {
   const group = page.getByRole("group", {
     name: `${label} editor`,
     exact: true,
   });
-  const mode = (name: "Preview" | "Source") =>
+  const button = (name: string) =>
     group.getByRole("button", { name, exact: true });
+  // The notes show their toolbar only while the field has the focus.
+  async function mode(name: "Text" | "Markdown") {
+    if (!(await button(name).isVisible()))
+      await group.getByRole("textbox").focus();
+    await button(name).click();
+  }
   return {
     field: page.getByRole("textbox", { name: label, exact: true }),
     group,
-    button: (name: string) => group.getByRole("button", { name, exact: true }),
+    button,
+    mode,
     async source(): Promise<string> {
-      await mode("Source").click();
+      await mode("Markdown");
       const value = await group.getByRole("textbox").inputValue();
-      await mode("Preview").click();
+      await mode("Text");
       return value;
     },
     async setSource(markdown: string) {
-      await mode("Source").click();
+      await mode("Markdown");
       await group.getByRole("textbox").fill(markdown);
-      await mode("Preview").click();
+      await mode("Text");
     },
   };
 }

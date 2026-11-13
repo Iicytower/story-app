@@ -74,6 +74,7 @@ function render(
       <TooltipProvider>
         <AppSidebar
           defaultCollapsed={false}
+          defaultEditorCollapsed
           toolsAvailable
           nickname="Alice"
           {...props}
@@ -150,6 +151,7 @@ describe("AppSidebar", () => {
         <TooltipProvider>
           <AppSidebar
             defaultCollapsed={false}
+            defaultEditorCollapsed
             toolsAvailable
             hiddenItems={["moderation"]}
           />
@@ -166,6 +168,7 @@ describe("AppSidebar", () => {
           <TooltipProvider>
             <AppSidebar
               defaultCollapsed={false}
+              defaultEditorCollapsed
               toolsAvailable
               hiddenItems={hiddenItems}
             />
@@ -182,6 +185,7 @@ describe("AppSidebar", () => {
         <TooltipProvider>
           <AppSidebar
             defaultCollapsed={false}
+            defaultEditorCollapsed
             toolsAvailable
             initialUnread={5}
           />
@@ -199,6 +203,7 @@ describe("AppSidebar", () => {
         <TooltipProvider>
           <AppSidebar
             defaultCollapsed={false}
+            defaultEditorCollapsed
             toolsAvailable
             initialUnreadMessages={3}
           />

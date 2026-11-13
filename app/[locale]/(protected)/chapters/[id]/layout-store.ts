@@ -73,7 +73,8 @@ function subscribeToViewport(listener: () => void) {
   return () => query.removeEventListener("change", listener);
 }
 
-// The server renders the desktop layout; a narrow screen switches after hydration.
+// The server renders the desktop layout, which CSS hides below md; a narrow screen
+// switches to its own after hydration.
 export function useIsDesktop(): boolean {
   return useSyncExternalStore(
     subscribeToViewport,

@@ -237,13 +237,10 @@ test("other tools work during proofreading, and Source is blocked until it ends"
   await expect(bar).toBeVisible();
 
   const content = markdownEditor(page, "Content");
-  const source = content.button("Source");
+  const source = content.button("Markdown");
   await expect(source).toHaveAttribute("aria-disabled", "true");
   await source.click({ force: true });
-  await expect(content.button("Preview")).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  await expect(content.button("Text")).toHaveAttribute("aria-pressed", "true");
 
   // Finish proofreading: the issues go, the text stays.
   await bar.getByRole("button", { name: "Finish proofreading" }).click();
@@ -349,13 +346,10 @@ test("a check from Source goes to Preview", async ({ page }) => {
   const id = await seedStory("alice", { title: "Source", content: MD });
   await page.goto(`/chapters/${id}`);
   const content = markdownEditor(page, "Content");
-  await content.button("Source").click();
+  await content.mode("Markdown");
   const { text } = await check(page);
   await expect(text.locator("[data-proposal]")).toHaveCount(4);
-  await expect(content.button("Preview")).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  await expect(content.button("Text")).toHaveAttribute("aria-pressed", "true");
 });
 
 test.describe("on a narrow screen", () => {
