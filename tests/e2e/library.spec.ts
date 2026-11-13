@@ -149,10 +149,19 @@ test.describe("as a user", () => {
     ).toHaveText(["Book"]);
 
     await page.goto("/en/library");
-    const toggle = page.getByRole("switch", { name: library.public });
+    // The setting lives in "Manage shelves", not above the shelf tabs (D83, 5.1).
+    await expect(
+      page.getByRole("navigation", { name: library.shelves }),
+    ).toBeVisible();
+    await expect(page.getByRole("switch")).toHaveCount(0);
+    await page.getByRole("button", { name: library.manage }).click();
+    const dialog = page.getByRole("dialog", { name: library.manage });
+    const toggle = dialog.getByRole("switch", { name: library.public });
     await expect(toggle).toBeChecked();
+    await expect(toggle).toHaveAccessibleDescription(library.publicHint);
     await toggle.click();
     await expect(toggle).not.toBeChecked();
+    await page.keyboard.press("Escape");
     await erin.page.reload();
     await expect(
       erin.page.getByRole("heading", { name: USERS.dave.nickname }),

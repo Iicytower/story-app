@@ -18,7 +18,6 @@ import {
 } from "@/lib/reading/queries";
 import { cn } from "@/lib/utils";
 import { LibraryPicker } from "./library-picker";
-import { LibraryPublic } from "./library-public";
 import { ManageShelves } from "./manage-shelves";
 import { seedShelves } from "./starter";
 import { PageContainer } from "@/components/page-container";
@@ -127,9 +126,8 @@ export default async function LibraryPage({
     <PageContainer width="narrow">
       <div className="flex flex-wrap items-start gap-4">
         <h1 className="mr-auto text-2xl font-semibold">{t("title")}</h1>
-        <ManageShelves shelves={shelves} />
+        <ManageShelves shelves={shelves} libraryPublic={libraryPublic} />
       </div>
-      <LibraryPublic value={libraryPublic} />
       <nav aria-label={t("shelves")}>
         <ul className="flex flex-wrap gap-1 border-b pb-2">
           {tabs.map((tab) => {

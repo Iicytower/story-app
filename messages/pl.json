@@ -1017,6 +1017,7 @@
   "profile": {
     "title": "{nickname} – Story App",
     "avatarAlt": "Avatar: {nickname}",
+    "editProfile": "Edytuj profil",
     "bio": "O mnie",
     "books": "Książki",
     "noBooks": "Brak opublikowanych książek.",
@@ -1347,7 +1348,7 @@
     "chartLabel": "Wykres unikalnych czytelników na dobę z {days, plural, one {ostatniego # dnia} other {ostatnich # dni}}: łącznie {count, plural, one {# czytelnik} few {# czytelników} many {# czytelników} other {# czytelnika}}",
     "chartTotal": "{count, plural, one {# czytelnik w tym okresie} few {# czytelników w tym okresie} many {# czytelników w tym okresie} other {# czytelnika w tym okresie}}, liczonych raz na rozdział i dobę",
     "tableTitle": "Książki i rozdziały",
-    "tableNote": "Czytelnicy w wybranym okresie to suma unikalnych czytelników z każdej doby, więc osoba czytająca w kilka dni liczy się raz na każdy dzień. Reakcje, oceny, komentarze i dodania do bibliotek są liczone łącznie.",
+    "tableNote": "Czytelnicy to suma unikalnych czytelników z każdej doby, a reakcje, oceny, komentarze i dodania do bibliotek są liczone łącznie.",
     "text": "Książka lub rozdział",
     "readers": "Czytelnicy",
     "reactions": "Reakcje",

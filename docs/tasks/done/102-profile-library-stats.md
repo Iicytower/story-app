@@ -1,6 +1,6 @@
 # 102 – Profil, biblioteka, statystyki
 
-Subtask 51. Podstawa: [D83](../decisions/D083-poprawa-ux-ui.md) i raport [`docs/ui-ux-report.md`](../ui-ux-report.md) (numery punktów w nawiasach). Branch `feature/102-profile-library-stats` z `fix/ui`, merge do `fix/ui`.
+Subtask 51. Podstawa: [D83](../../decisions/D083-poprawa-ux-ui.md) i raport [`docs/ui-ux-report.md`](../../ui-ux-report.md) (numery punktów w nawiasach). Branch `feature/102-profile-library-stats` z `fix/ui`, merge do `fix/ui`.
 
 ## Zakres
 

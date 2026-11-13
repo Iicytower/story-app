@@ -119,3 +119,34 @@ test("on a narrow screen the table scrolls in its box, not the page", async ({
   await page.setViewportSize({ width: 1280, height: 800 });
   await expect(page.getByText(en.stats.tableScrollHint)).toBeHidden();
 });
+
+test("the chart keeps its height from the first paint", async ({
+  browser,
+  page,
+}) => {
+  await seedPublished("alice", "Book", [
+    { title: "One", publication: "public", content: "Chapter text" },
+  ]);
+  await seedDailyStats("alice", "Book", "One", [{ daysAgo: 1, readers: 3 }]);
+
+  // Before hydration (no JavaScript) the chart's place is held by a placeholder.
+  const noScript = await browser.newContext({
+    storageState: storageStatePath("alice"),
+    javaScriptEnabled: false,
+  });
+  const before = await noScript.newPage();
+  await before.goto("/en/stats");
+  const placeholder = before.getByTestId("stats-chart-placeholder");
+  await expect(placeholder).toBeAttached();
+  const placeholderBox = await placeholder.boundingBox();
+  await noScript.close();
+
+  await page.goto("/en/stats");
+  const chart = page.getByTestId("stats-chart");
+  await expect(chart).toHaveAttribute("data-points", "1");
+  await expect(page.getByTestId("stats-chart-placeholder")).toHaveCount(0);
+  await expect(chart.locator(".recharts-bar-rectangle").first()).toBeVisible();
+  const chartBox = await chart.boundingBox();
+  expect(placeholderBox?.height).toBe(256);
+  expect(chartBox?.height).toBe(placeholderBox?.height);
+});

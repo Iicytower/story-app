@@ -27,6 +27,9 @@ async function expectAliceProfile(page: Page) {
   await page.goto("/en/p/Alice");
   await expect(page).toHaveTitle("Alice – Story App");
   await expect(page.getByRole("heading", { name: "Alice" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: en.profile.editProfile }),
+  ).toHaveCount(0);
   const bio = page.getByRole("region", { name: "About me" });
   await expect(bio.locator("strong")).toHaveText("Bold words");
   await expect(bio.locator("b")).toHaveCount(0);
@@ -117,15 +120,11 @@ test.describe("as a user", () => {
   test("the owner edits “About me” and finds it through My profile", async ({
     page,
   }) => {
-    await page.goto("/en/books");
+    await page.goto("/en/p/Alice");
     const dialog = page.getByRole("dialog", { name: "Settings" });
-    // The API for "Edit profile" (task 102); repeated until the sidebar has hydrated.
+    // Repeated until the sidebar, which owns the dialog, has hydrated.
     await expect(async () => {
-      await page.evaluate(() =>
-        window.dispatchEvent(
-          new CustomEvent("story-app:open-settings", { detail: "profile" }),
-        ),
-      );
+      await page.getByRole("button", { name: en.profile.editProfile }).click();
       await expect(dialog).toBeVisible({ timeout: 1000 });
     }).toPass();
     await expect(
@@ -141,6 +140,7 @@ test.describe("as a user", () => {
     ).toHaveText("“About me” is saved.");
     await page.keyboard.press("Escape");
 
+    await page.goto("/en/books");
     await page
       .getByRole("navigation", { name: "Main" })
       .getByRole("link", { name: "My profile" })
