@@ -109,7 +109,7 @@ function NewChapterDialog({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline">
           {t("newChapter")}
         </Button>
       </DialogTrigger>

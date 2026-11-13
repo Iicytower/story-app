@@ -369,8 +369,8 @@
   "markdownEditor": {
     "group": "{label} editor",
     "mode": "Mode",
-    "preview": "Preview",
-    "source": "Source",
+    "preview": "Text",
+    "source": "Markdown",
     "findReplace": "Find and replace",
     "bold": "Bold",
     "italic": "Italic",
@@ -532,7 +532,8 @@
   },
   "save": {
     "saving": "Saving…",
-    "saved": "Saved"
+    "saved": "Saved",
+    "unsaved": "Unsaved changes"
   },
   "editor": {
     "views": {
@@ -666,7 +667,7 @@
     "bar": "Proofreading",
     "finish": "Finish proofreading",
     "closeBubble": "Close details",
-    "sourceBlocked": "Finish proofreading to switch to Source."
+    "sourceBlocked": "Finish proofreading to switch to Markdown."
   },
   "nameGenerator": {
     "typeGroups": {

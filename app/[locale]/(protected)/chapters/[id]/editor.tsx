@@ -114,6 +114,8 @@ export function Editor({
     folder?.notesUpdatedAt ?? "",
   );
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
+  // The status reads "Saved" only while the fields match what was last saved.
+  const [savedValues, setSavedValues] = useState(initial);
   const [publicPath, setPublicPath] = useState(story.publicPath);
   // Here, not in ToolsPanel: the dialog must outlive the desktop and mobile trees.
   const [openTool, setOpenTool] = useState<Tool | null>(null);
@@ -159,6 +161,7 @@ export function Editor({
           );
           if (result.ok) {
             saved.current = values;
+            setSavedValues(values);
             updatedAt.current = result.updatedAt;
             setSaveState({ status: "saved" });
             return true;
@@ -317,18 +320,35 @@ export function Editor({
           onChange: changeProofreading,
         }}
       />
-      <p className="text-muted-foreground border-t px-4 py-2 text-xs md:px-6">
-        {t("stats", {
-          words,
-          characters: countCharacters(content),
-          minutes: readAloudMinutes(words),
-        })}
-        {content.length > MAX_CONTENT_LENGTH && (
-          <span className="text-destructive block">
-            {tErrors("contentTooLong", { max: MAX_CONTENT_LENGTH })}
-          </span>
-        )}
-      </p>
+      <div className="text-muted-foreground flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t px-4 py-2 text-xs md:px-6">
+        <p>
+          {t("stats", {
+            words,
+            characters: countCharacters(content),
+            minutes: readAloudMinutes(words),
+          })}
+          {content.length > MAX_CONTENT_LENGTH && (
+            <span className="text-destructive block">
+              {tErrors("contentTooLong", { max: MAX_CONTENT_LENGTH })}
+            </span>
+          )}
+        </p>
+        <span
+          role="status"
+          className={cn(
+            "ml-auto",
+            saveState.status === "error" && "text-destructive",
+          )}
+        >
+          {saveState.status === "saving"
+            ? tSave("saving")
+            : saveState.status === "error"
+              ? saveState.message
+              : isSame({ title, content, notes, proofreading }, savedValues)
+                ? tSave("saved")
+                : tSave("unsaved")}
+        </span>
+      </div>
     </div>
   );
 
@@ -343,6 +363,7 @@ export function Editor({
         lang={lang}
         className="flex-1"
         compact
+        toolbarOnFocus
         scrollMemory={{ storyId: story.id, field: "notes" }}
       />
     </div>
@@ -394,16 +415,19 @@ export function Editor({
   return (
     // Below md the app's top bar takes 2.5rem.
     <div className="flex h-[calc(100dvh-2.5rem)] flex-col md:h-dvh">
-      <div className="flex flex-wrap items-center gap-2 border-b px-3 py-3 md:flex-nowrap md:gap-3 md:px-9">
+      <div className="flex items-center gap-2 border-b px-3 py-3 md:gap-3 md:px-9">
         {story.folderName !== null && (
           <Button variant="ghost" size="sm" asChild>
             <Link
               href={`/books/${story.folderId}`}
-              className="max-w-48"
+              className="max-w-48 shrink-0"
               title={t("backTo", { folder: story.folderName })}
             >
               <ArrowLeftIcon />
-              <span className="truncate">{story.folderName}</span>
+              {/* icon-only below sm, so the title and the menu share one row */}
+              <span className="sr-only sm:not-sr-only sm:truncate">
+                {story.folderName}
+              </span>
             </Link>
           </Button>
         )}
@@ -415,21 +439,9 @@ export function Editor({
           placeholder={t("title")}
           lang={lang}
           spellCheck
-          className="h-9 w-full text-lg font-semibold md:w-auto md:flex-1 md:text-lg"
+          className="h-9 min-w-0 flex-1 text-lg font-semibold md:text-lg"
         />
         {story.adult.adult && <AdultBadge />}
-        <span
-          role="status"
-          className={
-            saveState.status === "error"
-              ? "text-destructive mr-auto max-w-md text-sm md:mr-0"
-              : "text-muted-foreground mr-auto text-sm md:mr-0"
-          }
-        >
-          {saveState.status === "saving" && tSave("saving")}
-          {saveState.status === "saved" && tSave("saved")}
-          {saveState.status === "error" && saveState.message}
-        </span>
         <EditorMenu
           id={story.id}
           title={title}
@@ -452,7 +464,8 @@ export function Editor({
         />
       )}
       {isDesktop ? (
-        <div className="flex min-h-0 flex-1">
+        // Hidden below md until hydration has switched a narrow screen to its own layout.
+        <div className="hidden min-h-0 flex-1 md:flex">
           <ResizablePanelGroup
             // defaultLayout is read on mount only: remount when the side panel is shown or hidden.
             // Not for another tab, though: that would remount the story editor and lose its scroll.

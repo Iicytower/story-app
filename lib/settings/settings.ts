@@ -58,6 +58,10 @@ const SETTINGS = {
     sidebarCollapsed: field(false, (value) =>
       typeof value === "boolean" ? value : undefined,
     ),
+    // The chapter editor has its own state, collapsed until the user expands it there.
+    editorSidebarCollapsed: field(true, (value) =>
+      typeof value === "boolean" ? value : undefined,
+    ),
     theme: field<Theme | null>(null, (value) =>
       value === null ? null : oneOf(THEMES)(value),
     ),

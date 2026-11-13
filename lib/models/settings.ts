@@ -19,6 +19,7 @@ export interface SettingsFields {
     theme?: string | null;
     accent?: string;
     sidebarCollapsed?: boolean;
+    editorSidebarCollapsed?: boolean;
     locale?: string | null;
   };
   folders?: { sort?: string; manualOrder?: boolean };
@@ -46,6 +47,7 @@ const settingsSchema = new Schema<SettingsFields>(
       theme: { type: String, enum: [...THEMES, null] },
       accent: { type: String, enum: ACCENTS },
       sidebarCollapsed: { type: Boolean },
+      editorSidebarCollapsed: { type: Boolean },
       locale: { type: String, enum: [...routing.locales, null] },
     },
     folders: {

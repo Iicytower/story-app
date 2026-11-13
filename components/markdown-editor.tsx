@@ -127,6 +127,7 @@ export function MarkdownEditor({
   lang,
   className,
   compact = false,
+  toolbarOnFocus = false,
   scrollMemory,
   apiRef,
   proofreading,
@@ -141,6 +142,8 @@ export function MarkdownEditor({
   className?: string;
   // Smaller text for the notes panels.
   compact?: boolean;
+  // The notes keep the toolbar's room but show it only while the field or its find panel is in use.
+  toolbarOnFocus?: boolean;
   // Remembers the scroll position under this chapter and field (see scroll-memory).
   scrollMemory?: { storyId: string; field: string };
   apiRef?: React.RefObject<MarkdownEditorApi | null>;
@@ -571,9 +574,16 @@ export function MarkdownEditor({
       role="group"
       aria-label={t("group", { label })}
       onKeyDown={handleFindKeys}
-      className={cn("flex min-h-0 flex-col", className)}
+      className={cn("group/editor flex min-h-0 flex-col", className)}
     >
-      <div className="flex flex-wrap items-center gap-0.5 border-b px-2 py-1">
+      <div
+        className={cn(
+          "flex flex-wrap items-center gap-0.5 border-b px-2 py-1",
+          toolbarOnFocus &&
+            !find &&
+            "invisible group-focus-within/editor:visible",
+        )}
+      >
         <div
           role="group"
           aria-label={t("mode")}
@@ -743,8 +753,8 @@ function SourceHighlights({
   );
 }
 
-// Share of the view minus one line left empty above the first and below the last line.
-const TOP_GAP = 1 / 2;
+// Lines left empty above the first line; share of the view minus one line below the last.
+const TOP_GAP_LINES = 2;
 const BOTTOM_GAP = 3 / 4;
 
 function trackScrollGap(
@@ -753,11 +763,9 @@ function trackScrollGap(
   line: Element,
 ) {
   const update = () => {
-    const gap = Math.max(
-      scroller.clientHeight - parseFloat(getComputedStyle(line).lineHeight),
-      0,
-    );
-    const top = gap * TOP_GAP;
+    const lineHeight = parseFloat(getComputedStyle(line).lineHeight);
+    const gap = Math.max(scroller.clientHeight - lineHeight, 0);
+    const top = lineHeight * TOP_GAP_LINES;
     const previous = parseFloat(
       root.style.getPropertyValue("--scroll-gap-top"),
     );

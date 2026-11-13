@@ -406,6 +406,7 @@ function NavItems({
 
 export function AppSidebar({
   defaultCollapsed,
+  defaultEditorCollapsed,
   toolsAvailable,
   hiddenItems = [],
   nickname = null,
@@ -416,6 +417,8 @@ export function AppSidebar({
   realtimeUrl = null,
 }: {
   defaultCollapsed: boolean;
+  // On the chapter editor (D83).
+  defaultEditorCollapsed: boolean;
   toolsAvailable: boolean;
   initialUnread?: number;
   initialUnreadMessages?: number;
@@ -430,7 +433,13 @@ export function AppSidebar({
   avatar?: string | null;
 }) {
   const profilePath = nickname === null ? null : `/p/${nickname}`;
-  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  // Both kept: the sidebar stays mounted while the user moves between the editor and other pages.
+  const [pageCollapsed, setPageCollapsed] = useState(defaultCollapsed);
+  const [editorCollapsed, setEditorCollapsed] = useState(
+    defaultEditorCollapsed,
+  );
+  const inEditor = usePathname().startsWith("/chapters/");
+  const collapsed = inEditor ? editorCollapsed : pageCollapsed;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(settingsReopenRequested);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -458,8 +467,13 @@ export function AppSidebar({
   useEffect(clearSettingsReopen, []);
 
   function toggleCollapsed() {
-    setCollapsed(!collapsed);
-    void saveSettings({ appearance: { sidebarCollapsed: !collapsed } });
+    if (inEditor) {
+      setEditorCollapsed(!collapsed);
+      void saveSettings({ appearance: { editorSidebarCollapsed: !collapsed } });
+    } else {
+      setPageCollapsed(!collapsed);
+      void saveSettings({ appearance: { sidebarCollapsed: !collapsed } });
+    }
   }
 
   function openSettings() {

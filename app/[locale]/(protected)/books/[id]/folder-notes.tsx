@@ -128,6 +128,7 @@ export function FolderNotesField({
         lang={lang}
         className="flex-1"
         compact
+        toolbarOnFocus
         scrollMemory={scrollMemory}
       />
     </section>

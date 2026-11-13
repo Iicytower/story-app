@@ -10,7 +10,13 @@ import {
   withE2EDb,
 } from "./db";
 import { storageStatePath } from "./env";
-import { expect, menuAction, runAutosaveDelay, test } from "./helpers";
+import {
+  expect,
+  markdownEditor,
+  menuAction,
+  runAutosaveDelay,
+  test,
+} from "./helpers";
 
 test.use({
   storageState: storageStatePath("alice"),
@@ -240,7 +246,7 @@ test("folder and chapter notes save separately; folder notes show in another cha
   await e.folderNotes.fill("Shared world");
   await runAutosaveDelay(page);
   await expect(e.folderStatus).toHaveText("Saved");
-  await expect(e.status).toHaveText("");
+  await expect(e.status).toHaveText("Saved");
   expect((await findFolder("Book"))?.notes).toBe("Shared world");
   expect((await findStoryById(first))?.notes).toBe("First notes");
 
@@ -410,4 +416,79 @@ test("works with the default layout when localStorage throws", async ({
   await e.content.fill("Saved without storage");
   await runAutosaveDelay(page);
   await expect(e.status).toHaveText("Saved");
+});
+
+test("notes show their toolbar only while in use, without moving the text", async ({
+  page,
+}) => {
+  const { first } = await seedBook();
+  await page.goto(`/chapters/${first}`);
+  const e = editor(page);
+  await expect(e.notes).toHaveText("First notes");
+  await expect(markdownEditor(page, "Content").button("Bold")).toBeVisible();
+
+  for (const label of ["Notes", "Book notes"]) {
+    const notes = markdownEditor(page, label);
+    const bold = notes.button("Bold");
+    await expect(bold, label).toBeHidden();
+    await expect(notes.button("Text"), label).toBeHidden();
+    const before = (await notes.field.boundingBox())!.y;
+
+    await notes.field.click();
+    await expect(bold, label).toBeVisible();
+    expect((await notes.field.boundingBox())!.y, label).toBe(before);
+
+    // An open find panel keeps the toolbar, also with the focus elsewhere.
+    await page.keyboard.press("Control+f");
+    await expect(
+      notes.group.getByRole("textbox", { name: "Find" }),
+    ).toBeFocused();
+    await e.title.click();
+    await expect(bold, label).toBeVisible();
+    await notes.group.getByRole("textbox", { name: "Find" }).press("Escape");
+    await e.title.click();
+    await expect(bold, label).toBeHidden();
+  }
+});
+
+test("the editor starts with the app sidebar collapsed and remembers it expanded", async ({
+  page,
+}) => {
+  const { first } = await seedBook();
+  await page.goto(`/chapters/${first}`);
+  const nav = page.getByRole("navigation", { name: "Main" });
+  await expect(
+    nav.getByRole("button", { name: "Expand sidebar" }),
+  ).toBeVisible();
+  expect((await nav.boundingBox())!.width).toBeLessThan(60);
+
+  await nav.getByRole("button", { name: "Expand sidebar" }).click();
+  await expect
+    .poll(
+      async () =>
+        (await findSettings("alice"))?.appearance?.editorSidebarCollapsed,
+    )
+    .toBe(false);
+  await page.reload();
+  await expect(
+    nav.getByRole("button", { name: "Collapse sidebar" }),
+  ).toBeVisible();
+  expect((await nav.boundingBox())!.width).toBeGreaterThan(150);
+
+  // Other pages keep their own state.
+  await page.goto("/books");
+  await expect(
+    nav.getByRole("button", { name: "Collapse sidebar" }),
+  ).toBeVisible();
+  await page.goto(`/chapters/${first}`);
+  await nav.getByRole("button", { name: "Collapse sidebar" }).click();
+  await expect
+    .poll(
+      async () =>
+        (await findSettings("alice"))?.appearance?.editorSidebarCollapsed,
+    )
+    .toBe(true);
+  expect((await findSettings("alice"))?.appearance?.sidebarCollapsed).not.toBe(
+    true,
+  );
 });

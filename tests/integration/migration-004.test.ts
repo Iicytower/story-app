@@ -79,6 +79,7 @@ describe("004-settings", () => {
       editor: { layout, mobileView: "notes" },
       appearance: {
         sidebarCollapsed: false,
+        editorSidebarCollapsed: true,
         theme: "dark",
         accent: "sepia",
         locale: null,

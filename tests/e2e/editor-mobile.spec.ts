@@ -35,7 +35,7 @@ test("switches between story, notes, chapters and tools on a narrow screen", asy
   await expect(content).toBeVisible();
   await expect(
     page.getByRole("group", { name: "Content editor" }).getByRole("button", {
-      name: "Source",
+      name: "Markdown",
     }),
   ).toBeVisible();
   await expect(notes).toBeHidden();
@@ -107,4 +107,30 @@ test("keeps toolbar buttons accessible by name on a narrow screen", async ({
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+});
+
+test.describe("before hydration", () => {
+  test.use({ javaScriptEnabled: false, viewport: { width: 375, height: 812 } });
+
+  test("a narrow screen never gets the desktop side panel", async ({
+    page,
+  }) => {
+    const id = await seedStory("alice", {
+      title: "No script",
+      folder: "Book",
+      notes: "Side note",
+    });
+
+    await page.goto(`/chapters/${id}`);
+    await expect(page.getByRole("textbox", { name: "Title" })).toBeVisible();
+    const sidePanel = page.getByRole("tablist", {
+      name: "Side panel",
+      includeHidden: true,
+    });
+    // Rendered by the server for wide screens, hidden by CSS on this one.
+    await expect(sidePanel).toHaveCount(1);
+    await expect(sidePanel).toBeHidden();
+    await expect(page.getByRole("button", { name: "Hide notes" })).toBeHidden();
+    await expect(page.getByRole("separator")).toHaveCount(0);
+  });
 });

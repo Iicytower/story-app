@@ -14,7 +14,7 @@ export function ToolsPanel({ onOpen }: { onOpen: (tool: Tool) => void }) {
   return (
     <ul
       aria-label={t("list")}
-      className="grid min-h-0 flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-2 overflow-y-auto p-3"
+      className="grid min-h-0 flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-2 overflow-y-auto p-4"
     >
       {TOOLS.map((tool) => (
         <li key={tool.id}>

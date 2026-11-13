@@ -369,8 +369,8 @@
   "markdownEditor": {
     "group": "Edytor: {label}",
     "mode": "Tryb",
-    "preview": "Podgląd",
-    "source": "Źródło",
+    "preview": "Tekst",
+    "source": "Markdown",
     "findReplace": "Znajdź i zamień",
     "bold": "Pogrubienie",
     "italic": "Kursywa",
@@ -532,7 +532,8 @@
   },
   "save": {
     "saving": "Zapisywanie…",
-    "saved": "Zapisano"
+    "saved": "Zapisano",
+    "unsaved": "Niezapisane zmiany"
   },
   "editor": {
     "views": {
@@ -666,7 +667,7 @@
     "bar": "Korekta",
     "finish": "Zakończ korektę",
     "closeBubble": "Zamknij szczegóły",
-    "sourceBlocked": "Zakończ korektę, aby przełączyć na Source."
+    "sourceBlocked": "Zakończ korektę, aby przełączyć na Markdown."
   },
   "nameGenerator": {
     "typeGroups": {

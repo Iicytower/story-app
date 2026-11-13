@@ -45,6 +45,7 @@ export async function AppShell({
     <div className="flex min-h-dvh w-full">
       <AppSidebar
         defaultCollapsed={appearance.sidebarCollapsed}
+        defaultEditorCollapsed={appearance.editorSidebarCollapsed}
         toolsAvailable={toolsConfig() !== null}
         hiddenItems={hiddenItems}
         nickname={account.nickname}

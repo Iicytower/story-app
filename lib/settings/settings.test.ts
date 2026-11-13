@@ -18,6 +18,7 @@ describe("DEFAULT_SETTINGS", () => {
       editor: { layout: DEFAULT_LAYOUT, mobileView: "story" },
       appearance: {
         sidebarCollapsed: false,
+        editorSidebarCollapsed: true,
         theme: null,
         accent: "sepia",
         locale: null,
@@ -64,6 +65,7 @@ describe("normalizeSettings", () => {
       },
       appearance: {
         sidebarCollapsed: false,
+        editorSidebarCollapsed: true,
         theme: "dark",
         accent: "sepia",
         locale: null,
