@@ -105,6 +105,7 @@ Decyzje i odstępstwa od `docs/spec.md` – mają pierwszeństwo nad spec, a prz
 - [**D45**](D045-bez-merge-staging-main.md) Claude nie merguje do `staging` i `main` – merge i push na te branche robi tylko użytkownik. Zmienia D15.
 - [**D81**](D081-narzedzia-ux-ui.md) Narzędzia Claude do UX i UI – skille `frontend-design`, `ux-heuristics`, `web-design-guidelines`, MCP `shadcn` i `playwright`, bez Claude in Chrome.
 - [**D84**](D084-oszczedny-autorun.md) Oszczędniejszy `/autorun` – sesja główna na Sonnecie, Sonnet dla prostych tasków UI, dokładne zlecenia, jeden wariant `ui-checker`, skrypt śpi do resetu limitu. Zmienia D83.
+- [**D85**](D085-poprawa-ux-ui-2.md) Poprawa UX i UI, runda 2 (task 108, subtaski 109–125, branch `fix/ui-2`) – granice błędów, stany ładowania i puste, edytor i czytelnik na mobile, ustawienia czytania, tryb skupienia, cele słów, paleta poleceń; bez e-maili i bez „Cofnij”. Rozszerza D83.
 - [**D82**](D082-decyzje-w-plikach.md) Decyzje w osobnych plikach – plik na decyzję, spis z jednym zdaniem, statusy aktualna/archiwalna, zasady dopisywania i archiwizacji.
 
 ### System społecznościowy

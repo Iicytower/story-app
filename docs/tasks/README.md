@@ -104,6 +104,24 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 90 | ↳ [Realtime: serwis SSE w stosie narzędzi](done/90-realtime.md) (subtask 68) | 81, 85 | [x] |
 | 91 | ↳ [Audyt bezpieczeństwa i E2E całości](done/91-social-audit.md) (subtask 68) | 69–90 | [x] |
 | 92 | [Wydanie systemu społecznościowego: kroki ręczne](92-social-release-manual.md) (**ręcznie – użytkownik**) | 68 | [ ] |
+| 108 | [Poprawa UX i UI, runda 2 (zbiorczy)](108-ui-polish-2.md) | – | [ ] |
+| 109 | ↳ [Granice błędów, 404 w układzie aplikacji, tytuły kart](109-error-boundaries.md) (subtask 108) | – | [ ] |
+| 110 | ↳ [Stany ładowania i szkielety](110-loading-states.md) (subtask 108) | 109 | [ ] |
+| 111 | ↳ [Wspólne stany puste i Badge](111-empty-states-badge.md) (subtask 108) | – | [ ] |
+| 112 | ↳ [Edytor na mobile](112-editor-mobile.md) (subtask 108) | 110 | [ ] |
+| 113 | ↳ [Czytelnik: szerokość, krój, mobile](113-reader-layout.md) (subtask 108) | – | [ ] |
+| 114 | ↳ [Ustawienia czytania](114-reading-settings.md) (subtask 108) | 113 | [ ] |
+| 115 | ↳ [Nawigacja w czytniku i strony publiczne](115-reader-nav-public-pages.md) (subtask 108) | 113 | [ ] |
+| 116 | ↳ [Strona główna, sidebar, szerokości](116-home-sidebar-widths.md) (subtask 108) | 111 | [ ] |
+| 117 | ↳ [Książka, forum, biblioteka, ustawienia](117-book-forum-library-settings.md) (subtask 108) | 111 | [ ] |
+| 118 | ↳ [Tryb skupienia w edytorze](118-focus-mode.md) (subtask 108) | 112 | [ ] |
+| 119 | ↳ [Cele słów rozdziału](119-word-goals.md) (subtask 108) | 112 | [ ] |
+| 120 | ↳ [Onboarding nowego autora](120-author-onboarding.md) (subtask 108) | 111 | [ ] |
+| 121 | ↳ [Paleta poleceń i ściąga skrótów](121-command-palette.md) (subtask 108) | 112 | [ ] |
+| 122 | ↳ [Feedback akcji: Sonner i Button `loading`](122-action-feedback.md) (subtask 108) | – | [ ] |
+| 123 | ↳ [Formularze (`Field`) i niezapisane zmiany](123-forms-unsaved.md) (subtask 108) | 122 | [ ] |
+| 124 | ↳ [Powiadomienia: grupowanie i „oznacz wszystkie”](124-notifications-grouping.md) (subtask 108) | – | [ ] |
+| 125 | ↳ [Audyt końcowy UI/UX i raport po poprawkach](125-ui-audit-2.md) (subtask 108) | 109–124 | [ ] |
 
 ## Backlog
 
@@ -133,6 +151,7 @@ Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 - `feature/NN-<slug>` – jeden branch na task, tworzony z `develop`.
 - `security` – lokalny branch zbiorczy poprawek bezpieczeństwa (taski 56–63 i aktualizacja zależności z 2026-11-09), z `develop`. Branche tasków z niego i merge do niego; do `develop` merguje użytkownik po przeglądzie.
 - `feature/social` – lokalny branch zbiorczy systemu społecznościowego (task 68, subtaski 69–91, D80), z `develop`. Branche subtasków z niego i merge do niego; nie jest pushowany, do `develop` merguje użytkownik po przeglądzie. `develop` mergujemy do niego okresowo.
+- `fix/ui-2` – lokalny branch zbiorczy poprawy UX i UI, runda 2 (task 108, subtaski 109–125, D85), z `develop`. Branche subtasków `feature/NN-<slug>` z niego i merge do niego; nie jest pushowany, dalej merguje użytkownik. `develop` mergujemy do niego okresowo.
 - `fix/ui` – lokalny branch zbiorczy poprawy UX i UI (task 51, subtaski 93–107, D83), z `feature/social`. Branche subtasków `feature/NN-<slug>` z niego i merge do niego; nie jest pushowany, dalej merguje użytkownik.
 - Task zbiorczy (np. 66): jego branch z `develop`, a branch każdego subtasku z brancha zbiorczego; subtask merge'ujemy do brancha zbiorczego, a ten do `develop` dopiero po wszystkich subtaskach.
 
