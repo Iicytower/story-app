@@ -52,6 +52,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { WithTooltip } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { applyTheme } from "@/lib/theme";
+import { onOpenSettings, type SettingsTab } from "@/lib/settings/open-settings";
 
 const ITEM = "w-full justify-start";
 
@@ -442,6 +443,7 @@ export function AppSidebar({
   const collapsed = inEditor ? editorCollapsed : pageCollapsed;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(settingsReopenRequested);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>("appearance");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const t = useTranslations("sidebar");
   const tCommon = useTranslations("common");
@@ -466,6 +468,16 @@ export function AppSidebar({
 
   useEffect(clearSettingsReopen, []);
 
+  useEffect(
+    () =>
+      onOpenSettings((tab) => {
+        setDrawerOpen(false);
+        setSettingsTab(tab);
+        setSettingsOpen(true);
+      }),
+    [],
+  );
+
   function toggleCollapsed() {
     if (inEditor) {
       setEditorCollapsed(!collapsed);
@@ -478,6 +490,7 @@ export function AppSidebar({
 
   function openSettings() {
     setDrawerOpen(false);
+    setSettingsTab("appearance");
     setSettingsOpen(true);
   }
 
@@ -560,6 +573,7 @@ export function AppSidebar({
       <SettingsDialog
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
+        tab={settingsTab}
         toolsAvailable={toolsAvailable}
       />
       <NotificationsPanel

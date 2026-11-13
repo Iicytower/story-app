@@ -167,6 +167,11 @@ test("the accent color is picked from swatches and kept for the user", async ({
   await accents.getByRole("radio", { name: "Navy" }).check();
   await dialog.getByRole("button", { name: "Save" }).click();
   await expect(dialog.getByRole("button", { name: "Save" })).toBeDisabled();
+  // The dialog stays open (D50), so the save is confirmed in it.
+  await expect(dialog.getByText("Settings saved.")).toBeVisible();
+  await accents.getByRole("radio", { name: "Sage" }).check();
+  await expect(dialog.getByText("Settings saved.")).toHaveCount(0);
+  await accents.getByRole("radio", { name: "Navy" }).check();
   await expect(html(page)).toHaveAttribute("data-accent", "navy");
   expect(await primary()).not.toBe(sepia);
   await expect
@@ -260,4 +265,89 @@ test.describe("on a narrow screen", () => {
     ).toHaveAttribute("aria-selected", "true");
     await desktop.context.close();
   });
+});
+
+test("every setting is in one of four tabs, listed on the left", async ({
+  page,
+}) => {
+  await page.goto("/books");
+  const dialog = await openSettings(page);
+  await expect(dialog.getByRole("tablist")).toHaveAttribute(
+    "aria-orientation",
+    "vertical",
+  );
+  const panel = (name: string) =>
+    dialog.getByRole("tabpanel", { name, exact: true });
+  const tab = (name: string) => dialog.getByRole("tab", { name, exact: true });
+  await expect(tab("Appearance")).toHaveAttribute("aria-selected", "true");
+  const appearance = panel("Appearance");
+  await expect(appearance.getByLabel("Theme")).toBeVisible();
+  await expect(
+    appearance.getByRole("radiogroup", { name: "Accent color" }),
+  ).toBeVisible();
+  await expect(appearance.getByLabel("Interface language")).toBeVisible();
+  await expect(
+    appearance.getByRole("heading", { name: "Proofreading dictionary" }),
+  ).toBeVisible();
+  await expect(appearance.getByRole("button", { name: "Save" })).toBeVisible();
+
+  await tab("Profile").click();
+  const profile = panel("Profile");
+  await expect(
+    profile.getByRole("textbox", { name: "About me" }),
+  ).toBeVisible();
+  await expect(
+    profile.getByRole("button", { name: "Avatar", exact: true }),
+  ).toBeVisible();
+  await expect(
+    profile.getByRole("group", {
+      name: "Who can start a conversation with me",
+    }),
+  ).toBeVisible();
+  await expect(
+    profile.getByRole("heading", { name: "Blocked accounts" }),
+  ).toBeVisible();
+
+  await tab("Account").click();
+  const account = panel("Account");
+  for (const name of [
+    "Change password",
+    "Log out other devices",
+    "Delete account",
+  ])
+    await expect(account.getByRole("button", { name })).toBeVisible();
+
+  await tab("Notifications").click();
+  await expect(
+    panel("Notifications").getByRole("group", { name: "My texts" }),
+  ).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Save" })).toHaveCount(0);
+});
+
+test("at 375 px the tabs sit above the content without scrolling the page", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    storageState: storageStatePath("alice"),
+    viewport: { width: 375, height: 740 },
+  });
+  const page = await context.newPage();
+  await page.goto("/books");
+  const dialog = await openSettings(page);
+  const tabs = dialog.getByRole("tablist");
+  await expect(tabs).toHaveAttribute("aria-orientation", "horizontal");
+  await expect(tabs.getByRole("tab")).toHaveCount(4);
+  for (const tab of await tabs.getByRole("tab").all()) {
+    const box = await tab.boundingBox();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(375);
+  }
+  const panel = await dialog.getByRole("tabpanel").boundingBox();
+  expect(panel!.y).toBeGreaterThan((await tabs.boundingBox())!.y);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await context.close();
 });

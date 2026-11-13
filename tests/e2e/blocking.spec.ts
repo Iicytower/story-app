@@ -64,7 +64,7 @@ test("alice blocks dave from his comment and unblocks him in the settings", asyn
   await dave.context.close();
 
   // Criterion 5: the list in the settings, with Unblock.
-  const settings = await openSettings(page);
+  const settings = await openSettings(page, "Profile");
   const blocked = settings.getByRole("list", {
     name: en.settings.blocked,
   });
