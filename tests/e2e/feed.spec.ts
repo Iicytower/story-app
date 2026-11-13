@@ -39,6 +39,23 @@ test("a follower sees the author's new chapter in the feed, others do not", asyn
   const entries = page.getByRole("list", { name: en.feed.entries });
   await expect(entries.getByRole("listitem")).toHaveCount(1);
   await expect(entries.getByRole("link", { name: "Alice" })).toBeVisible();
+  // One underlined link per entry, the chapter in bold (task 104, criterion 3).
+  const underlined = async () =>
+    entries
+      .getByRole("link")
+      .evaluateAll((links) =>
+        links
+          .filter((link) =>
+            getComputedStyle(link).textDecorationLine.includes("underline"),
+          )
+          .map((link) => [link.textContent, getComputedStyle(link).fontWeight]),
+      );
+  expect(await underlined()).toEqual([[title, "600"]]);
+  await entries.getByRole("link", { name: "Alice" }).hover();
+  await expect(entries.getByRole("link", { name: "Alice" })).toHaveCSS(
+    "text-decoration-line",
+    "underline",
+  );
   await page.setViewportSize({ width: 375, height: 800 });
   await expectNoHorizontalScroll(page);
   await entries.getByRole("link", { name: title }).click();

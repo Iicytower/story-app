@@ -1,6 +1,6 @@
 # 104 – Wiadomości i aktualności
 
-Subtask 51. Podstawa: [D83](../decisions/D083-poprawa-ux-ui.md) i raport [`docs/ui-ux-report.md`](../ui-ux-report.md) (numery punktów w nawiasach). Branch `feature/104-messages-feed` z `fix/ui`, merge do `fix/ui`. Użyj skilla `social-checklist`.
+Subtask 51. Podstawa: [D83](../../decisions/D083-poprawa-ux-ui.md) i raport [`docs/ui-ux-report.md`](../../ui-ux-report.md) (numery punktów w nawiasach). Branch `feature/104-messages-feed` z `fix/ui`, merge do `fix/ui`. Użyj skilla `social-checklist`.
 
 ## Zakres
 

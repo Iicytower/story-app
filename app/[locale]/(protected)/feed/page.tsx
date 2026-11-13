@@ -18,8 +18,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("feed") };
 }
 
+// One link of an entry stands out (5.2); the others show their underline on hover or focus.
+const mainLinkClass =
+  "font-semibold [overflow-wrap:anywhere] underline decoration-muted-foreground/40 underline-offset-4 hover:decoration-current";
 const linkClass =
-  "font-medium [overflow-wrap:anywhere] underline decoration-muted-foreground/40 underline-offset-4 hover:decoration-current";
+  "[overflow-wrap:anywhere] underline-offset-4 hover:underline focus-visible:underline";
 
 export default async function FeedPage({
   searchParams,
@@ -78,7 +81,7 @@ export default async function FeedPage({
                         </Link>
                       ),
                       thread: (chunks: ReactNode) => (
-                        <Link href={thread.path} className={linkClass}>
+                        <Link href={thread.path} className={mainLinkClass}>
                           {chunks}
                         </Link>
                       ),
@@ -101,7 +104,14 @@ export default async function FeedPage({
                 </Link>
               ),
               chapter: (chunks: ReactNode) => (
-                <Link href={chapterPath} className={linkClass}>
+                <Link
+                  href={chapterPath}
+                  className={
+                    entry.type === "chapterPublished"
+                      ? mainLinkClass
+                      : linkClass
+                  }
+                >
                   {chunks}
                 </Link>
               ),
@@ -112,13 +122,21 @@ export default async function FeedPage({
                       ? entry.commentPath
                       : chapterPath
                   }
-                  className={linkClass}
+                  className={mainLinkClass}
                 >
                   {chunks}
                 </Link>
               ),
               book: (chunks: ReactNode) => (
-                <Link href={entry.book.path} className={linkClass}>
+                <Link
+                  href={entry.book.path}
+                  className={
+                    entry.type === "chapterPublished" &&
+                    entry.chapters.length > 1
+                      ? mainLinkClass
+                      : linkClass
+                  }
+                >
                   {chunks}
                 </Link>
               ),

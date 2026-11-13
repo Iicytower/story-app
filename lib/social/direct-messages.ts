@@ -9,6 +9,8 @@ import { hiddenUserIdsFor } from "@/lib/social/permissions";
 
 export const MESSAGES_PAGE = 50;
 export const CONVERSATIONS_SHOWN = 100;
+// Characters of the last message sent for the list preview; the line is cut further by CSS.
+export const PREVIEW_LENGTH = 200;
 
 type Id = string | Types.ObjectId;
 
@@ -96,6 +98,38 @@ export interface ConversationView {
   lastMessageAt: string;
   unread: boolean;
   closed: boolean;
+  // The start of the last message as written (markdown), null in a conversation without one.
+  preview: { body: string; own: boolean } | null;
+}
+
+// The last message of each conversation in one query: the sort follows the message index
+// backwards, so the group takes the first one of each conversation without reading the rest.
+async function lastMessagesOf(
+  conversationIds: Types.ObjectId[],
+): Promise<Map<string, { senderId: Types.ObjectId; body: string }>> {
+  if (conversationIds.length === 0) return new Map();
+  const rows = await Message.aggregate<{
+    _id: Types.ObjectId;
+    senderId: Types.ObjectId;
+    body: string;
+  }>([
+    { $match: { conversationId: { $in: conversationIds } } },
+    { $sort: { conversationId: -1, createdAt: -1, _id: -1 } },
+    {
+      $group: {
+        _id: "$conversationId",
+        senderId: { $first: "$senderId" },
+        body: { $first: "$body" },
+      },
+    },
+    {
+      $project: {
+        senderId: 1,
+        body: { $substrCP: ["$body", 0, PREVIEW_LENGTH] },
+      },
+    },
+  ]);
+  return new Map(rows.map(({ _id, ...last }) => [_id.toString(), last]));
 }
 
 async function viewsOf(
@@ -111,7 +145,7 @@ async function viewsOf(
   const others = conversations.map(({ participantIds }) =>
     otherOf(participantIds, userId),
   );
-  const [users, blocked, hidden] = await Promise.all([
+  const [users, blocked, hidden, lastMessages] = await Promise.all([
     User.find({
       _id: { $in: others },
       nickname: { $type: "string" },
@@ -121,6 +155,7 @@ async function viewsOf(
       .lean(),
     blockedAmong(userId, others),
     hiddenUserIdsFor(userId),
+    lastMessagesOf(conversations.map(({ _id }) => _id)),
   ]);
   const nicknames = new Map(
     users.map(({ _id, nickname }) => [_id.toString(), nickname]),
@@ -128,6 +163,7 @@ async function viewsOf(
   const hiddenIds = new Set(hidden.map(String));
   return conversations.map((conversation, index) => {
     const other = others[index].toString();
+    const last = lastMessages.get(conversation._id.toString());
     return {
       id: conversation._id.toString(),
       nickname: nicknames.get(other) ?? null,
@@ -135,6 +171,9 @@ async function viewsOf(
       lastMessageAt: conversation.lastMessageAt.toISOString(),
       unread: conversation.unreadBy.some((id) => id.equals(userId)),
       closed: Boolean(conversation.closedAt) || blocked.has(other),
+      preview: last
+        ? { body: last.body, own: last.senderId.equals(userId) }
+        : null,
     };
   });
 }

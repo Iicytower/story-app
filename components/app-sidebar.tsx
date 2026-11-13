@@ -502,13 +502,15 @@ export function AppSidebar({
             variant="ghost"
             size="icon"
             ref={menu}
-            aria-label={unread > 0 ? t("menuUnread") : t("menu")}
+            aria-label={
+              unread + unreadMessages > 0 ? t("menuUnread") : t("menu")
+            }
             // 44px touch target inside the 40px bar
             className="relative after:absolute after:-inset-1.5 after:content-['']"
             onClick={() => setDrawerOpen(true)}
           >
             <MenuIcon />
-            {unread > 0 && (
+            {unread + unreadMessages > 0 && (
               <span
                 aria-hidden
                 className="bg-primary absolute top-1 right-1 size-2 rounded-full"
