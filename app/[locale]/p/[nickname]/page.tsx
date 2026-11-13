@@ -16,6 +16,7 @@ import { retryDueCovers } from "@/lib/covers/mutations";
 import { getPublicLibrary, getPublicProfile } from "@/lib/profiles/queries";
 import type { LibraryBook } from "@/lib/library/queries";
 import { BlockButton } from "./block-button";
+import { EditProfileButton } from "./edit-profile-button";
 import { FollowButton } from "./follow-button";
 import { MessageButton } from "./message-button";
 import { ReportButton } from "@/components/report-dialog";
@@ -90,6 +91,7 @@ export default async function ProfilePage({
               {t("followingCount", { count: profile.following })}
             </Link>
           </p>
+          {profile.owner && <EditProfileButton />}
           {!profile.owner && !profile.blockedEitherWay && (
             <FollowButton
               nickname={profile.nickname}

@@ -23,8 +23,15 @@ import {
   renameShelf,
   reorderShelves,
 } from "./actions";
+import { LibraryPublic } from "./library-public";
 
-export function ManageShelves({ shelves }: { shelves: ShelfView[] }) {
+export function ManageShelves({
+  shelves,
+  libraryPublic,
+}: {
+  shelves: ShelfView[];
+  libraryPublic: boolean;
+}) {
   const t = useTranslations("library");
   const tErrors = useTranslations("errors");
   const [busy, startTransition] = useTransition();
@@ -114,6 +121,9 @@ export function ManageShelves({ shelves }: { shelves: ShelfView[] }) {
             {error}
           </p>
         )}
+        <div className="border-t pt-4">
+          <LibraryPublic value={libraryPublic} />
+        </div>
       </DialogContent>
       <ConfirmDialog
         open={deleting !== null}

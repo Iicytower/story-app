@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useSyncExternalStore } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   type ChartConfig,
@@ -14,6 +15,8 @@ export interface ChartDay {
   readers: number;
 }
 
+const noSubscribe = () => () => {};
+
 export function StatsChart({
   days,
   label,
@@ -26,6 +29,21 @@ export function StatsChart({
   const config = {
     readers: { label: t("readers"), color: "var(--primary)" },
   } satisfies ChartConfig;
+  // The server renders no chart (ResponsiveContainer measures in the browser), so its place
+  // holds a placeholder of the same height until hydration (D83, 5.3).
+  const hydrated = useSyncExternalStore(
+    noSubscribe,
+    () => true,
+    () => false,
+  );
+  if (!hydrated)
+    return (
+      <div
+        aria-hidden
+        data-testid="stats-chart-placeholder"
+        className="bg-muted h-64 w-full rounded-md"
+      />
+    );
   return (
     <ChartContainer
       config={config}
@@ -56,7 +74,12 @@ export function StatsChart({
           width={32}
         />
         <ChartTooltip content={<ChartTooltipContent />} />
-        <Bar dataKey="readers" fill="var(--color-readers)" radius={2} />
+        <Bar
+          dataKey="readers"
+          fill="var(--color-readers)"
+          radius={2}
+          isAnimationActive={false}
+        />
       </BarChart>
     </ChartContainer>
   );

@@ -1017,6 +1017,7 @@
   "profile": {
     "title": "{nickname} – Story App",
     "avatarAlt": "Avatar of {nickname}",
+    "editProfile": "Edit profile",
     "bio": "About me",
     "books": "Books",
     "noBooks": "No published books yet.",
@@ -1347,7 +1348,7 @@
     "chartLabel": "Chart of unique readers per day over the last {days, plural, one {# day} other {# days}}: {count, plural, one {# reader} other {# readers}} in total",
     "chartTotal": "{count, plural, one {# reader in this period} other {# readers in this period}}, counted once per chapter and day",
     "tableTitle": "Books and chapters",
-    "tableNote": "Readers in the chosen period are the sum of each day's unique readers, so someone who reads on several days counts once per day. Reactions, ratings, comments and library additions are totals.",
+    "tableNote": "Readers are summed from each day's unique readers, while reactions, ratings, comments and library additions are totals.",
     "text": "Book or chapter",
     "readers": "Readers",
     "reactions": "Reactions",
