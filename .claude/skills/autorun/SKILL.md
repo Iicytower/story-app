@@ -33,10 +33,14 @@ Argument: the number of an umbrella task (e.g. `68`) or a list of numbers. You (
    2. Every 4 tasks (and before the first): `git log <umbrella branch>..develop`; when there are new commits, merge `develop` → umbrella branch (yourself, `merger` on a conflict).
    3. Create `feature/NN-<slug>` from the umbrella branch, set `[~]` in the table.
    4. When the task needs research (the "Zakres" section mentions research or a new API), first `researcher` with concrete questions; pass the result to the implementer in the request.
-   5. `implementer` (short request): task number, branch, base branch, decision files to read (for 68: `scope.md`, `roles-bans-blocks.md` and the task's area file in `docs/decisions/D080-system-spolecznosciowy/`; for 51: `D083-poprawa-ux-ui.md`, the report sections named in the task and the decisions D83 changes that the task touches), research results, "close the task" (status `[x]`, `git mv` to `done/`, resolutions in the decision file). The implementer runs typecheck, lint, `npx vitest related <changed files> --run` and the E2E specs of affected pages.
+   5. `implementer` (short, precise request – turns drive the cost: every turn re-reads the whole context):
+      - task number, branch, base branch, research results, "close the task" (status `[x]`, `git mv` to `done/`, resolutions in the decision file);
+      - the files or directories to change (from "Zakres", found with one `grep` of your own if needed) and the decision bullets the task needs, quoted in the request – instead of "read the whole decision file and report" (for 68: `scope.md`, `roles-bans-blocks.md` and the area file stay as paths; for 51: quote the D83 bullets and name the report sections);
+      - "mechanical changes across many files (renames, imports, keys) with one script (`sed`, codemod), not file by file; edit everything first, then run typecheck, lint, `npx vitest related <changed files> --run` and the E2E specs of affected pages once and fix in one batch".
+      - Model: the `Model:` line of the task file; without it `opus` when the task touches anything from the reviewer list in step 6 or is a large refactor, otherwise pass `model: "sonnet"` to the Agent call (copy, layout, styles, simple components).
    6. `reviewer` (base: umbrella branch) only for risky tasks: permissions, bans and blocks, data isolation, public visibility, limits, deleting or moving data, races, security. Simple UI, copy and documentation – no review.
-   7. `ui-checker` only for a new page or a large UI change: on the running server (no build), two variants (1280 light `/en`, 375 dark `/pl`). May run in parallel with `reviewer`.
-      For 51 (D83): `ui-checker` with Playwright MCP after every subtask that changes UI, not only large ones. Before the first one start the dev server yourself in the background (`npm run dev` on port 3000, log to a scratchpad file, local database after `npm run seed`) and pass its URL and the pages the subtask touched; one `ui-checker` at a time (one MCP browser). Task 107: the request names the report paths from the task file and all 8 variants; small findings go to `implementer` in the same task.
+   7. `ui-checker` only for a new page or a large UI change: on the running server (no build), one variant (1280 light `/pl`; 375 dark `/pl` instead when the task changes the mobile layout), only the pages the task touched, report in at most ~20 turns. All variants only in a final audit task. May run in parallel with `reviewer`.
+      For 51 (D83, changed in D84): `ui-checker` with Playwright MCP after every subtask that changes UI, with the same single-variant rule. Before the first one start the dev server yourself in the background (`npm run dev` on port 3000, log to a scratchpad file, local database after `npm run seed`) and pass its URL and the pages the subtask touched; one `ui-checker` at a time (one MCP browser). Task 107: the request names the report paths from the task file and all 8 variants; small findings go to `implementer` in the same task.
    8. Blocking findings from 6–7 → one request to `implementer` with all findings at once.
    9. Commit on the task branch: `git add -A && git commit` with the message `NN: <short english description>` and the attribution footer from the system reminder.
    10. Merge yourself: `git switch <umbrella branch> && git merge --no-ff feature/NN-<slug>`. Conflict → `git merge --abort` and `merger`.
@@ -44,6 +48,12 @@ Argument: the number of an umbrella task (e.g. `68`) or a list of numbers. You (
        `docs-keeper` only for "Blokada"/"Pominięty" sections or larger changes to `README.md`, `docs/deploy.md` (with parts in `docs/deploy/`) and the `local-setup` skill.
 3. At the end (after all subtasks): `security-auditor` for `git diff develop...<umbrella branch>` (for 51: `git diff feature/social...fix/ui`); critical and high findings → implementer/verifier as in the tasks (separate commit `NN: security fixes`). Then close the umbrella task (yourself or `docs-keeper`, commit), but do not merge it into `develop` – the user does that.
 4. Final report for the user: table task → status (done / blocked with reason / skipped), list of resolutions to confirm, what the user must do before the release.
+
+## Planning a run (when writing the tasks)
+
+- Subtask size: at most ~30 minutes of implementer work (a usage limit in the middle of an agent loses its context); split larger ones.
+- Each task file gets a line `Model: sonnet` or `Model: opus` under the title (rule in step 5).
+- Run it with `scripts/autorun-night.sh` (main session on Sonnet, sleeps until the limit resets) right after a limit reset, and do not use the account interactively meanwhile – the limit is shared.
 
 ## After context compaction
 

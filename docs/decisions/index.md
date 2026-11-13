@@ -72,7 +72,7 @@ Decyzje i odstępstwa od `docs/spec.md` – mają pierwszeństwo nad spec, a prz
 - [**D50**](D050-dialog-ustawien.md) Dialog ustawień – motyw, język, hasło i wylogowanie w jednym dialogu „Settings”. Zmieniona w D80 (nowe ustawienia), D83.
 - [**D52**](D052-kontrast-motyw.md) Łagodniejszy kontrast i jeden motyw kolorystyczny – mniejszy kontrast przy zachowaniu WCAG AA.
 - [**D53**](D053-tooltipy.md) Tooltipy przy przyciskach z samą ikoną – shadcn Tooltip zamiast `title`. Częściowo zmieniona w D55.
-- [**D83**](D083-poprawa-ux-ui.md) Poprawa UX i UI (task 51, subtaski 93–107, branch `fix/ui`) – nazwy „Książka/Rozdział” i adresy `/books`, `/chapters`, blok konta, szerokości, edytor, strona główna, ustawienia z zakładkami, społeczność; zmienia D16, D17, D18, D25, D27, D30, D31, D33, D42, D47, D50, D54, D80.
+- [**D83**](D083-poprawa-ux-ui.md) Poprawa UX i UI (task 51, subtaski 93–107, branch `fix/ui`) – nazwy „Książka/Rozdział” i adresy `/books`, `/chapters`, blok konta, szerokości, edytor, strona główna, ustawienia z zakładkami, społeczność; zmienia D16, D17, D18, D25, D27, D30, D31, D33, D42, D47, D50, D54, D80. Zmieniona w D84.
 
 ### Serwer narzędzi, korekta i słowniki
 
@@ -104,6 +104,7 @@ Decyzje i odstępstwa od `docs/spec.md` – mają pierwszeństwo nad spec, a prz
 - [**D26**](D026-backup-bazy.md) Lokalny backup bazy – `scripts/backup.sh` (bash + Docker) zamiast skryptu `tsx`.
 - [**D45**](D045-bez-merge-staging-main.md) Claude nie merguje do `staging` i `main` – merge i push na te branche robi tylko użytkownik. Zmienia D15.
 - [**D81**](D081-narzedzia-ux-ui.md) Narzędzia Claude do UX i UI – skille `frontend-design`, `ux-heuristics`, `web-design-guidelines`, MCP `shadcn` i `playwright`, bez Claude in Chrome.
+- [**D84**](D084-oszczedny-autorun.md) Oszczędniejszy `/autorun` – sesja główna na Sonnecie, Sonnet dla prostych tasków UI, dokładne zlecenia, jeden wariant `ui-checker`, skrypt śpi do resetu limitu. Zmienia D83.
 - [**D82**](D082-decyzje-w-plikach.md) Decyzje w osobnych plikach – plik na decyzję, spis z jednym zdaniem, statusy aktualna/archiwalna, zasady dopisywania i archiwizacji.
 
 ### System społecznościowy

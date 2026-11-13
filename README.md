@@ -61,7 +61,9 @@ The skill checks the requirements, installs dependencies, creates `.env.local` w
 mkdir -p .claude/autorun-logs && nohup scripts/autorun-night.sh 51 > .claude/autorun-logs/night.log 2>&1 &
 ```
 
-The script starts `claude -p "/autorun 51"` with a fixed session ID and, whenever the process ends while `.claude/autorun.lock` still exists (usage limit, API error), waits 20 minutes and resumes the same conversation. It stops when the skill removes the lock, after 3 normal exits in a row without a new commit, or after 40 attempts. `scripts/autorun-night.sh 51 --resume` continues the last session after a manual stop. Settings: `AUTORUN_WAIT`, `AUTORUN_MAX_ATTEMPTS`, `AUTORUN_MAX_STALLS`, `AUTORUN_MODEL`. Logs: `.claude/autorun-logs/`.
+The script starts `claude -p "/autorun 51"` with a fixed session ID (main session on Sonnet – it only delegates, commits and merges; agents keep their own models) and resumes the same conversation whenever it stops while `.claude/autorun.lock` still exists: after a usage limit it sleeps until the reset time reported by the CLI, after an API error (e.g. a Cloudflare 403) it retries in 5 minutes. Limits do not use up attempts. It stops when the skill removes the lock, after 3 normal exits in a row without a new commit, after 12 API errors in a row or after 40 attempts. `scripts/autorun-night.sh 51 --resume` continues the last session after a manual stop. Settings: `AUTORUN_MODEL`, `AUTORUN_MAX_ATTEMPTS`, `AUTORUN_MAX_ERRORS`, `AUTORUN_ERROR_WAIT`, `AUTORUN_WAIT`, `AUTORUN_MAX_STALLS`. Logs: `.claude/autorun-logs/` (`stream-json`, one line per message, so progress is visible during an attempt).
+
+The usage limit is shared with your other sessions: start the run right after a limit reset and avoid using the account meanwhile.
 
 Nobody answers prompts during the run: permissions use `--permission-mode auto --permission-prompts none` (anything that would still ask is denied, not left waiting), questions are refused by the `autorun-guard.sh` hook and the agent logs its own decisions in the umbrella task's decision file. Commands the run needs must be in `.claude/settings.json` `allow`.
 
