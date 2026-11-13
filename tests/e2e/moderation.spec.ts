@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import en from "@/messages/en.json";
-import { seedPublished } from "./db";
+import { seedCommentReport, seedPublished } from "./db";
 import { storageStatePath } from "./env";
 import { expect, loginAs, openMenu, test } from "./helpers";
 
@@ -148,11 +148,73 @@ test("alice invites erin, erin hides dave's comment, alice bans dave who sees wh
   await expect(
     page.getByRole("textbox", { name: en.comments.newLabel }),
   ).toHaveCount(0);
-  const chapterReactions = page.locator("#reactions").getByRole("button");
-  await expect(chapterReactions.first()).toBeDisabled();
+  // Without used reactions a banned reader has no reaction bar (task 103).
+  await expect(page.locator("#reactions").getByRole("button")).toHaveCount(0);
   await expect(
     page.locator("#rating").getByRole("button").first(),
   ).toBeDisabled();
   await page.setViewportSize({ width: 375, height: 800 });
   await expectNoHorizontalScroll(page);
+});
+
+test("the reports tab and the sidebar count the open reports until they are decided", async ({
+  browser,
+}) => {
+  await seedPublished("alice", "Book", [
+    { title: "One", publication: "public", content: "Chapter text" },
+  ]);
+  await seedCommentReport("dave", "erin", "One", "Spam one");
+  await seedCommentReport("dave", "erin", "One", "Spam two");
+
+  const alice = await loginAs(browser, "alice");
+  const { page } = alice;
+  await page.goto("/en/moderation");
+  const sidebarLink = (name: string) =>
+    page.getByRole("link", { name, exact: true });
+  const pending = (count: number) => ({
+    sidebar: en.sidebar.moderationPending
+      .match(/other \{([^}]+)\}/)![1]
+      .replace("#", String(count)),
+    tab: en.moderation.reportsPending
+      .match(/other \{([^}]+)\}/)![1]
+      .replace("#", String(count)),
+  });
+  await expect(sidebarLink(pending(2).sidebar)).toBeVisible();
+  await sidebarLink(pending(2).tab).click();
+  await expect(sidebarLink(pending(2).tab)).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  const reports = page.getByRole("list", { name: en.moderation.reportList });
+  await expect(reports.getByRole("listitem")).toHaveCount(2);
+
+  const resolve = reports.getByRole("button", {
+    name: new RegExp(`^${en.moderation.resolveFor.replace("{date}", "")}`),
+  });
+  await resolve.first().click();
+  await expect(reports.getByRole("listitem")).toHaveCount(1);
+  await expect(
+    sidebarLink(
+      en.sidebar.moderationPending
+        .match(/one \{([^}]+)\}/)![1]
+        .replace("#", "1"),
+    ),
+  ).toBeVisible();
+  await expect(
+    sidebarLink(
+      en.moderation.reportsPending
+        .match(/one \{([^}]+)\}/)![1]
+        .replace("#", "1"),
+    ),
+  ).toBeVisible();
+
+  await reports
+    .getByRole("button", {
+      name: new RegExp(`^${en.moderation.dismissFor.replace("{date}", "")}`),
+    })
+    .click();
+  await expect(page.getByText(en.moderation.noReports)).toBeVisible();
+  await expect(sidebarLink(en.sidebar.moderation)).toBeVisible();
+  await expect(sidebarLink(tab("reports"))).toBeVisible();
+  await alice.context.close();
 });

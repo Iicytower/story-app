@@ -133,7 +133,7 @@ test("dave reports erin's comment under alice's text and alice resolves it", asy
   const reports = alice.page.getByRole("list", {
     name: en.moderation.reportList,
   });
-  await expect(reports.getByText("Reported comment by Erin")).toBeVisible();
+  await expect(reports.getByText("Reported comment: Erin")).toBeVisible();
   await expect(reports.getByText("Buy cheap stuff")).toBeVisible();
   await expect(reports.getByText("Reason: harassment")).toBeVisible();
   await expect(

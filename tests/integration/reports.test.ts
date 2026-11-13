@@ -21,9 +21,12 @@ import { Story } from "@/lib/models/story";
 import { User } from "@/lib/models/user";
 import { SOCIAL_LIMITS, takeUserAttempt } from "@/lib/rate-limit";
 import {
+  countCommunityReports,
+  countPendingReports,
   listAdminReports,
   listCommunityReports,
   listModerationLog,
+  MODERATION_LIST_LIMIT,
 } from "@/lib/social/moderation";
 import en from "@/messages/en.json";
 import { setupTestDb } from "./test-db";
@@ -564,5 +567,81 @@ describe("resolveReport", () => {
     expect(
       await as(alice, () => resolveReport(aboutBob.reportId, "dismissed")),
     ).toEqual(OK);
+  });
+});
+
+describe("pending report counts (task 106)", () => {
+  async function openReport(writer: Types.ObjectId, storyId = book.storyId) {
+    const id = await comment(writer, `By ${writer.toString()}`, storyId);
+    expect(await reportComment(dave, id)).toEqual(OK);
+    return (await Report.findOne({ targetId: id }).lean())!._id.toString();
+  }
+
+  const tab = (viewer: Types.ObjectId, role: "author" | "moderator") =>
+    countCommunityReports(viewer.toString(), {
+      authorId: alice.toString(),
+      role,
+    });
+  const listed = async (viewer: Types.ObjectId) =>
+    (await listCommunityReports(viewer.toString(), alice.toString())).length;
+  const pending = (viewer: Types.ObjectId) =>
+    countPendingReports(viewer.toString());
+
+  it("counts the open reports of the moderated communities, like the tab's list", async () => {
+    const aboutErin = await openReport(erin);
+    // About a moderator: the author sees it, the moderator does not.
+    await openReport(bob);
+    // Another author's community and the admin's queue are not counted.
+    const bobsBook = await seedBook(bob, "Bob's");
+    await openReport(erin, bobsBook.storyId);
+    expect(
+      await as(dave, () => report("story", book.storyId, "spam", "")),
+    ).toEqual(OK);
+
+    expect(await tab(alice, "author")).toBe(2);
+    expect(await listed(alice)).toBe(2);
+    expect(await pending(alice)).toBe(2);
+    expect(await tab(bob, "moderator")).toBe(1);
+    expect(await listed(bob)).toBe(1);
+    // Bob also counts his own community's report.
+    expect(await pending(bob)).toBe(2);
+    for (const user of [dave, erin, frank]) {
+      expect(await pending(user)).toBe(0);
+    }
+
+    expect(await as(alice, () => resolveReport(aboutErin, "resolved"))).toEqual(
+      OK,
+    );
+    expect(await pending(alice)).toBe(1);
+    expect(await pending(bob)).toBe(1);
+  });
+
+  it("an invited moderator and a globally banned one count nothing", async () => {
+    await openReport(erin);
+    await CommunityModerator.updateOne({ userId: bob }, { state: "invited" });
+    expect(await pending(bob)).toBe(0);
+    await CommunityModerator.updateOne({ userId: bob }, { state: "active" });
+    expect(await pending(bob)).toBe(1);
+    await User.updateOne(
+      { _id: bob },
+      { globalBan: { until: null, reason: "x", by: frank } },
+    );
+    expect(await pending(bob)).toBe(0);
+  });
+
+  it("caps the count at the list's length", async () => {
+    await Report.insertMany(
+      Array.from({ length: MODERATION_LIST_LIMIT + 5 }, () => ({
+        reporterId: dave,
+        targetType: "comment",
+        targetId: new Types.ObjectId(),
+        targetUserId: erin,
+        route: "author",
+        authorId: alice,
+        reason: "spam",
+        state: "open",
+      })),
+    );
+    expect(await pending(alice)).toBe(MODERATION_LIST_LIMIT);
   });
 });

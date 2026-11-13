@@ -46,8 +46,26 @@ test("resolves Dave's report, bans Erin and marks Alice's chapter as 18+", async
 
   await page.goto("/en/admin");
   const reports = page.getByRole("list", { name: en.moderation.reportList });
-  await expect(reports.getByText("Reported chapter by Alice")).toBeVisible();
+  await expect(reports.getByText("Reported chapter: Alice")).toBeVisible();
   await expect(reports.getByText(/Reported by Dave on/)).toBeVisible();
+  // A destructive action looks like a button with a red outline, not like a link (D83).
+  const banLink = reports.getByRole("link", {
+    name: en.admin.banFor.replace("{nickname}", "Alice"),
+  });
+  await expect(banLink).toHaveClass(/border-destructive/);
+  const ban = await banLink.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      border: style.borderTopColor,
+      borderWidth: style.borderTopWidth,
+      color: style.color,
+    };
+  });
+  expect(ban.borderWidth).toBe("1px");
+  expect(ban.border).not.toBe("rgba(0, 0, 0, 0)");
+  expect(ban.color).not.toBe(
+    await page.evaluate(() => getComputedStyle(document.body).color),
+  );
   await reports
     .getByRole("button", { name: /^Resolve the report from/ })
     .click();
@@ -98,16 +116,29 @@ test("resolves Dave's report, bans Erin and marks Alice's chapter as 18+", async
     .getByRole("link", { name: tab("log") })
     .click();
   const log = page.getByRole("list", { name: en.moderation.logList });
-  await expect(log.getByText("Admin marked a chapter by Alice as 18+")).toBeVisible();
+  await expect(
+    log.getByText("Admin marked a chapter by Alice as 18+"),
+  ).toBeVisible();
   await expect(log.getByText("Admin banned Erin")).toBeVisible();
-  await expect(log.getByText("Admin resolved a report about Alice")).toBeVisible();
+  await expect(
+    log.getByText("Admin resolved a report about Alice"),
+  ).toBeVisible();
 });
 
 test("fits a narrow screen", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 800 });
-  for (const name of ["reports", "bans", "adult", "categories", "tags", "log"]) {
+  for (const name of [
+    "reports",
+    "bans",
+    "adult",
+    "categories",
+    "tags",
+    "log",
+  ]) {
     await page.goto(`/en/admin?tab=${name}`);
-    await expect(page.getByRole("heading", { name: en.admin.title })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: en.admin.title }),
+    ).toBeVisible();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= window.innerWidth,

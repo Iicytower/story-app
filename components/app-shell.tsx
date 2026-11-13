@@ -4,7 +4,10 @@ import { myAccount } from "@/lib/profiles/queries";
 import { getUserSettings } from "@/lib/settings/queries";
 import { hasPublication } from "@/lib/social/author-stats";
 import { isActiveAdmin } from "@/lib/social/admin";
-import { hasModerationAccess } from "@/lib/social/moderation";
+import {
+  countPendingReports,
+  hasModerationAccess,
+} from "@/lib/social/moderation";
 import { countUnreadConversations } from "@/lib/social/direct-messages";
 import { countUnread } from "@/lib/social/notification-list";
 import { realtimeUrl } from "@/lib/social/realtime";
@@ -19,9 +22,13 @@ export async function AppShell({
 }) {
   // One publication check for both entries.
   const publication = hasPublication(userId);
+  const moderationAccess = publication.then((value) =>
+    hasModerationAccess(userId, value),
+  );
   const [
     { appearance },
     moderation,
+    pendingModeration,
     unread,
     unreadMessages,
     published,
@@ -29,7 +36,10 @@ export async function AppShell({
     account,
   ] = await Promise.all([
     getUserSettings(userId),
-    publication.then((value) => hasModerationAccess(userId, value)),
+    moderationAccess,
+    moderationAccess.then((access) =>
+      access ? countPendingReports(userId) : 0,
+    ),
     countUnread(userId),
     countUnreadConversations(userId),
     publication,
@@ -52,6 +62,7 @@ export async function AppShell({
         avatar={account.avatar}
         initialUnread={unread}
         initialUnreadMessages={unreadMessages}
+        pendingModeration={pendingModeration}
         realtimeUrl={realtimeUrl()}
       />
       {/* Below md the fixed top bar of the sidebar covers the first 2.5rem. */}
