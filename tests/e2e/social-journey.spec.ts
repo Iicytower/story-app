@@ -116,7 +116,7 @@ test.describe("a reader", () => {
       .getByRole("group", { name: en.ratings.chapter })
       .getByRole("button", { name: "4 stars", exact: true })
       .click();
-    await expect(page.getByText("4.0 average from 1 rating")).toBeVisible();
+    await expect(page.getByText("4.0 · 1 rating")).toBeVisible();
 
     // Notifications: the new chapter for dave, the mention for erin, the follower for alice.
     await page.goto("/en/books");

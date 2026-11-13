@@ -31,6 +31,7 @@ import { ownsPlace } from "@/lib/social/visibility";
 import { GuestLibraryButton } from "./guest-library-button";
 import { RatingSection } from "./ratings";
 import { PublicBreadcrumb } from "../breadcrumb";
+import { GuestTopBar } from "../guest-top-bar";
 
 // The picker needs the reader's shelves, so its first opening of a book page creates them too.
 async function libraryPicker(userId: string, nickname: string, slug: string) {
@@ -144,6 +145,12 @@ export default async function PublishedFolderPage({
       <p className="text-muted-foreground mb-4 text-sm">
         {t("by", { nickname: folder.nickname })}
       </p>
+      {folder.description && (
+        // Plain text (D83): React escapes it, the newlines stay.
+        <p className="mb-4 max-w-prose [overflow-wrap:anywhere] whitespace-pre-line">
+          {folder.description}
+        </p>
+      )}
       <div className="mb-4">
         <RatingSection
           viewerId={viewer.ok ? viewer.userId : null}
@@ -152,6 +159,18 @@ export default async function PublishedFolderPage({
         />
       </div>
       <div className="mb-8 flex flex-wrap items-center gap-3">
+        <Button
+          asChild
+          className="h-auto max-w-full min-w-0 shrink py-2 [overflow-wrap:anywhere] whitespace-normal"
+        >
+          {reader?.continueAt ? (
+            <Link href={reader.continueAt.path}>
+              {t("continue", { title: reader.continueAt.title })}
+            </Link>
+          ) : (
+            <Link href={folder.chapters[0].path}>{t("startReading")}</Link>
+          )}
+        </Button>
         {picker ? (
           <LibraryPicker
             folderId={picker.folderId}
@@ -160,17 +179,6 @@ export default async function PublishedFolderPage({
           />
         ) : (
           <GuestLibraryButton path={folder.path} />
-        )}
-        {reader?.continueAt && (
-          <Button
-            asChild
-            variant="outline"
-            className="h-auto max-w-full min-w-0 shrink py-2 [overflow-wrap:anywhere] whitespace-normal"
-          >
-            <Link href={reader.continueAt.path}>
-              {t("continue", { title: reader.continueAt.title })}
-            </Link>
-          </Button>
         )}
         {!own && (
           <ReportButton
@@ -220,6 +228,9 @@ export default async function PublishedFolderPage({
   return viewer.ok ? (
     <AppShell userId={viewer.userId}>{content}</AppShell>
   ) : (
-    <main className="flex flex-1 flex-col">{content}</main>
+    <main className="flex flex-1 flex-col">
+      <GuestTopBar path={folder.path} />
+      {content}
+    </main>
   );
 }

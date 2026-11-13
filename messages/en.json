@@ -838,6 +838,9 @@
     "breadcrumb": "Breadcrumb",
     "contents": "Contents",
     "continue": "Continue reading: {title}",
+    "startReading": "Start reading",
+    "previous": "Previous",
+    "next": "Next chapter",
     "newChapter": "New",
     "commentCount": "{count, plural, one {# comment} other {# comments}}"
   },
@@ -1190,8 +1193,8 @@
     "chapter": "Rate the chapter",
     "book": "Rate the book",
     "star": "{value, plural, one {# star} other {# stars}}",
-    "summary": "{count, plural, =0 {No ratings yet} one {{average, number, ::.0} average from # rating} other {{average, number, ::.0} average from # ratings}}",
-    "mine": "Your rating: {value, plural, one {# star} other {# stars}}",
+    "summary": "{count, plural, =0 {No ratings yet} one {{average, number, ::.0} · # rating} other {{average, number, ::.0} · # ratings}}",
+    "yours": "Your rating:",
     "own": "You cannot rate your own text."
   },
   "moderation": {

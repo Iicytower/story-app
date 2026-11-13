@@ -838,6 +838,9 @@
     "breadcrumb": "Ścieżka nawigacji",
     "contents": "Spis treści",
     "continue": "Czytaj dalej: {title}",
+    "startReading": "Zacznij czytać",
+    "previous": "Poprzedni",
+    "next": "Następny rozdział",
     "newChapter": "Nowy",
     "commentCount": "{count, plural, one {# komentarz} few {# komentarze} many {# komentarzy} other {# komentarza}}"
   },
@@ -1190,8 +1193,8 @@
     "chapter": "Oceń rozdział",
     "book": "Oceń książkę",
     "star": "{value, plural, one {# gwiazdka} few {# gwiazdki} many {# gwiazdek} other {# gwiazdki}}",
-    "summary": "{count, plural, =0 {Brak ocen} one {Średnia {average, number, ::.0} z # oceny} few {Średnia {average, number, ::.0} z # ocen} many {Średnia {average, number, ::.0} z # ocen} other {Średnia {average, number, ::.0} z # oceny}}",
-    "mine": "Twoja ocena: {value, plural, one {# gwiazdka} few {# gwiazdki} many {# gwiazdek} other {# gwiazdki}}",
+    "summary": "{count, plural, =0 {Brak ocen} one {{average, number, ::.0} · # ocena} few {{average, number, ::.0} · # oceny} many {{average, number, ::.0} · # ocen} other {{average, number, ::.0} · # oceny}}",
+    "yours": "Twoja ocena:",
     "own": "Nie możesz oceniać własnego tekstu."
   },
   "moderation": {
