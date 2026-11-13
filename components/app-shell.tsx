@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { myAccount } from "@/lib/profiles/queries";
@@ -46,6 +47,7 @@ export async function AppShell({
     isActiveAdmin(userId),
     myAccount(userId),
   ]);
+  const t = await getTranslations("common");
   const hiddenItems = [
     ...(moderation ? [] : ["moderation" as const]),
     ...(admin ? [] : ["admin" as const]),
@@ -53,6 +55,12 @@ export async function AppShell({
   ];
   return (
     <div className="flex min-h-dvh w-full">
+      <a
+        href="#main"
+        className="bg-background focus-visible:ring-ring/50 sr-only z-50 rounded-md border px-3 py-2 text-sm font-medium focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus-visible:ring-[3px]"
+      >
+        {t("skipToContent")}
+      </a>
       <AppSidebar
         defaultCollapsed={appearance.sidebarCollapsed}
         defaultEditorCollapsed={appearance.editorSidebarCollapsed}
@@ -66,7 +74,11 @@ export async function AppShell({
         realtimeUrl={realtimeUrl()}
       />
       {/* Below md the fixed top bar of the sidebar covers the first 2.5rem. */}
-      <main className="flex min-w-0 flex-1 flex-col pt-10 md:pt-0">
+      <main
+        id="main"
+        tabIndex={-1}
+        className="flex min-w-0 flex-1 flex-col pt-10 outline-none md:pt-0"
+      >
         {children}
       </main>
     </div>

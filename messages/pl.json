@@ -9,7 +9,8 @@
     "create": "Utwórz",
     "creating": "Tworzenie…",
     "rename": "Zmień nazwę",
-    "appName": "Story App"
+    "appName": "Story App",
+    "skipToContent": "Przejdź do treści"
   },
   "sidebar": {
     "home": "Strona główna",
@@ -74,7 +75,7 @@
     "bio": "O mnie",
     "bioHelp": "Widoczne na Twoim profilu. Możesz użyć **pogrubienia**, *kursywy*, linków i > cytatów.",
     "bioLength": "{length, number} / {max, number}",
-    "saveBio": "Zaktualizuj „O mnie”",
+    "saveBio": "Zapisz „O mnie”",
     "bioSaved": "„O mnie” zapisane.",
     "avatar": "Avatar",
     "avatarsUnavailable": "Avatary są teraz niedostępne.",
@@ -457,7 +458,7 @@
     "sortUpdated": "Ostatnio zmienione",
     "sortManual": "Ręcznie",
     "sortAlpha": "A–Z",
-    "searchPlaceholder": "Szukaj w tytułach i treści wszystkich książek, naciśnij Enter",
+    "searchPlaceholder": "Szukaj w tytułach i treści",
     "searchLabel": "Szukaj w książkach",
     "filterByTag": "Filtruj po tagu",
     "empty": "Nie ma jeszcze książek. Utwórz książkę albo nowy rozdział.",
@@ -500,7 +501,7 @@
   },
   "menu": {
     "actionsFor": "Akcje: {name}",
-    "actions": "Akcje",
+    "actions": "Akcje: wszystkie książki",
     "sort": "Sortuj",
     "statusPublic": "Publiczny",
     "statusPrivate": "Niepubliczny",
@@ -1368,7 +1369,7 @@
   },
   "messages": {
     "title": "Wiadomości",
-    "empty": "Nie masz jeszcze rozmów. Zacznij ją przyciskiem Nowa wiadomość albo Wiadomość na czyimś profilu.",
+    "empty": "Nie masz jeszcze rozmów. Zacznij rozmowę przyciskiem „Nowa wiadomość” albo „Wiadomość” na czyimś profilu.",
     "new": "Nowa wiadomość",
     "recipient": "Do",
     "list": "Rozmowy",

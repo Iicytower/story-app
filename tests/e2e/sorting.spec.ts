@@ -51,14 +51,14 @@ test("switches folder sort modes and drags a folder in manual mode", async ({
   await page.goto("/books");
   const folders = page.getByRole("list", { name: "Books" });
   const names = folders.getByRole("listitem").locator("a > span > span:first-child");
-  await expectSort(page, "Actions", "Last updated");
+  await expectSort(page, "Actions for all books", "Last updated");
   await expect(names).toHaveText(["banana", "cherry", "Apple"]);
   await expect(page.getByRole("button", { name: /^Move / })).toHaveCount(0);
 
-  await sortBy(page, "Actions", "A–Z");
+  await sortBy(page, "Actions for all books", "A–Z");
   await expect(names).toHaveText(["Apple", "banana", "cherry"]);
 
-  await sortBy(page, "Actions", "Manual");
+  await sortBy(page, "Actions for all books", "Manual");
   await expect(names).toHaveText(["Apple", "banana", "cherry"]);
   await dragWithKeyboard(
     page.getByRole("button", { name: "Move cherry" }),
@@ -68,7 +68,7 @@ test("switches folder sort modes and drags a folder in manual mode", async ({
   await expect(names).toHaveText(["Apple", "cherry", "banana"]);
 
   await page.reload();
-  await expectSort(page, "Actions", "Manual");
+  await expectSort(page, "Actions for all books", "Manual");
   await expect(names).toHaveText(["Apple", "cherry", "banana"]);
 
   await dragWithMouse(

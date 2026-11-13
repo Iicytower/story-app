@@ -61,7 +61,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 104 | ↳ [Wiadomości i aktualności](done/104-messages-feed.md) (subtask 51) | 94, 95 | [x] |
 | 105 | ↳ [Publiczna strona książki i rozdziału](done/105-public-book-chapter.md) (subtask 51) | 96, 98, 103 | [x] |
 | 106 | ↳ [Moderacja i panel admina](done/106-moderation-admin.md) (subtask 51) | 95 | [x] |
-| 107 | ↳ [Audyt końcowy UI/UX i raport po poprawkach](107-ui-audit.md) (subtask 51) | 93–106 | [ ] |
+| 107 | ↳ [Audyt końcowy UI/UX i raport po poprawkach](done/107-ui-audit.md) (subtask 51) | 93–106 | [x] |
 | 66 | [Okładki folderów i oznaczenie 18+ (zbiorczy)](done/66-covers-and-adult-rating.md) | – | [x] |
 | 65 | ↳ [Oznaczenie 18+](done/65-adult-rating.md) (subtask 66) | – | [x] |
 | 26 | ↳ [Upload okładek](done/26-cover-upload.md) (subtask 66) | 65 | [x] |
@@ -116,6 +116,14 @@ Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 - Asonans w rymach, zwinięty pod wynikami; 271 kluczy na 4,2 mln form, wyniki bliskie losowym (po tasku 34).
 - narzędzie do znajdywania etymologii
 - narzędzie do frazeologizmów. wytłumaczenie frazeologizmu oraz znalezienie na zadany opis. 
+- Strona 404 dla zalogowanych w układzie aplikacji (sidebar, link do strony głównej); `/stats` konta bez publikacji jako pusty stan zamiast 404 (audyt 107).
+- Tytuły kart z nazwą książki, wersji i rozdziału zamiast ogólnych „Książka / Wersja / Edytor – Story App” (audyt 107).
+- Notatki książki i rozdziału: ukryty pasek narzędzi (widoczny przy fokusie) rezerwuje nad tekstem ~67 px w wąskim panelu, więc krótka notatka wygląda na wyśrodkowaną (3.7); pasek jako nakładka albo w jednym wierszu (audyt 107).
+- Domyślne półki biblioteki zapisane jako tekst w języku konta („Czytam”, „Na później”, „Przeczytane”) nie zmieniają się z językiem UI (audyt 107).
+- `/forums`: liczniki kategorii agregują wszystkie wątki przy każdym wejściu – liczniki zapisane w kategorii albo cache i indeks (audyt bezpieczeństwa 107, luka ze 103).
+- Licznik oczekujących zgłoszeń w `AppShell` liczony na każdej stronie, jedno zapytanie na moderowaną społeczność – `cache()` albo jedno zapytanie zbiorcze (audyt bezpieczeństwa 107, luka ze 106).
+- `getLastEditedChapter` wczytuje wszystkie książki użytkownika do `$in` – zapytanie po rozdziałach z `userId` i sortowaniem (audyt bezpieczeństwa 107).
+- Migracja usuwająca stare dokumenty `tag:*` z `rankings` (po 100); indeks `Story {userId, publishedAt}` usuwa już `syncIndexes()` w `lib/migrate.ts` (audyt bezpieczeństwa 107).
 
 ## Branche
 

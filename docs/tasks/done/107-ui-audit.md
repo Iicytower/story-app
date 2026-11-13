@@ -1,6 +1,6 @@
 # 107 – Audyt końcowy UI/UX i raport po poprawkach
 
-Subtask 51. Podstawa: [D83](../decisions/D083-poprawa-ux-ui.md) i raport [`docs/ui-ux-report.md`](../ui-ux-report.md) (numery punktów w nawiasach). Branch `feature/107-ui-audit` z `fix/ui`, merge do `fix/ui`.
+Subtask 51. Podstawa: [D83](../../decisions/D083-poprawa-ux-ui.md) i raport [`docs/ui-ux-report.md`](../../ui-ux-report.md) (numery punktów w nawiasach). Branch `feature/107-ui-audit` z `fix/ui`, merge do `fix/ui`.
 
 ## Zakres
 

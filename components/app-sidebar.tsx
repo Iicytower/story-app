@@ -250,6 +250,7 @@ function AccountMenu({
       <Button
         variant="ghost"
         aria-label={t("accountMenu", { name })}
+        data-account
         className={`${ITEM} px-1.5`}
       >
         <UserAvatar nickname={nickname ?? ""} src={avatar} alt="" size={22} />
@@ -266,7 +267,10 @@ function AccountMenu({
       ) : (
         trigger
       )}
-      <DropdownMenuContent side="top" className="min-w-48">
+      <DropdownMenuContent
+        side="top"
+        className="min-w-[max(12rem,var(--radix-dropdown-menu-trigger-width))]"
+      >
         {profilePath !== null && (
           <DropdownMenuItem asChild>
             <Link href={profilePath}>
@@ -454,6 +458,8 @@ export function AppSidebar({
   const tCommon = useTranslations("common");
   const menu = useRef<HTMLButtonElement>(null);
   const sidebar = useRef<HTMLElement>(null);
+  // The account menu item that opened the settings is gone once they close.
+  const settingsFromMenu = useRef(false);
   const openNotifications = useCallback(() => {
     setDrawerOpen(false);
     setNotificationsOpen(true);
@@ -476,6 +482,7 @@ export function AppSidebar({
   useEffect(
     () =>
       onOpenSettings((tab) => {
+        settingsFromMenu.current = false;
         setDrawerOpen(false);
         setSettingsTab(tab);
         setSettingsOpen(true);
@@ -494,9 +501,16 @@ export function AppSidebar({
   }
 
   function openSettings() {
+    settingsFromMenu.current = true;
     setDrawerOpen(false);
     setSettingsTab("appearance");
     setSettingsOpen(true);
+  }
+
+  // Below md the sidebar is hidden and its buttons are in the closed drawer.
+  function focusInSidebar(selector: string) {
+    const target = sidebar.current?.querySelector<HTMLElement>(selector);
+    (target?.checkVisibility() ? target : menu.current)?.focus();
   }
 
   return (
@@ -582,6 +596,11 @@ export function AppSidebar({
         onOpenChange={setSettingsOpen}
         tab={settingsTab}
         toolsAvailable={toolsAvailable}
+        onCloseAutoFocus={(event) => {
+          if (!settingsFromMenu.current) return;
+          event.preventDefault();
+          focusInSidebar("[data-account]");
+        }}
       />
       <NotificationsPanel
         open={notificationsOpen}
@@ -589,10 +608,7 @@ export function AppSidebar({
         onUnreadChange={setUnread}
         onCloseAutoFocus={(event) => {
           event.preventDefault();
-          // Below md the sidebar is hidden and the bell is in the closed drawer.
-          const bell =
-            sidebar.current?.querySelector<HTMLElement>("[data-bell]");
-          (bell?.checkVisibility() ? bell : menu.current)?.focus();
+          focusInSidebar("[data-bell]");
         }}
       />
       <Toaster position="bottom-right" containerAriaLabel={t("toasts")} />

@@ -76,7 +76,9 @@ export default async function FolderPage({
             {t("allFolders")}
           </Link>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold">{folder.name}</h1>
+            <h1 className="min-w-0 text-2xl font-semibold break-words">
+              {folder.name}
+            </h1>
             {folder.adult.adult && <AdultBadge />}
             <span className="mr-auto" />
             <FolderMenu
@@ -114,7 +116,7 @@ export default async function FolderPage({
           />
         </div>
       </div>
-      <div className="grid gap-6 md:grid-cols-[1fr_20rem]">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_20rem]">
         {folder.chapters.length === 0 ? (
           <p className="text-muted-foreground">{t("noChapters")}</p>
         ) : (
@@ -136,7 +138,9 @@ export default async function FolderPage({
                       className="hover:bg-muted/50 flex min-w-0 flex-1 flex-col gap-1 px-4 py-3"
                     >
                       <span className="flex items-center gap-2">
-                        <span className="font-medium">{chapter.title}</span>
+                        <span className="min-w-0 font-medium break-words">
+                          {chapter.title}
+                        </span>
                         {chapter.adult.adult && <AdultBadge />}
                       </span>
                       <span className="text-muted-foreground line-clamp-2 text-sm">

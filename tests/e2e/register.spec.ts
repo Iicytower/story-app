@@ -58,7 +58,7 @@ test("registering shows the recovery codes once, then signs in with an empty acc
 
   await expect(page.getByRole("navigation", { name: "Main" })).toBeVisible();
   await page.goto("/books");
-  await expect(page.getByRole("button", { name: "Actions" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Actions for all books" })).toBeVisible();
   await expect(page.getByRole("list", { name: "Books" })).toHaveCount(0);
 });
 

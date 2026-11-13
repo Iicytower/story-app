@@ -118,8 +118,10 @@ export default async function StoriesPage({
                     />
                   )}
                   <span className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
-                    <span className="mr-auto flex min-w-0 flex-wrap items-center gap-2">
-                      <span className="font-medium">{folder.name}</span>
+                    <span className="mr-auto flex max-w-full min-w-0 flex-wrap items-center gap-2">
+                      <span className="min-w-0 font-medium break-words">
+                        {folder.name}
+                      </span>
                       {folder.adult.adult && <AdultBadge />}
                       <TagChips tags={folder.tags} />
                     </span>
@@ -186,10 +188,12 @@ async function SearchResults({
               href={`/chapters/${story.id}`}
               className="hover:bg-muted/50 flex flex-col gap-1 px-4 py-3"
             >
-              <span className="flex items-baseline gap-2">
-                <span className="font-medium">{story.title}</span>
+              <span className="flex flex-wrap items-baseline gap-x-2">
+                <span className="min-w-0 font-medium break-words">
+                  {story.title}
+                </span>
                 {story.adult && <AdultBadge />}
-                <span className="text-muted-foreground text-xs">
+                <span className="text-muted-foreground min-w-0 text-xs break-words">
                   {t("inFolder", { folder: story.folderName })}
                 </span>
               </span>

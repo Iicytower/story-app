@@ -125,18 +125,21 @@ export function SettingsDialog({
   onOpenChange,
   tab = "appearance",
   toolsAvailable,
+  onCloseAutoFocus,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   tab?: SettingsTab;
   // Avatars need the classifier on the tools server (D56).
   toolsAvailable: boolean;
+  onCloseAutoFocus?: (event: Event) => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/* Mounted only while open, so every opening starts from the saved values. */}
       <DialogContent
         aria-describedby={undefined}
+        onCloseAutoFocus={onCloseAutoFocus}
         className="flex max-h-[90dvh] flex-col sm:h-[36rem] sm:max-w-2xl"
       >
         <SettingsContent initialTab={tab} toolsAvailable={toolsAvailable} />
