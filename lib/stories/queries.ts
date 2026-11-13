@@ -101,3 +101,22 @@ export async function getStoryForExport(userId: string, id: string) {
     .lean();
   return story && serialize(story);
 }
+
+// Home page shortcut (D83): the user's chapter changed last, in a book that still exists.
+export async function getLastEditedChapter(userId: string) {
+  await connectDB();
+  const folders = await Folder.find({ userId, deletedAt: null })
+    .select({ name: 1 })
+    .lean();
+  const story = await Story.findOne({
+    userId,
+    folderId: { $in: folders.map(({ _id }) => _id) },
+    deletedAt: null,
+  })
+    .sort({ updatedAt: -1, _id: -1 })
+    .select({ title: 1, folderId: 1 })
+    .lean();
+  if (!story) return null;
+  const folder = folders.find(({ _id }) => _id.equals(story.folderId));
+  return { id: story._id.toString(), title: story.title, bookName: folder!.name };
+}

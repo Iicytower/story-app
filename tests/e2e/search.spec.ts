@@ -265,3 +265,38 @@ test("a signed-in user searches in the sidebar view", async ({ page }) => {
   await page.getByRole("searchbox").press("Enter");
   await expect(results(page)).toHaveCount(1);
 });
+
+test("the search button runs the search and the placeholder fits at 375 px", async ({
+  browser,
+}) => {
+  await seedPublished();
+  const visitor = await anonymous(browser);
+  await visitor.goto("/");
+  await visitor
+    .getByRole("searchbox", { name: "Search published stories" })
+    .fill("dragon");
+  await visitor.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(visitor).toHaveURL(/\?q=dragon/);
+  await expect(results(visitor)).toHaveCount(1);
+
+  await visitor.setViewportSize({ width: 375, height: 800 });
+  for (const [path, placeholder] of [
+    ["/en", "Search stories"],
+    ["/pl", "Szukaj opowiadań"],
+  ]) {
+    await visitor.goto(path);
+    const field = visitor.getByRole("searchbox");
+    await expect(field).toHaveAttribute("placeholder", placeholder);
+    const fits = await field.evaluate((input: HTMLInputElement) => {
+      const style = getComputedStyle(input);
+      const context = document.createElement("canvas").getContext("2d")!;
+      context.font = style.font;
+      const room =
+        input.clientWidth -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight);
+      return context.measureText(input.placeholder).width <= room;
+    });
+    expect(fits).toBe(true);
+  }
+});

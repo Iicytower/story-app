@@ -2,16 +2,11 @@
 
 export const RANKING_STORED = 30;
 export const RANKING_SHOWN = 10;
-export const TAG_RANKING_SHOWN = 5;
 export const RANKING_MAX_AGE_MS = 60 * 60 * 1000;
 export const RANKING_LEASE_MS = 5 * 60 * 1000;
 export const RANKING_WEEK_DAYS = 7;
 // Books with fewer ratings are not ranked; also the weight of the global mean.
 export const MIN_RATINGS = 5;
-
-export type RankingKey = "weekly" | "topRated" | `tag:${string}`;
-
-export const tagRankingKey = (tag: string): RankingKey => `tag:${tag}`;
 
 export interface ScoredBook {
   folderId: string;

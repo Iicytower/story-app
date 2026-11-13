@@ -6,6 +6,7 @@ import {
   seedPublished as seedBook,
   seedRanking,
   seedStory,
+  updateFolder,
   withE2EDb,
 } from "./db";
 import { storageStatePath } from "./env";
@@ -53,14 +54,14 @@ test("a visitor sees the hero in both languages", async ({ page: visitor }) => {
   await expect(
     visitor.getByRole("heading", {
       level: 1,
-      name: "Your stories, from the first line to the first reader",
+      name: "Your books, from the first line to the first reader",
     }),
   ).toBeVisible();
   await expect(visitor.getByText(/^Write chapter by chapter/)).toBeVisible();
   await expect(
     visitor.getByRole("heading", { level: 2, name: "Search stories" }),
   ).toBeVisible();
-  await expect(visitor).toHaveTitle("Story App – write and publish stories");
+  await expect(visitor).toHaveTitle("Story App – write and publish books");
   await expect(visitor.locator('meta[name="description"]')).toHaveAttribute(
     "content",
     /^Write chapter by chapter/,
@@ -190,13 +191,12 @@ async function seedRankedBooks() {
     { user: "erin", folder: "Day" },
   ]);
   await seedRanking("topRated", []);
-  await seedRanking("tag:fantasy", [{ user: "erin", folder: "Day" }]);
 }
 
 const ranking = (page: Page, name: string) =>
   page.getByRole("list", { name, exact: true }).getByRole("link");
 
-test("a visitor sees the rankings with 18+ badges and no empty or followed sections", async ({
+test("a visitor sees the rankings with 18+ badges and no empty sections", async ({
   page: visitor,
 }) => {
   await seedRankedBooks();
@@ -219,20 +219,12 @@ test("a visitor sees the rankings with 18+ badges and no empty or followed secti
     weekly.nth(1).getByRole("img", { name: "For adults only (18+)" }),
   ).toHaveCount(0);
 
-  await expect(
-    visitor.getByRole("heading", { level: 2, name: "Popular in categories" }),
-  ).toBeVisible();
-  await expect(ranking(visitor, "Fantasy")).toHaveCount(1);
   await expect(visitor.getByRole("heading", { name: "Top rated" })).toHaveCount(
     0,
   );
-  await expect(
-    visitor.getByRole("heading", { name: "From authors you follow" }),
-  ).toHaveCount(0);
 
   await visitor.goto("/pl");
   await expect(ranking(visitor, "Popularne w tym tygodniu")).toHaveCount(2);
-  await expect(ranking(visitor, "Fantasy")).toHaveCount(1);
 
   await visitor.setViewportSize({ width: 375, height: 800 });
   await visitor.goto("/en");
@@ -274,25 +266,90 @@ test.describe("signed in", () => {
     await expect(page).toHaveURL("/en");
   });
 
-  test("the rankings have a section with the latest chapters of followed authors", async ({
+  test("no category or followed sections; a category chip filters the list", async ({
     page,
   }) => {
     await seedRankedBooks();
+    await updateFolder("Day", { tags: ["fantasy"] });
+    await seedFollow("alice", "dave");
     await page.goto("/");
     await expect(ranking(page, "Popular this week")).toHaveCount(2);
-    await expect(
-      page.getByRole("heading", { name: "From authors you follow" }),
-    ).toHaveCount(0);
+    await expect(page.getByRole("heading", { level: 2 })).toHaveText([
+      "Recently published",
+      "Popular this week",
+    ]);
 
-    await seedFollow("alice", "dave");
-    await page.reload();
-    const followed = ranking(page, "From authors you follow");
-    await expect(followed).toHaveCount(1);
-    await expect(followed.first()).toContainText("Dusk");
-    await expect(followed.first()).toContainText("Night by Dave");
-    await expect(followed.first()).toHaveAttribute(
-      "href",
-      "/en/p/Dave/night/dusk",
-    );
+    await page
+      .getByRole("navigation", { name: "Filter by category" })
+      .getByRole("link", { name: "Fantasy" })
+      .click();
+    await expect(page).toHaveURL(/tag=fantasy/);
+    const results = page
+      .getByRole("list", { name: "Search results" })
+      .getByRole("link");
+    await expect(results).toHaveCount(1);
+    await expect(results).toContainText("Dawn");
+
+    await page.goto("/pl");
+    await expect(page.getByRole("heading", { level: 2 })).toHaveText([
+      "Ostatnio opublikowane",
+      "Popularne w tym tygodniu",
+    ]);
   });
+
+  test("the last edited chapter has a Continue link next to New book", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByText(/^Last edited:/)).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Continue" })).toHaveCount(0);
+    await page.getByRole("button", { name: "New book" }).click();
+    await expect(
+      page.getByRole("dialog").getByRole("heading", { name: "New book" }),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    await seedStory("alice", {
+      title: "Older",
+      folder: "Saga",
+      updatedAt: new Date(Date.now() - 60 * 60_000),
+    });
+    const latest = await seedStory("alice", {
+      title: "Latest",
+      folder: "Saga",
+      updatedAt: new Date(Date.now() - 60_000),
+    });
+    await seedStory("bob", { title: "Bob's newer", folder: "Other" });
+    await seedStory("alice", {
+      title: "Deleted",
+      folder: "Saga",
+      deletedAt: new Date(),
+    });
+    await page.reload();
+    await expect(page.getByText(/^Last edited:/)).toHaveText(
+      "Last edited: Latest (Saga)",
+    );
+    await page.getByRole("link", { name: "Continue" }).click();
+    await expect(page).toHaveURL(`/en/chapters/${latest}`);
+
+    await page.goto("/pl");
+    await expect(page.getByText(/^Ostatnio edytowane:/)).toHaveText(
+      "Ostatnio edytowane: Latest (Saga)",
+    );
+    await expect(page.getByRole("link", { name: "Kontynuuj" })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Nowa książka" }),
+    ).toBeVisible();
+  });
+});
+
+test("a visitor does not see the writing shortcut", async ({
+  page: visitor,
+}) => {
+  await seedStory("alice", { title: "Mine", folder: "Saga" });
+  await visitor.goto("/");
+  await expect(visitor.getByText(/^Last edited:/)).toHaveCount(0);
+  await expect(visitor.getByRole("button", { name: "New book" })).toHaveCount(
+    0,
+  );
 });

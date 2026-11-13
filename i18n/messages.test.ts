@@ -79,7 +79,12 @@ describe("plurals", () => {
 
 describe("naming (D83)", () => {
   // The public search keeps "opowiadania" for published works (D83).
-  const ALLOWED = new Set(["search.title", "search.label", "search.none"]);
+  const ALLOWED = new Set([
+    "search.title",
+    "search.label",
+    "search.placeholder",
+    "search.none",
+  ]);
 
   // Arguments ({folder}) and select keys (folder {…}) are code, not UI text.
   const text = (message: string) =>

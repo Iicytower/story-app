@@ -2,8 +2,6 @@ import { Types } from "mongoose";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Block } from "@/lib/models/block";
 import { Folder } from "@/lib/models/folder";
-import { Follow } from "@/lib/models/follow";
-import { PredefinedTag } from "@/lib/models/predefined-tag";
 import { Ranking } from "@/lib/models/ranking";
 import { Rating } from "@/lib/models/rating";
 import { ReadEvent } from "@/lib/models/read-event";
@@ -43,12 +41,11 @@ async function banGlobally(userId: Types.ObjectId) {
   );
 }
 
-async function seedBook(owner: Types.ObjectId, name: string, tags?: string[]) {
+async function seedBook(owner: Types.ObjectId, name: string) {
   const folder = await Folder.create({
     userId: owner,
     name,
     published: true,
-    tags,
   });
   const story = await Story.create({
     userId: owner,
@@ -141,29 +138,6 @@ describe("weekly ranking", () => {
     expect(await stored("weekly")).toEqual([
       { folderId: one.folderId.toString(), score: 1 },
     ]);
-  });
-
-  it("ranks each predefined category present in the data", async () => {
-    await PredefinedTag.create([
-      { _id: "fantasy", labels: { en: "Fantasy", pl: "Fantastyka" } },
-      { _id: "horror", labels: { en: "Horror", pl: "Horror" } },
-    ]);
-    const one = await seedBook(alice, "One", ["fantasy", "own"]);
-    const two = await seedBook(bob, "Two", ["fantasy"]);
-    await seedBook(bob, "Three", ["own"]);
-    await read(one, ["u:1"]);
-    await read(two, ["u:1", "u:2"]);
-    await recomputeRanking("weekly");
-
-    expect(
-      (await stored("tag:fantasy")).map(({ folderId }) => folderId),
-    ).toEqual([two.folderId.toString(), one.folderId.toString()]);
-    expect(await Ranking.findById("tag:horror")).toBeNull();
-    expect(await Ranking.findById("tag:own")).toBeNull();
-    const home = await getHomeRankings(null);
-    expect(
-      home.tags.map(({ key, books }) => ({ key, books: names(books) })),
-    ).toEqual([{ key: "fantasy", books: ["Two", "One"] }]);
   });
 });
 
@@ -290,20 +264,6 @@ describe("lazy recomputation", () => {
     expect((globalThis as { afterTasks?: unknown[] }).afterTasks).toEqual([]);
   });
 
-  it("does not overwrite categories of a newer computation", async () => {
-    await PredefinedTag.create({
-      _id: "fantasy",
-      labels: { en: "Fantasy", pl: "Fantastyka" },
-    });
-    const one = await seedBook(alice, "One", ["fantasy"]);
-    await read(one, ["u:1"]);
-    const newer = new Date(Date.now() + 60_000);
-    await Ranking.create({ _id: "tag:fantasy", items: [], computedAt: newer });
-    expect(await recomputeRanking("weekly")).toBe(true);
-    const tag = await Ranking.findById("tag:fantasy").lean();
-    expect(tag).toMatchObject({ items: [], computedAt: newer });
-  });
-
   it("recomputes both stored rankings", async () => {
     await recomputeStaleRankings();
     const ids = (await Ranking.find().select({ _id: 1 }).lean()).map(
@@ -411,48 +371,5 @@ describe("visibility at read time", () => {
     expect((await stored("topRated")).map(({ folderId }) => folderId)).toEqual([
       two.folderId.toString(),
     ]);
-  });
-});
-
-describe("from followed authors", () => {
-  it("is null for a guest and lists followed authors' latest public chapters", async () => {
-    const one = await seedBook(alice, "One");
-    await seedBook(bob, "Two");
-    await Story.create({
-      userId: alice,
-      folderId: one.folderId,
-      title: "Draft",
-      publication: "hidden",
-    });
-    await Story.create({
-      userId: alice,
-      folderId: one.folderId,
-      title: "Newer",
-      publication: "public",
-      publishedAt: new Date(Date.now() + 1000),
-    });
-    await Follow.create({ followerId: viewer, followeeId: alice });
-
-    expect((await getHomeRankings(null)).followed).toBeNull();
-    const { followed } = await getHomeRankings(viewer.toString());
-    expect(followed).toEqual([
-      expect.objectContaining({
-        title: "Newer",
-        path: "/p/Alice/one/newer",
-        book: expect.objectContaining({ name: "One" }),
-      }),
-      expect.objectContaining({
-        title: "One one",
-        path: "/p/Alice/one/one-one",
-      }),
-    ]);
-    expect((await getHomeRankings(bob.toString())).followed).toEqual([]);
-  });
-
-  it("leaves out authors hidden from the viewer", async () => {
-    await seedBook(alice, "One");
-    await Follow.create({ followerId: viewer, followeeId: alice });
-    await Block.create({ blockerId: alice, blockedId: viewer });
-    expect((await getHomeRankings(viewer.toString())).followed).toEqual([]);
   });
 });

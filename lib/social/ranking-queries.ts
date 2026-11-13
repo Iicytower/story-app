@@ -1,18 +1,11 @@
 import { Types } from "mongoose";
 import { after } from "next/server";
-import { isAdult } from "@/lib/adult/adult";
 import { connectDB } from "@/lib/db";
 import { Folder } from "@/lib/models/folder";
-import { Follow } from "@/lib/models/follow";
 import { Ranking, type RankingItem } from "@/lib/models/ranking";
 import { Rating } from "@/lib/models/rating";
 import { ReadEvent } from "@/lib/models/read-event";
-import { Story } from "@/lib/models/story";
-import {
-  findChapterPaths,
-  findPublicBooks,
-  type PublicBook,
-} from "@/lib/publish/queries";
+import { findPublicBooks, type PublicBook } from "@/lib/publish/queries";
 import { feedHiddenUserIds } from "@/lib/social/feed";
 import { hiddenUserIdsFor } from "@/lib/social/permissions";
 import {
@@ -25,17 +18,10 @@ import {
   rankByScore,
   rankTopRated,
   type ScoredBook,
-  TAG_RANKING_SHOWN,
-  tagRankingKey,
 } from "@/lib/social/rankings";
 import { statsDay } from "@/lib/social/read-stats";
-import { listPredefinedTags } from "@/lib/tags/queries";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-// Followed authors' chapters read before the visibility filter; the section shows RANKING_SHOWN.
-const FOLLOWED_CANDIDATES = 30;
-// Follows have no count limit; past this many the section reads the latest followed authors.
-const FOLLOWED_AUTHORS = 500;
 
 export type ComputedRanking = "weekly" | "topRated";
 const COMPUTED: ComputedRanking[] = ["weekly", "topRated"];
@@ -72,7 +58,7 @@ async function rankableFolders(
     published: true,
     deletedAt: null,
   })
-    .select({ tags: 1 })
+    .select({ _id: 1 })
     .lean();
 }
 
@@ -105,25 +91,17 @@ async function computeWeekly(now: Date, banned: Types.ObjectId[]) {
     counts.map(({ _id }) => _id),
     banned,
   );
-  const tagsOf = new Map(
-    folders.map(({ _id, tags }) => [_id.toString(), tags ?? []]),
+  const rankable = new Set(folders.map(({ _id }) => _id.toString()));
+  return toItems(
+    rankByScore(
+      counts
+        .filter(({ _id }) => rankable.has(_id.toString()))
+        .map(({ _id, readers }) => ({
+          folderId: _id.toString(),
+          score: readers,
+        })),
+    ),
   );
-  const ranked = rankByScore(
-    counts
-      .filter(({ _id }) => tagsOf.has(_id.toString()))
-      .map(({ _id, readers }) => ({
-        folderId: _id.toString(),
-        score: readers,
-      })),
-  );
-  const predefined = await listPredefinedTags();
-  const byTag = predefined.flatMap(({ key }) => {
-    const books = ranked.filter(({ folderId }) =>
-      tagsOf.get(folderId)!.includes(key),
-    );
-    return books.length > 0 ? [{ key, items: toItems(books) }] : [];
-  });
-  return { items: toItems(ranked), byTag };
 }
 
 // Book ratings only, with the same filter as the counters on the page (task 78).
@@ -169,115 +147,16 @@ export async function recomputeRanking(key: ComputedRanking): Promise<boolean> {
   if (key === "topRated") {
     return (await finish(await computeTopRated(banned))).modifiedCount === 1;
   }
-  const { items, byTag } = await computeWeekly(now, banned);
-  // A lost lease: a newer computation owns the result.
-  if ((await finish(items)).modifiedCount === 0) return false;
-  // The categories come with the weekly ranking; a category with no books this week goes.
-  // An older computation never overwrites a newer one's categories.
-  await Ranking.deleteMany({
-    _id: {
-      $regex: /^tag:/,
-      $nin: byTag.map(({ key }) => tagRankingKey(key)),
-    },
-    computedAt: { $lte: now },
-  });
-  if (byTag.length > 0) {
-    await Ranking.bulkWrite(
-      // The upsert matches _id alone, so it never collides with a newer document.
-      byTag.flatMap(({ key, items }) => [
-        {
-          updateOne: {
-            filter: { _id: tagRankingKey(key) },
-            update: { $setOnInsert: { items: [], computedAt: new Date(0) } },
-            upsert: true,
-          },
-        },
-        {
-          updateOne: {
-            filter: { _id: tagRankingKey(key), computedAt: { $lte: now } },
-            update: { $set: { items, computedAt: now } },
-          },
-        },
-      ]),
-    );
-  }
-  return true;
+  return (await finish(await computeWeekly(now, banned))).modifiedCount === 1;
 }
 
 export async function recomputeStaleRankings(): Promise<void> {
   await Promise.all(COMPUTED.map(recomputeRanking));
 }
 
-export interface FollowedChapter {
-  title: string;
-  path: string;
-  adult: boolean;
-  book: PublicBook;
-}
-
-// Counted live: the latest public chapters of the authors the viewer follows (D38 at read time).
-async function followedChapters(
-  viewerId: string,
-  hidden: Types.ObjectId[],
-): Promise<FollowedChapter[]> {
-  const follows = await Follow.find(
-    { followerId: viewerId },
-    { _id: 0, followeeId: 1 },
-  )
-    .sort({ createdAt: -1, _id: -1 })
-    .limit(FOLLOWED_AUTHORS)
-    .lean();
-  const hiddenIds = new Set(hidden.map(String));
-  const authorIds = follows
-    .map(({ followeeId }) => followeeId)
-    .filter((id) => !hiddenIds.has(id.toString()));
-  if (authorIds.length === 0) return [];
-  const stories = await Story.find({
-    userId: { $in: authorIds },
-    publication: "public",
-    publishedAt: { $type: "date" },
-    deletedAt: null,
-  })
-    .sort({ publishedAt: -1, _id: -1 })
-    .limit(FOLLOWED_CANDIDATES)
-    .select({ userId: 1, folderId: 1, title: 1, adult: 1 })
-    .lean();
-  const books = await findPublicBooks(
-    [...new Set(stories.map(({ folderId }) => folderId.toString()))].map(
-      (id) => new Types.ObjectId(id),
-    ),
-    hidden,
-  );
-  const visible = stories
-    .filter(({ folderId }) => books.has(folderId.toString()))
-    .slice(0, RANKING_SHOWN);
-  const paths = await findChapterPaths(
-    visible,
-    new Map(
-      visible.map(({ userId, folderId }) => [
-        userId.toString(),
-        books.get(folderId.toString())!.nickname,
-      ]),
-    ),
-  );
-  return visible.map((story) => {
-    const book = books.get(story.folderId.toString())!;
-    return {
-      title: story.title,
-      path: paths.get(story._id.toString())!,
-      adult: book.adult || isAdult(story.adult),
-      book,
-    };
-  });
-}
-
 export interface HomeRankings {
   weekly: PublicBook[];
   topRated: PublicBook[];
-  // Predefined tags only, in the stored order; the page sorts them by label.
-  tags: { key: string; books: PublicBook[] }[];
-  // null for a guest.
-  followed: FollowedChapter[] | null;
 }
 
 // Stored rankings filtered for the viewer: D38, global bans and blocks both ways (as the feed).
@@ -287,10 +166,11 @@ export async function getHomeRankings(
 ): Promise<HomeRankings> {
   await connectDB();
   const now = new Date();
-  const [docs, hidden, predefined] = await Promise.all([
-    Ranking.find().select({ items: 1, computedAt: 1, computing: 1 }).lean(),
+  const [docs, hidden] = await Promise.all([
+    Ranking.find({ _id: { $in: COMPUTED } })
+      .select({ items: 1, computedAt: 1, computing: 1 })
+      .lean(),
     viewerId ? feedHiddenUserIds(viewerId) : hiddenUserIdsFor(null),
-    listPredefinedTags(),
   ]);
   const byKey = new Map(docs.map((doc) => [doc._id, doc]));
   if (
@@ -314,19 +194,9 @@ export async function getHomeRankings(
     ].map((id) => new Types.ObjectId(id)),
     hidden,
   );
-  const shown = (key: string, limit: number) =>
+  const shown = (key: ComputedRanking) =>
     (byKey.get(key)?.items ?? [])
       .flatMap(({ folderId }) => books.get(folderId.toString()) ?? [])
-      .slice(0, limit);
-  return {
-    weekly: shown("weekly", RANKING_SHOWN),
-    topRated: shown("topRated", RANKING_SHOWN),
-    tags: predefined
-      .map(({ key }) => ({
-        key,
-        books: shown(tagRankingKey(key), TAG_RANKING_SHOWN),
-      }))
-      .filter(({ books }) => books.length > 0),
-    followed: viewerId ? await followedChapters(viewerId, hidden) : null,
-  };
+      .slice(0, RANKING_SHOWN);
+  return { weekly: shown("weekly"), topRated: shown("topRated") };
 }

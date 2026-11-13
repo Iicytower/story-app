@@ -1,8 +1,10 @@
+import { SearchIcon } from "lucide-react";
 import Form from "next/form";
 import { headers } from "next/headers";
 import { getLocale, getTranslations } from "next-intl/server";
 import { getPathname } from "@/i18n/navigation";
 import { TagFilter } from "@/components/tag-filter";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { connectDB } from "@/lib/db";
 import {
@@ -41,7 +43,7 @@ export async function PublicSearch({
   return (
     <section className="flex flex-col gap-6">
       <Heading className="text-2xl font-semibold">{t("title")}</Heading>
-      <Form action={searchPath} role="search">
+      <Form action={searchPath} role="search" className="flex gap-2">
         <Input
           key={query}
           name="q"
@@ -51,6 +53,9 @@ export async function PublicSearch({
           placeholder={t("placeholder")}
           aria-label={t("label")}
         />
+        <Button type="submit" size="icon" aria-label={t("submit")}>
+          <SearchIcon />
+        </Button>
         {selectedTags.map((selected) => (
           <input key={selected} type="hidden" name="tag" value={selected} />
         ))}
