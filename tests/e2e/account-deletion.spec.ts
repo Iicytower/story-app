@@ -37,7 +37,7 @@ test("a new account comments, deletes itself and keeps its nickname taken", asyn
   await expect(comments.getByRole("link", { name: "Frank" })).toBeVisible();
 
   await page.goto("/en/books");
-  const settings = await openSettings(page);
+  const settings = await openSettings(page, "Account");
   await settings
     .getByRole("button", { name: en.settings.deleteAccount })
     .click();

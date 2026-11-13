@@ -41,10 +41,12 @@ test("the sidebar names the app and the account, whose menu opens the settings",
   await openSettings(page);
 
   const dialog = page.getByRole("dialog", { name: "Settings" });
-  for (const name of ["Appearance", "Language", "Account"])
-    await expect(
-      dialog.getByRole("region", { name, exact: true }),
-    ).toBeVisible();
+  await expect(dialog.getByRole("tab")).toHaveText([
+    "Appearance",
+    "Profile",
+    "Account",
+    "Notifications",
+  ]);
   await expect(
     dialog.getByRole("button", { name: "Log out", exact: true }),
   ).toHaveCount(0);
@@ -365,9 +367,9 @@ test("a signed-in reader keeps the sidebar on a public book and chapter, a guest
     const visitor = await guest.newPage();
     await visitor.goto(path);
     await expect(visitor.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(
-      visitor.getByRole("navigation", { name: "Main" }),
-    ).toHaveCount(0);
+    await expect(visitor.getByRole("navigation", { name: "Main" })).toHaveCount(
+      0,
+    );
   }
   await reader.close();
   await guest.close();

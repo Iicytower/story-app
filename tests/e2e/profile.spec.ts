@@ -27,7 +27,7 @@ async function expectAliceProfile(page: Page) {
   await page.goto("/en/p/Alice");
   await expect(page).toHaveTitle("Alice – Story App");
   await expect(page.getByRole("heading", { name: "Alice" })).toBeVisible();
-  const bio = page.getByRole("region", { name: "About" });
+  const bio = page.getByRole("region", { name: "About me" });
   await expect(bio.locator("strong")).toHaveText("Bold words");
   await expect(bio.locator("b")).toHaveCount(0);
   const books = page.getByRole("list", { name: "Books" });
@@ -114,19 +114,31 @@ test.describe("as a user", () => {
     await context.close();
   });
 
-  test("the owner edits the bio and finds it through My profile", async ({
+  test("the owner edits “About me” and finds it through My profile", async ({
     page,
   }) => {
     await page.goto("/en/books");
-    const dialog = await openSettings(page);
-    const bio = dialog.getByLabel("Bio", { exact: true });
+    const dialog = page.getByRole("dialog", { name: "Settings" });
+    // The API for "Edit profile" (task 102); repeated until the sidebar has hydrated.
+    await expect(async () => {
+      await page.evaluate(() =>
+        window.dispatchEvent(
+          new CustomEvent("story-app:open-settings", { detail: "profile" }),
+        ),
+      );
+      await expect(dialog).toBeVisible({ timeout: 1000 });
+    }).toPass();
+    await expect(
+      dialog.getByRole("tab", { name: "Profile", exact: true }),
+    ).toHaveAttribute("aria-selected", "true");
+    const bio = dialog.getByRole("textbox", { name: "About me" });
     await expect(bio).toHaveValue("");
     await bio.fill("I write *short* stories.");
     await expect(dialog.getByText("24 / 1,000")).toBeVisible();
-    await dialog.getByRole("button", { name: "Update bio" }).click();
+    await dialog.getByRole("button", { name: "Update “About me”" }).click();
     await expect(
-      dialog.getByRole("region", { name: "Profile" }).getByRole("status"),
-    ).toHaveText("The bio is saved.");
+      dialog.getByRole("region", { name: "About me" }).getByRole("status"),
+    ).toHaveText("“About me” is saved.");
     await page.keyboard.press("Escape");
 
     await page
@@ -135,10 +147,10 @@ test.describe("as a user", () => {
       .click();
     await expect(page).toHaveURL("/en/p/Alice");
     await expect(
-      page.getByRole("region", { name: "About" }).locator("em"),
+      page.getByRole("region", { name: "About me" }).locator("em"),
     ).toHaveText("short");
 
-    const again = await openSettings(page);
+    const again = await openSettings(page, "Profile");
     await again.getByRole("link", { name: "View profile" }).click();
     await expect(again).toBeHidden();
     await expect(page).toHaveURL("/en/p/Alice");
@@ -198,7 +210,7 @@ test.describe("as a user", () => {
     page,
   }) => {
     await page.goto("/en/books");
-    const settings = await openSettings(page);
+    const settings = await openSettings(page, "Profile");
     await settings.getByRole("button", { name: "Avatar", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "Avatar", exact: true });
     await expect(dialog.getByText(en.avatar.none)).toBeVisible();

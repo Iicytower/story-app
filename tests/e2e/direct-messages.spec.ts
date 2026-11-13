@@ -105,7 +105,7 @@ test.describe("signed in", () => {
   }) => {
     const erin = await loginAs(browser, "erin");
     await erin.page.goto("/en/books");
-    const dialog = await openSettings(erin.page);
+    const dialog = await openSettings(erin.page, "Profile");
     const nobody = dialog
       .getByRole("group", { name: en.settings.dmFrom })
       .getByLabel(en.settings.dmFromOptions.nobody);
@@ -114,7 +114,7 @@ test.describe("signed in", () => {
     // Saved at once: it is still chosen when the dialog opens again.
     await erin.page.reload();
     await expect(
-      (await openSettings(erin.page))
+      (await openSettings(erin.page, "Profile"))
         .getByRole("group", { name: en.settings.dmFrom })
         .getByLabel(en.settings.dmFromOptions.nobody),
     ).toBeChecked();

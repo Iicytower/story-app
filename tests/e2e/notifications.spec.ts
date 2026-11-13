@@ -172,7 +172,7 @@ test("a kind turned off in the settings creates no notification", async ({
   browser,
 }) => {
   await page.goto("/en/books");
-  const settings = await openSettings(page);
+  const settings = await openSettings(page, "Notifications");
   const comments = settings
     .getByRole("group", { name: en.settings.notificationGroups.interactions })
     .getByRole("checkbox", { name: en.settings.notificationTypes.comment });

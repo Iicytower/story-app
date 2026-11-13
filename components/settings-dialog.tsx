@@ -2,7 +2,13 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { XIcon } from "lucide-react";
-import { useEffect, useRef, useState, useTransition } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+} from "react";
 import {
   changeLocale,
   listDictionary,
@@ -34,6 +40,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
@@ -54,6 +61,7 @@ import {
   type OptionalNotificationType,
 } from "@/lib/social/notifications";
 import { setAccent, setTheme } from "@/lib/theme";
+import { SETTINGS_TABS, type SettingsTab } from "@/lib/settings/open-settings";
 
 const SYSTEM = "system";
 type ThemeChoice = Theme | typeof SYSTEM;
@@ -95,36 +103,63 @@ export function clearSettingsReopen(): void {
 
 const SELECT = "border-input bg-background h-9 rounded-md border px-2 text-sm";
 
+const WIDE = "(min-width: 40rem)";
+
+function subscribeToWidth(onChange: () => void) {
+  const query = window.matchMedia(WIDE);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+// Tabs on the left from sm up, above the content on a phone (D83).
+function useWide(): boolean {
+  return useSyncExternalStore(
+    subscribeToWidth,
+    () => window.matchMedia(WIDE).matches,
+    () => true,
+  );
+}
+
 export function SettingsDialog({
   open,
   onOpenChange,
+  tab = "appearance",
   toolsAvailable,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  tab?: SettingsTab;
   // Avatars need the classifier on the tools server (D56).
   toolsAvailable: boolean;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/* Mounted only while open, so every opening starts from the saved values. */}
-      {/* The profile section made it taller than a laptop screen. */}
       <DialogContent
         aria-describedby={undefined}
-        className="max-h-[90dvh] overflow-y-auto"
+        className="flex max-h-[90dvh] flex-col sm:h-[36rem] sm:max-w-2xl"
       >
-        <SettingsContent toolsAvailable={toolsAvailable} />
+        <SettingsContent initialTab={tab} toolsAvailable={toolsAvailable} />
       </DialogContent>
     </Dialog>
   );
 }
 
-function SettingsContent({ toolsAvailable }: { toolsAvailable: boolean }) {
+function SettingsContent({
+  initialTab,
+  toolsAvailable,
+}: {
+  initialTab: SettingsTab;
+  toolsAvailable: boolean;
+}) {
   const t = useTranslations("settings");
   const tCommon = useTranslations("common");
   const locale = useLocale() as Locale;
   const pathname = usePathname();
   const router = useRouter();
+  const wide = useWide();
+  // Kept here: the password and deletion forms replace the tabs and come back to Account.
+  const [tab, setTab] = useState(initialTab);
   const [changingPassword, setChangingPassword] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [confirmLogOutOthers, setConfirmLogOutOthers] = useState(false);
@@ -135,19 +170,29 @@ function SettingsContent({ toolsAvailable }: { toolsAvailable: boolean }) {
   const [accent, setAccentChoice] = useState(savedAccentValue);
   const [language, setLanguage] = useState(locale);
   const [error, setError] = useState<string | null>(null);
+  const [justSaved, setJustSaved] = useState(false);
   const [pending, startTransition] = useTransition();
   const changed =
     theme !== saved || accent !== savedAccentValue || language !== locale;
 
   if (changingPassword) {
-    return <ChangePasswordForm onDone={() => setChangingPassword(false)} />;
+    return (
+      <div className="min-h-0 overflow-y-auto">
+        <ChangePasswordForm onDone={() => setChangingPassword(false)} />
+      </div>
+    );
   }
   if (deletingAccount) {
-    return <DeleteAccountForm onDone={() => setDeletingAccount(false)} />;
+    return (
+      <div className="min-h-0 overflow-y-auto">
+        <DeleteAccountForm onDone={() => setDeletingAccount(false)} />
+      </div>
+    );
   }
 
   function save() {
     setError(null);
+    setJustSaved(false);
     startTransition(async () => {
       if (theme !== saved) {
         const value = theme === SYSTEM ? null : theme;
@@ -172,153 +217,186 @@ function SettingsContent({ toolsAvailable }: { toolsAvailable: boolean }) {
         router.replace(`${pathname}${window.location.search}`, {
           locale: language,
         });
+        return;
       }
+      setJustSaved(true);
     });
   }
 
+  const panel = "min-h-0 overflow-y-auto px-1 pb-1";
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
       <DialogHeader>
         <DialogTitle>{t("title")}</DialogTitle>
       </DialogHeader>
-      <section aria-labelledby="settings-appearance" className="grid gap-2">
-        <h3 id="settings-appearance" className="font-medium">
-          {t("appearance")}
-        </h3>
-        <Label htmlFor="settings-theme" className="font-normal">
-          {t("theme")}
-        </Label>
-        <select
-          id="settings-theme"
-          className={SELECT}
-          value={theme}
-          onChange={(event) =>
-            setThemeChoice(event.target.value as ThemeChoice)
-          }
+      <Tabs
+        value={tab}
+        onValueChange={(value) => setTab(value as SettingsTab)}
+        orientation={wide ? "vertical" : "horizontal"}
+        className="min-h-0 flex-1 gap-4"
+      >
+        <TabsList
+          aria-label={t("title")}
+          className="shrink-0 group-data-[orientation=horizontal]/tabs:h-auto group-data-[orientation=horizontal]/tabs:w-full group-data-[orientation=horizontal]/tabs:flex-wrap group-data-[orientation=vertical]/tabs:w-40"
         >
-          {THEME_CHOICES.map((choice) => (
-            <option key={choice} value={choice}>
-              {t(`themes.${choice}`)}
-            </option>
+          {SETTINGS_TABS.map((value) => (
+            <TabsTrigger key={value} value={value} className="py-1">
+              {t(value)}
+            </TabsTrigger>
           ))}
-        </select>
-        <span id="settings-accent" className="text-sm">
-          {t("accent")}
-        </span>
-        <div
-          role="radiogroup"
-          aria-labelledby="settings-accent"
-          className="flex gap-3 py-1"
-        >
-          {ACCENTS.map((choice) => (
-            <WithTooltip key={choice} label={t(`accents.${choice}`)}>
-              <label className="relative">
-                <input
-                  type="radio"
-                  name="accent"
-                  value={choice}
-                  aria-label={t(`accents.${choice}`)}
-                  checked={accent === choice}
-                  onChange={() => setAccentChoice(choice)}
-                  className="peer absolute inset-0 cursor-pointer opacity-0"
-                />
-                {/* data-accent gives the swatch that palette's --primary. */}
-                <span
-                  data-accent={choice}
-                  className="bg-primary ring-offset-background peer-checked:ring-foreground peer-focus-visible:outline-ring block size-7 rounded-full ring-offset-2 peer-checked:ring-2 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-4"
-                />
-              </label>
-            </WithTooltip>
-          ))}
-        </div>
-      </section>
-      <section aria-labelledby="settings-language" className="grid gap-2">
-        <h3 id="settings-language" className="font-medium">
-          {t("languageSection")}
-        </h3>
-        <Label htmlFor="settings-locale" className="font-normal">
-          {t("language")}
-        </Label>
-        <select
-          id="settings-locale"
-          className={SELECT}
-          value={language}
-          onChange={(event) => setLanguage(event.target.value as Locale)}
-        >
-          {routing.locales.map((option) => (
-            <option key={option} value={option} lang={option}>
-              {LOCALE_NAMES[option]}
-            </option>
-          ))}
-        </select>
-      </section>
-      <DictionarySection />
-      <NotificationsSection />
-      <MessagesSection />
-      <BlockedSection />
-      <ProfileSection toolsAvailable={toolsAvailable} />
-      <section aria-labelledby="settings-account" className="grid gap-2">
-        <h3 id="settings-account" className="font-medium">
-          {t("account")}
-        </h3>
-        <Button
-          variant="outline"
-          className="justify-self-start"
-          onClick={() => setChangingPassword(true)}
-        >
-          {t("changePassword")}
-        </Button>
-        <Button
-          variant="outline"
-          className="justify-self-start"
-          onClick={() => setConfirmLogOutOthers(true)}
-        >
-          {t("logOutOthers")}
-        </Button>
-        {othersLoggedOut && (
-          <p role="status" className="text-muted-foreground text-sm">
-            {t("logOutOthersDone")}
-          </p>
-        )}
-        <ConfirmDialog
-          open={confirmLogOutOthers}
-          onOpenChange={setConfirmLogOutOthers}
-          title={t("logOutOthersTitle")}
-          description={t("logOutOthersDescription")}
-          confirmLabel={t("logOutOthersConfirm")}
-          action={logOutOtherDevices}
-          onDone={() => setOthersLoggedOut(true)}
-        />
-        <div className="mt-4 grid gap-2">
-          <p
-            id="settings-delete-account-help"
-            className="text-muted-foreground text-sm"
-          >
-            {t("deleteAccountHelp")}
-          </p>
-          <Button
-            variant="destructive"
-            className="justify-self-start"
-            aria-describedby="settings-delete-account-help"
-            onClick={() => setDeletingAccount(true)}
-          >
-            {t("deleteAccount")}
-          </Button>
-        </div>
-      </section>
-      {error && (
-        <p role="alert" className="text-destructive text-sm">
-          {error}
-        </p>
-      )}
-      <DialogFooter>
-        <DialogClose asChild>
-          <Button variant="outline">{tCommon("cancel")}</Button>
-        </DialogClose>
-        <Button disabled={!changed || pending} onClick={save}>
-          {pending ? tCommon("saving") : tCommon("save")}
-        </Button>
-      </DialogFooter>
+        </TabsList>
+        <TabsContent value="appearance" className={panel}>
+          <div className="flex flex-col gap-6">
+            <div className="grid gap-2">
+              <Label htmlFor="settings-theme" className="font-normal">
+                {t("theme")}
+              </Label>
+              <select
+                id="settings-theme"
+                className={SELECT}
+                value={theme}
+                onChange={(event) =>
+                  setThemeChoice(event.target.value as ThemeChoice)
+                }
+              >
+                {THEME_CHOICES.map((choice) => (
+                  <option key={choice} value={choice}>
+                    {t(`themes.${choice}`)}
+                  </option>
+                ))}
+              </select>
+              <span id="settings-accent" className="text-sm">
+                {t("accent")}
+              </span>
+              <div
+                role="radiogroup"
+                aria-labelledby="settings-accent"
+                className="flex gap-3 py-1"
+              >
+                {ACCENTS.map((choice) => (
+                  <WithTooltip key={choice} label={t(`accents.${choice}`)}>
+                    <label className="relative">
+                      <input
+                        type="radio"
+                        name="accent"
+                        value={choice}
+                        aria-label={t(`accents.${choice}`)}
+                        checked={accent === choice}
+                        onChange={() => setAccentChoice(choice)}
+                        className="peer absolute inset-0 cursor-pointer opacity-0"
+                      />
+                      {/* data-accent gives the swatch that palette's --primary. */}
+                      <span
+                        data-accent={choice}
+                        className="bg-primary ring-offset-background peer-checked:ring-foreground peer-focus-visible:outline-ring block size-7 rounded-full ring-offset-2 peer-checked:ring-2 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-4"
+                      />
+                    </label>
+                  </WithTooltip>
+                ))}
+              </div>
+            </div>
+            <section aria-labelledby="settings-language" className="grid gap-2">
+              <h3 id="settings-language" className="font-medium">
+                {t("languageSection")}
+              </h3>
+              <Label htmlFor="settings-locale" className="font-normal">
+                {t("language")}
+              </Label>
+              <select
+                id="settings-locale"
+                className={SELECT}
+                value={language}
+                onChange={(event) => setLanguage(event.target.value as Locale)}
+              >
+                {routing.locales.map((option) => (
+                  <option key={option} value={option} lang={option}>
+                    {LOCALE_NAMES[option]}
+                  </option>
+                ))}
+              </select>
+            </section>
+            <DictionarySection />
+            {error && (
+              <p role="alert" className="text-destructive text-sm">
+                {error}
+              </p>
+            )}
+            {/* Only theme, accent and language wait for Save; the rest is saved at once. The footer sits inside the scrolling panel, so it drops the dialog-edge negative margins. */}
+            <DialogFooter className="mx-0 mb-0 flex-row flex-wrap items-center justify-end rounded-lg">
+              <p
+                role="status"
+                className="text-muted-foreground mr-auto text-sm"
+              >
+                {justSaved && !changed && t("saved")}
+              </p>
+              <DialogClose asChild>
+                <Button variant="outline">{tCommon("cancel")}</Button>
+              </DialogClose>
+              <Button disabled={!changed || pending} onClick={save}>
+                {pending ? tCommon("saving") : tCommon("save")}
+              </Button>
+            </DialogFooter>
+          </div>
+        </TabsContent>
+        <TabsContent value="profile" className={panel}>
+          <div className="flex flex-col gap-6">
+            <ProfileSection toolsAvailable={toolsAvailable} />
+            <MessagesSection />
+            <BlockedSection />
+          </div>
+        </TabsContent>
+        <TabsContent value="account" className={panel}>
+          <div className="grid gap-2">
+            <Button
+              variant="outline"
+              className="justify-self-start"
+              onClick={() => setChangingPassword(true)}
+            >
+              {t("changePassword")}
+            </Button>
+            <Button
+              variant="outline"
+              className="justify-self-start"
+              onClick={() => setConfirmLogOutOthers(true)}
+            >
+              {t("logOutOthers")}
+            </Button>
+            {othersLoggedOut && (
+              <p role="status" className="text-muted-foreground text-sm">
+                {t("logOutOthersDone")}
+              </p>
+            )}
+            <ConfirmDialog
+              open={confirmLogOutOthers}
+              onOpenChange={setConfirmLogOutOthers}
+              title={t("logOutOthersTitle")}
+              description={t("logOutOthersDescription")}
+              confirmLabel={t("logOutOthersConfirm")}
+              action={logOutOtherDevices}
+              onDone={() => setOthersLoggedOut(true)}
+            />
+            <div className="mt-4 grid gap-2">
+              <p
+                id="settings-delete-account-help"
+                className="text-muted-foreground text-sm"
+              >
+                {t("deleteAccountHelp")}
+              </p>
+              <Button
+                variant="destructive"
+                className="justify-self-start"
+                aria-describedby="settings-delete-account-help"
+                onClick={() => setDeletingAccount(true)}
+              >
+                {t("deleteAccount")}
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+        <TabsContent value="notifications" className={panel}>
+          <NotificationsSection />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -457,10 +535,7 @@ function NotificationsSection() {
   }
 
   return (
-    <section aria-labelledby="settings-notifications" className="grid gap-2">
-      <h3 id="settings-notifications" className="font-medium">
-        {t("notifications")}
-      </h3>
+    <div className="grid gap-2">
       <p className="text-muted-foreground text-sm">{t("notificationsHelp")}</p>
       {!settings && !error && (
         <p role="status" className="text-muted-foreground text-sm">
@@ -498,7 +573,7 @@ function NotificationsSection() {
           {error}
         </p>
       )}
-    </section>
+    </div>
   );
 }
 
@@ -739,7 +814,7 @@ function ProfileSection({ toolsAvailable }: { toolsAvailable: boolean }) {
   return (
     <section aria-labelledby="settings-profile" className="grid gap-2">
       <h3 id="settings-profile" className="font-medium">
-        {t("profile")}
+        {t("bio")}
       </h3>
       {!profile ? (
         !message && (
@@ -749,11 +824,9 @@ function ProfileSection({ toolsAvailable }: { toolsAvailable: boolean }) {
         )
       ) : (
         <>
-          <Label htmlFor="settings-bio" className="font-normal">
-            {t("bio")}
-          </Label>
           <Textarea
             id="settings-bio"
+            aria-labelledby="settings-profile"
             aria-describedby="settings-bio-help"
             value={bio}
             maxLength={MAX_BIO_LENGTH}

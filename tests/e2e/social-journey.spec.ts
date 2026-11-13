@@ -84,7 +84,9 @@ test.describe("a reader", () => {
       .click();
     await page.keyboard.press("Escape");
     await page.goto("/en/library");
-    await expect(page.getByRole("link", { name: "Book", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Book", exact: true }),
+    ).toBeVisible();
     await seedReadingProgress("dave", "alice", "Book", "One");
     await page.goto(BOOK);
     await page
@@ -353,7 +355,7 @@ test.describe("a new account", () => {
     await comment(page, "Hello from Grace");
 
     await page.goto("/en/books");
-    const settings = await openSettings(page);
+    const settings = await openSettings(page, "Account");
     await settings
       .getByRole("button", { name: en.settings.deleteAccount })
       .click();

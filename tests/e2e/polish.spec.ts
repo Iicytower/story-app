@@ -34,17 +34,23 @@ test("switching to Polish keeps the page, survives a reload and is saved", async
   ).toBeVisible();
   await expect(dialog.getByLabel("Język interfejsu")).toHaveValue("pl");
   await expect(dialog.getByRole("button", { name: "Zapisz" })).toBeDisabled();
-  for (const name of ["Wygląd", "Język", "Konto"])
-    await expect(dialog.getByRole("region", { name })).toBeVisible();
+  await expect(dialog.getByRole("tab")).toHaveText([
+    "Wygląd",
+    "Profil",
+    "Konto",
+    "Powiadomienia",
+  ]);
+  await expect(dialog.getByRole("region", { name: "Język" })).toBeVisible();
   await expect(dialog.getByLabel("Motyw").locator("option")).toHaveText([
     "Jasny",
     "Ciemny",
     "Systemowy",
   ]);
+  await expect(dialog.getByRole("button", { name: "Anuluj" })).toBeVisible();
+  await dialog.getByRole("tab", { name: "Konto" }).click();
   await expect(
     dialog.getByRole("button", { name: "Zmień hasło" }),
   ).toBeVisible();
-  await expect(dialog.getByRole("button", { name: "Anuluj" })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.locator("html")).toHaveAttribute("lang", "pl");
   await expect(

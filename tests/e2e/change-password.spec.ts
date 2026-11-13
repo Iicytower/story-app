@@ -35,7 +35,7 @@ async function signIn(page: Page, password: string) {
 test.beforeEach(async ({ page }) => {
   await restorePassword("carol");
   await login(page, "carol");
-  const settings = await openSettings(page);
+  const settings = await openSettings(page, "Account");
   await settings.getByRole("button", { name: "Change password" }).click();
 });
 
@@ -103,7 +103,7 @@ test("Cancel goes back to the settings and clears what was typed", async ({
   await page.getByRole("button", { name: "Cancel" }).click();
   const settings = page.getByRole("dialog", { name: "Settings" });
   await expect(
-    settings.getByRole("region", { name: "Account", exact: true }),
+    settings.getByRole("tabpanel", { name: "Account", exact: true }),
   ).toBeVisible();
 
   await settings.getByRole("button", { name: "Change password" }).click();
@@ -112,8 +112,8 @@ test("Cancel goes back to the settings and clears what was typed", async ({
   // Closing the whole dialog starts from the settings next time.
   await page.getByLabel("Current password").fill("typed");
   await page.keyboard.press("Escape");
-  await openSettings(page);
+  await openSettings(page, "Account");
   await expect(
-    settings.getByRole("region", { name: "Account", exact: true }),
+    settings.getByRole("tabpanel", { name: "Account", exact: true }),
   ).toBeVisible();
 });

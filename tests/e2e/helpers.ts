@@ -195,9 +195,15 @@ export async function accountAction(
   await page.getByRole("menuitem", { name, exact: true }).click();
 }
 
-export async function openSettings(page: Page) {
+// The dialog opens on Appearance; other settings are behind their tab (D83).
+export async function openSettings(
+  page: Page,
+  tab?: "Appearance" | "Profile" | "Account" | "Notifications",
+) {
   await accountAction(page, "Settings");
-  return page.getByRole("dialog", { name: "Settings" });
+  const dialog = page.getByRole("dialog", { name: "Settings" });
+  if (tab) await dialog.getByRole("tab", { name: tab, exact: true }).click();
+  return dialog;
 }
 
 export async function logOut(page: Page) {

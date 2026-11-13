@@ -55,7 +55,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 98 | ↳ [Strona książki, opis i wersje](done/98-book-page.md) (subtask 51) | 97 | [x] |
 | 99 | ↳ [Edytor: odstęp, układ mobile, paski, nazwy trybów](done/99-editor-ux.md) (subtask 51) | 95 | [x] |
 | 100 | ↳ [Strona główna: skrót do pisania i mniej sekcji](done/100-home-page.md) (subtask 51) | 97 | [x] |
-| 101 | ↳ [Dialog ustawień z zakładkami](101-settings-tabs.md) (subtask 51) | 95 | [ ] |
+| 101 | ↳ [Dialog ustawień z zakładkami](done/101-settings-tabs.md) (subtask 51) | 95 | [x] |
 | 102 | ↳ [Profil, biblioteka, statystyki](102-profile-library-stats.md) (subtask 51) | 101 | [ ] |
 | 103 | ↳ [Reakcje i fora](103-reactions-forums.md) (subtask 51) | 94 | [ ] |
 | 104 | ↳ [Wiadomości i aktualności](104-messages-feed.md) (subtask 51) | 94, 95 | [ ] |

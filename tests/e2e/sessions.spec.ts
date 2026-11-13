@@ -29,7 +29,7 @@ test("changing the password in one browser signs out the other", async ({
   const here = await device(browser);
   const other = await device(browser);
 
-  const settings = await openSettings(here.page);
+  const settings = await openSettings(here.page, "Account");
   await settings.getByRole("button", { name: "Change password" }).click();
   await here.page.getByLabel("Current password").fill(USERS.carol.password);
   const next = "Meadow-new-secret-678";
@@ -50,7 +50,7 @@ test("Log out other devices keeps this one signed in", async ({ browser }) => {
   const here = await device(browser);
   const other = await device(browser);
 
-  const settings = await openSettings(here.page);
+  const settings = await openSettings(here.page, "Account");
   await settings.getByRole("button", { name: "Log out other devices" }).click();
   await here.page
     .getByRole("alertdialog")
