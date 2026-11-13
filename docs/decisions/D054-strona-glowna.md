@@ -1,6 +1,6 @@
 # D54 – Strona główna z hero i ostatnio opublikowanymi (2026-11-04)
 
-Status: aktualna. Zmienia D38, D42, D46. Zmieniona w D83 (sekcje, skrót do pisania).
+Status: aktualna. Zmienia D38, D42, D46. Zmieniona w D83 (sekcje, skrót do pisania). Karuzele (2026-11-13, bez taska): patrz ostatni punkt.
 
 - Zmienia D38, D42 i D46 (task 49). `/` zostaje jedną stroną dla gościa i zalogowanego, wyszukiwarka zostaje na `/`. Gość widzi hero (nagłówek, opis, „Create account” i „Log in”), potem wyszukiwarkę i „Recently published”; zalogowany to samo bez hero, z sidebarem. Sidebar traci pozycję Search, zostaje Home (decyzje użytkownika).
 - Dialog logowania z D42 bez zmian; przycisk w prawym górnym rogu i CTA hero otwierają ten sam dialog, CTA w trybie rejestracji albo logowania.
@@ -10,3 +10,4 @@ Status: aktualna. Zmienia D38, D42, D46. Zmieniona w D83 (sekcje, skrót do pisa
 - Link Home w sidebarze ma `prefetch={false}`: render `/` czyta listy publiczne, a prefetch z każdej strony (także edytora) robiłby to przy każdym wejściu; jego spóźniona odpowiedź psuła też zaznaczenie w testach E2E edytora.
 - Tytuł strony głównej „Story App – write and publish stories” z opisem z hero. U gościa `h1` to nagłówek hero, u zalogowanego „Search stories”.
 - Odstępstwo od „tylko desktop” (D46): strona główna jest dopracowana pod wąski ekran (od 375 px); reszta aplikacji w tasku 51 (decyzja użytkownika).
+- Karuzele (2026-11-13, bez taska): „Recently published”, „Popular this week” i „Top rated” to poziome karuzele (shadcn `carousel`, pakiet `embla-carousel-react`, `app/[locale]/home-carousel.tsx`) z pionowymi kartami (okładka 120×180, tytuł, autor, data). Zastępuje „klient pokazuje 5 i dokłada po 5”: przycisk „Show more” i `recent-list.tsx` usunięte, karuzela przewija wszystkie 15 pobranych. Strzałki znikają na krańcach (`home.previous`, `home.next`), na telefonie przeciąganie. Pusta kategoria nadal się nie pokazuje; sekcje to `region`, nie `list`.

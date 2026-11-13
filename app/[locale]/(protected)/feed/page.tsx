@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { after, connection } from "next/server";
-import type { ReactNode } from "react";
-import { AdultBadge } from "@/components/adult";
-import { LocalDate } from "@/components/local-date";
-import { PublicCover } from "@/components/cover";
+import { ChevronRight, ChevronsUp, Newspaper } from "lucide-react";
+import { FeedEntry } from "@/components/feed-entry";
 import { Button } from "@/components/ui/button";
-import { profilePath } from "@/components/user-link";
 import { Link, redirect } from "@/i18n/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { retryDueCovers } from "@/lib/covers/mutations";
@@ -17,12 +14,6 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
   return { title: t("feed") };
 }
-
-// One link of an entry stands out (5.2); the others show their underline on hover or focus.
-const mainLinkClass =
-  "font-semibold [overflow-wrap:anywhere] underline decoration-muted-foreground/40 underline-offset-4 hover:decoration-current";
-const linkClass =
-  "[overflow-wrap:anywhere] underline-offset-4 hover:underline focus-visible:underline";
 
 export default async function FeedPage({
   searchParams,
@@ -36,175 +27,42 @@ export default async function FeedPage({
   const cursor = parseFeedCursor(afterParam);
   const { entries, next } = await getFeed(user.userId, cursor);
   const t = await getTranslations("feed");
-  const tCovers = await getTranslations("covers");
 
   return (
     <PageContainer width="narrow">
       <h1 className="text-2xl font-semibold">{t("title")}</h1>
       {entries.length === 0 && !cursor && !next ? (
-        <p className="text-muted-foreground">
-          {t("empty")}{" "}
-          <Link
-            href="/"
-            className="text-foreground underline underline-offset-4"
-          >
-            {t("emptyLink")}
-          </Link>
-        </p>
+        <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed px-6 py-12 text-center">
+          <Newspaper aria-hidden className="text-muted-foreground size-10" />
+          <p className="text-muted-foreground max-w-prose">{t("empty")}</p>
+          <Button asChild variant="outline">
+            <Link href="/">{t("emptyLink")}</Link>
+          </Button>
+        </div>
       ) : entries.length === 0 ? (
         <p className="text-muted-foreground">{t("noOlder")}</p>
       ) : (
-        <ul aria-label={t("entries")} className="flex flex-col gap-4">
-          {entries.map((entry) => {
-            const time = (
-              <LocalDate
-                iso={entry.createdAt.toISOString()}
-                relative
-                className="text-muted-foreground text-sm"
-              />
-            );
-            if (entry.type === "forumThread") {
-              const thread = entry.thread;
-              return (
-                <li
-                  key={entry.id}
-                  className="flex min-w-0 flex-col gap-1 border-b pb-4"
-                >
-                  <p className="min-w-0 [overflow-wrap:anywhere]">
-                    {t.rich("forumThread", {
-                      author: (chunks: ReactNode) => (
-                        <Link
-                          href={profilePath(entry.nickname)}
-                          className={linkClass}
-                        >
-                          {chunks}
-                        </Link>
-                      ),
-                      thread: (chunks: ReactNode) => (
-                        <Link href={thread.path} className={mainLinkClass}>
-                          {chunks}
-                        </Link>
-                      ),
-                      nickname: entry.nickname,
-                      title: thread.title,
-                    })}
-                  </p>
-                  {time}
-                </li>
-              );
-            }
-            const chapterPath =
-              entry.type === "chapterPublished"
-                ? entry.chapters[0].path
-                : (entry.chapter?.path ?? entry.book.path);
-            const tags = {
-              author: (chunks: ReactNode) => (
-                <Link href={profilePath(entry.nickname)} className={linkClass}>
-                  {chunks}
-                </Link>
-              ),
-              chapter: (chunks: ReactNode) => (
-                <Link
-                  href={chapterPath}
-                  className={
-                    entry.type === "chapterPublished"
-                      ? mainLinkClass
-                      : linkClass
-                  }
-                >
-                  {chunks}
-                </Link>
-              ),
-              comment: (chunks: ReactNode) => (
-                <Link
-                  href={
-                    entry.type === "authorReply"
-                      ? entry.commentPath
-                      : chapterPath
-                  }
-                  className={mainLinkClass}
-                >
-                  {chunks}
-                </Link>
-              ),
-              book: (chunks: ReactNode) => (
-                <Link
-                  href={entry.book.path}
-                  className={
-                    entry.type === "chapterPublished" &&
-                    entry.chapters.length > 1
-                      ? mainLinkClass
-                      : linkClass
-                  }
-                >
-                  {chunks}
-                </Link>
-              ),
-            };
-            return (
-              <li
-                key={entry.id}
-                className="flex min-w-0 items-start gap-3 border-b pb-4"
-              >
-                {entry.book.cover && (
-                  <PublicCover
-                    cover={entry.book.cover}
-                    alt={tCovers("alt", { name: entry.book.name })}
-                    size="sm"
-                  />
-                )}
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <p className="min-w-0 [overflow-wrap:anywhere]">
-                    {entry.type === "authorReply"
-                      ? entry.chapter
-                        ? t.rich("authorReplyChapter", {
-                            ...tags,
-                            nickname: entry.nickname,
-                            title: entry.chapter.title,
-                            bookName: entry.book.name,
-                          })
-                        : t.rich("authorReplyBook", {
-                            ...tags,
-                            nickname: entry.nickname,
-                            bookName: entry.book.name,
-                          })
-                      : entry.chapters.length === 1
-                        ? t.rich("chapterPublished", {
-                            ...tags,
-                            nickname: entry.nickname,
-                            title: entry.chapters[0].title,
-                            bookName: entry.book.name,
-                          })
-                        : t.rich("chaptersPublished", {
-                            ...tags,
-                            nickname: entry.nickname,
-                            count: entry.chapters.length,
-                            bookName: entry.book.name,
-                          })}
-                    {entry.book.adult && (
-                      <span className="ml-2 inline-block align-middle">
-                        <AdultBadge />
-                      </span>
-                    )}
-                  </p>
-                  {time}
-                </div>
-              </li>
-            );
-          })}
+        <ul aria-label={t("entries")} className="flex flex-col gap-3">
+          {entries.map((entry) => (
+            <FeedEntry key={entry.id} entry={entry} />
+          ))}
         </ul>
       )}
       {(cursor || next) && (
         <nav aria-label={t("pages")} className="flex flex-wrap gap-2">
           {cursor && (
             <Button asChild variant="outline">
-              <Link href="/feed">{t("newest")}</Link>
+              <Link href="/feed">
+                <ChevronsUp aria-hidden />
+                {t("newest")}
+              </Link>
             </Button>
           )}
           {next && (
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="ml-auto">
               <Link href={{ pathname: "/feed", query: { after: next } }}>
                 {t("older")}
+                <ChevronRight aria-hidden />
               </Link>
             </Button>
           )}

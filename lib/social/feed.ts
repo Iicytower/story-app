@@ -9,7 +9,9 @@ import { Folder } from "@/lib/models/folder";
 import { Follow } from "@/lib/models/follow";
 import { ForumThread } from "@/lib/models/forum-thread";
 import { NOT_DELETED, User } from "@/lib/models/user";
+import { Profile } from "@/lib/models/profile";
 import { Story } from "@/lib/models/story";
+import { avatarPath } from "@/lib/profiles/queries";
 import { findChapterPaths, findPublicBooks } from "@/lib/publish/queries";
 import { commentAnchor } from "@/lib/social/comments";
 import { hasPublicBook, threadPath } from "@/lib/social/forums";
@@ -59,7 +61,7 @@ type Book = {
   cover: CoverView | null;
 };
 
-export type FeedEntry = FeedEntryBase &
+type FeedEntryData = FeedEntryBase &
   (
     | {
         type: "forumThread";
@@ -79,6 +81,8 @@ export type FeedEntry = FeedEntryBase &
         commentPath: string;
       }
   );
+
+export type FeedEntry = FeedEntryData & { avatar: string | null };
 
 interface RawEntry {
   _id: Types.ObjectId;
@@ -150,7 +154,7 @@ async function shownReplies(raw: RawEntry[], hidden: Types.ObjectId[]) {
 // forum exists (a public book).
 async function shownThreads(raw: RawEntry[]) {
   const entries = raw.filter(({ type }) => type === "forumThread");
-  if (entries.length === 0) return new Map<string, FeedEntry>();
+  if (entries.length === 0) return new Map<string, FeedEntryData>();
   const threads = await ForumThread.find({
     _id: { $in: entries.flatMap(({ threadId }) => threadId ?? []) },
     scope: "author",
@@ -185,7 +189,7 @@ async function shownThreads(raw: RawEntry[]) {
   const byId = new Map(
     threads.map((thread) => [thread._id.toString(), thread]),
   );
-  const shown = new Map<string, FeedEntry>();
+  const shown = new Map<string, FeedEntryData>();
   for (const entry of entries) {
     const thread = entry.threadId && byId.get(entry.threadId.toString());
     const actor = entry.actorId.toString();
@@ -210,7 +214,7 @@ async function shownThreads(raw: RawEntry[]) {
 async function visibleEntries(
   raw: RawEntry[],
   hidden: Types.ObjectId[],
-): Promise<Map<string, FeedEntry>> {
+): Promise<Map<string, FeedEntryData>> {
   const folderIds = [
     ...new Set(raw.flatMap(({ folderId }) => folderId?.toString() ?? [])),
   ];
@@ -248,7 +252,7 @@ async function visibleEntries(
   const storyById = new Map(
     stories.map((story) => [story._id.toString(), story]),
   );
-  const entries = new Map<string, FeedEntry>(threads);
+  const entries = new Map<string, FeedEntryData>(threads);
   for (const entry of raw) {
     if (entry.type === "forumThread") continue;
     const book = entry.folderId && books.get(entry.folderId.toString());
@@ -305,6 +309,43 @@ export async function getFeed(
   viewerId: string,
   after: Cursor | null,
 ): Promise<{ entries: FeedEntry[]; next: string | null }> {
+  const page = await getFeedPage(viewerId, after);
+  const users = await User.find({
+    nickname: { $in: [...new Set(page.entries.map((e) => e.nickname))] },
+  })
+    .select({ nickname: 1 })
+    .lean();
+  const profiles = await Profile.find({
+    userId: { $in: users.map(({ _id }) => _id) },
+    avatarId: { $exists: true },
+  })
+    .select({ userId: 1, avatarId: 1 })
+    .lean();
+  const avatarOf = new Map(
+    profiles.map(({ userId, avatarId }) => [
+      userId.toString(),
+      avatarPath(avatarId!.toString()),
+    ]),
+  );
+  const byNickname = new Map(
+    users.map(({ _id, nickname }) => [
+      nickname,
+      avatarOf.get(_id.toString()) ?? null,
+    ]),
+  );
+  return {
+    next: page.next,
+    entries: page.entries.map((entry) => ({
+      ...entry,
+      avatar: byNickname.get(entry.nickname) ?? null,
+    })),
+  };
+}
+
+async function getFeedPage(
+  viewerId: string,
+  after: Cursor | null,
+): Promise<{ entries: FeedEntryData[]; next: string | null }> {
   await connectDB();
   const [follows, hidden] = await Promise.all([
     Follow.find({ followerId: viewerId }, { _id: 0, followeeId: 1 }).lean(),
@@ -316,7 +357,7 @@ export async function getFeed(
     .filter((id) => !hiddenIds.has(id.toString()));
   if (actorIds.length === 0) return { entries: [], next: null };
 
-  const entries: FeedEntry[] = [];
+  const entries: FeedEntryData[] = [];
   let cursor = after;
   for (let batch = 0; batch < MAX_BATCHES; batch++) {
     const raw = await Activity.find({

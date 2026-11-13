@@ -47,7 +47,7 @@ async function seedPublished(titles: string[]) {
 }
 
 const recent = (page: Page, name = "Recently published") =>
-  page.getByRole("list", { name }).getByRole("link");
+  page.getByRole("region", { name }).getByRole("link");
 
 test("a visitor sees the hero in both languages", async ({ page: visitor }) => {
   await visitor.goto("/en");
@@ -104,30 +104,22 @@ test("the hero buttons open the dialog in the right mode", async ({
   await expect(dialog.getByRole("heading")).toHaveText("Sign in");
 });
 
-test("recently published shows 5 more at a time and stays while searching", async ({
+test("recently published is a carousel that stays while searching", async ({
   page: visitor,
 }) => {
   const titles = Array.from({ length: 12 }, (_, i) => `Chapter ${i + 1}`);
   await seedPublished(titles);
   await visitor.goto("/");
 
-  await expect(recent(visitor)).toHaveCount(5);
   await expect(recent(visitor).first()).toContainText("Chapter 1");
   await expect(recent(visitor).first()).toContainText("in Book by Alice");
   await expect(recent(visitor).first()).toContainText("1 minute ago");
   await expect(recent(visitor).nth(3)).toContainText("3 days ago");
-  const showMore = visitor.getByRole("button", { name: "Show more" });
-  await showMore.click();
-  await expect(recent(visitor)).toHaveCount(10);
-  await expect(recent(visitor).nth(9)).toContainText(
-    new Intl.DateTimeFormat("en", {
-      dateStyle: "medium",
-      timeZone: "UTC",
-    }).format(new Date(Date.now() - 9 * DAY - 60_000)),
+  await expect(visitor.getByRole("button", { name: "Next" })).toBeVisible();
+  await expect(visitor.getByRole("button", { name: "Previous" })).toBeHidden();
+  await expect(visitor.getByRole("button", { name: "Show more" })).toHaveCount(
+    0,
   );
-  await showMore.click();
-  await expect(recent(visitor)).toHaveCount(12);
-  await expect(showMore).toBeHidden();
 
   const field = visitor.getByRole("searchbox");
   await field.fill("Chapter 12");
@@ -135,24 +127,16 @@ test("recently published shows 5 more at a time and stays while searching", asyn
   await expect(
     visitor.getByRole("list", { name: "Search results" }).getByRole("link"),
   ).toHaveCount(1);
-  // The list keeps its client state across the search.
-  await expect(recent(visitor)).toHaveCount(12);
+  await expect(recent(visitor).first()).toContainText("Chapter 1");
 });
 
-test("recently published has no button for up to 5 and a message when empty", async ({
+test("recently published shows a message when empty", async ({
   page: visitor,
 }) => {
   await visitor.goto("/");
   await expect(
     visitor.getByText("Nothing has been published yet."),
   ).toBeVisible();
-
-  await seedPublished(["A", "B", "C", "D", "E"]);
-  await visitor.goto("/");
-  await expect(recent(visitor)).toHaveCount(5);
-  await expect(visitor.getByRole("button", { name: "Show more" })).toHaveCount(
-    0,
-  );
 });
 
 test("a narrow screen does not scroll sideways", async ({ page: visitor }) => {
@@ -194,7 +178,7 @@ async function seedRankedBooks() {
 }
 
 const ranking = (page: Page, name: string) =>
-  page.getByRole("list", { name, exact: true }).getByRole("link");
+  page.getByRole("region", { name, exact: true }).getByRole("link");
 
 test("a visitor sees the rankings with 18+ badges and no empty sections", async ({
   page: visitor,
