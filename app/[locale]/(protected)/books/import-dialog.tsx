@@ -139,9 +139,12 @@ function ImportForm({
         : { kind: "new", name: title };
     startTransition(async () => {
       // Text full of line breaks can still outgrow the request limit once encoded.
-      const result = await importStories(target, named, file.folderNotes).catch(
-        () => null,
-      );
+      const result = await importStories(
+        target,
+        named,
+        file.folderNotes,
+        file.folderDescription,
+      ).catch(() => null);
       if (!result) {
         setError(tErrors("importFailed"));
         return;

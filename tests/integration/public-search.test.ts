@@ -126,6 +126,7 @@ describe("searchPublishedChapters", () => {
     expect(Object.keys(result).toSorted()).toEqual([
       "adult",
       "cover",
+      "folderDescription",
       "folderName",
       "folderTags",
       "nickname",
@@ -136,6 +137,38 @@ describe("searchPublishedChapters", () => {
     ]);
     expect(result.nickname).toBe("Alice");
     expect(JSON.stringify(result)).not.toContain(alice.toString());
+  });
+
+  it("shows the description of a published folder only", async () => {
+    await seedChapter(await seedFolder({ description: "O łące." }), {
+      title: "Jawny",
+    });
+    await seedChapter(
+      await seedFolder({
+        name: "Prywatny",
+        published: false,
+        description: "Sekretny opis",
+      }),
+      { title: "Ukryty" },
+    );
+    const old = await seedFolder({ name: "Dawna" });
+    await Folder.collection.updateOne(
+      { _id: old._id },
+      { $unset: { description: "" } },
+    );
+    await seedChapter(old, { title: "Bez opisu" });
+
+    const results = await searchPublishedChapters("łąka", []);
+    expect(
+      results.map(({ title, folderDescription }) => [title, folderDescription]),
+    ).toEqual(
+      expect.arrayContaining([
+        ["Jawny", "O łące."],
+        ["Bez opisu", ""],
+      ]),
+    );
+    expect(results).toHaveLength(2);
+    expect(JSON.stringify(results)).not.toContain("Sekretny");
   });
 
   it("skips every chapter a reader could not open", async () => {

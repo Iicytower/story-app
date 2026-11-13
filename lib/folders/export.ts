@@ -9,6 +9,7 @@ export const COVER_FILE = "cover.webp";
 
 type ExportedFolder = {
   name: string;
+  description?: string;
   notes: string;
   createdAt: string;
   notesUpdatedAt: string;
@@ -51,6 +52,7 @@ export function folderZipEntries(
       title: folder.name,
       createdAt: folder.createdAt,
       updatedAt: folder.notesUpdatedAt,
+      ...(folder.description && { description: folder.description }),
     },
     folder.notes,
   );

@@ -6,6 +6,8 @@ import { FOLDER_LANGUAGES, type FolderLanguage } from "@/lib/languages";
 export interface FolderFields {
   userId: Types.ObjectId;
   name: string;
+  // Plain text for readers (task 98); missing on folders from before it, which means empty.
+  description?: string;
   notes: string;
   // Conflict check for folder notes only, so saving a chapter never conflicts with them.
   notesUpdatedAt: Date;
@@ -42,6 +44,7 @@ const folderSchema = new Schema<FolderFields>(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     name: { type: String, required: true },
+    description: { type: String, default: "" },
     notes: { type: String, default: "" },
     notesUpdatedAt: { type: Date, default: Date.now },
     lastActivityAt: { type: Date, default: Date.now },

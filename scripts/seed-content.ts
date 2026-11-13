@@ -18,6 +18,8 @@ export interface SeedChapter {
 export interface SeedBook {
   owner: string;
   name: string;
+  // Plain text for readers (task 98).
+  description: string;
   notes: string;
   tags: string[];
   published: boolean;
@@ -31,6 +33,8 @@ export const BOOKS: SeedBook[] = [
   {
     owner: "seed_anna",
     name: "Kroniki Mglistej Doliny",
+    description:
+      "Latarniczka Ila i dolina, z której mgła nigdy nie schodzi. Opowieść w odcinkach o tym, co mgła zabiera i co oddaje.",
     notes:
       "Plan: pięć rozdziałów, finał w wieży. Sprawdzić imiona strażników i mapę doliny.",
     tags: ["fantasy", "adventure", "novel", "mgła"],
@@ -86,6 +90,7 @@ export const BOOKS: SeedBook[] = [
   {
     owner: "seed_anna",
     name: "Szkice",
+    description: "",
     notes: "Luźne pomysły, nic do publikacji.",
     tags: ["short story"],
     published: false,
@@ -110,6 +115,8 @@ export const BOOKS: SeedBook[] = [
   {
     owner: "seed_ben",
     name: "Signals from Kepler Station",
+    description:
+      "A relay station on the edge of the system starts receiving signals that arrive before they are sent.",
     notes: "Hard SF, keep the physics honest. Check the light delay numbers.",
     tags: ["sci-fi", "short story", "space"],
     published: true,
@@ -154,6 +161,7 @@ export const BOOKS: SeedBook[] = [
   {
     owner: "seed_ben",
     name: "Drafts",
+    description: "",
     notes: "",
     tags: [],
     published: false,
@@ -171,6 +179,8 @@ export const BOOKS: SeedBook[] = [
   {
     owner: "seed_clara",
     name: "Velvet Hours",
+    description:
+      "Two strangers, one hotel, and a week that neither of them planned. For adult readers.",
     notes: "Adult romance. Marked 18+ on purpose.",
     tags: ["romance", "drama"],
     published: true,
@@ -206,6 +216,8 @@ export const BOOKS: SeedBook[] = [
   {
     owner: "seed_clara",
     name: "The House on Wren Street",
+    description:
+      "A ghost story in three parts about a house that remembers everyone who lived there.",
     notes: "Ghost story in three parts.",
     tags: ["horror", "paranormal"],
     published: true,
@@ -237,6 +249,7 @@ export const BOOKS: SeedBook[] = [
   {
     owner: "seed_ewa",
     name: "Wiersze na deszcz",
+    description: "Krótkie wiersze na jesienne, deszczowe wieczory.",
     notes: "Cykl jesienny.",
     tags: ["poetry", "deszcz"],
     published: true,
@@ -276,6 +289,7 @@ export const BOOKS: SeedBook[] = [
   {
     owner: "seed_admin",
     name: "Moderation notes",
+    description: "",
     notes: "Private notes of the admin account.",
     tags: [],
     published: false,

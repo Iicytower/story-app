@@ -2,22 +2,13 @@
 
 import {
   ArrowLeftIcon,
-  CheckIcon,
-  CopyIcon,
-  LinkIcon,
   PanelRightCloseIcon,
   PanelRightOpenIcon,
 } from "lucide-react";
 import { cn } from "cn";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   MarkdownEditor,
@@ -52,6 +43,7 @@ import { saveStory, setChapterPublished } from "../actions";
 import { ChaptersPanel } from "./chapters-panel";
 import { EditorMenu } from "./editor-menu";
 import { AdultBadge } from "@/components/adult";
+import { PublicLink } from "@/components/public-link";
 import {
   flushLayoutSave,
   setMobileView,
@@ -87,8 +79,6 @@ function isSame(a: Values, b: Values) {
   );
 }
 
-const subscribeNever = () => () => {};
-
 export function Editor({
   story,
   folder,
@@ -104,7 +94,6 @@ export function Editor({
   const t = useTranslations("editor");
   const tErrors = useTranslations("errors");
   const tSave = useTranslations("save");
-  const tFolders = useTranslations("folders");
   const lang = folder?.language ?? DEFAULT_FOLDER_LANGUAGE;
   const [title, setTitle] = useState(story.title);
   const [content, setContent] = useState(story.content);
@@ -126,16 +115,8 @@ export function Editor({
   );
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
   const [publicPath, setPublicPath] = useState(story.publicPath);
-  const [copied, setCopied] = useState(false);
   // Here, not in ToolsPanel: the dialog must outlive the desktop and mobile trees.
   const [openTool, setOpenTool] = useState<Tool | null>(null);
-  // Empty during SSR, so the absolute link is only rendered after hydration.
-  const origin = useSyncExternalStore(
-    subscribeNever,
-    () => window.location.origin,
-    () => "",
-  );
-  const publicUrl = publicPath && origin + publicPath;
   const latest = useRef<Values>(initial);
   const saved = useRef<Values>(initial);
   const updatedAt = useRef(story.updatedAt);
@@ -261,16 +242,8 @@ export function Editor({
     const result = await setChapterPublished(story.id, !publicPath);
     if (result.ok) {
       setPublicPath(result.publicPath);
-      setCopied(false);
     }
     return result;
-  }
-
-  async function copyPublicUrl() {
-    if (!publicUrl) return;
-    await navigator.clipboard.writeText(publicUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   }
 
   useEffect(() => {
@@ -467,38 +440,16 @@ export function Editor({
           togglePublished={togglePublished}
           onDeleted={() =>
             router.push(
-              story.folderName === null
-                ? "/books"
-                : `/books/${story.folderId}`,
+              story.folderName === null ? "/books" : `/books/${story.folderId}`,
             )
           }
         />
       </div>
-      {publicUrl && (
-        <div className="flex items-center gap-2 border-b px-4 py-2 text-sm md:px-6">
-          <LinkIcon className="text-muted-foreground size-4 shrink-0" />
-          <span className="text-muted-foreground hidden md:inline">
-            {t("isPublic")}
-          </span>
-          <Input
-            readOnly
-            value={publicUrl}
-            aria-label={tFolders("publicLink")}
-            onFocus={(event) => event.target.select()}
-            className="h-8 max-w-xl min-w-0"
-          />
-          <WithTooltip
-            label={copied ? tFolders("copied") : tFolders("copyLink")}
-            className="md:hidden"
-          >
-            <Button variant="outline" size="sm" onClick={copyPublicUrl}>
-              {copied ? <CheckIcon /> : <CopyIcon />}
-              <span className="sr-only md:not-sr-only">
-                {copied ? tFolders("copied") : tFolders("copyLink")}
-              </span>
-            </Button>
-          </WithTooltip>
-        </div>
+      {publicPath && (
+        <PublicLink
+          publicPath={publicPath}
+          className="h-10 shrink-0 border-b px-4 md:px-6"
+        />
       )}
       {isDesktop ? (
         <div className="flex min-h-0 flex-1">

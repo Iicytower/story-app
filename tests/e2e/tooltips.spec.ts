@@ -33,7 +33,7 @@ async function expectNoTooltip(page: Page) {
   await expect(tooltip(page)).toHaveCount(0);
 }
 
-test("the chapter row ⋮ and publication icon show their name on hover and on keyboard focus", async ({
+test("the chapter row ⋮ shows its name on hover and on keyboard focus, the visible status none", async ({
   page,
 }) => {
   const { folderId } = await seedChapter();
@@ -41,13 +41,13 @@ test("the chapter row ⋮ and publication icon show their name on hover and on k
   const menu = page.getByRole("button", { name: "Actions for Dragon tale" });
   const status = page
     .getByRole("list", { name: "Chapters" })
-    .getByRole("img", { name: "Not public" });
+    .getByText("Not public", { exact: true });
   await expect(menu).not.toHaveAttribute("title");
 
   await menu.hover();
   await expect(tooltip(page)).toHaveText(["Actions for Dragon tale"]);
   await status.hover();
-  await expect(tooltip(page)).toHaveText(["Not public"]);
+  await expectNoTooltip(page);
 
   await page.mouse.move(0, 400);
   await expect(tooltip(page)).toHaveCount(0);

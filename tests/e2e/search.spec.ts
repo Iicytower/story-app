@@ -1,7 +1,13 @@
 import type { Browser, Page } from "@playwright/test";
-import { exhaustSearchLimit, findFolder, seedStory, withE2EDb } from "./db";
+import {
+  exhaustSearchLimit,
+  findFolder,
+  seedStory,
+  updateFolder,
+  withE2EDb,
+} from "./db";
 import { E2E_IP_HEADER, storageStatePath } from "./env";
-import { expect, menuAction, test } from "./helpers";
+import { expect, menuAction, publicLinkRow, test } from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
@@ -74,6 +80,26 @@ test("a visitor finds a story by title, tag and text and opens it", async ({
   await results(visitor).click();
   await expect(visitor).toHaveURL(/\/p\/Alice\/book\/dragon-tale$/);
   await expect(visitor.getByText("Zielona łąka")).toBeVisible();
+});
+
+test("a result shows the published book's description as plain text", async ({
+  browser,
+}) => {
+  await seedPublished();
+  await updateFolder("Book", { description: "A <b>bold</b> saga." });
+  const visitor = await anonymous(browser);
+
+  await search(visitor, "dragon");
+  const description = visitor
+    .getByRole("list", { name: "Search results" })
+    .getByText("A <b>bold</b> saga.", { exact: true });
+  await expect(description).toBeVisible();
+  expect((await description.boundingBox())!.height).toBeLessThanOrEqual(24);
+
+  await updateFolder("Book", { published: false });
+  await search(visitor, "dragon");
+  await expect(visitor.getByText("No stories found.")).toBeVisible();
+  expect(await visitor.content()).not.toContain("bold</b> saga");
 });
 
 test("a word from a comment finds nothing", async ({ browser }) => {
@@ -167,7 +193,7 @@ test("unpublishing and deleting take a story out of the results", async ({
     .getByRole("alertdialog", { name: "Unpublish book?" })
     .getByRole("button", { name: "Unpublish" })
     .click();
-  await expect(page.getByRole("textbox", { name: "Public link" })).toBeHidden();
+  await expect(publicLinkRow(page)).toBeHidden();
   await search(visitor, "dragon");
   await expect(visitor.getByText("No stories found.")).toBeVisible();
   await expect(visitor.getByRole("link", { name: "smoki" })).toHaveCount(0);
@@ -177,9 +203,7 @@ test("unpublishing and deleting take a story out of the results", async ({
     .getByRole("alertdialog", { name: "Publish book?" })
     .getByRole("button", { name: "Publish" })
     .click();
-  await expect(
-    page.getByRole("textbox", { name: "Public link" }),
-  ).toBeVisible();
+  await expect(publicLinkRow(page)).toBeVisible();
   await search(visitor, "dragon");
   await expect(results(visitor)).toHaveCount(1);
 

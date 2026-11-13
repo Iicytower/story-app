@@ -49,6 +49,11 @@ export function readMarkdown(
   };
 }
 
+export function readDescription(text: string): string | undefined {
+  const description = frontmatter(text)?.description;
+  return typeof description === "string" ? description : undefined;
+}
+
 // The last notes heading of any language, as plain text has no heading markup.
 const HEADINGS = NOTES_HEADINGS.map(escapeRegex).join("|");
 const NOTES_LINE = new RegExp(

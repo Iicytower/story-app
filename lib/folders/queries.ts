@@ -73,6 +73,7 @@ export async function getFolder(userId: string, id: string) {
   const folder = await Folder.findOne({ _id: id, userId, deletedAt: null })
     .select({
       name: 1,
+      description: 1,
       notes: 1,
       notesUpdatedAt: 1,
       chapterSort: 1,
@@ -111,6 +112,7 @@ export async function getFolder(userId: string, id: string) {
     .lean();
   return {
     ...serialize(folder),
+    description: folder.description ?? "",
     language: folderLanguage(folder.language),
     adult: folderAdultState(folder.adult),
     cover: cover && {
@@ -139,6 +141,7 @@ export async function getFolderForExport(userId: string, id: string) {
   const folder = await Folder.findOne({ _id: id, userId, deletedAt: null })
     .select({
       name: 1,
+      description: 1,
       notes: 1,
       createdAt: 1,
       notesUpdatedAt: 1,
@@ -154,7 +157,11 @@ export async function getFolderForExport(userId: string, id: string) {
   )
     .select({ title: 1, content: 1, notes: 1, createdAt: 1, updatedAt: 1 })
     .lean();
-  return { ...serialize(folder), chapters: chapters.map(serialize) };
+  return {
+    ...serialize(folder),
+    description: folder.description ?? "",
+    chapters: chapters.map(serialize),
+  };
 }
 
 // The editor's side panels: folder notes and the chapter list, without chapter contents.

@@ -3,10 +3,19 @@ import {
   findStory,
   findStoryFolder,
   seedFolder,
+  seedPublished,
   seedStory,
+  updateFolder,
 } from "./db";
 import { storageStatePath } from "./env";
-import { expect, hideTab, menuAction, runAutosaveDelay, test } from "./helpers";
+import {
+  expect,
+  hideTab,
+  menuAction,
+  publicLinkRow,
+  runAutosaveDelay,
+  test,
+} from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
@@ -131,7 +140,7 @@ test("the folder row menu renames, publishes and deletes a folder", async ({
     .getByRole("list", { name: "Books" })
     .getByRole("listitem")
     .filter({ hasText: "Row" });
-  await expect(row.getByRole("img")).toHaveAccessibleName("Not public");
+  await expect(row.getByText("Not public", { exact: true })).toBeVisible();
 
   await menuAction(page, "Actions for Row", "Rename");
   const rename = page.getByRole("dialog", { name: "Rename book" });
@@ -147,7 +156,7 @@ test("the folder row menu renames, publishes and deletes a folder", async ({
   await expect(
     page
       .getByRole("list", { name: "Books" })
-      .getByRole("img", { name: "Public" }),
+      .getByText("Public", { exact: true }),
   ).toBeVisible();
   expect((await findFolder("Renamed"))?.published).toBe(true);
 
@@ -168,4 +177,90 @@ test("search results only open stories", async ({ page }) => {
   await expect(results.getByRole("button")).toHaveCount(0);
   await results.getByRole("link").click();
   await expect(page).toHaveURL(/\/chapters\/[0-9a-f]{24}$/);
+});
+
+test("the chapter list shows only tags the book does not have and the status as text", async ({
+  page,
+}) => {
+  const folderId = await seedFolder("alice", "Tagged");
+  await seedStory("alice", {
+    title: "Own tags",
+    folder: "Tagged",
+    tags: ["mythic", "draft"],
+  });
+  await updateFolder("Tagged", { tags: ["mythic", "epic"] });
+
+  await page.goto(`/books/${folderId}`);
+  const row = page
+    .getByRole("list", { name: "Chapters" })
+    .getByRole("listitem")
+    .filter({ hasText: "Own tags" });
+  await expect(row.getByText("draft", { exact: true })).toBeVisible();
+  await expect(row.getByText("mythic", { exact: true })).toHaveCount(0);
+  await expect(row.getByText("epic", { exact: true })).toHaveCount(0);
+  await expect(row.getByText("Not public", { exact: true })).toBeVisible();
+});
+
+test("the public link row fits one line, is in the first HTML, copies the address and opens the page", async ({
+  page,
+  context,
+}) => {
+  const folderId = await seedFolder("alice", "Shared");
+  await seedPublished("alice", "Shared", [
+    { title: "One", publication: "public" },
+  ]);
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.setViewportSize({ width: 375, height: 800 });
+
+  // Rendered on the server, so it does not appear later and shift the page (3.9).
+  const html = await (await page.request.get(`/en/books/${folderId}`)).text();
+  expect(html).toContain('aria-label="Public link"');
+
+  await page.goto(`/books/${folderId}`);
+  const row = publicLinkRow(page);
+  await expect(row).toContainText("Public");
+  expect((await row.boundingBox())!.height).toBeLessThanOrEqual(40);
+  expect(await row.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(
+    true,
+  );
+
+  await row.getByRole("button", { name: "Copy link" }).click();
+  await expect(row.getByRole("button", { name: "Copied" })).toBeVisible();
+  const origin = new URL(page.url()).origin;
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe(`${origin}/p/Alice/shared`);
+
+  const [popup] = await Promise.all([
+    page.waitForEvent("popup"),
+    row.getByRole("link", { name: "Open" }).click(),
+  ]);
+  await expect(popup).toHaveURL(/\/p\/Alice\/shared$/);
+  await expect(popup.getByRole("heading", { name: "Shared" })).toBeVisible();
+});
+
+test("saves the book description within the limit and keeps it after a reload", async ({
+  page,
+}) => {
+  const folderId = await seedFolder("alice", "Described");
+
+  await page.goto(`/books/${folderId}`);
+  const field = page.getByRole("textbox", { name: "Book description" });
+  await expect(field).toHaveAttribute("maxlength", "1000");
+  const save = page.getByRole("button", { name: "Save", exact: true });
+  await expect(save).toBeDisabled();
+
+  await field.fill("  A <b>tale</b> of two cities.  ");
+  await save.click();
+  await expect(page.getByRole("status")).toHaveText("Description saved");
+  await expect(save).toBeDisabled();
+  expect((await findFolder("Described"))?.description).toBe(
+    "A <b>tale</b> of two cities.",
+  );
+
+  await page.reload();
+  await expect(field).toHaveValue("A <b>tale</b> of two cities.");
+
+  await field.fill("x".repeat(1200));
+  await expect(field).toHaveValue("x".repeat(1000));
 });

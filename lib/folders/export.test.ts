@@ -59,6 +59,15 @@ describe("folderZipEntries", () => {
     });
   });
 
+  it("adds a non-empty description to the notes.md frontmatter", () => {
+    const notes = (description: string) =>
+      split(folderZipEntries({ ...folder, description })["notes.md"]).data;
+    expect(notes("O świcie i nocy.")).toMatchObject({
+      description: "O świcie i nocy.",
+    });
+    expect(notes("")).not.toHaveProperty("description");
+  });
+
   it("pads numbers to the chapter count and falls back for empty slugs", () => {
     const many = {
       ...folder,

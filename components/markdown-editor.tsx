@@ -603,9 +603,12 @@ export function MarkdownEditor({
             );
           })}
         </div>
-        {mode === "preview" && editor && (
-          <Toolbar editor={editor} onLink={() => setLinkOpen(true)} />
-        )}
+        {mode === "preview" &&
+          (editor ? (
+            <Toolbar editor={editor} onLink={() => setLinkOpen(true)} />
+          ) : (
+            <ToolbarPlaceholder />
+          ))}
         <WithTooltip label={t("findReplace")}>
           <Button
             type="button"
@@ -889,6 +892,16 @@ function lineTops(textarea: HTMLTextAreaElement, offsets: number[]): number[] {
   const tops = markers.map((marker) => marker.offsetTop);
   mirror.remove();
   return tops;
+}
+
+// The editor exists only after hydration (immediatelyRender: false); empty slots of the same
+// size keep the toolbar row from growing when the buttons appear (3.9).
+const TOOLBAR_BUTTONS = 13;
+
+function ToolbarPlaceholder() {
+  return Array.from({ length: TOOLBAR_BUTTONS }, (_, index) => (
+    <span key={index} aria-hidden className="size-7" />
+  ));
 }
 
 function Toolbar({ editor, onLink }: { editor: Editor; onLink: () => void }) {

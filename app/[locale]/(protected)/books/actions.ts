@@ -159,6 +159,29 @@ export async function saveFolderNotes(
   return actionError("CONFLICT", "notesConflict");
 }
 
+export async function saveFolderDescription(
+  id: string,
+  description: string,
+): Promise<ActionResult<{ description: string }>> {
+  const user = await requireUser();
+  if (!user.ok) return user;
+  if (!isId(id)) return NOT_FOUND();
+  if (!isString(description)) return INVALID_REQUEST();
+  const value = description.trim();
+  const tooLong = lengthError("folderDescription", value);
+  if (tooLong) return translateError(tooLong);
+
+  await connectDB();
+  const { matchedCount } = await Folder.updateOne(
+    { _id: id, userId: user.userId, deletedAt: null },
+    { $set: { description: value } },
+  );
+  if (matchedCount === 0) return NOT_FOUND();
+
+  refresh();
+  return { ok: true, description: value };
+}
+
 // Organizational change: keeps updatedAt, lastActivityAt and notesUpdatedAt (D36).
 export async function setFolderTags(
   id: string,

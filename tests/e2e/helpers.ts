@@ -248,6 +248,18 @@ export async function publishFromEditor(page: Page) {
   await expect(page.getByRole("alertdialog")).toBeHidden();
 }
 
+// The "Public · Copy link · Open" row of a published book or chapter (task 98).
+export function publicLinkRow(page: Page) {
+  return page.getByRole("group", { name: "Public link" });
+}
+
+// The address the row's "Open" link goes to, once the row is shown.
+export async function publicLinkHref(page: Page): Promise<string> {
+  const open = publicLinkRow(page).getByRole("link", { name: "Open" });
+  await expect(open).toBeVisible();
+  return (await open.getAttribute("href"))!;
+}
+
 // Picks a sort option from the "Sort" submenu of a ⋮ menu.
 export async function sortBy(page: Page, menu: string, option: string) {
   await openMenu(page.getByRole("button", { name: menu, exact: true }));

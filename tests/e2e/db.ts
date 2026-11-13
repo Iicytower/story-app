@@ -235,9 +235,21 @@ type FolderDoc = {
   _id: mongoose.Types.ObjectId;
   name: string;
   notes: string;
+  description?: string;
   deletedAt: Date | null;
   published?: boolean;
 };
+
+export function updateFolder(
+  name: string,
+  fields: { description?: string; tags?: string[]; published?: boolean },
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    await connection
+      .collection("folders")
+      .updateOne({ name, deletedAt: null }, { $set: fields });
+  });
+}
 
 export function findFolder(name: string): Promise<FolderDoc | null> {
   return withE2EDb((connection) =>

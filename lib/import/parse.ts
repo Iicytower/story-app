@@ -107,6 +107,10 @@ async function readZip(
     if (base === "notes") {
       file.title = entry.title;
       file.folderNotes = (entry.unsplit ?? entry.chapters[0]).content;
+      if (extension === "md" || extension === "markdown") {
+        const { readDescription } = await import("./formats/text");
+        file.folderDescription = readDescription(decodeText(data));
+      }
     } else {
       file.chapters.push(...(entry.unsplit ? [entry.unsplit] : entry.chapters));
     }
