@@ -376,6 +376,42 @@ export interface CommunityReportView {
 
 // Open reports of comments in authorId's community, newest first. A moderator does not see
 // reports about themselves or another moderator (as canModerate); nobody else sees any.
+// One filter for the Reports tab and its counters, so the numbers match the list.
+// A moderator does not see reports about themselves or another moderator.
+async function openReportsFilter(
+  viewerId: string,
+  { authorId, role }: Pick<Community, "authorId" | "role">,
+) {
+  const excluded =
+    role === "moderator" ? [viewerId, ...(await moderatorIdsOf(authorId))] : [];
+  return {
+    route: "author" as const,
+    authorId,
+    state: "open" as const,
+    ...(excluded.length > 0 && { targetUserId: { $nin: excluded } }),
+  };
+}
+
+// Capped at the list's length: the tab never shows more than that.
+export async function countCommunityReports(
+  viewerId: string,
+  community: Pick<Community, "authorId" | "role">,
+): Promise<number> {
+  await connectDB();
+  return Report.countDocuments(await openReportsFilter(viewerId, community), {
+    limit: MODERATION_LIST_LIMIT,
+  });
+}
+
+// The sidebar's counter: open reports over every community the panel shows to the viewer.
+export async function countPendingReports(viewerId: string): Promise<number> {
+  const { communities } = await getModerationOverview(viewerId);
+  const counts = await Promise.all(
+    communities.map((community) => countCommunityReports(viewerId, community)),
+  );
+  return counts.reduce((sum, count) => sum + count, 0);
+}
+
 export async function listCommunityReports(
   viewerId: string,
   authorId: string,
@@ -383,14 +419,9 @@ export async function listCommunityReports(
   await connectDB();
   const role = await moderationRole(viewerId, authorId);
   if (!role) return [];
-  const excluded =
-    role === "moderator" ? [viewerId, ...(await moderatorIdsOf(authorId))] : [];
-  const reports = await Report.find({
-    route: "author",
-    authorId,
-    state: "open",
-    ...(excluded.length > 0 && { targetUserId: { $nin: excluded } }),
-  })
+  const reports = await Report.find(
+    await openReportsFilter(viewerId, { authorId, role }),
+  )
     .sort({ createdAt: -1 })
     .limit(MODERATION_LIST_LIMIT)
     .select({

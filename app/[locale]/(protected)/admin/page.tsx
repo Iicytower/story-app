@@ -164,8 +164,8 @@ export default async function AdminPage({
                   <Button
                     asChild
                     size="sm"
-                    variant="ghost"
-                    className="h-auto max-w-full [overflow-wrap:anywhere] whitespace-normal"
+                    variant="outline"
+                    className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive dark:border-destructive/50 dark:hover:bg-destructive/20 h-auto max-w-full [overflow-wrap:anywhere] whitespace-normal"
                   >
                     <Link
                       href={`/admin?tab=bans&nickname=${encodeURIComponent(report.target)}`}

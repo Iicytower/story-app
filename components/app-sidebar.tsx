@@ -391,6 +391,11 @@ function NavItems({
             current={pathname === SOCIAL_LINKS.moderation.href}
             onClick={onDone}
             badge={pendingModeration}
+            accessibleLabel={
+              pendingModeration > 0
+                ? t("moderationPending", { count: pendingModeration })
+                : t("moderation")
+            }
           />
         )}
         <AccountMenu
@@ -423,7 +428,7 @@ export function AppSidebar({
   toolsAvailable: boolean;
   initialUnread?: number;
   initialUnreadMessages?: number;
-  // Shown by Moderation; filled in by task 106.
+  // Open reports in the communities the user moderates, shown by Moderation.
   pendingModeration?: number;
   // The realtime stream's address (task 90); without it the counters only poll.
   realtimeUrl?: string | null;

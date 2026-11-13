@@ -638,6 +638,41 @@ export function seedChapterReport(
   });
 }
 
+// A comment on a chapter and its open report for the chapter author's community (task 75).
+export function seedCommentReport(
+  reporter: UserName,
+  writer: UserName,
+  title: string,
+  body: string,
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const story = await connection.collection("stories").findOne({ title });
+    if (!story) throw new Error(`No chapter "${title}"`);
+    const writerId = await userId(connection, writer);
+    const { insertedId } = await connection.collection("comments").insertOne({
+      authorId: story.userId,
+      userId: writerId,
+      folderId: story.folderId,
+      storyId: story._id,
+      parentId: null,
+      body,
+      createdAt: new Date(),
+    });
+    await connection.collection("reports").insertOne({
+      reporterId: await userId(connection, reporter),
+      targetType: "comment",
+      targetId: insertedId,
+      targetUserId: writerId,
+      route: "author",
+      authorId: story.userId,
+      reason: "spam",
+      details: "",
+      state: "open",
+      createdAt: new Date(),
+    });
+  });
+}
+
 // A saved version of a book without chapters, saved at a given moment.
 export function seedFolderVersion(
   user: UserName,

@@ -11,6 +11,7 @@ import { Link, redirect } from "@/i18n/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { MAX_MODERATORS } from "@/lib/limits";
 import {
+  countCommunityReports,
   getModerationOverview,
   listCommunityBans,
   listCommunityReports,
@@ -84,6 +85,9 @@ export default async function ModerationPage({
   const tabs = current ? tabsFor(current.role) : [];
   const tab: ModerationTab =
     tabs.find((value) => value === query.tab) ?? MODERATION_TABS[0];
+  const pending = current
+    ? await countCommunityReports(user.userId, current)
+    : 0;
   const fullDate = new Intl.DateTimeFormat(locale, {
     dateStyle: "long",
     timeStyle: "short",
@@ -467,8 +471,21 @@ export default async function ModerationPage({
                 <Link
                   href={href(current.authorId, value)}
                   aria-current={value === tab ? "page" : undefined}
+                  aria-label={
+                    value === "reports" && pending > 0
+                      ? t("reportsPending", { count: pending })
+                      : undefined
+                  }
                 >
                   {t("tab", { tab: value })}
+                  {value === "reports" && pending > 0 && (
+                    <span
+                      aria-hidden
+                      className="bg-primary text-primary-foreground rounded-full px-1.5 text-xs leading-5 font-medium"
+                    >
+                      {pending > 99 ? "99+" : pending}
+                    </span>
+                  )}
                 </Link>
               </Button>
             ))}

@@ -60,7 +60,7 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 103 | ↳ [Reakcje i fora](done/103-reactions-forums.md) (subtask 51) | 94 | [x] |
 | 104 | ↳ [Wiadomości i aktualności](done/104-messages-feed.md) (subtask 51) | 94, 95 | [x] |
 | 105 | ↳ [Publiczna strona książki i rozdziału](done/105-public-book-chapter.md) (subtask 51) | 96, 98, 103 | [x] |
-| 106 | ↳ [Moderacja i panel admina](106-moderation-admin.md) (subtask 51) | 95 | [ ] |
+| 106 | ↳ [Moderacja i panel admina](done/106-moderation-admin.md) (subtask 51) | 95 | [x] |
 | 107 | ↳ [Audyt końcowy UI/UX i raport po poprawkach](107-ui-audit.md) (subtask 51) | 93–106 | [ ] |
 | 66 | [Okładki folderów i oznaczenie 18+ (zbiorczy)](done/66-covers-and-adult-rating.md) | – | [x] |
 | 65 | ↳ [Oznaczenie 18+](done/65-adult-rating.md) (subtask 66) | – | [x] |
