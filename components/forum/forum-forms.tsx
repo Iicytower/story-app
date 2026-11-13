@@ -121,12 +121,21 @@ export function NewThreadForm({
   basePath: string;
 }) {
   const t = useTranslations("forums");
+  const tCommon = useTranslations("common");
   const router = useRouter();
   const id = useId();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [open, setOpen] = useState(false);
+  const opener = useRef<HTMLButtonElement>(null);
+
+  function close() {
+    setOpen(false);
+    setError(null);
+    requestAnimationFrame(() => opener.current?.focus());
+  }
 
   function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -139,6 +148,19 @@ export function NewThreadForm({
       }
       router.push(`${basePath}/${result.id}`);
     });
+  }
+
+  if (!open) {
+    return (
+      <Button
+        ref={opener}
+        type="button"
+        className="self-start"
+        onClick={() => setOpen(true)}
+      >
+        {t("newThread")}
+      </Button>
+    );
   }
 
   return (
@@ -158,6 +180,7 @@ export function NewThreadForm({
           onChange={(event) => setTitle(event.target.value)}
           maxLength={MAX_THREAD_TITLE_LENGTH}
           required
+          autoFocus
         />
       </div>
       <div className="flex flex-col gap-2">
@@ -177,13 +200,22 @@ export function NewThreadForm({
           {error}
         </p>
       )}
-      <Button
-        type="submit"
-        className="self-start"
-        disabled={pending || !title.trim() || !body.trim()}
-      >
-        {t("submitThread")}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="submit"
+          disabled={pending || !title.trim() || !body.trim()}
+        >
+          {t("submitThread")}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={pending}
+          onClick={close}
+        >
+          {tCommon("cancel")}
+        </Button>
+      </div>
     </form>
   );
 }

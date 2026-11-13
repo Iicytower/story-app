@@ -21,7 +21,7 @@ export async function RatingSection({
   const t = await getTranslations("ratings");
   const locale = await getLocale();
   return (
-    <section id={ratingAnchor} className="scroll-mt-4">
+    <section id={ratingAnchor} className="scroll-mt-14 md:scroll-mt-4">
       <RatingStars
         target={viewerId ? target : null}
         summary={summary}

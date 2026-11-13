@@ -101,7 +101,11 @@ test.describe("a reader", () => {
     ).toBeVisible();
     await page
       .getByRole("group", { name: en.reactions.chapter })
-      .getByRole("button", { name: "Heart: no reactions", exact: true })
+      .getByRole("button", { name: en.reactions.add })
+      .click();
+    await page
+      .getByRole("group", { name: en.reactions.pick })
+      .getByRole("button", { name: en.reactions.names.heart })
       .click();
     await expect(
       page
@@ -218,6 +222,7 @@ test.describe("the community", () => {
 
     // The forum: dave starts a thread in the workshop, erin answers with spam.
     await dave.page.goto("/en/forums/workshop");
+    await dave.page.getByRole("button", { name: en.forums.newThread }).click();
     await dave.page.getByLabel(en.forums.threadTitle).fill("Pacing help");
     await dave.page
       .getByRole("textbox", { name: en.forums.threadBody })

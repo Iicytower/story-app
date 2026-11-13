@@ -177,7 +177,7 @@ export async function Comments({
     <section
       id={SECTION_ID}
       aria-labelledby="comments-title"
-      className="flex min-w-0 scroll-mt-4 flex-col gap-4 border-t pt-6"
+      className="flex min-w-0 scroll-mt-14 md:scroll-mt-4 flex-col gap-4 border-t pt-6"
     >
       <h2
         id="comments-title"
@@ -219,7 +219,7 @@ export async function Comments({
                 <li
                   key={comment.id}
                   id={commentAnchor(comment.id)}
-                  className="target:bg-muted/60 flex min-w-0 scroll-mt-4 flex-col gap-3 target:rounded-md"
+                  className="target:bg-muted/60 flex min-w-0 scroll-mt-14 md:scroll-mt-4 flex-col gap-3 target:rounded-md"
                 >
                   {item(comment, signedIn && comment.state !== "hidden")}
                   {comment.replies.length > 0 && (
@@ -233,7 +233,7 @@ export async function Comments({
                         <li
                           key={reply.id}
                           id={commentAnchor(reply.id)}
-                          className="target:bg-muted/60 min-w-0 scroll-mt-4 target:rounded-md"
+                          className="target:bg-muted/60 min-w-0 scroll-mt-14 md:scroll-mt-4 target:rounded-md"
                         >
                           {item(reply, signedIn)}
                         </li>

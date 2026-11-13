@@ -14,6 +14,10 @@ const bell = (page: Page, unread = 0) =>
   });
 
 async function startThread(page: Page, title: string, body: string) {
+  // The form stays hidden until "New thread" is clicked (task 103).
+  await expect(page.getByLabel(en.forums.threadTitle)).toHaveCount(0);
+  await page.getByRole("button", { name: en.forums.newThread }).click();
+  await expect(page.getByLabel(en.forums.threadTitle)).toBeFocused();
   await page.getByLabel(en.forums.threadTitle).fill(title);
   await page.getByRole("textbox", { name: en.forums.threadBody }).fill(body);
   await page.getByRole("button", { name: en.forums.submitThread }).click();
@@ -24,12 +28,29 @@ test("dave starts a thread in the workshop, erin quotes it and dave is notified"
   page,
   browser,
 }) => {
+  const workshop = (page: Page) =>
+    page
+      .getByRole("list", { name: en.forums.categories })
+      .getByRole("listitem")
+      .filter({ hasText: "Writing workshop" });
   await page.goto("/en/forums");
+  await expect(workshop(page)).toContainText("No threads");
   await page.getByRole("link", { name: "Writing workshop" }).click();
   await expect(page).toHaveURL(/\/en\/forums\/workshop$/);
+  // Cancel closes the form and gives the focus back to "New thread".
+  await page.getByRole("button", { name: en.forums.newThread }).click();
+  await page.getByRole("button", { name: en.common.cancel }).click();
+  await expect(
+    page.getByRole("button", { name: en.forums.newThread }),
+  ).toBeFocused();
   await startThread(page, "Pacing help", "How do I fix **pacing**?");
   await expect(page).toHaveURL(/\/en\/forums\/t\/[0-9a-f]{24}$/);
   const threadUrl = page.url();
+  await page.goto("/en/forums");
+  await expect(workshop(page)).toContainText(
+    /1 thread · last post (now|\d+ minutes? ago)/,
+  );
+  await page.goto(threadUrl);
   await expect(
     page.getByRole("button", { name: en.forums.unfollow }),
   ).toBeVisible();

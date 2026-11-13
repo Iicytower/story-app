@@ -21,7 +21,7 @@ export async function ChapterReactions({
   const t = await getTranslations("reactions");
   const locale = await getLocale();
   return (
-    <section id={reactionsAnchor} className="scroll-mt-4">
+    <section id={reactionsAnchor} className="scroll-mt-14 md:scroll-mt-4">
       <ReactionBar
         target={viewerId ? { type: "story", id: storyId } : null}
         summary={summary}

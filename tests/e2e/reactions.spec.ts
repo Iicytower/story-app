@@ -14,6 +14,20 @@ const commentBar = (page: Page, nickname: string) =>
   page.getByRole("group", {
     name: en.reactions.comment.replace("{nickname}", nickname),
   });
+const reaction = (bar: ReturnType<typeof chapterBar>, name: string) =>
+  bar.getByRole("button", { name, exact: true });
+
+async function pick(
+  page: Page,
+  bar: ReturnType<typeof chapterBar>,
+  name: keyof typeof en.reactions.names,
+) {
+  await bar.getByRole("button", { name: en.reactions.add }).click();
+  await page
+    .getByRole("group", { name: en.reactions.pick })
+    .getByRole("button", { name: en.reactions.names[name] })
+    .click();
+}
 test("dave and erin react to a chapter and a comment; a guest sees the counts and signs in to react", async ({
   page,
   browser,
@@ -23,48 +37,33 @@ test("dave and erin react to a chapter and a comment; a guest sees the counts an
   ]);
 
   await page.goto(CHAPTER);
-  await chapterBar(page)
-    .getByRole("button", { name: "Heart: no reactions", exact: true })
-    .click();
-  const daveHeart = chapterBar(page).getByRole("button", {
-    name: "Heart: 1 reaction",
-    exact: true,
-  });
-  await expect(daveHeart).toHaveAttribute("aria-pressed", "true");
+  // Without reactions there is only "Add reaction" and no total count.
+  await expect(chapterBar(page).getByRole("button")).toHaveCount(1);
+  await pick(page, chapterBar(page), "heart");
+  await expect(reaction(chapterBar(page), "Heart: 1 reaction")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await page
     .getByRole("textbox", { name: en.comments.newLabel })
     .fill("Lovely");
   await page.getByRole("button", { name: en.comments.submit }).click();
-  // One's own comment takes no reactions.
-  await expect(
-    commentBar(page, "Dave").getByRole("button", {
-      name: "Heart: no reactions",
-      exact: true,
-    }),
-  ).toBeDisabled();
+  await expect(page.getByText("Lovely")).toBeVisible();
+  // One's own comment takes no reactions, so it has no bar at all.
+  await expect(commentBar(page, "Dave")).toHaveCount(0);
 
   const erin = await loginAs(browser, "erin");
   await erin.page.goto(CHAPTER);
-  await chapterBar(erin.page)
-    .getByRole("button", { name: "Heart: 1 reaction", exact: true })
-    .click();
+  await reaction(chapterBar(erin.page), "Heart: 1 reaction").click();
   await expect(
-    chapterBar(erin.page).getByRole("button", {
-      name: "Heart: 2 reactions",
-      exact: true,
-    }),
+    reaction(chapterBar(erin.page), "Heart: 2 reactions"),
   ).toHaveAttribute("aria-pressed", "true");
-  await commentBar(erin.page, "Dave")
-    .getByRole("button", { name: "Fire: no reactions", exact: true })
-    .click();
+  await pick(erin.page, commentBar(erin.page, "Dave"), "fire");
   await expect(
-    commentBar(erin.page, "Dave").getByRole("button", {
-      name: "Fire: 1 reaction",
-      exact: true,
-    }),
+    reaction(commentBar(erin.page, "Dave"), "Fire: 1 reaction"),
   ).toHaveAttribute("aria-pressed", "true");
   await chapterBar(erin.page)
-    .getByRole("button", { name: `${en.reactions.who}: 2 reactions` })
+    .getByRole("button", { name: "Who reacted: Heart" })
     .click();
   const list = erin.page.getByRole("list", { name: en.reactions.who });
   await expect(list.getByRole("link", { name: "Erin" })).toBeVisible();
@@ -74,30 +73,21 @@ test("dave and erin react to a chapter and a comment; a guest sees the counts an
 
   // Another reaction replaces Dave's; the same one again takes it off.
   await page.reload();
-  await chapterBar(page)
-    .getByRole("button", { name: "Laughing: no reactions", exact: true })
-    .click();
+  await pick(page, chapterBar(page), "laugh");
   await expect(
-    chapterBar(page).getByRole("button", {
-      name: "Laughing: 1 reaction",
-      exact: true,
-    }),
+    reaction(chapterBar(page), "Laughing: 1 reaction"),
   ).toHaveAttribute("aria-pressed", "true");
+  await expect(reaction(chapterBar(page), "Heart: 1 reaction")).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+  await reaction(chapterBar(page), "Laughing: 1 reaction").click();
   await expect(
-    chapterBar(page).getByRole("button", {
-      name: "Heart: 1 reaction",
-      exact: true,
-    }),
-  ).toHaveAttribute("aria-pressed", "false");
-  await chapterBar(page)
-    .getByRole("button", { name: "Laughing: 1 reaction", exact: true })
-    .click();
+    chapterBar(page).getByRole("button", { name: /^Laughing/ }),
+  ).toHaveCount(0);
   await expect(
-    chapterBar(page).getByRole("button", {
-      name: "Laughing: no reactions",
-      exact: true,
-    }),
-  ).toHaveAttribute("aria-pressed", "false");
+    chapterBar(page).getByRole("button", { name: en.reactions.add }),
+  ).toBeFocused();
 
   const guest = await browser.newContext({
     storageState: { cookies: [], origins: [] },
@@ -106,31 +96,19 @@ test("dave and erin react to a chapter and a comment; a guest sees the counts an
   await guestPage.setViewportSize({ width: 375, height: 800 });
   await guestPage.goto(CHAPTER);
   await expect(
-    chapterBar(guestPage).getByRole("button", {
-      name: "Heart: 1 reaction",
-      exact: true,
-    }),
+    reaction(chapterBar(guestPage), "Heart: 1 reaction"),
   ).toBeVisible();
   await expect(
-    commentBar(guestPage, "Dave").getByRole("button", {
-      name: "Fire: 1 reaction",
-      exact: true,
-    }),
+    reaction(commentBar(guestPage, "Dave"), "Fire: 1 reaction"),
   ).toBeVisible();
+  await expect(guestPage.getByText(/^\d+ reactions?$/)).toHaveCount(0);
   expect(
     await guestPage.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
-  // The six reactions stay in one row on a narrow screen.
-  const tops = await commentBar(guestPage, "Dave")
-    .getByRole("button")
-    .evaluateAll((buttons) =>
-      buttons.slice(0, 6).map((button) => button.getBoundingClientRect().top),
-    );
-  expect(new Set(tops).size).toBe(1);
   await chapterBar(guestPage)
-    .getByRole("button", { name: `${en.reactions.who}: 1 reaction` })
+    .getByRole("button", { name: "Who reacted: Heart" })
     .click();
   await expect(
     guestPage
@@ -138,21 +116,16 @@ test("dave and erin react to a chapter and a comment; a guest sees the counts an
       .getByRole("link", { name: "Erin" }),
   ).toBeVisible();
   await guestPage.keyboard.press("Escape");
-  await chapterBar(guestPage)
-    .getByRole("button", { name: "Heart: 1 reaction", exact: true })
-    .click();
+  await reaction(chapterBar(guestPage), "Heart: 1 reaction").click();
   await expect(
     guestPage.getByRole("dialog", { name: en.auth.signIn }),
   ).toBeVisible();
   await guestPage.keyboard.press("Escape");
   await expect(
-    chapterBar(guestPage).getByRole("button", {
-      name: "Heart: 1 reaction",
-      exact: true,
-    }),
+    reaction(chapterBar(guestPage), "Heart: 1 reaction"),
   ).toBeFocused();
   await commentBar(guestPage, "Dave")
-    .getByRole("button", { name: "Fire: 1 reaction", exact: true })
+    .getByRole("button", { name: en.reactions.add })
     .click();
   await expect(
     guestPage.getByRole("dialog", { name: en.auth.signIn }),
