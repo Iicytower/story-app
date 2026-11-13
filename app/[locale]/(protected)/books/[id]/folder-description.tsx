@@ -52,7 +52,7 @@ export function FolderDescription({
   }
 
   return (
-    <div className="flex max-w-2xl flex-col gap-1.5">
+    <div className="mt-3 flex flex-col gap-1.5">
       <label htmlFor={id} className="text-sm font-medium">
         {t("description")}
       </label>

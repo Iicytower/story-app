@@ -134,7 +134,7 @@ test.describe("as a user", () => {
     await expect(bio).toHaveValue("");
     await bio.fill("I write *short* stories.");
     await expect(dialog.getByText("24 / 1,000")).toBeVisible();
-    await dialog.getByRole("button", { name: "Update “About me”" }).click();
+    await dialog.getByRole("button", { name: "Save “About me”" }).click();
     await expect(
       dialog.getByRole("region", { name: "About me" }).getByRole("status"),
     ).toHaveText("“About me” is saved.");

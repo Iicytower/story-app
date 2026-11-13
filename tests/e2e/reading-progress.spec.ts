@@ -59,9 +59,12 @@ test("saves the reading position, and Continue reading returns to it", async ({
     page.getByText("Paragraph 150 of a long chapter."),
   ).toBeAttached();
   await scrollTo(page, 0.5);
-  await page.clock.runFor(10_000);
+  // The save timer starts only after hydration, which may come after the first runFor.
   await expect
-    .poll(async () => (await findReadingProgress("dave"))?.position ?? -1)
+    .poll(async () => {
+      await page.clock.runFor(10_000);
+      return (await findReadingProgress("dave"))?.position ?? -1;
+    })
     .toBeCloseTo(0.5, 1);
   expect((await findReadingProgress("dave"))?.read).toBe(0);
 

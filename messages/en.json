@@ -9,7 +9,8 @@
     "create": "Create",
     "creating": "Creating…",
     "rename": "Rename",
-    "appName": "Story App"
+    "appName": "Story App",
+    "skipToContent": "Skip to content"
   },
   "sidebar": {
     "home": "Home",
@@ -74,7 +75,7 @@
     "bio": "About me",
     "bioHelp": "Shown on your profile. You can use **bold**, *italics*, links and > quotes.",
     "bioLength": "{length, number} / {max, number}",
-    "saveBio": "Update “About me”",
+    "saveBio": "Save “About me”",
     "bioSaved": "“About me” is saved.",
     "avatar": "Avatar",
     "avatarsUnavailable": "Avatars are not available right now.",
@@ -457,7 +458,7 @@
     "sortUpdated": "Last updated",
     "sortManual": "Manual",
     "sortAlpha": "A–Z",
-    "searchPlaceholder": "Search titles and content in all books, press Enter",
+    "searchPlaceholder": "Search titles and text",
     "searchLabel": "Search books",
     "filterByTag": "Filter by tag",
     "empty": "No books yet. Create a book or a new chapter.",
@@ -500,7 +501,7 @@
   },
   "menu": {
     "actionsFor": "Actions for {name}",
-    "actions": "Actions",
+    "actions": "Actions for all books",
     "sort": "Sort",
     "statusPublic": "Public",
     "statusPrivate": "Not public",
@@ -1368,7 +1369,7 @@
   },
   "messages": {
     "title": "Messages",
-    "empty": "No conversations yet. Start one with New message or Message on someone’s profile.",
+    "empty": "No conversations yet. Start one with “New message” or “Message” on someone’s profile.",
     "new": "New message",
     "recipient": "To",
     "list": "Conversations",

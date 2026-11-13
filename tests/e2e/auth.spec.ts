@@ -20,6 +20,9 @@ test.describe("signed out", () => {
         .filter({ hasText: "Invalid nickname or password." }),
     ).toBeVisible();
     await expect(page).toHaveURL("/en?auth=login");
+    // Only the password has to be typed again.
+    await expect(page.getByLabel("Nickname")).toHaveValue(USERS.alice.nickname);
+    await expect(page.getByLabel("Password")).toHaveValue("");
   });
 
   test("unknown nickname shows the same error", async ({ page }) => {

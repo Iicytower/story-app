@@ -1,4 +1,4 @@
-import { findSettings, seedPublished, seedStory } from "./db";
+import { findSettings, seedFolder, seedPublished, seedStory } from "./db";
 import { storageStatePath } from "./env";
 import {
   expect,
@@ -60,6 +60,62 @@ test("the sidebar names the app and the account, whose menu opens the settings",
   await nav.getByRole("link", { name: "Story App" }).click();
   await expect(page).toHaveURL("/en");
 });
+
+test("the first Tab stop skips the navigation to the page content", async ({
+  page,
+}) => {
+  await page.goto("/books");
+  await expect(page.getByRole("heading", { name: "Books" })).toBeVisible();
+  const skip = page.getByRole("link", { name: "Skip to content" });
+  await expect(skip).not.toBeInViewport();
+  await page.keyboard.press("Tab");
+  await expect(skip).toBeFocused();
+  await expect(skip).toBeInViewport();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("main")).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("main").getByRole("button", { name: "New book" }),
+  ).toBeFocused();
+});
+
+test("closing the settings opened from the account menu focuses the account button", async ({
+  page,
+}) => {
+  await page.goto("/books");
+  const dialog = await openSettings(page);
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(
+    page
+      .getByRole("navigation", { name: "Main" })
+      .getByRole("button", { name: "Account menu, Alice" }),
+  ).toBeFocused();
+});
+
+for (const [name, viewport] of [
+  ["desktop", { width: 1280, height: 800 }],
+  ["a narrow screen", { width: 375, height: 812 }],
+] as const)
+  test(`a long title without spaces does not scroll the page sideways on ${name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    const title = "x".repeat(200);
+    const folder = await seedFolder("alice", title);
+    await seedStory("alice", { title, folder: title });
+    for (const path of ["/books", `/books/${folder}`, "/books?q=xxxx"]) {
+      await page.goto(path);
+      await expect(page.getByText(title).first()).toBeVisible();
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth - window.innerWidth,
+        ),
+        path,
+      ).toBeLessThanOrEqual(0);
+    }
+  });
 
 test("Moderation sits above the account block and Feed is Aktualności in Polish", async ({
   page,
@@ -266,6 +322,38 @@ test.describe("on a narrow screen", () => {
       .getByRole("heading", { level: 1 })
       .boundingBox())!;
     expect(bar.y + bar.height).toBeLessThanOrEqual(heading.y);
+  });
+
+  test("closing the settings from the account menu focuses the menu button", async ({
+    page,
+  }) => {
+    await page.goto("/books");
+    const dialog = await openSettings(page);
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(page.getByRole("button", { name: /^Menu/ })).toBeFocused();
+  });
+
+  test("the account menu covers the Moderation row in the drawer", async ({
+    page,
+  }) => {
+    await seedPublished("alice", "Drawer", [
+      { title: "One", publication: "public", content: "Text" },
+    ]);
+    await page.goto("/books");
+    await page.getByRole("button", { name: /^Menu/ }).click();
+    const drawer = page.getByRole("dialog", { name: "Menu" });
+    await drawer.getByRole("button", { name: "Account menu, Alice" }).click();
+    const row = drawer.getByRole("link", { name: /^Moderation/ });
+    const menu = page.getByRole("menu");
+    // Both boxes move while the drawer and the menu animate in.
+    await expect
+      .poll(async () => {
+        const [r, m] = [(await row.boundingBox())!, (await menu.boundingBox())!];
+        return m.x <= r.x + 0.5 && m.x + m.width >= r.x + r.width - 0.5;
+      })
+      .toBe(true);
   });
 
   test("the drawer closes after choosing a view", async ({ page }) => {
