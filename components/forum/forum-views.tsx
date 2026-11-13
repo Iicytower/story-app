@@ -349,7 +349,7 @@ export async function ThreadPage({
           <li
             key={post.id}
             id={postAnchor(post.id)}
-            className="target:bg-muted/60 min-w-0 scroll-mt-4 target:rounded-md"
+            className="target:bg-muted/60 min-w-0 scroll-mt-14 md:scroll-mt-4 target:rounded-md"
           >
             <PostItem
               post={post}

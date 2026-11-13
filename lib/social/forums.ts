@@ -78,6 +78,69 @@ export async function listForumCategories(): Promise<CategoryView[]> {
   return categories.map(categoryView);
 }
 
+export interface CategoryListItem extends CategoryView {
+  threadCount: number;
+  lastPostAt: string | null;
+}
+
+// Each category with the number and the latest activity of the threads its list shows the
+// viewer (the filters of listThreads), so hidden content does not leak through the counts.
+export async function listCategoriesWithActivity(
+  viewerId: string | null,
+): Promise<CategoryListItem[]> {
+  await connectDB();
+  const [categories, hidden] = await Promise.all([
+    ForumCategory.find().sort({ order: 1, _id: 1 }).lean(),
+    hiddenUserIdsFor(viewerId),
+  ]);
+  const roles = await Promise.all(
+    categories.map((category) =>
+      forumRole(viewerId, {
+        scope: "global",
+        category: categoryView(category),
+        moderatorIds: category.moderatorIds.map(String),
+      }),
+    ),
+  );
+  const moderated = categories
+    .filter((_, index) => roles[index])
+    .map(({ _id }) => _id);
+  const stats = await ForumThread.aggregate<{
+    _id: string;
+    threadCount: number;
+    lastPostAt: Date;
+  }>([
+    {
+      $match: {
+        scope: "global",
+        categoryId: { $in: categories.map(({ _id }) => _id) },
+        deletedAt: null,
+        userId: { $nin: hidden },
+        $or: [
+          { hidden: { $exists: false } },
+          { categoryId: { $in: moderated } },
+        ],
+      },
+    },
+    {
+      $group: {
+        _id: "$categoryId",
+        threadCount: { $sum: 1 },
+        lastPostAt: { $max: "$lastPostAt" },
+      },
+    },
+  ]);
+  const byKey = new Map(stats.map((stat) => [stat._id, stat]));
+  return categories.map((category) => {
+    const stat = byKey.get(category._id);
+    return {
+      ...categoryView(category),
+      threadCount: stat?.threadCount ?? 0,
+      lastPostAt: stat ? stat.lastPostAt.toISOString() : null,
+    };
+  });
+}
+
 export async function findCategoryPlace(
   key: string,
 ): Promise<Extract<ForumPlace, { scope: "global" }> | null> {

@@ -1180,8 +1180,10 @@
       "clap": "Applause"
     },
     "react": "{reaction}: {count, plural, =0 {no reactions} one {# reaction} other {# reactions}}",
-    "total": "{count, plural, one {# reaction} other {# reactions}}",
     "who": "Who reacted",
+    "whoFor": "Who reacted: {reaction}",
+    "add": "Add reaction",
+    "pick": "Choose a reaction",
     "more": "{count, plural, other {and # more}}"
   },
   "ratings": {
@@ -1403,6 +1405,8 @@
     "startedBy": "Started by {nickname}",
     "posts": "{count, plural, one {# post} other {# posts}}",
     "lastPost": "Last post",
+    "threadCount": "{count, plural, =0 {No threads} one {# thread} other {# threads}}",
+    "categoryLastPost": "last post",
     "threadHidden": "Hidden by a moderator.",
     "postHidden": "Hidden by a moderator.",
     "postDeleted": "Post deleted.",

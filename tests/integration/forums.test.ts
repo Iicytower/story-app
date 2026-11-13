@@ -39,6 +39,7 @@ import {
   findAuthorForum,
   findCategoryPlace,
   getThread,
+  listCategoriesWithActivity,
   listThreads,
   threadReplyRecipients,
 } from "@/lib/social/forums";
@@ -639,6 +640,66 @@ describe("reading (7)", () => {
     expect(
       (await listThreads(null, place)).map(({ title }) => title),
     ).toContain("By Dave");
+  });
+});
+
+describe("category list (task 103)", () => {
+  it("counts the threads and the last post like the thread list of each viewer", async () => {
+    const at = (day: number) => new Date(Date.UTC(2026, 0, day));
+    const setLast = (id: string, day: number) =>
+      ForumThread.updateOne({ _id: id }, { $set: { lastPostAt: at(day) } });
+    await setLast(await thread("Dave"), 1);
+    await setLast(await thread("Erin"), 2);
+    await setLast(await thread("Dave", { category: "hyde-park" }), 3);
+    const banned = await thread("Alice");
+    await setLast(banned, 4);
+    const hidden = await thread("Carol");
+    await setLast(hidden, 5);
+    await ok(as("Bob", () => hideContent("thread", hidden)));
+    const deleted = await thread("Alice");
+    await ok(as("Alice", async () => deletePost(await firstPost(deleted))));
+    await setLast(deleted, 6);
+    await User.updateOne(
+      { _id: ids.Alice },
+      { $set: { globalBan: { until: null, reason: "x", by: ids.Admin } } },
+    );
+    await ok(as("Erin", () => blockUser("Dave")));
+
+    const workshop = (await findCategoryPlace("workshop"))!;
+    const park = (await findCategoryPlace("hyde-park"))!;
+    const of = async (name: Name | null) => {
+      const viewerId = name ? ids[name].toString() : null;
+      const categories = await listCategoriesWithActivity(viewerId);
+      const pick = async (place: typeof workshop) => {
+        const category = categories.find(
+          ({ key }) => key === place.category.key,
+        )!;
+        const threads = await listThreads(viewerId, place);
+        expect(category.threadCount).toBe(threads.length);
+        expect(category.lastPostAt).toBe(threads[0]?.lastPostAt ?? null);
+        return [category.threadCount, category.lastPostAt];
+      };
+      return { workshop: await pick(workshop), park: await pick(park) };
+    };
+    const iso = (day: number) => at(day).toISOString();
+
+    expect(await of(null)).toEqual({
+      workshop: [2, iso(2)],
+      park: [1, iso(3)],
+    });
+    expect(await of("Erin")).toEqual({
+      workshop: [1, iso(2)],
+      park: [0, null],
+    });
+    // The category's moderator and the admin see the hidden thread in the list, so in the count.
+    expect((await of("Bob")).workshop).toEqual([3, iso(5)]);
+    expect((await of("Admin")).workshop).toEqual([3, iso(5)]);
+    expect((await of("Dave")).workshop).toEqual([2, iso(2)]);
+    expect(
+      (await listCategoriesWithActivity(null)).find(
+        ({ key }) => key === "announcements",
+      ),
+    ).toMatchObject({ threadCount: 0, lastPostAt: null });
   });
 });
 
