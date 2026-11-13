@@ -356,7 +356,7 @@ describe("folder queries", () => {
     ]);
   });
 
-  it("returns the folder with its chapters, newest first, only for the owner", async () => {
+  it("returns the folder with its chapters, oldest first, only for the owner", async () => {
     const folderId = await seedFolder("Drafts");
     const first = await seedStory(folderId, "First");
     await Story.updateOne(
@@ -367,7 +367,7 @@ describe("folder queries", () => {
     await seedStory(folderId, "Second");
 
     const folder = await getFolder(alice.toString(), folderId.toString());
-    expect(folder?.chapters.map((c) => c.title)).toEqual(["Second", "First"]);
+    expect(folder?.chapters.map((c) => c.title)).toEqual(["First", "Second"]);
     expect(await getFolder(bob.toString(), folderId.toString())).toBeNull();
   });
 

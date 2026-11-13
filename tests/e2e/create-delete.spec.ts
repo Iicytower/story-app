@@ -14,7 +14,7 @@ test("creates a story from the modal and opens the editor", async ({
   page,
 }) => {
   await page.goto("/books");
-  await menuAction(page, "Actions", "New chapter");
+  await page.getByRole("button", { name: "New chapter", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "New chapter" });
   await dialog.getByLabel("Book").fill("Drafts");
   await dialog.getByLabel("Title").fill("Fresh story");
@@ -31,7 +31,7 @@ test("shows the duplicate title error in the modal", async ({ page }) => {
   await seedStory("alice", { title: "Taken" });
 
   await page.goto("/books");
-  await menuAction(page, "Actions", "New chapter");
+  await page.getByRole("button", { name: "New chapter", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "New chapter" });
   // Prefilled with the most recently active folder.
   await expect(dialog.getByLabel("Book")).toHaveValue("Unsorted");
@@ -47,7 +47,7 @@ test("shows the duplicate title error in the modal", async ({ page }) => {
 
 test("shows the empty title error in the modal", async ({ page }) => {
   await page.goto("/books");
-  await menuAction(page, "Actions", "New chapter");
+  await page.getByRole("button", { name: "New chapter", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "New chapter" });
   await dialog.getByLabel("Title").fill("   ");
   await dialog.getByRole("button", { name: "Create" }).click();

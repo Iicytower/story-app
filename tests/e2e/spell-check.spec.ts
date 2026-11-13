@@ -4,7 +4,6 @@ import { storageStatePath } from "./env";
 import {
   expect,
   markdownEditor,
-  menuAction,
   openMenu,
   publishFromEditor,
   test,
@@ -48,7 +47,7 @@ test("story text fields are spell checked in Polish", async ({ page }) => {
   await expectPolish(markdownEditor(page, "Book notes").field);
 
   await page.goto("/books");
-  await menuAction(page, "Actions", "New chapter");
+  await page.getByRole("button", { name: "New chapter", exact: true }).click();
   const story = page.getByRole("dialog", { name: "New chapter" });
   await expectPolish(story.getByLabel("Title"));
   await expect(story.getByLabel("Book")).not.toHaveAttribute("lang", "pl");

@@ -16,7 +16,7 @@ test("creates a folder, a chapter in it, moves the chapter and deletes the folde
   await seedFolder("alice", "Archive", new Date("2026-01-01"));
 
   await page.goto("/books");
-  await menuAction(page, "Actions", "New book");
+  await page.getByRole("button", { name: "New book", exact: true }).click();
   const folderDialog = page.getByRole("dialog", { name: "New book" });
   await folderDialog.getByLabel("Name").fill("Book");
   await folderDialog.getByRole("button", { name: "Create" }).click();
@@ -25,7 +25,7 @@ test("creates a folder, a chapter in it, moves the chapter and deletes the folde
     page.getByRole("heading", { name: "Book", exact: true }),
   ).toBeVisible();
 
-  await menuAction(page, "Actions for Book", "New chapter");
+  await page.getByRole("button", { name: "New chapter", exact: true }).click();
   const storyDialog = page.getByRole("dialog", { name: "New chapter" });
   await expect(storyDialog.getByLabel("Book", { exact: true })).toHaveValue(
     "Book",
@@ -61,7 +61,7 @@ test("creates a folder, a chapter in it, moves the chapter and deletes the folde
 
 test("creates a new folder from the New chapter dialog", async ({ page }) => {
   await page.goto("/books");
-  await menuAction(page, "Actions", "New chapter");
+  await page.getByRole("button", { name: "New chapter", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "New chapter" });
   await dialog.getByLabel("Book", { exact: true }).fill("Typed folder");
   await dialog.getByLabel("Title").fill("First");

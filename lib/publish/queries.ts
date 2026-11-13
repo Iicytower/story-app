@@ -5,7 +5,7 @@ import { isAdult } from "@/lib/adult/adult";
 import { coversOf, type CoverView } from "@/lib/covers/queries";
 import { connectDB } from "@/lib/db";
 import { findChaptersInOrder } from "@/lib/folders/queries";
-import { chapterOrder, type ChapterSort } from "@/lib/folders/sort";
+import { chapterOrder } from "@/lib/folders/sort";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
 import { NOT_DELETED, User } from "@/lib/models/user";
@@ -45,11 +45,6 @@ export function chapterSlugs(
     chapters.map(({ _id, title }) => ({ id: _id.toString(), text: title })),
     CHAPTER_SLUG_FALLBACK,
   );
-}
-
-// Readers start from the first chapter, while the author's "Newest first" starts from the last.
-function readingOrder<T>(chapters: T[], sort: ChapterSort | undefined): T[] {
-  return (sort ?? "created") === "created" ? chapters.toReversed() : chapters;
 }
 
 // Public pages: never notes, tags or ids, and only public chapters of a published active folder.
@@ -107,7 +102,7 @@ async function loadPublishedFolder(
       .lean();
     const path = `/p/${author.nickname}/${slugs.get(folder._id.toString())}`;
     const slugsOfChapters = chapterSlugs(chapters);
-    const visible = readingOrder(chapters, folder.chapterSort)
+    const visible = chapters
       .filter(({ publication }) => publication === "public")
       .map(({ _id, title, formerSlugs, adult, publishedAt }) => {
         const slug = slugsOfChapters.get(_id.toString())!;

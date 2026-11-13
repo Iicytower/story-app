@@ -27,6 +27,7 @@ import { AdultDialog, AdultMenuItem } from "@/components/adult";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ExportDialog } from "@/components/export-dialog";
 import { type TagOptions, TagsDialog } from "@/components/tags-dialog";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -142,16 +143,15 @@ export function FolderMenu({
 
   return (
     <>
+      <Button onClick={() => setDialog("newChapter")}>
+        <FilePlusIcon />
+        {tChapters("newChapter")}
+      </Button>
       <ActionMenu label={t("actionsFor", { name: folder.name })}>
-        <DropdownMenuItem onSelect={() => setDialog("newChapter")}>
-          <FilePlusIcon />
-          {tChapters("newChapter")}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
         <SortSubmenu
           value={sort}
           options={[
-            { value: "created", label: tFolders("sortNewest") },
+            { value: "created", label: tFolders("sortOldest") },
             { value: "manual", label: tFolders("sortManual") },
             { value: "alpha", label: tFolders("sortAlpha") },
           ]}

@@ -4,6 +4,7 @@ import { FilePlusIcon, FileUpIcon, FolderPlusIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useOptimistic, useState, useTransition } from "react";
 import { ActionMenu, SortSubmenu } from "@/components/action-menu";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -50,35 +51,37 @@ export function StoriesMenu({
   return (
     <>
       {sortError && (
-        <p role="alert" className="text-destructive text-sm">
+        <p role="alert" className="text-destructive order-last w-full text-sm">
           {sortError}
         </p>
       )}
-      <ActionMenu label={t("actions")}>
-        <DropdownMenuItem onSelect={() => setDialog("newStory")}>
-          <FilePlusIcon />
-          {tStories("newStory")}
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => setDialog("newFolder")}>
+      {/* one group, so on narrow screens all actions wrap together under the title */}
+      <div className="flex items-center gap-2">
+        <Button onClick={() => setDialog("newFolder")}>
           <FolderPlusIcon />
           {tFolders("newFolder")}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <SortSubmenu
-          value={optimisticSort}
-          options={[
-            { value: "updated", label: tFolders("sortUpdated") },
-            { value: "manual", label: tFolders("sortManual") },
-            { value: "alpha", label: tFolders("sortAlpha") },
-          ]}
-          onChange={changeSort}
-        />
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => setDialog("import")}>
-          <FileUpIcon />
-          {tImport("import")}
-        </DropdownMenuItem>
-      </ActionMenu>
+        </Button>
+        <Button variant="outline" onClick={() => setDialog("newStory")}>
+          <FilePlusIcon />
+          {tStories("newStory")}
+        </Button>
+        <ActionMenu label={t("actions")}>
+          <SortSubmenu
+            value={optimisticSort}
+            options={[
+              { value: "updated", label: tFolders("sortUpdated") },
+              { value: "manual", label: tFolders("sortManual") },
+              { value: "alpha", label: tFolders("sortAlpha") },
+            ]}
+            onChange={changeSort}
+          />
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => setDialog("import")}>
+            <FileUpIcon />
+            {tImport("import")}
+          </DropdownMenuItem>
+        </ActionMenu>
+      </div>
       <CreateStoryDialog
         {...dialogProps("newStory")}
         folders={folders}

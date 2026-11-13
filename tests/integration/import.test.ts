@@ -111,7 +111,7 @@ describe("importStories", () => {
     ]);
   });
 
-  it("keeps a reproducible order in Newest first", async () => {
+  it("keeps a reproducible order in Oldest first", async () => {
     const folder = await seedFolder(alice, "F");
     await importStories(
       { kind: "folder", id: folder._id.toString() },
@@ -119,9 +119,9 @@ describe("importStories", () => {
       "",
     );
     const stories = await Story.find({ folderId: folder._id })
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 })
       .lean();
-    expect(stories.map(({ title }) => title)).toEqual(["3", "2", "1"]);
+    expect(stories.map(({ title }) => title)).toEqual(["1", "2", "3"]);
   });
 
   it("picks an existing folder by name or creates one", async () => {

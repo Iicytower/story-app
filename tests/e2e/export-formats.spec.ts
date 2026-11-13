@@ -89,8 +89,8 @@ for (const id of ["docx", "pdf"] as const) {
     expect(download.suggestedFilename()).toBe("ksiazka.zip");
     const files = unzipSync(await readFile(await download.path()));
     expect(Object.keys(files).sort()).toEqual([
-      `01-dwa.${id}`,
-      `02-jeden.${id}`,
+      `01-jeden.${id}`,
+      `02-dwa.${id}`,
     ]);
   });
 }

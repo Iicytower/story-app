@@ -56,8 +56,8 @@ test("switches between story, notes, chapters and tools on a narrow screen", asy
 
   await tab("Chapters").click();
   await expect(chapters.getByRole("link")).toHaveText([
-    "Other chapter",
     "Mobile",
+    "Other chapter",
   ]);
   await expect(notes).toBeHidden();
 
