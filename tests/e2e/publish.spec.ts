@@ -1,10 +1,13 @@
 import type { Browser, Page } from "@playwright/test";
-import { findFolder, seedStory, withE2EDb } from "./db";
+import en from "@/messages/en.json";
+import { findFolder, seedPublished, seedStory, withE2EDb } from "./db";
 import { storageStatePath } from "./env";
 import {
   editorAction,
   expect,
   menuAction,
+  publicLinkHref,
+  publicLinkRow,
   publishFromEditor,
   test,
 } from "./helpers";
@@ -58,15 +61,18 @@ test("a published folder is readable without logging in until it is unpublished"
   browser,
 }) => {
   const id = await seedBook();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await expect(
-    page.getByRole("img", { name: "Not public" }).first(),
+    page
+      .getByRole("list", { name: "Chapters" })
+      .getByText("Not public", { exact: true })
+      .first(),
   ).toBeVisible();
   await menuAction(page, "Actions for Book", "Publish");
-  await confirm(page, "Publish folder?", "Publish");
-  const link = page.getByRole("textbox", { name: "Public link" });
-  await expect(link).toHaveValue(/\/p\/Alice\/book$/);
-  const url = await link.inputValue();
+  await confirm(page, "Publish book?", "Publish");
+  const link = publicLinkRow(page);
+  const url = await publicLinkHref(page);
+  expect(url).toMatch(/\/p\/Alice\/book$/);
 
   const visitor = await anonymous(browser);
   await visitor.goto(url);
@@ -75,7 +81,9 @@ test("a published folder is readable without logging in until it is unpublished"
   await visitor.getByRole("link", { name: "1. One" }).click();
   await expect(visitor).toHaveURL(/\/p\/Alice\/book\/one$/);
   await expect(visitor.getByText("First text")).toBeVisible();
-  await expect(visitor.getByRole("link", { name: "Two →" })).toBeVisible();
+  await expect(
+    visitor.getByRole("link", { name: en.public.next }),
+  ).toHaveAttribute("title", "Two");
   const html = await visitor.content();
   for (const secret of [SECRET_COMMENT, SECRET_NOTE, SECRET_FOLDER_NOTE]) {
     expect(html).not.toContain(secret);
@@ -84,7 +92,7 @@ test("a published folder is readable without logging in until it is unpublished"
   expect(response!.headers()["x-robots-tag"]).toBeUndefined();
 
   await menuAction(page, "Actions for Book", "Unpublish");
-  await confirm(page, "Unpublish folder?", "Unpublish");
+  await confirm(page, "Unpublish book?", "Unpublish");
   await expect(link).toBeHidden();
   expect((await visitor.goto(url))!.status()).toBe(404);
 });
@@ -94,26 +102,29 @@ test("a chapter published alone keeps the others unpublished, and Publish all re
   browser,
 }) => {
   const id = await seedBook();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await menuAction(page, "Actions for One", "Publish");
   await confirm(page, "Publish chapter?", "Publish");
-  const link = page.getByRole("textbox", { name: "Public link" });
-  await expect(link).toBeVisible();
-
   const visitor = await anonymous(browser);
-  await visitor.goto(await link.inputValue());
+  await visitor.goto(await publicLinkHref(page));
   await expect(visitor.getByRole("link", { name: "1. One" })).toBeVisible();
   await expect(visitor.getByRole("link", { name: /Two/ })).toBeHidden();
 
   const chapters = page.getByRole("list", { name: "Chapters" });
   await expect(
-    chapters.getByRole("listitem").filter({ hasText: "One" }).getByRole("img"),
-  ).toHaveAccessibleName("Public");
+    chapters
+      .getByRole("listitem")
+      .filter({ hasText: "One" })
+      .getByText("Public", { exact: true }),
+  ).toBeVisible();
   await menuAction(page, "Actions for Book", "Publish all");
   await confirm(page, "Publish all chapters?", "Publish all");
   await expect(
-    chapters.getByRole("listitem").filter({ hasText: "Two" }).getByRole("img"),
-  ).toHaveAccessibleName("Public");
+    chapters
+      .getByRole("listitem")
+      .filter({ hasText: "Two" })
+      .getByText("Public", { exact: true }),
+  ).toBeVisible();
   await visitor.reload();
   await expect(visitor.getByRole("link", { name: "2. Two" })).toBeVisible();
 });
@@ -128,13 +139,12 @@ test("the editor publishes a chapter, and a deleted chapter gives 404", async ({
     folder: "Book",
     content: "Third text",
   });
-  await page.goto(`/stories/${story}`);
+  await page.goto(`/chapters/${story}`);
   await publishFromEditor(page);
-  const link = page.getByRole("textbox", { name: "Public link" });
-  await expect(link).toHaveValue(/\/p\/Alice\/book\/three$/);
+  const url = await publicLinkHref(page);
+  expect(url).toMatch(/\/p\/Alice\/book\/three$/);
 
   const visitor = await anonymous(browser);
-  const url = await link.inputValue();
   await visitor.goto(url);
   await expect(visitor.getByText("Third text")).toBeVisible();
 
@@ -143,7 +153,7 @@ test("the editor publishes a chapter, and a deleted chapter gives 404", async ({
     .getByRole("alertdialog")
     .getByRole("button", { name: "Delete" })
     .click();
-  await expect(page).toHaveURL(/\/folders\//);
+  await expect(page).toHaveURL(/\/books\//);
   expect((await visitor.goto(url))!.status()).toBe(404);
 });
 
@@ -153,11 +163,10 @@ test("the old address redirects after a title change", async ({
 }) => {
   await seedBook();
   const story = await seedStory("alice", { title: "Three", folder: "Book" });
-  await page.goto(`/stories/${story}`);
+  await page.goto(`/chapters/${story}`);
   await publishFromEditor(page);
-  const link = page.getByRole("textbox", { name: "Public link" });
-  await expect(link).toHaveValue(/three$/);
-  const url = await link.inputValue();
+  const url = await publicLinkHref(page);
+  expect(url).toMatch(/three$/);
   await page.getByRole("textbox", { name: "Title" }).fill("Renamed");
   await page.keyboard.press("Control+s");
   await expect(page.getByRole("status")).toHaveText(/Saved/);
@@ -169,4 +178,95 @@ test("the old address redirects after a title change", async ({
 
 test("the old share addresses are gone", async ({ page }) => {
   expect((await page.goto("/s/abc123456789"))!.status()).toBe(404);
+});
+
+test("the breadcrumb leads from a chapter to its folder, the author and home", async ({
+  browser,
+}) => {
+  await seedPublished("alice", "Book", [
+    { title: "One", publication: "public" },
+  ]);
+  const visitor = await anonymous(browser);
+  const breadcrumb = visitor.getByRole("navigation", { name: "Breadcrumb" });
+
+  await visitor.goto("/en/p/Alice/book/one");
+  await breadcrumb.getByRole("link", { name: "Book" }).click();
+  await expect(visitor).toHaveURL(/\/en\/p\/Alice\/book$/);
+  await expect(breadcrumb.getByRole("link", { name: "Book" })).toBeHidden();
+  await breadcrumb.getByRole("link", { name: "Alice" }).click();
+  await expect(visitor).toHaveURL(/\/en\/p\/Alice$/);
+
+  await visitor.goto("/en/p/Alice/book");
+  await breadcrumb.getByRole("link", { name: "Home" }).click();
+  await expect(visitor).toHaveURL(/\/en$/);
+});
+
+test("a public book shows its plain-text description and reading as the main action; the chapter navigation comes first under the text (D83)", async ({
+  browser,
+}) => {
+  await seedPublished("alice", "Book", [
+    {
+      title: "One",
+      publication: "public",
+      content: "First text",
+      createdAt: new Date(Date.UTC(2026, 0, 1)),
+    },
+    {
+      title: "Two",
+      publication: "public",
+      content: "Second text",
+      createdAt: new Date(Date.UTC(2026, 0, 2)),
+    },
+  ]);
+  const folder = await findFolder("Book");
+  await withE2EDb((connection) =>
+    connection
+      .collection("folders")
+      .updateOne(
+        { _id: folder!._id },
+        { $set: { description: "First line\n<b>Second</b> line" } },
+      ),
+  );
+  const visitor = await anonymous(browser);
+  await visitor.goto("/en/p/Alice/book");
+  await expect(
+    visitor.getByRole("button", { name: en.auth.openDialog }),
+  ).toBeVisible();
+  const description = visitor.getByText("First line");
+  expect(await description.innerText()).toBe("First line\n<b>Second</b> line");
+  await expect(visitor.locator("main b")).toHaveCount(0);
+  await expect(
+    visitor.getByRole("button", { name: en.library.add }),
+  ).not.toHaveClass(/bg-primary/);
+  const start = visitor.getByRole("link", { name: en.public.startReading });
+  await expect(start).toHaveClass(/bg-primary/);
+  await start.click();
+  await expect(visitor).toHaveURL(/\/en\/p\/Alice\/book\/one$/);
+
+  const top = async (locator: ReturnType<Page["locator"]>) =>
+    (await locator.boundingBox())!.y;
+  const textBottom = await visitor
+    .getByText("First text")
+    .boundingBox()
+    .then((box) => box!.y + box!.height);
+  const nav = visitor.getByRole("navigation", { name: en.public.chapters });
+  const navTop = await top(nav);
+  expect(navTop).toBeGreaterThan(textBottom);
+  for (const below of [
+    visitor.getByRole("group", { name: en.reactions.chapter }),
+    visitor.getByRole("group", { name: en.ratings.chapter }),
+    visitor.getByRole("button", { name: en.reports.reportChapter }),
+  ])
+    expect(await top(below)).toBeGreaterThan(navTop);
+  await expect(nav.getByRole("link", { name: en.public.previous })).toHaveCount(
+    0,
+  );
+  const next = nav.getByRole("link", { name: en.public.next });
+  await expect(next).toHaveClass(/bg-primary/);
+  await next.click();
+  await expect(visitor).toHaveURL(/\/en\/p\/Alice\/book\/two$/);
+  await expect(
+    nav.getByRole("link", { name: en.public.previous }),
+  ).toHaveAttribute("title", "One");
+  await expect(nav.getByRole("link", { name: en.public.next })).toHaveCount(0);
 });

@@ -1,6 +1,7 @@
 import {
   CHAPTER_SLUG_FALLBACK,
   FOLDER_SLUG_FALLBACK,
+  RESERVED_FOLDER_SLUGS,
   slugsById,
 } from "./slugs";
 import { Folder } from "@/lib/models/folder";
@@ -30,15 +31,32 @@ export async function arrivalUpdate(folderId: Id) {
   };
 }
 
-// Call after chapters become public: only those never published before get a date.
+// Call after chapters become public: only those never published before get a date. Returns
+// them: they are the feed entry (task 75) and the "new chapter" notifications (task 81) of this
+// publication, one per book (recordChaptersPublished).
 export async function stampPublishedAt(
   filter: Record<string, unknown>,
-): Promise<void> {
+): Promise<Types.ObjectId[]> {
+  const unpublished = {
+    publication: "public" as const,
+    publishedAt: { $exists: false },
+  };
+  const chapters = await Story.find({ ...filter, ...unpublished })
+    .select({ _id: 1 })
+    .lean();
+  if (chapters.length === 0) return [];
+  const ids = chapters.map(({ _id }) => _id);
+  const stamp = new Date();
   await Story.updateMany(
-    { ...filter, publication: "public", publishedAt: { $exists: false } },
-    { $set: { publishedAt: new Date() } },
+    { _id: { $in: ids }, ...unpublished },
+    { $set: { publishedAt: stamp } },
     { timestamps: false },
   );
+  // A concurrent publication may have dated some of them first: those are its own.
+  const stamped = await Story.find({ _id: { $in: ids }, publishedAt: stamp })
+    .select({ _id: 1 })
+    .lean();
+  return stamped.map(({ _id }) => _id);
 }
 
 // Call after a title change: siblings are read with the old title to get the old address back.
@@ -81,6 +99,7 @@ export async function rememberFolderSlug(
       text: _id.toString() === id ? oldName : name,
     })),
     FOLDER_SLUG_FALLBACK,
+    RESERVED_FOLDER_SLUGS,
   );
   await Folder.updateOne(
     { _id: folderId },

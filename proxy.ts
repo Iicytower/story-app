@@ -5,12 +5,13 @@ import { auth } from "@/auth";
 import { routing } from "@/i18n/routing";
 import { isPublicPath } from "@/lib/auth/public-paths";
 import { contentSecurityPolicy } from "@/lib/security-headers";
+import { realtimeUrl } from "@/lib/social/realtime";
 
 const intl = createMiddleware(routing);
 
 // Route Handlers stay outside the locale prefix (D46).
 const UNPREFIXED =
-  /^\/(api\/|(stories|folders)\/[^/]+\/export(\/|$)|covers\/[^/]+$)/;
+  /^\/(api\/|(chapters|books)\/[^/]+\/export(\/|$)|(covers|avatars)\/[^/]+$)/;
 // No page has a two-letter first segment, so this is a locale outside the list.
 const LOCALE_LIKE = /^\/[a-z]{2}(-[A-Za-z]{2})?(\/|$)/;
 
@@ -20,6 +21,7 @@ export const proxy = auth((request) => {
   const csp = contentSecurityPolicy(
     nonce,
     process.env.NODE_ENV === "development",
+    realtimeUrl(),
   );
   const headers = new Headers(request.headers);
   headers.set("x-nonce", nonce);

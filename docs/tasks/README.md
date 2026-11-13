@@ -1,6 +1,6 @@
 # Taski
 
-Źródło wymagań: [`../spec.md`](../spec.md) + [`../decisions.md`](../decisions.md) (ma pierwszeństwo). Wersja 1.0 (tag `v1.0.0`) jest na produkcji; taski dotyczą zmian po 1.0. Szczegóły otwartego tasku w `NN-<slug>.md` (sekcje Zakres, Kryteria akceptacji, Testy). Zakończone taski: wiersz zostaje w tabeli ze statusem `[x]`, a plik przenosimy do [`done/`](done/) (`git mv`, w commicie taska) i poprawiamy link w tabeli. Numeracja rośnie dalej, żeby nie powtarzać nazw branchy.
+Źródło wymagań: [`../spec.md`](../spec.md) + [`../decisions/index.md`](../decisions/index.md) (ma pierwszeństwo). Wersja 1.0 (tag `v1.0.0`) jest na produkcji; taski dotyczą zmian po 1.0. Szczegóły otwartego tasku w `NN-<slug>.md` (sekcje Zakres, Kryteria akceptacji, Testy). Zakończone taski: wiersz zostaje w tabeli ze statusem `[x]`, a plik przenosimy do [`done/`](done/) (`git mv`, w commicie taska) i poprawiamy link w tabeli. Numeracja rośnie dalej, żeby nie powtarzać nazw branchy.
 
 Status: `[ ]` do zrobienia, `[~]` w trakcie, `[x]` zrobione (zmergowane do `develop`).
 
@@ -46,7 +46,22 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 34 | [Rymy](done/34-rhymes.md) | 25, 27 | [x] |
 | 35 | [Filtry rymów](done/35-rhyme-filters.md) | 34 | [x] |
 | 55 | [Korekta w głównym edytorze](done/55-inline-proofreading.md) | 23 | [x] |
-| 51 | [Poprawa wyglądu (mobile i web)](51-ui-polish.md) | – | [ ] |
+| 51 | [Poprawa UX i UI (zbiorczy)](done/51-ui-polish.md) | – | [x] |
+| 93 | ↳ [Nazewnictwo „Książka/Rozdział” i nowe adresy](done/93-books-naming-routes.md) (subtask 51) | – | [x] |
+| 94 | ↳ [Daty w lokalnej strefie i czas względny](done/94-local-dates.md) (subtask 51) | 93 | [x] |
+| 95 | ↳ [Sidebar: nazwa aplikacji, blok konta, pasek mobile](done/95-sidebar-account.md) (subtask 51) | 93 | [x] |
+| 96 | ↳ [Szerokości treści i sidebar na stronach publicznych](done/96-layout-widths.md) (subtask 51) | 95 | [x] |
+| 97 | ↳ [Główne akcje i kolejność rozdziałów](done/97-book-actions-order.md) (subtask 51) | 93 | [x] |
+| 98 | ↳ [Strona książki, opis i wersje](done/98-book-page.md) (subtask 51) | 97 | [x] |
+| 99 | ↳ [Edytor: odstęp, układ mobile, paski, nazwy trybów](done/99-editor-ux.md) (subtask 51) | 95 | [x] |
+| 100 | ↳ [Strona główna: skrót do pisania i mniej sekcji](done/100-home-page.md) (subtask 51) | 97 | [x] |
+| 101 | ↳ [Dialog ustawień z zakładkami](done/101-settings-tabs.md) (subtask 51) | 95 | [x] |
+| 102 | ↳ [Profil, biblioteka, statystyki](done/102-profile-library-stats.md) (subtask 51) | 101 | [x] |
+| 103 | ↳ [Reakcje i fora](done/103-reactions-forums.md) (subtask 51) | 94 | [x] |
+| 104 | ↳ [Wiadomości i aktualności](done/104-messages-feed.md) (subtask 51) | 94, 95 | [x] |
+| 105 | ↳ [Publiczna strona książki i rozdziału](done/105-public-book-chapter.md) (subtask 51) | 96, 98, 103 | [x] |
+| 106 | ↳ [Moderacja i panel admina](done/106-moderation-admin.md) (subtask 51) | 95 | [x] |
+| 107 | ↳ [Audyt końcowy UI/UX i raport po poprawkach](done/107-ui-audit.md) (subtask 51) | 93–106 | [x] |
 | 66 | [Okładki folderów i oznaczenie 18+ (zbiorczy)](done/66-covers-and-adult-rating.md) | – | [x] |
 | 65 | ↳ [Oznaczenie 18+](done/65-adult-rating.md) (subtask 66) | – | [x] |
 | 26 | ↳ [Upload okładek](done/26-cover-upload.md) (subtask 66) | 65 | [x] |
@@ -64,30 +79,31 @@ Otwarte taski są w tabeli w kolejności realizacji (ustalonej 2026-11-06, D56):
 | 63 | [Kody odzyskiwania konta](done/63-recovery-codes.md) | – | [x] |
 | 64 | [Predefiniowane tagi](done/64-predefined-tags.md) | 24 | [x] |
 | 53 | [Projekt systemu społecznościowego i plan tasków](done/53-social-system-plan.md) | – | [x] |
-| 68 | [System społecznościowy (zbiorczy)](68-social.md) | – | [ ] |
-| 69 | ↳ [Fundament społeczności](69-social-foundation.md) (subtask 68) | – | [ ] |
-| 70 | ↳ [Profil użytkownika](70-profile.md) (subtask 68) | 69 | [ ] |
-| 71 | ↳ [Obserwowanie autorów](71-follow.md) (subtask 68) | 70 | [ ] |
-| 72 | ↳ [Biblioteka i półki](72-library.md) (subtask 68) | 70 | [ ] |
-| 73 | ↳ [Postęp czytania i nowe rozdziały](73-reading-progress.md) (subtask 68) | 72 | [ ] |
-| 74 | ↳ [Zakładki i notatki czytelnika](74-reader-notes.md) (subtask 68) | 73 | [ ] |
-| 75 | ↳ [Feed aktywności](75-feed.md) (subtask 68) | 71, 72 | [ ] |
-| 76 | ↳ [Komentarze](76-comments.md) (subtask 68) | 69 | [ ] |
-| 77 | ↳ [Reakcje](77-reactions.md) (subtask 68) | 76 | [ ] |
-| 78 | ↳ [Oceny](78-ratings.md) (subtask 68) | 69 | [ ] |
-| 79 | ↳ [Moderacja autora](79-author-moderation.md) (subtask 68) | 76 | [ ] |
-| 80 | ↳ [Zgłoszenia](80-reports.md) (subtask 68) | 79 | [ ] |
-| 81 | ↳ [Powiadomienia](81-notifications.md) (subtask 68) | 71, 76, 79 | [ ] |
-| 82 | ↳ [Wzmianki @nick](82-mentions.md) (subtask 68) | 81 | [ ] |
-| 83 | ↳ [Statystyki autora](83-author-stats.md) (subtask 68) | 73, 77, 78 | [ ] |
-| 84 | ↳ [Rankingi na stronie głównej](84-rankings.md) (subtask 68) | 83 | [ ] |
-| 85 | ↳ [Wiadomości prywatne](85-direct-messages.md) (subtask 68) | 81 | [ ] |
-| 86 | ↳ [Blokowanie w pełnym zakresie](86-blocking.md) (subtask 68) | 85, 82 | [ ] |
-| 87 | ↳ [Fora autora i globalne](87-forums.md) (subtask 68) | 77, 80 | [ ] |
-| 88 | ↳ [Panel admina](88-admin-panel.md) (subtask 68) | 80, 87 | [ ] |
-| 89 | ↳ [Usuwanie konta](89-account-deletion.md) (subtask 68) | 85, 87 | [ ] |
-| 90 | ↳ [Realtime: serwis SSE w stosie narzędzi](90-realtime.md) (subtask 68) | 81, 85 | [ ] |
-| 91 | ↳ [Audyt bezpieczeństwa i E2E całości](91-social-audit.md) (subtask 68) | 69–90 | [ ] |
+| 68 | [System społecznościowy (zbiorczy)](done/68-social.md) | – | [x] |
+| 69 | ↳ [Fundament społeczności](done/69-social-foundation.md) (subtask 68) | – | [x] |
+| 70 | ↳ [Profil użytkownika](done/70-profile.md) (subtask 68) | 69 | [x] |
+| 71 | ↳ [Obserwowanie autorów](done/71-follow.md) (subtask 68) | 70 | [x] |
+| 72 | ↳ [Biblioteka i półki](done/72-library.md) (subtask 68) | 70 | [x] |
+| 73 | ↳ [Postęp czytania i nowe rozdziały](done/73-reading-progress.md) (subtask 68) | 72 | [x] |
+| 74 | ↳ [Zakładki i notatki czytelnika](done/74-reader-notes.md) (subtask 68) | 73 | [x] |
+| 75 | ↳ [Feed aktywności](done/75-feed.md) (subtask 68) | 71, 72 | [x] |
+| 76 | ↳ [Komentarze](done/76-comments.md) (subtask 68) | 69, 70, 75 | [x] |
+| 77 | ↳ [Reakcje](done/77-reactions.md) (subtask 68) | 76 | [x] |
+| 78 | ↳ [Oceny](done/78-ratings.md) (subtask 68) | 69 | [x] |
+| 79 | ↳ [Moderacja autora](done/79-author-moderation.md) (subtask 68) | 76 | [x] |
+| 80 | ↳ [Zgłoszenia](done/80-reports.md) (subtask 68) | 79 | [x] |
+| 81 | ↳ [Powiadomienia](done/81-notifications.md) (subtask 68) | 71, 72, 73, 76, 77, 78, 79, 80 | [x] |
+| 82 | ↳ [Wzmianki @nick](done/82-mentions.md) (subtask 68) | 81 | [x] |
+| 83 | ↳ [Statystyki autora](done/83-author-stats.md) (subtask 68) | 71, 72, 73, 76, 77, 78 | [x] |
+| 84 | ↳ [Rankingi na stronie głównej](done/84-rankings.md) (subtask 68) | 71, 83 | [x] |
+| 85 | ↳ [Wiadomości prywatne](done/85-direct-messages.md) (subtask 68) | 81 | [x] |
+| 86 | ↳ [Blokowanie w pełnym zakresie](done/86-blocking.md) (subtask 68) | 82, 84, 85 | [x] |
+| 87 | ↳ [Fora autora i globalne](done/87-forums.md) (subtask 68) | 75, 77, 80, 81, 82, 86 | [x] |
+| 88 | ↳ [Panel admina](done/88-admin-panel.md) (subtask 68) | 80, 87 | [x] |
+| 89 | ↳ [Usuwanie konta](done/89-account-deletion.md) (subtask 68) | 69–88 | [x] |
+| 90 | ↳ [Realtime: serwis SSE w stosie narzędzi](done/90-realtime.md) (subtask 68) | 81, 85 | [x] |
+| 91 | ↳ [Audyt bezpieczeństwa i E2E całości](done/91-social-audit.md) (subtask 68) | 69–90 | [x] |
+| 92 | [Wydanie systemu społecznościowego: kroki ręczne](92-social-release-manual.md) (**ręcznie – użytkownik**) | 68 | [ ] |
 
 ## Backlog
 
@@ -100,6 +116,14 @@ Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 - Asonans w rymach, zwinięty pod wynikami; 271 kluczy na 4,2 mln form, wyniki bliskie losowym (po tasku 34).
 - narzędzie do znajdywania etymologii
 - narzędzie do frazeologizmów. wytłumaczenie frazeologizmu oraz znalezienie na zadany opis. 
+- Strona 404 dla zalogowanych w układzie aplikacji (sidebar, link do strony głównej); `/stats` konta bez publikacji jako pusty stan zamiast 404 (audyt 107).
+- Tytuły kart z nazwą książki, wersji i rozdziału zamiast ogólnych „Książka / Wersja / Edytor – Story App” (audyt 107).
+- Notatki książki i rozdziału: ukryty pasek narzędzi (widoczny przy fokusie) rezerwuje nad tekstem ~67 px w wąskim panelu, więc krótka notatka wygląda na wyśrodkowaną (3.7); pasek jako nakładka albo w jednym wierszu (audyt 107).
+- Domyślne półki biblioteki zapisane jako tekst w języku konta („Czytam”, „Na później”, „Przeczytane”) nie zmieniają się z językiem UI (audyt 107).
+- `/forums`: liczniki kategorii agregują wszystkie wątki przy każdym wejściu – liczniki zapisane w kategorii albo cache i indeks (audyt bezpieczeństwa 107, luka ze 103).
+- Licznik oczekujących zgłoszeń w `AppShell` liczony na każdej stronie, jedno zapytanie na moderowaną społeczność – `cache()` albo jedno zapytanie zbiorcze (audyt bezpieczeństwa 107, luka ze 106).
+- `getLastEditedChapter` wczytuje wszystkie książki użytkownika do `$in` – zapytanie po rozdziałach z `userId` i sortowaniem (audyt bezpieczeństwa 107).
+- Migracja usuwająca stare dokumenty `tag:*` z `rankings` (po 100); indeks `Story {userId, publishedAt}` usuwa już `syncIndexes()` w `lib/migrate.ts` (audyt bezpieczeństwa 107).
 
 ## Branche
 
@@ -109,6 +133,7 @@ Pomysły bez pliku taska – do obgadania, zanim staną się taskami.
 - `feature/NN-<slug>` – jeden branch na task, tworzony z `develop`.
 - `security` – lokalny branch zbiorczy poprawek bezpieczeństwa (taski 56–63 i aktualizacja zależności z 2026-11-09), z `develop`. Branche tasków z niego i merge do niego; do `develop` merguje użytkownik po przeglądzie.
 - `feature/social` – lokalny branch zbiorczy systemu społecznościowego (task 68, subtaski 69–91, D80), z `develop`. Branche subtasków z niego i merge do niego; nie jest pushowany, do `develop` merguje użytkownik po przeglądzie. `develop` mergujemy do niego okresowo.
+- `fix/ui` – lokalny branch zbiorczy poprawy UX i UI (task 51, subtaski 93–107, D83), z `feature/social`. Branche subtasków `feature/NN-<slug>` z niego i merge do niego; nie jest pushowany, dalej merguje użytkownik.
 - Task zbiorczy (np. 66): jego branch z `develop`, a branch każdego subtasku z brancha zbiorczego; subtask merge'ujemy do brancha zbiorczego, a ten do `develop` dopiero po wszystkich subtaskach.
 
 ## Definicja „zrobione” (każdy task)

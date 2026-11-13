@@ -14,7 +14,8 @@ export default defineConfig({
   workers: 1,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  reporter: "list",
+  // --reporter=list for one line per test.
+  reporter: "dot",
   globalSetup: "./tests/e2e/global-setup.ts",
   globalTeardown: "./tests/e2e/global-teardown.ts",
   use: {
@@ -48,6 +49,8 @@ export default defineConfig({
         // Never the tools server from .env.local (npm run up).
         TOOLS_API_URL: `http://127.0.0.1:${E2E_TOOLS_PORT}`,
         TOOLS_API_SECRET: E2E_TOOLS_SECRET,
+        // The fake realtime service (task 90), down unless a test turns it on.
+        REALTIME_PUBLIC_URL: `http://127.0.0.1:${E2E_TOOLS_PORT}`,
         // Stands in for Vercel's header (D74): only tests that send it get limits per address.
         TRUSTED_IP_HEADER: E2E_IP_HEADER,
       },

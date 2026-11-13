@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,8 @@ import { login } from "./login-actions";
 
 export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
   const [state, formAction, pending] = useActionState(login, null);
+  // Controlled, so the form reset after a failed attempt clears only the password.
+  const [nickname, setNickname] = useState("");
   const t = useTranslations("auth");
 
   return (
@@ -20,6 +22,8 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
           id="nickname"
           name="nickname"
           type="text"
+          value={nickname}
+          onChange={(event) => setNickname(event.target.value)}
           autoComplete="username"
           spellCheck={false}
           required

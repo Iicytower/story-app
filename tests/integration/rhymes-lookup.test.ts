@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { lookUpRhymes } from "@/app/[locale]/(protected)/stories/[id]/dictionary-actions";
+import { lookUpRhymes } from "@/app/[locale]/(protected)/chapters/[id]/dictionary-actions";
 import type { ActionError } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import { DICTIONARY_TIMEOUT_MS } from "@/lib/tools/dictionary";

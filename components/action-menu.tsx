@@ -24,16 +24,23 @@ import { WithTooltip } from "@/components/ui/tooltip";
 // inside: the menu content unmounts when the menu closes.
 export function ActionMenu({
   label,
+  triggerRef,
   children,
 }: {
   label: string;
+  triggerRef?: React.Ref<HTMLButtonElement>;
   children: React.ReactNode;
 }) {
   return (
     <DropdownMenu modal={false}>
       <WithTooltip label={label}>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label={label}>
+          <Button
+            ref={triggerRef}
+            variant="ghost"
+            size="icon"
+            aria-label={label}
+          >
             <EllipsisVerticalIcon />
           </Button>
         </DropdownMenuTrigger>
@@ -77,23 +84,17 @@ export function RadioSubmenu({
 
 export function SortSubmenu(props: RadioSubmenuProps) {
   const t = useTranslations("menu");
-  return <RadioSubmenu icon={<ArrowDownUpIcon />} label={t("sort")} {...props} />;
+  return (
+    <RadioSubmenu icon={<ArrowDownUpIcon />} label={t("sort")} {...props} />
+  );
 }
 
-export function PublicationIcon({ isPublic }: { isPublic: boolean }) {
+export function PublicationStatus({ isPublic }: { isPublic: boolean }) {
   const t = useTranslations("menu");
-  const label = isPublic ? t("statusPublic") : t("statusPrivate");
   return (
-    <WithTooltip label={label}>
-      <span
-        role="img"
-        aria-label={label}
-        // Focusable, so keyboard users get the tooltip too.
-        tabIndex={0}
-        className="text-muted-foreground focus-visible:ring-ring/50 flex size-8 shrink-0 items-center justify-center rounded-md outline-none focus-visible:ring-3 [&_svg]:size-4"
-      >
-        {isPublic ? <GlobeIcon /> : <GlobeLockIcon />}
-      </span>
-    </WithTooltip>
+    <span className="text-muted-foreground flex shrink-0 items-center gap-1 text-xs whitespace-nowrap [&_svg]:size-3.5">
+      {isPublic ? <GlobeIcon /> : <GlobeLockIcon />}
+      {isPublic ? t("statusPublic") : t("statusPrivate")}
+    </span>
   );
 }

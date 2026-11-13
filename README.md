@@ -1,18 +1,18 @@
 # Story App
 
-Your stories, from the first line to the first reader. Story App gives writers a calm, distraction-free place to draft books chapter by chapter, keep notes and versions close at hand, and publish their work with a single click. Readers discover it through public search and dive straight in. The interface is available in English and Polish.
+Your stories, from the first line to the first reader. Story App gives writers a calm, distraction-free place to draft books chapter by chapter, keep notes and versions close at hand, and publish their work with a single click. Readers discover it through public search and dive straight in, then follow authors, keep books in their library, comment, react, rate and talk in forums and direct messages, with moderation by authors and admins. The interface is available in English and Polish.
 
 ## Tech stack
 
-| Area      | Choice                                                                                         |
-| --------- | ---------------------------------------------------------------------------------------------- |
-| Framework | Next.js 16 (App Router, Server Components, Server Actions), React 19, TypeScript               |
-| Data      | MongoDB (Atlas in the cloud, Docker locally) with Mongoose                                     |
-| Auth      | Auth.js v5, Credentials provider, JWT sessions, `bcryptjs`                                     |
-| UI        | Tailwind CSS 4, shadcn/ui (Radix), Tiptap v3, `react-resizable-panels`, `dnd-kit`, `next-intl` |
-| Tests     | Vitest (unit and integration against a real MongoDB), Playwright (E2E)                         |
-| Hosting   | Vercel (production and staging), MongoDB Atlas                                                 |
-| Tools     | Self-hosted tools server managed by Coolify; locally Coolify and the server run in Docker      |
+| Area      | Choice                                                                                                                                                                |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework | Next.js 16 (App Router, Server Components, Server Actions), React 19, TypeScript                                                                                      |
+| Data      | MongoDB (Atlas in the cloud, Docker locally) with Mongoose                                                                                                            |
+| Auth      | Auth.js v5, Credentials provider, JWT sessions, `bcryptjs`                                                                                                            |
+| UI        | Tailwind CSS 4, shadcn/ui (Radix), Tiptap v3, `react-resizable-panels`, `dnd-kit`, `next-intl`, `recharts`, `cmdk`, `sonner`                                          |
+| Tests     | Vitest (unit and integration against a real MongoDB), Playwright (E2E)                                                                                                |
+| Hosting   | Vercel (production and staging), MongoDB Atlas                                                                                                                        |
+| Tools     | Self-hosted tools server managed by Coolify (proofreading, dictionaries, cover classifier, realtime Server-Sent Events); locally Coolify and the server run in Docker |
 
 The main architectural rules:
 
@@ -26,17 +26,18 @@ The main architectural rules:
 The app is developed with [Claude Code](https://claude.com/claude-code) following a written, test-first process. The documentation in `docs/` is the source of truth for both the human and the agent:
 
 - **`docs/spec.md`**: the original functional specification.
-- **`docs/decisions.md`**: numbered decisions (D1, D2, …) recording every change to the spec and every non-obvious choice. Decisions override the spec.
+- **`docs/decisions/`**: numbered decisions (D1, D2, …), one file each, recording every change to the spec and every non-obvious choice. Decisions override the spec; `index.md` lists them with a one-line summary, split into current and archived.
 - **`docs/tasks/`**: one file per task with scope, acceptance criteria and the tests that cover them. Each task runs on its own `feature/NN-<slug>` branch from `develop` and ends with a single commit.
 - **`docs/testing.md`**: every acceptance criterion maps to a unit, integration or E2E test, or is explicitly marked `manual`. A task is done only when `npm run verify` (lint, typecheck, Vitest, Playwright) passes.
-- **`docs/deploy.md`**: environments, releases, migrations and backups.
+- **`docs/deploy.md`**: environments and releases; migrations, the tools server and backups in `docs/deploy/`.
 
 The agent is constrained by project configuration in `.claude/`:
 
 - **`CLAUDE.md` / `AGENTS.md`**: project rules, workflow and commands.
 - **Hooks**: ESLint and Prettier run after every edit, `tsc` runs before the agent finishes, and a guard blocks merges and pushes to `staging` and `main`. Releases (`develop` → `staging` → `main`) are made only by the human.
 - **Skills**: repeatable procedures such as `/tasks`, `/release-prs`, `/resolve-pr-conflicts`, `/local-setup` and `/autorun`, which works through a group of tasks unattended.
-- **Subagents** (`.claude/agents/`): researcher, implementer, verifier, reviewer, UI checker, security auditor, docs keeper and merger. The main session orchestrates and delegates the work to keep its context small.
+- **Design tooling**: vendored, reviewed skills `frontend-design`, `ux-heuristics` and `web-design-guidelines` for UI and UX audits, plus `shadcn` and Playwright MCP servers (`.mcp.json`) for the component registry and checking the rendered app.
+- **Subagents** (`.claude/agents/`): researcher, implementer, verifier, reviewer, UI checker, security auditor, docs keeper and merger. The main session orchestrates and delegates the work to keep its context small; Opus for implementation, review and security audit, Sonnet for the rest.
 
 ## Running locally
 
@@ -52,6 +53,20 @@ Open the repo in Claude Code and run:
 
 The skill checks the requirements, installs dependencies, creates `.env.local` with a generated secret, starts MongoDB, applies migrations and starts the dev server.
 
+### Unattended runs overnight
+
+`/autorun <umbrella task>` can run headless and survive usage limits:
+
+```bash
+mkdir -p .claude/autorun-logs && nohup scripts/autorun-night.sh 51 > .claude/autorun-logs/night.log 2>&1 &
+```
+
+The script starts `claude -p "/autorun 51"` with a fixed session ID (main session on Sonnet – it only delegates, commits and merges; agents keep their own models) and resumes the same conversation whenever it stops while `.claude/autorun.lock` still exists: after a usage limit it sleeps until the reset time reported by the CLI, after an API error (e.g. a Cloudflare 403) it retries in 5 minutes. Limits do not use up attempts. It stops when the skill removes the lock, after 3 normal exits in a row without a new commit, after 12 API errors in a row or after 40 attempts. `scripts/autorun-night.sh 51 --resume` continues the last session after a manual stop. Settings: `AUTORUN_MODEL`, `AUTORUN_MAX_ATTEMPTS`, `AUTORUN_MAX_ERRORS`, `AUTORUN_ERROR_WAIT`, `AUTORUN_WAIT`, `AUTORUN_MAX_STALLS`. Logs: `.claude/autorun-logs/` (`stream-json`, one line per message, so progress is visible during an attempt).
+
+The usage limit is shared with your other sessions: start the run right after a limit reset and avoid using the account meanwhile.
+
+Nobody answers prompts during the run: permissions use `--permission-mode auto --permission-prompts none` (anything that would still ask is denied, not left waiting), questions are refused by the `autorun-guard.sh` hook and the agent logs its own decisions in the umbrella task's decision file. Commands the run needs must be in `.claude/settings.json` `allow`.
+
 ### Manually
 
 ```sh
@@ -65,10 +80,11 @@ openssl rand -base64 32
 
 npm run db:up      # MongoDB 8 in Docker on 127.0.0.1:27017
 npm run migrate    # collections and indexes (the app does not create indexes itself)
+npm run seed       # optional: sample accounts, books and social data (local database only)
 npm run dev        # http://localhost:3000
 ```
 
-Create an account with "Log in / Create account" on the home page, or from the terminal with `npm run create-account`. Run `npm run migrate` again after pulling changes that touch schemas or `migrations/`. The list of predefined tags (genres and forms) comes with the migrations; `npm run tags -- list|set|remove` changes it.
+Create an account with "Log in / Create account" on the home page, or from the terminal with `npm run create-account`. Run `npm run migrate` again after pulling changes that touch schemas or `migrations/`. The list of predefined tags (genres and forms) comes with the migrations; `npm run tags -- list|set|remove` changes it. `npm run admin -- list|add <nick>|remove <nick>` lists, grants or revokes the admin role (database from `.env.local`). `npm run seed` fills a local database with `seed_*` accounts (one admin), books, comments, forums, messages and statistics; it refuses any host other than `127.0.0.1`/`localhost`, replaces only its own accounts' data on every run and prints the shared password.
 
 ### Everything at once, with the tools server
 
@@ -79,7 +95,7 @@ npm run dict:build # builds the dictionary databases from PoliMorf, the Polish W
 npm run dict:upload # sends them to the dictionary service on the tools server
 ```
 
-`npm run up` starts Coolify and a Docker-in-Docker container that plays the remote tools server, deploys the tools gateway, LanguageTool (used for proofreading), the dictionary service and the cover classifier (an ONNX model that rates folder covers) to it through the Coolify API and writes `TOOLS_API_URL` and `TOOLS_API_SECRET` to `.env.local`. Running it again changes nothing unless `docker/tools/compose.yml` changed (then it redeploys the service). Generated secrets stay in `.tools/` (gitignored); the Coolify admin password is in `.tools/tools.env`. The stack needs about 1.2 GB of RAM and 2.8 GB of images (half of them pulled inside the tools server container). Details: `docs/deploy.md`.
+`npm run up` starts Coolify and a Docker-in-Docker container that plays the remote tools server, deploys the tools gateway, LanguageTool (used for proofreading), the dictionary service, the cover classifier (an ONNX model that rates book covers) and the realtime service (Server-Sent Events for notifications and messages; set `REALTIME_PUBLIC_URL=http://127.0.0.1:8110` in `.env.local` to use it, otherwise the app polls) to it through the Coolify API and writes `TOOLS_API_URL` and `TOOLS_API_SECRET` to `.env.local`. Running it again changes nothing unless `docker/tools/compose.yml` changed (then it redeploys the service). Generated secrets stay in `.tools/` (gitignored); the Coolify admin password is in `.tools/tools.env`. The stack needs about 1.2 GB of RAM and 2.8 GB of images (half of them pulled inside the tools server container). Details: `docs/deploy.md`.
 
 The production tools server (a Mikrus VPS) is set up from your machine over SSH: `npm run tools:remote` installs Docker and Coolify there and deploys the same services, and `npm run dict:upload:remote` sends the databases. Step by step: `docs/deploy.md`, "Serwer narzędzi na Mikrusie".
 

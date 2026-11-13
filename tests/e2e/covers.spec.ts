@@ -1,58 +1,21 @@
 import { readFile } from "node:fs/promises";
-import { deflateSync } from "node:zlib";
 import { strToU8, unzipSync, zipSync } from "fflate";
 import type { Page } from "@playwright/test";
 import { findFolder, seedStory } from "./db";
-import { E2E_TOOLS_PORT, E2E_TOOLS_SECRET, storageStatePath } from "./env";
-import { editorAction, expect, menuAction, openMenu, test } from "./helpers";
+import { storageStatePath } from "./env";
+import {
+  classifier,
+  editorAction,
+  expect,
+  menuAction,
+  openMenu,
+  png,
+  test,
+} from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
 const BADGE = "For adults only (18+)";
-
-// A solid-colour PNG the browser can decode, crop and re-encode.
-function png(width: number, height: number, rgb: [number, number, number]) {
-  const crcTable = Array.from({ length: 256 }, (_, n) => {
-    let c = n;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    return c >>> 0;
-  });
-  const crc = (data: Buffer) => {
-    let c = 0xffffffff;
-    for (const byte of data) c = crcTable[(c ^ byte) & 0xff] ^ (c >>> 8);
-    return (c ^ 0xffffffff) >>> 0;
-  };
-  const chunk = (type: string, data: Buffer) => {
-    const body = Buffer.concat([Buffer.from(type), data]);
-    const length = Buffer.alloc(4);
-    length.writeUInt32BE(data.length);
-    const sum = Buffer.alloc(4);
-    sum.writeUInt32BE(crc(body));
-    return Buffer.concat([length, body, sum]);
-  };
-  const header = Buffer.alloc(13);
-  header.writeUInt32BE(width, 0);
-  header.writeUInt32BE(height, 4);
-  header.set([8, 2, 0, 0, 0], 8);
-  const row = Buffer.concat([
-    Buffer.from([0]),
-    Buffer.from(Array(width).fill(rgb).flat()),
-  ]);
-  return Buffer.concat([
-    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    chunk("IHDR", header),
-    chunk("IDAT", deflateSync(Buffer.concat(Array(height).fill(row)))),
-    chunk("IEND", Buffer.alloc(0)),
-  ]);
-}
-
-async function classifier(mode: "safe" | "adult" | "down") {
-  await fetch(`http://127.0.0.1:${E2E_TOOLS_PORT}/classify/mode`, {
-    method: "POST",
-    headers: { "X-Tools-Secret": E2E_TOOLS_SECRET },
-    body: mode,
-  });
-}
 
 async function seedBook() {
   await seedStory("alice", { title: "Night", folder: "Book" });
@@ -86,10 +49,10 @@ test("the owner adds, replaces and removes a folder cover", async ({
   page,
 }) => {
   const id = await seedBook();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await menuAction(page, "Actions for Book", "Cover");
   await expect(
-    dialog(page).getByText("This folder has no cover yet."),
+    dialog(page).getByText("This book has no cover yet."),
   ).toBeVisible();
 
   await upload(page, [200, 40, 40]);
@@ -111,13 +74,13 @@ test("the owner adds, replaces and removes a folder cover", async ({
 
   await dialog(page).getByRole("button", { name: "Remove cover" }).click();
   await expect(
-    dialog(page).getByText("This folder has no cover yet."),
+    dialog(page).getByText("This book has no cover yet."),
   ).toBeVisible();
 });
 
 test("a cover rated 18+ locks the folder's 18+ mark", async ({ page }) => {
   const id = await seedBook();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await classifier("adult");
   await menuAction(page, "Actions for Book", "Cover");
   await upload(page, [10, 10, 10]);
@@ -138,7 +101,7 @@ test("a cover rated 18+ locks the folder's 18+ mark", async ({ page }) => {
 
 test("the owner marks a cover as 18+ by hand", async ({ page }) => {
   const id = await seedBook();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await menuAction(page, "Actions for Book", "Cover");
   await upload(page, [40, 40, 200]);
   const mark = dialog(page).getByRole("checkbox", {
@@ -158,7 +121,7 @@ test("without a verdict the new cover waits and the old one stays", async ({
   page,
 }) => {
   const id = await seedBook();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await menuAction(page, "Actions for Book", "Cover");
   await upload(page, [200, 40, 40]);
   await expect(currentCover(page)).toBeVisible();
@@ -176,7 +139,7 @@ test("a folder's cover is the title page of an EPUB export", async ({
   page,
 }) => {
   const id = await seedBook();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await menuAction(page, "Actions for Book", "Cover");
   await upload(page, [200, 40, 40]);
   await expect(currentCover(page)).toBeVisible();
@@ -198,7 +161,7 @@ test("importing a folder zip brings its cover.webp along", async ({ page }) => {
     "02-dwa.md": strToU8("Treść dwa"),
     "cover.webp": png(30, 45, [40, 40, 200]),
   });
-  await page.goto("/stories");
+  await page.goto("/books");
   await page
     .getByRole("button", { name: /^Actions/ })
     .first()
@@ -210,7 +173,7 @@ test("importing a folder zip brings its cover.webp along", async ({ page }) => {
     buffer: Buffer.from(zip),
   });
   await page.getByRole("button", { name: "Import", exact: true }).click();
-  await expect(page).toHaveURL(/\/folders\/[0-9a-f]{24}$/);
+  await expect(page).toHaveURL(/\/books\/[0-9a-f]{24}$/);
 
   await menuAction(page, "Actions for Book", "Cover");
   await expect(currentCover(page)).toBeVisible();
@@ -219,7 +182,7 @@ test("importing a folder zip brings its cover.webp along", async ({ page }) => {
 async function publishBook(page: Page) {
   await menuAction(page, "Actions for Book", "Publish");
   await page
-    .getByRole("alertdialog", { name: "Publish folder?" })
+    .getByRole("alertdialog", { name: "Publish book?" })
     .getByRole("button", { name: "Publish", exact: true })
     .click();
   await expect(page.getByRole("alertdialog")).toBeHidden();
@@ -238,7 +201,7 @@ test("the cover shows in the folder list and on the folder page, and changes wit
 }) => {
   const id = await seedBook();
   await seedStory("alice", { title: "Other", folder: "Plain" });
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   const onPage = page.getByRole("img", { name: "Cover of Book" });
   await expect(onPage).toHaveCount(0);
   await menuAction(page, "Actions for Book", "Cover");
@@ -248,7 +211,7 @@ test("the cover shows in the folder list and on the folder page, and changes wit
   await expect(onPage).toBeVisible();
   const first = await onPage.getAttribute("src");
 
-  await page.goto("/stories");
+  await page.goto("/books");
   await expect(
     page.getByRole("img", { name: "Cover of Book" }),
   ).toHaveAttribute("src", first!);
@@ -256,7 +219,7 @@ test("the cover shows in the folder list and on the folder page, and changes wit
     0,
   );
 
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await menuAction(page, "Actions for Book", "Cover");
   await upload(page, [40, 200, 40]);
   await expect(currentCover(page)).not.toHaveAttribute("src", first!);
@@ -277,7 +240,7 @@ test("readers see the cover on the contents page, chapter pages, in search and o
     content: "Moonlit",
   });
   const id = (await findFolder("Book"))!._id.toString();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await publishBook(page);
   await menuAction(page, "Actions for Book", "Cover");
   await upload(page, [200, 40, 40]);
@@ -327,7 +290,7 @@ test("an 18+ cover is a badge in search and blurred on the contents and chapter 
     content: "Moonlit",
   });
   const id = (await findFolder("Book"))!._id.toString();
-  await page.goto(`/folders/${id}`);
+  await page.goto(`/books/${id}`);
   await publishBook(page);
   await classifier("adult");
   await menuAction(page, "Actions for Book", "Cover");

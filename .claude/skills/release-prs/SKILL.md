@@ -27,7 +27,7 @@ Never push to `main` or `staging` and never merge these PRs: the user does that.
 
    `staging` and `main` receive squash merges, so `git log A..B` and the diff shown in a PR also list work that is already there. An empty `git diff` means both branches hold the same files. Skip a PR only when both of its branches are identical and nothing is waiting on the branch before it.
 
-3. Work out the task list from `git diff --stat` and `docs/tasks/README.md`: take only tasks whose changes are really in the diff. Use the decision numbers from `docs/decisions.md`.
+3. Work out the task list from `git diff --stat` and `docs/tasks/README.md`: take only tasks whose changes are really in the diff. Use the decision numbers from `docs/decisions/index.md`.
 
 4. Create the PRs in this order, with descriptions in Polish:
 
@@ -39,7 +39,7 @@ Never push to `main` or `staging` and never merge these PRs: the user does that.
    Each description has:
    - `## Zmiany`: one line per task with its decision number, then whether there are new migrations and dependencies.
    - `## Weryfikacja` (to `staging`): the last `npm run verify` result, only if it really ran on this code, and the smoke test to do.
-   - `## Przed mergem` (to `main`): the PR to `staging` merged, smoke test, for new migrations `Applying <id>` and `Indexes synced` in the staging build log (`docs/deploy.md`), merge and tag `vX.Y.Z` by the user.
+   - `## Przed mergem` (to `main`): the PR to `staging` merged, smoke test, for new migrations `Applying <id>` and `Indexes synced` in the staging build log (`docs/deploy/migrations.md`), merge and tag `vX.Y.Z` by the user.
 
    If `staging` and `main` are identical, start the second description with: merge only after the PR to `staging`, what it will release, and why the diff shown now is not real.
 

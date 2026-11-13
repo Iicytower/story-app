@@ -36,7 +36,7 @@ async function openDefinitions(page: Page) {
 
 async function openStory(page: Page, content = "Ala ma kota.") {
   const id = await seedStory("alice", { title: "Words", content });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   return id;
 }
 
@@ -190,7 +190,7 @@ test("an unavailable service and a lost Server Action give a message, and editin
   await expect(dialog.getByRole("link", { name: "PWN" })).toBeVisible();
 
   // After a deploy the old page's action id is unknown to the server.
-  await page.route(`**/stories/${id}`, (route) =>
+  await page.route(`**/chapters/${id}`, (route) =>
     route.request().headers()["next-action"]
       ? route.fulfill({ status: 404, body: "Server action not found." })
       : route.fallback(),

@@ -6,6 +6,10 @@ import {
 import { FOLDER_SORTS, type FolderSort } from "@/lib/folders/sort";
 import { normalizeDictionary } from "@/lib/proofreading/dictionary";
 import { type Locale, routing } from "@/i18n/routing";
+import {
+  OPTIONAL_NOTIFICATION_TYPES,
+  type OptionalNotificationType,
+} from "@/lib/social/notifications";
 
 export const THEMES = ["light", "dark"] as const;
 export type Theme = (typeof THEMES)[number];
@@ -17,6 +21,10 @@ export type Accent = (typeof ACCENTS)[number];
 // Below the md breakpoint only one panel is shown at a time.
 export const MOBILE_VIEWS = ["story", "notes", "chapters", "tools"] as const;
 export type MobileView = (typeof MOBILE_VIEWS)[number];
+
+// Who may start a conversation (D80): following means the accounts the recipient follows.
+export const DM_FROM = ["everyone", "following", "nobody"] as const;
+export type DmFrom = (typeof DM_FROM)[number];
 
 interface Field<T> {
   default: T;
@@ -50,6 +58,10 @@ const SETTINGS = {
     sidebarCollapsed: field(false, (value) =>
       typeof value === "boolean" ? value : undefined,
     ),
+    // The chapter editor has its own state, collapsed until the user expands it there.
+    editorSidebarCollapsed: field(true, (value) =>
+      typeof value === "boolean" ? value : undefined,
+    ),
     theme: field<Theme | null>(null, (value) =>
       value === null ? null : oneOf(THEMES)(value),
     ),
@@ -75,6 +87,16 @@ const SETTINGS = {
     // Spelling the user accepts (task 30); changed only by its own actions, one word at a time.
     dictionary: field<string[]>([], normalizeDictionary, false),
   },
+  messages: {
+    dmFrom: field<DmFrom>("everyone", oneOf(DM_FROM)),
+  },
+  // One switch per kind (D80, task 81); moderation has none, so it cannot be turned off.
+  notifications: Object.fromEntries(
+    OPTIONAL_NOTIFICATION_TYPES.map((type) => [
+      type,
+      field(true, (value) => (typeof value === "boolean" ? value : undefined)),
+    ]),
+  ) as Record<OptionalNotificationType, Field<boolean>>,
 };
 
 type Schema = typeof SETTINGS;

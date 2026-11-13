@@ -3,18 +3,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createFolderVersion,
   restoreEntireVersion,
-} from "@/app/[locale]/(protected)/folders/[id]/versions/actions";
+} from "@/app/[locale]/(protected)/books/[id]/versions/actions";
 import {
   createFolder,
   renameFolder,
   saveFolderNotes,
-} from "@/app/[locale]/(protected)/folders/actions";
+} from "@/app/[locale]/(protected)/books/actions";
 import {
   createStory,
   importStories,
   moveStory,
   saveStory,
-} from "@/app/[locale]/(protected)/stories/actions";
+} from "@/app/[locale]/(protected)/chapters/actions";
 import { requireUser } from "@/lib/auth/session";
 import {
   MAX_CHAPTERS_PER_FOLDER,
@@ -73,7 +73,7 @@ function invalid(message: RegExp) {
 describe("length limits", () => {
   it("folder names: createFolder, renameFolder, createStory, import", async () => {
     const long = text(MAX_NAME_LENGTH + 1);
-    const tooLong = invalid(/folder name can have at most 200 characters/);
+    const tooLong = invalid(/book name can have at most 200 characters/);
     expect(await createFolder(long)).toMatchObject(tooLong);
     expect(await renameFolder(folderId, long)).toMatchObject(tooLong);
     expect(await createStory("T", long)).toMatchObject(tooLong);
@@ -138,7 +138,7 @@ describe("length limits", () => {
   });
 
   it("folder notes in saveFolderNotes and in import", async () => {
-    const tooLong = invalid(/Folder notes can have at most 100,000 characters/);
+    const tooLong = invalid(/Book notes can have at most 100,000 characters/);
     expect(
       await saveFolderNotes(
         folderId,
@@ -218,7 +218,7 @@ describe("count limits", () => {
         name: `F${index}`,
       })),
     );
-    const tooMany = invalid(/at most 1,000 folders/);
+    const tooMany = invalid(/at most 1,000 books/);
     expect(await createFolder("New")).toMatchObject(tooMany);
     expect(await createStory("T", "New")).toMatchObject(tooMany);
     expect(

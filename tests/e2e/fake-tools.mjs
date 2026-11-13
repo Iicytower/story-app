@@ -4,7 +4,10 @@
 // (task 25), a few entries (task 32), synonyms (task 33) and rhymes (task 34). Markers in the
 // text or the looked-up word: AWARIA answers 503, POWOLI answers after a delay. /classify
 // (task 26) echoes the image with the scores of the mode set by POST /classify/mode: safe,
-// adult or down (503).
+// adult or down (503). /rt/stream and /publish (task 90) stand in for the realtime service:
+// the stream checks the token like docker/tools/realtime/server.mjs and is down (503) until
+// POST /rt/mode sets "up", so other specs keep testing the polling.
+import { createHmac } from "node:crypto";
 import { createServer } from "node:http";
 
 const [port, secret] = process.argv.slice(2);
@@ -207,11 +210,72 @@ const SCORES = {
 };
 let classifyMode = "safe";
 
+let realtimeMode = "down";
+const streams = new Map();
+const realtimeKey = createHmac("sha256", secret)
+  .update("story-app realtime token")
+  .digest();
+
+function tokenUser(token) {
+  const [userId, exp, signature] = (token ?? "").split(".");
+  const expected = createHmac("sha256", realtimeKey)
+    .update(`${userId}.${exp}`)
+    .digest("base64url");
+  return signature === expected && Number(exp) * 1000 > Date.now()
+    ? userId
+    : null;
+}
+
+function realtimeStream(request, response) {
+  response.setHeader("Access-Control-Allow-Origin", "*");
+  if (realtimeMode !== "up") {
+    response.statusCode = 503;
+    return response.end();
+  }
+  const userId = tokenUser(
+    new URL(request.url, "http://fake").searchParams.get("token"),
+  );
+  if (!userId) {
+    response.statusCode = 401;
+    return response.end();
+  }
+  response.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+  });
+  response.write(": connected\n\n");
+  const own = streams.get(userId) ?? new Set();
+  streams.set(userId, own);
+  own.add(response);
+  request.on("close", () => own.delete(response));
+}
+
 createServer(async (request, response) => {
   if (request.url === "/") return response.end("ok");
+  if (request.url.startsWith("/rt/stream"))
+    return realtimeStream(request, response);
   if (request.headers["x-tools-secret"] !== secret) {
     response.statusCode = 401;
     return response.end();
+  }
+  if (request.url === "/rt/mode" || request.url === "/publish") {
+    let body = "";
+    for await (const chunk of request) body += chunk;
+    if (request.url === "/rt/mode") {
+      realtimeMode = body;
+      // Down ends the open streams too, as a stopped service would.
+      if (body !== "up") {
+        for (const own of streams.values()) for (const open of own) open.end();
+        streams.clear();
+      }
+      return response.end();
+    }
+    const { userIds, event } = JSON.parse(body);
+    for (const userId of userIds)
+      for (const open of streams.get(userId) ?? [])
+        open.write(`data: ${JSON.stringify(event)}\n\n`);
+    response.setHeader("Content-Type", "application/json");
+    return response.end("{}");
   }
   if (request.url.startsWith("/classify")) {
     const chunks = [];

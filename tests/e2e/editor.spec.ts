@@ -17,7 +17,7 @@ test("loads the title, content and notes of the story", async ({ page }) => {
     notes: "Remember the dragon",
   });
 
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   await expect(
     page.getByRole("textbox", { name: "Title", exact: true }),
   ).toHaveValue("Loaded");
@@ -40,7 +40,7 @@ test("shows a comment as an editable block and keeps it in the source", async ({
     content: "Visible text\n\n<!-- loaded note -->",
   });
 
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const content = markdownEditor(page, "Content");
   const comments = content.field.locator("aside[data-comment]");
   await expect(comments).toHaveText(["loaded note"]);
@@ -64,7 +64,7 @@ test("Enter starts a paragraph and Shift+Enter breaks the line", async ({
 }) => {
   const id = await seedStory("alice", { title: "Breaks" });
 
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const content = markdownEditor(page, "Content");
   await content.field.click();
   await page.keyboard.type("first");
@@ -91,7 +91,7 @@ test("does not execute or render a script from the content", async ({
     await dialog.dismiss();
   });
 
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const content = markdownEditor(page, "Content");
   await content.setSource(
     '<script>alert("xss")</script>\n\n<img src=x onerror="alert(1)">',
@@ -104,7 +104,7 @@ test("does not execute or render a script from the content", async ({
 test("counts words and characters of the markdown", async ({ page }) => {
   const id = await seedStory("alice", { title: "Counter" });
 
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   await expect(
     page.getByText("0 words · 0 characters · 0 minutes read aloud"),
   ).toBeVisible();
@@ -117,7 +117,7 @@ test("counts words and characters of the markdown", async ({ page }) => {
 test("collapses and expands the notes panel", async ({ page }) => {
   const id = await seedStory("alice", { title: "Notes" });
 
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   await expect(
     page.getByRole("textbox", { name: "Notes", exact: true }),
   ).toBeVisible();
@@ -135,12 +135,12 @@ test("deletes the story and returns to its folder", async ({ page }) => {
   const id = await seedStory("alice", { title: "Doomed", folder: "Book" });
   const folderId = await seedFolder("alice", "Book");
 
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   await editorAction(page, "Delete");
-  const dialog = page.getByRole("alertdialog", { name: "Delete story?" });
+  const dialog = page.getByRole("alertdialog", { name: "Delete chapter?" });
   await dialog.getByRole("button", { name: "Delete" }).click();
 
-  await expect(page).toHaveURL(`/en/folders/${folderId}`);
+  await expect(page).toHaveURL(`/en/books/${folderId}`);
   await expect(page.getByText("No chapters yet.")).toBeVisible();
   expect((await findStory("Doomed"))?.deletedAt).toBeInstanceOf(Date);
 });
@@ -148,7 +148,7 @@ test("deletes the story and returns to its folder", async ({ page }) => {
 test("returns 404 for another user's story", async ({ page }) => {
   const id = await seedStory("bob", { title: "Bob's secret" });
 
-  const response = await page.goto(`/stories/${id}`);
+  const response = await page.goto(`/chapters/${id}`);
   expect(response?.status()).toBe(404);
   await expect(page.getByText("Bob's secret")).toHaveCount(0);
 });
@@ -159,11 +159,11 @@ test("returns 404 for a deleted story", async ({ page }) => {
     deletedAt: new Date(),
   });
 
-  const response = await page.goto(`/stories/${id}`);
+  const response = await page.goto(`/chapters/${id}`);
   expect(response?.status()).toBe(404);
 });
 
 test("returns 404 for a malformed id", async ({ page }) => {
-  const response = await page.goto("/stories/not-an-id");
+  const response = await page.goto("/chapters/not-an-id");
   expect(response?.status()).toBe(404);
 });

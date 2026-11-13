@@ -18,3 +18,7 @@ export function isIsoDate(value: unknown): value is string {
   const time = new Date(value).getTime();
   return Number.isFinite(time) && new Date(time).toISOString() === value;
 }
+
+// A share of something, e.g. how far a chapter is scrolled.
+export const isFraction = (value: unknown): value is number =>
+  typeof value === "number" && value >= 0 && value <= 1;

@@ -1,15 +1,19 @@
 import type { Page } from "@playwright/test";
 import { findStoryById, seedStory } from "./db";
 import { storageStatePath } from "./env";
-import {
-  countActionRequests,
-  expect,
-  hideTab,
-  runAutosaveDelay,
-  test,
-} from "./helpers";
+import { expect, hideTab, runAutosaveDelay, test } from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
+
+// Saves only; the notification poll (task 81) is an action without arguments.
+function countSaveRequests(page: Page) {
+  const requests: string[] = [];
+  page.on("request", (request) => {
+    if (request.headers()["next-action"] && request.postData() !== "[]")
+      requests.push(request.url());
+  });
+  return requests;
+}
 
 function editor(page: Page) {
   return {
@@ -23,14 +27,14 @@ function editor(page: Page) {
 test("autosaves 20 seconds after the last keystroke", async ({ page }) => {
   const id = await seedStory("alice", { title: "Autosave" });
   await page.clock.install();
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { title, content, notes, status } = editor(page);
 
   await content.fill("Once upon a time");
   await notes.fill("A note");
   await title.fill("Autosave renamed");
   await runAutosaveDelay(page, 19_000);
-  await expect(status).toHaveText("");
+  await expect(status).toHaveText("Unsaved changes");
   expect((await findStoryById(id))?.title).toBe("Autosave");
   await runAutosaveDelay(page, 1000);
   await expect(status).toHaveText("Saved");
@@ -46,16 +50,16 @@ test("typing with pauses shorter than 20 seconds does not save", async ({
 }) => {
   const id = await seedStory("alice", { title: "Pauses" });
   await page.clock.install();
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { content, status } = editor(page);
-  const requests = countActionRequests(page);
+  const requests = countSaveRequests(page);
 
   await content.click();
   for (const word of ["One", " two", " three", " four"]) {
     await page.keyboard.type(word);
     await runAutosaveDelay(page, 10_000);
   }
-  await expect(status).toHaveText("");
+  await expect(status).toHaveText("Unsaved changes");
   expect(requests).toEqual([]);
 
   await runAutosaveDelay(page, 10_000);
@@ -68,9 +72,9 @@ test("hiding the tab saves at once, and only when something changed", async ({
 }) => {
   const id = await seedStory("alice", { title: "Hidden" });
   await page.clock.install();
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { content, status } = editor(page);
-  const requests = countActionRequests(page);
+  const requests = countSaveRequests(page);
 
   await hideTab(page);
   await expect(content).toBeVisible();
@@ -84,7 +88,7 @@ test("hiding the tab saves at once, and only when something changed", async ({
 
 test("Ctrl+S saves immediately", async ({ page }) => {
   const id = await seedStory("alice", { title: "Shortcut" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { content, status } = editor(page);
 
   await content.fill("Saved right away");
@@ -100,8 +104,8 @@ test("shows a conflict when the story was saved in another tab", async ({
 }) => {
   const id = await seedStory("alice", { title: "Two tabs" });
   const other = await context.newPage();
-  await page.goto(`/stories/${id}`);
-  await other.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
+  await other.goto(`/chapters/${id}`);
 
   await editor(page).content.fill("From the first tab");
   await page.keyboard.press("Control+s");
@@ -121,7 +125,7 @@ test("does not save with an empty title and saves once a title is entered", asyn
 }) => {
   const id = await seedStory("alice", { title: "Untitled soon" });
   await page.clock.install();
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { title, content, status } = editor(page);
 
   await title.fill("");
@@ -130,7 +134,7 @@ test("does not save with an empty title and saves once a title is entered", asyn
   await hideTab(page);
   await runAutosaveDelay(page);
 
-  await expect(status).toHaveText("");
+  await expect(status).toHaveText("Unsaved changes");
   expect(await findStoryById(id)).toMatchObject({
     title: "Untitled soon",
     content: "",
@@ -148,7 +152,7 @@ test("does not save with an empty title and saves once a title is entered", asyn
 test("shows an error for a duplicate title", async ({ page }) => {
   await seedStory("alice", { title: "Taken" });
   const id = await seedStory("alice", { title: "Mine" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { title, content, status } = editor(page);
 
   await content.fill("New content");
@@ -156,7 +160,7 @@ test("shows an error for a duplicate title", async ({ page }) => {
   await page.keyboard.press("Control+s");
 
   await expect(status).toHaveText(
-    "A story with this title already exists in this folder.",
+    "A chapter with this title already exists in this book.",
   );
   expect(await findStoryById(id)).toMatchObject({ title: "Mine", content: "" });
 });
@@ -169,7 +173,7 @@ test("shows an error when the whole content is cleared and keeps the database in
     content: "Do not lose me",
   });
   const before = await findStoryById(id);
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const { content, status } = editor(page);
 
   await content.fill("");
@@ -181,7 +185,7 @@ test("shows an error when the whole content is cleared and keeps the database in
 
 test("warns before closing the tab with unsaved changes", async ({ page }) => {
   const id = await seedStory("alice", { title: "Unsaved" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const dialogs: string[] = [];
   page.on("dialog", async (dialog) => {
     dialogs.push(dialog.type());
@@ -198,7 +202,7 @@ test("does not warn before closing the tab when everything is saved", async ({
   page,
 }) => {
   const id = await seedStory("alice", { title: "All saved" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const dialogs: string[] = [];
   page.on("dialog", async (dialog) => {
     dialogs.push(dialog.type());
@@ -211,4 +215,29 @@ test("does not warn before closing the tab when everything is saved", async ({
   await page.close({ runBeforeUnload: true });
 
   expect(dialogs).toEqual([]);
+});
+
+test("the footer always shows the save status next to the word count", async ({
+  page,
+}) => {
+  const id = await seedStory("alice", { title: "Status", content: "One" });
+  await page.clock.install();
+  await page.goto(`/chapters/${id}`);
+  const { content, status } = editor(page);
+  const stats = page.getByText(/^1 word/);
+
+  await expect(status).toHaveText("Saved");
+  await expect(stats).toBeVisible();
+  const statusBox = (await status.boundingBox())!;
+  const statsBox = (await stats.boundingBox())!;
+  expect(Math.abs(statusBox.y - statsBox.y)).toBeLessThan(statsBox.height);
+  expect(statusBox.y).toBeGreaterThan((await content.boundingBox())!.y);
+
+  await content.click();
+  await page.keyboard.press("Control+End");
+  await page.keyboard.type(" two");
+  await expect(status).toHaveText("Unsaved changes");
+  await runAutosaveDelay(page);
+  await expect(status).toHaveText("Saved");
+  expect((await findStoryById(id))?.content).toBe("One two");
 });

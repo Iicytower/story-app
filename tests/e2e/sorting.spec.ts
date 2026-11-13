@@ -48,17 +48,17 @@ test("switches folder sort modes and drags a folder in manual mode", async ({
   await seedFolder("alice", "Apple", new Date("2026-01-01"));
   await seedFolder("alice", "cherry", new Date("2026-01-02"));
 
-  await page.goto("/stories");
-  const folders = page.getByRole("list", { name: "Folders" });
-  const names = folders.getByRole("listitem").locator("a > span:first-child");
-  await expectSort(page, "Actions", "Last updated");
+  await page.goto("/books");
+  const folders = page.getByRole("list", { name: "Books" });
+  const names = folders.getByRole("listitem").locator("a > span > span:first-child");
+  await expectSort(page, "Actions for all books", "Last updated");
   await expect(names).toHaveText(["banana", "cherry", "Apple"]);
   await expect(page.getByRole("button", { name: /^Move / })).toHaveCount(0);
 
-  await sortBy(page, "Actions", "A–Z");
+  await sortBy(page, "Actions for all books", "A–Z");
   await expect(names).toHaveText(["Apple", "banana", "cherry"]);
 
-  await sortBy(page, "Actions", "Manual");
+  await sortBy(page, "Actions for all books", "Manual");
   await expect(names).toHaveText(["Apple", "banana", "cherry"]);
   await dragWithKeyboard(
     page.getByRole("button", { name: "Move cherry" }),
@@ -68,7 +68,7 @@ test("switches folder sort modes and drags a folder in manual mode", async ({
   await expect(names).toHaveText(["Apple", "cherry", "banana"]);
 
   await page.reload();
-  await expectSort(page, "Actions", "Manual");
+  await expectSort(page, "Actions for all books", "Manual");
   await expect(names).toHaveText(["Apple", "cherry", "banana"]);
 
   await dragWithMouse(
@@ -101,14 +101,16 @@ test("switches chapter sort modes and drags a chapter in manual mode", async ({
     createdAt: day(2),
   });
 
-  await page.goto("/stories");
-  await page.getByRole("link", { name: /^Book/ }).click();
+  await page.goto("/books");
+  await page.getByRole("link", { name: /^Book \d/ }).click();
+  // The folder list row has its own "Actions for Book" menu; wait for the folder page.
+  await expect(page).toHaveURL(/\/books\//);
   const titles = page
     .getByRole("list", { name: "Chapters" })
     .getByRole("listitem")
     .locator("a > span:first-child");
-  await expectSort(page, "Actions for Book", "Newest first");
-  await expect(titles).toHaveText(["Apple", "cherry", "banana"]);
+  await expectSort(page, "Actions for Book", "Oldest first");
+  await expect(titles).toHaveText(["banana", "cherry", "Apple"]);
   await expect(page.getByRole("button", { name: /^Move / })).toHaveCount(0);
 
   await sortBy(page, "Actions for Book", "A–Z");

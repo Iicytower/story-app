@@ -1,0 +1,12 @@
+# D20 – Edytor WYSIWYG (2026-10-20)
+
+Status: aktualna. Zmieniona w D28 (listy) i D35 (skróty Find).
+
+- Tiptap v3 bez spike'a (zgoda użytkownika). Wymagania użytkownika: podstawowe formatowanie, komentarze w dowolnej formie, Enter = nowy akapit, listy numerowane i punktowane. Zgodność ze starymi opowiadaniami (pojedynczy Enter, stare komentarze) nie jest wymagana – użytkownik poprawi dane ręcznie. Z wyrównania i koloru tekstu (dawny task 07) rezygnujemy.
+- Wspólny komponent `MarkdownEditor` dla treści, notatek rozdziału i notatek folderu (także na stronie folderu): przełącznik Preview / Source (zawsze Preview przy otwarciu, bez zapamiętywania), w Source surowy markdown w textarea. Przejście z Source do Preview wczytuje tekst (`setContent` bez `emitUpdate`), więc wartość z Source zostaje bez zmian, dopóki użytkownik nie edytuje w Preview.
+- Zapis zawsze w markdownie (`@tiptap/markdown`, marked z `breaks: true, gfm: true` – pojedynczy znak nowej linii to złamanie linii, jak remark-breaks na stronach publicznych). Serializer normalizuje źródło (np. `__a__` → `**a**`, złamanie jako dwie spacje + `\n`), końcowe puste linie są obcinane. `value` zmienia się tylko w `onUpdate` (edycja), więc samo otwarcie niczego nie zapisuje.
+- Skróty (odstępstwo od spec „brak skrótów”): Ctrl/Cmd+B, Ctrl/Cmd+I, Ctrl/Cmd+K (dialog linku), Undo/Redo, Enter = akapit, Shift+Enter = złamanie linii. Przyciski: Bold, Italic, H1–H3, listy, cytat, linia pozioma, link, Comment, Undo, Redo. StarterKit bez `code`, `codeBlock`, `strike`, `underline`.
+- Link: tylko `http:`, `https:`, `mailto:` (`isAllowedLink` w dialogu i `isAllowedUri` rozszerzenia); inne adresy → „Use an http, https or mailto link.”. Pusty adres usuwa link.
+- Komentarz: własny węzeł blokowy `comment` (wyróżniony `aside`, edytowalny, Enter = nowa linia, Enter na pustej ostatniej linii wychodzi z komentarza), w markdownie `<!-- tekst -->` w osobnym bloku. `-->` w tekście zapisywane jako `- ->`. `<!--` wewnątrz akapitu zostaje tekstem. Strony publiczne dalej usuwają komentarze `stripComments`, eksport je zachowuje.
+- Surowy HTML w źródle (np. `<script>`) nie jest renderowany w edytorze (marked → token HTML, którego żadne rozszerzenie nie obsługuje).
+- Edytor renderuje się dopiero po hydratacji (`immediatelyRender: false`). Pole ma `role="textbox"` i nazwę jak dawne textarea („Content”, „Notes”, „Folder notes”); grupa edytora ma nazwę „<etykieta> editor”. Kolumna podglądu (`MarkdownPreview`) zniknęła z edytora; komponent zostaje dla stron publicznych.

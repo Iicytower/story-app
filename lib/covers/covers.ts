@@ -3,6 +3,14 @@ import type { CoverScores } from "@/lib/models/cover";
 
 export const COVER_WIDTH = 600;
 export const COVER_HEIGHT = 900;
+export const COVER_SIZE = { width: COVER_WIDTH, height: COVER_HEIGHT };
+// Avatars go through the same filter, cropped 1:1 (task 70).
+export const AVATAR_SIZE = { width: 256, height: 256 };
+
+export interface ImageSize {
+  width: number;
+  height: number;
+}
 // What the browser accepts before cropping and scaling.
 export const MAX_INPUT_BYTES = 10 * 1024 * 1024;
 export const INPUT_TYPES = ["image/jpeg", "image/png", "image/webp"];

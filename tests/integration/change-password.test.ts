@@ -22,7 +22,7 @@ const BOB_PASSWORD = "Granite-path-1357913";
 let alice: Types.ObjectId;
 let bob: Types.ObjectId;
 
-async function passwordHashOf(id: Types.ObjectId): Promise<string> {
+async function passwordHashOf(id: Types.ObjectId): Promise<string | undefined> {
   return (await User.findById(id).lean())!.passwordHash;
 }
 

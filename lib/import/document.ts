@@ -15,6 +15,8 @@ export type ImportedFile = {
   // The same text as one chapter; set only when chapters were guessed from headings.
   unsplit: ImportedChapter | null;
   folderNotes: string;
+  // From the frontmatter of a folder zip's notes.md (task 98); used for a new folder only.
+  folderDescription?: string;
   // The format cannot keep the formatting, which the dialog warns about.
   lossy: boolean;
   // cover.webp of a folder zip (task 26); the dialog sends it to the new folder.

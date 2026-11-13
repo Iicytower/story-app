@@ -4,6 +4,8 @@ import { coverBytes } from "@/lib/covers/mutations";
 import { connectDB } from "@/lib/db";
 import { Cover } from "@/lib/models/cover";
 import { Folder } from "@/lib/models/folder";
+import { User } from "@/lib/models/user";
+import { isBanActive } from "@/lib/social/permissions";
 
 const notFound = () => new Response("Not found", { status: 404 });
 
@@ -31,6 +33,13 @@ export async function GET(
   const user = await requireUser();
   const owner = user.ok && cover.userId.equals(user.userId);
   if (!owner && !folder.published) return notFound();
+  // A globally banned author's books are hidden from others (D80, task 88).
+  if (!owner) {
+    const author = await User.findById(cover.userId)
+      .select({ globalBan: 1 })
+      .lean();
+    if (isBanActive(author?.globalBan, new Date())) return notFound();
+  }
 
   return new Response(new Uint8Array(coverBytes(cover.data)), {
     headers: {

@@ -85,7 +85,7 @@ async function expectSameTextAfterSwitching(page: Page) {
   await expect(field.getByText("Paragraph 61", { exact: true })).toBeAttached();
 
   await scrollPreviewToText(field, "Paragraph 61");
-  await content.button("Source").click();
+  await content.mode("Markdown");
   const textarea = content.group.getByRole("textbox");
   expect(await sourceShowsLine(textarea, "Paragraph 61")).toBe(true);
   expect(await sourceShowsLine(textarea, "# Heading 0")).toBe(false);
@@ -99,7 +99,7 @@ async function expectSameTextAfterSwitching(page: Page) {
       scroller.getBoundingClientRect().top +
       line * parseFloat(getComputedStyle(element).lineHeight);
   }, line);
-  await content.button("Preview").click();
+  await content.mode("Text");
   await expect
     .poll(() =>
       isInView(
@@ -155,7 +155,7 @@ async function expectWrappedParagraphAfterSwitching(page: Page) {
   await expect(block).toBeAttached();
   await block.evaluate((element) => element.scrollIntoView({ block: "start" }));
 
-  await content.button("Source").click();
+  await content.mode("Markdown");
   const { offset, lineHeight } = await sourceLineOffset(
     content.group.getByRole("textbox"),
     "Long 25:",
@@ -189,7 +189,7 @@ test.describe("wide screen", () => {
   test("Preview and Source show the same text after switching", async ({
     page,
   }) => {
-    await page.goto(`/stories/${await seedLongBook()}`);
+    await page.goto(`/chapters/${await seedLongBook()}`);
     await expectSameTextAfterSwitching(page);
   });
 
@@ -197,14 +197,14 @@ test.describe("wide screen", () => {
     page,
   }) => {
     const id = await seedStory("alice", { title: "Wrapped", content: WRAPPED });
-    await page.goto(`/stories/${id}`);
+    await page.goto(`/chapters/${id}`);
     await expectWrappedParagraphAfterSwitching(page);
   });
 
   test("Notes and Chapters keep their scroll and leave the story where it was", async ({
     page,
   }) => {
-    await page.goto(`/stories/${await seedLongBook(40)}`);
+    await page.goto(`/chapters/${await seedLongBook(40)}`);
     const content = scroller(markdownEditor(page, "Content").field);
     const notes = scroller(markdownEditor(page, "Notes").field);
     const chapters = page.getByRole("list", { name: "Chapters" });
@@ -238,7 +238,7 @@ test.describe("wide screen", () => {
   });
   test("positions survive a reload", async ({ page }) => {
     const id = await seedLongBook(40);
-    await page.goto(`/stories/${id}`);
+    await page.goto(`/chapters/${id}`);
     const content = markdownEditor(page, "Content").field;
     const notes = markdownEditor(page, "Notes").field;
     const chapters = page.getByRole("list", { name: "Chapters" });
@@ -265,7 +265,7 @@ test.describe("wide screen", () => {
   });
 
   test("Hide and Show keep the story position", async ({ page }) => {
-    await page.goto(`/stories/${await seedLongBook()}`);
+    await page.goto(`/chapters/${await seedLongBook()}`);
     const content = markdownEditor(page, "Content").field;
     await expect(
       content.getByText("Paragraph 61", { exact: true }),
@@ -287,7 +287,7 @@ test.describe("narrow screen", () => {
   test("Preview and Source show the same text after switching", async ({
     page,
   }) => {
-    await page.goto(`/stories/${await seedLongBook()}`);
+    await page.goto(`/chapters/${await seedLongBook()}`);
     await expectSameTextAfterSwitching(page);
   });
 
@@ -295,12 +295,12 @@ test.describe("narrow screen", () => {
     page,
   }) => {
     const id = await seedStory("alice", { title: "Wrapped", content: WRAPPED });
-    await page.goto(`/stories/${id}`);
+    await page.goto(`/chapters/${id}`);
     await expectWrappedParagraphAfterSwitching(page);
   });
 
   test("Story, Notes and Chapters keep their scroll", async ({ page }) => {
-    await page.goto(`/stories/${await seedLongBook(40)}`);
+    await page.goto(`/chapters/${await seedLongBook(40)}`);
     const content = scroller(markdownEditor(page, "Content").field);
     const notes = scroller(markdownEditor(page, "Notes").field);
     const chapters = page.getByRole("list", { name: "Chapters" });
@@ -331,12 +331,12 @@ test.describe("narrow screen", () => {
     await expect(chapters).toBeVisible();
     expect(await scrollTop(chapters)).toBe(chaptersTop);
 
-    await tab("Story").click();
+    await tab("Text").click();
     await expect(markdownEditor(page, "Content").field).toBeVisible();
     expect(await scrollTop(content)).toBe(contentTop);
   });
   test("the story position survives a reload", async ({ page }) => {
-    await page.goto(`/stories/${await seedLongBook()}`);
+    await page.goto(`/chapters/${await seedLongBook()}`);
     const content = markdownEditor(page, "Content").field;
     await expect(
       content.getByText("Paragraph 61", { exact: true }),

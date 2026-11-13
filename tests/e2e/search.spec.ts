@@ -1,7 +1,13 @@
 import type { Browser, Page } from "@playwright/test";
-import { exhaustSearchLimit, findFolder, seedStory, withE2EDb } from "./db";
+import {
+  exhaustSearchLimit,
+  findFolder,
+  seedStory,
+  updateFolder,
+  withE2EDb,
+} from "./db";
 import { E2E_IP_HEADER, storageStatePath } from "./env";
-import { expect, menuAction, test } from "./helpers";
+import { expect, menuAction, publicLinkRow, test } from "./helpers";
 
 test.use({ storageState: storageStatePath("alice") });
 
@@ -74,6 +80,26 @@ test("a visitor finds a story by title, tag and text and opens it", async ({
   await results(visitor).click();
   await expect(visitor).toHaveURL(/\/p\/Alice\/book\/dragon-tale$/);
   await expect(visitor.getByText("Zielona łąka")).toBeVisible();
+});
+
+test("a result shows the published book's description as plain text", async ({
+  browser,
+}) => {
+  await seedPublished();
+  await updateFolder("Book", { description: "A <b>bold</b> saga." });
+  const visitor = await anonymous(browser);
+
+  await search(visitor, "dragon");
+  const description = visitor
+    .getByRole("list", { name: "Search results" })
+    .getByText("A <b>bold</b> saga.", { exact: true });
+  await expect(description).toBeVisible();
+  expect((await description.boundingBox())!.height).toBeLessThanOrEqual(24);
+
+  await updateFolder("Book", { published: false });
+  await search(visitor, "dragon");
+  await expect(visitor.getByText("No stories found.")).toBeVisible();
+  expect(await visitor.content()).not.toContain("bold</b> saga");
 });
 
 test("a word from a comment finds nothing", async ({ browser }) => {
@@ -161,25 +187,23 @@ test("unpublishing and deleting take a story out of the results", async ({
   await search(visitor, "dragon");
   await expect(results(visitor)).toHaveCount(1);
 
-  await page.goto(`/folders/${folderId}`);
+  await page.goto(`/books/${folderId}`);
   await menuAction(page, "Actions for Book", "Unpublish");
   await page
-    .getByRole("alertdialog", { name: "Unpublish folder?" })
+    .getByRole("alertdialog", { name: "Unpublish book?" })
     .getByRole("button", { name: "Unpublish" })
     .click();
-  await expect(page.getByRole("textbox", { name: "Public link" })).toBeHidden();
+  await expect(publicLinkRow(page)).toBeHidden();
   await search(visitor, "dragon");
   await expect(visitor.getByText("No stories found.")).toBeVisible();
   await expect(visitor.getByRole("link", { name: "smoki" })).toHaveCount(0);
 
   await menuAction(page, "Actions for Book", "Publish");
   await page
-    .getByRole("alertdialog", { name: "Publish folder?" })
+    .getByRole("alertdialog", { name: "Publish book?" })
     .getByRole("button", { name: "Publish" })
     .click();
-  await expect(
-    page.getByRole("textbox", { name: "Public link" }),
-  ).toBeVisible();
+  await expect(publicLinkRow(page)).toBeVisible();
   await search(visitor, "dragon");
   await expect(results(visitor)).toHaveCount(1);
 
@@ -231,7 +255,7 @@ test("the search page can be indexed", async ({ browser }) => {
 
 test("a signed-in user searches in the sidebar view", async ({ page }) => {
   await seedPublished();
-  await page.goto("/stories");
+  await page.goto("/books");
   await page
     .getByRole("navigation", { name: "Main" })
     .getByRole("link", { name: "Home" })
@@ -240,4 +264,39 @@ test("a signed-in user searches in the sidebar view", async ({ page }) => {
   await page.getByRole("searchbox").fill("dragon");
   await page.getByRole("searchbox").press("Enter");
   await expect(results(page)).toHaveCount(1);
+});
+
+test("the search button runs the search and the placeholder fits at 375 px", async ({
+  browser,
+}) => {
+  await seedPublished();
+  const visitor = await anonymous(browser);
+  await visitor.goto("/");
+  await visitor
+    .getByRole("searchbox", { name: "Search published stories" })
+    .fill("dragon");
+  await visitor.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(visitor).toHaveURL(/\?q=dragon/);
+  await expect(results(visitor)).toHaveCount(1);
+
+  await visitor.setViewportSize({ width: 375, height: 800 });
+  for (const [path, placeholder] of [
+    ["/en", "Search stories"],
+    ["/pl", "Szukaj opowiadań"],
+  ]) {
+    await visitor.goto(path);
+    const field = visitor.getByRole("searchbox");
+    await expect(field).toHaveAttribute("placeholder", placeholder);
+    const fits = await field.evaluate((input: HTMLInputElement) => {
+      const style = getComputedStyle(input);
+      const context = document.createElement("canvas").getContext("2d")!;
+      context.font = style.font;
+      const room =
+        input.clientWidth -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight);
+      return context.measureText(input.placeholder).width <= room;
+    });
+    expect(fits).toBe(true);
+  }
 });

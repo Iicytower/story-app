@@ -1,3 +1,8 @@
 package-lock.json
 next-env.d.ts
 docs/
+
+# Vendored third-party skills (D81), kept identical to upstream
+.claude/skills/frontend-design/
+.claude/skills/ux-heuristics/
+.claude/skills/web-design-guidelines/guidelines.md

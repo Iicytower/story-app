@@ -5,7 +5,7 @@ import {
   publishAllChapters,
   renameFolder,
   setFolderPublished,
-} from "@/app/[locale]/(protected)/folders/actions";
+} from "@/app/[locale]/(protected)/books/actions";
 import {
   createStory,
   deleteStory,
@@ -13,11 +13,11 @@ import {
   moveStory,
   saveStory,
   setChapterPublished,
-} from "@/app/[locale]/(protected)/stories/actions";
+} from "@/app/[locale]/(protected)/chapters/actions";
 import {
   createFolderVersion,
   restoreFolderVersion,
-} from "@/app/[locale]/(protected)/folders/[id]/versions/actions";
+} from "@/app/[locale]/(protected)/books/[id]/versions/actions";
 import { requireUser } from "@/lib/auth/session";
 import { getFolder, getFolderForExport } from "@/lib/folders/queries";
 import { Folder } from "@/lib/models/folder";
@@ -180,7 +180,7 @@ describe("setChapterPublished", () => {
 });
 
 describe("reading order", () => {
-  it("starts from the oldest chapter in Newest first", async () => {
+  it("starts from the oldest chapter in Oldest first", async () => {
     const { folderId } = await seedBook();
     await Folder.updateOne({ _id: folderId }, { chapterSort: "created" });
     await setFolderPublished(folderId, true);

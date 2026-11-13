@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { RateLimit } from "@/lib/models/rate-limit";
-import { giveBackAttempt, takeAttempt } from "@/lib/rate-limit";
+import { User } from "@/lib/models/user";
+import {
+  giveBackAttempt,
+  SOCIAL_LIMITS,
+  takeAttempt,
+  takeUserAttempt,
+} from "@/lib/rate-limit";
 import { setupTestDb } from "./test-db";
 
 setupTestDb();
@@ -70,5 +76,68 @@ describe("takeAttempt", () => {
         expireAfterSeconds: 0,
       }),
     );
+  });
+});
+
+describe("takeUserAttempt", () => {
+  const USER_RULE = { name: "user-test", max: 4, windowMs: 60_000 };
+
+  // createdAt is immutable in Mongoose, so an older account is written through the driver.
+  async function createUser(nickname: string, ageMs: number) {
+    const { insertedId } = await User.collection.insertOne({
+      nickname,
+      passwordHash: "x",
+      createdAt: new Date(Date.now() - ageMs),
+    });
+    return insertedId.toString();
+  }
+
+  async function allowed(userId: string) {
+    let count = 0;
+    while ((await takeUserAttempt(USER_RULE, userId)) !== null) count++;
+    return count;
+  }
+
+  it("gives an account older than 24 hours the whole limit", async () => {
+    const userId = await createUser("Old", 25 * 60 * 60 * 1000);
+    await expect(allowed(userId)).resolves.toBe(USER_RULE.max);
+  });
+
+  it("gives an account younger than 24 hours half of the limit", async () => {
+    const userId = await createUser("Young", 23 * 60 * 60 * 1000);
+    await expect(allowed(userId)).resolves.toBe(USER_RULE.max / 2);
+  });
+
+  it("rounds half of an odd limit down", async () => {
+    const userId = await createUser("Young", 0);
+    let count = 0;
+    while ((await takeUserAttempt({ ...USER_RULE, max: 5 }, userId)) !== null) {
+      count++;
+    }
+    expect(count).toBe(2);
+  });
+
+  it("counts every account separately", async () => {
+    const first = await createUser("First", 25 * 60 * 60 * 1000);
+    const second = await createUser("Second", 25 * 60 * 60 * 1000);
+    await allowed(first);
+    await expect(takeUserAttempt(USER_RULE, second)).resolves.not.toBeNull();
+  });
+
+  it("names every social rule differently", () => {
+    const names = Object.values(SOCIAL_LIMITS).map((rule) => rule.name);
+    expect(new Set(names).size).toBe(names.length);
+    expect(SOCIAL_LIMITS.commentMinute.max).toBe(10);
+    expect(SOCIAL_LIMITS.commentDay.max).toBe(200);
+    for (const name of [
+      "react",
+      "rate",
+      "follow",
+      "block",
+      "suggest",
+      "library",
+    ] as const) {
+      expect(SOCIAL_LIMITS[name]).toMatchObject({ max: 60, windowMs: 60_000 });
+    }
   });
 });

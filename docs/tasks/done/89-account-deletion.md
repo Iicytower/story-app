@@ -1,0 +1,38 @@
+# 89 – Usuwanie konta
+
+Subtask 68, zależy od 69–88. Podstawa: D80 (Konto). Zmienia D37 (konta nie dało się usunąć). Branch `feature/89-account-deletion` z `feature/social`, merge do `feature/social`.
+
+## Zakres
+
+- „Usuń konto” w dialogu ustawień: obecne hasło i wpisanie nicku; limit błędnych haseł jak `changePassword` (D75).
+- Akcja `deleteAccount`: usuwa (przez `purgeSocialData` z 69 dla danych jego tekstów, także notatek i postępu innych czytelników na nich) foldery, rozdziały, wersje, okładki, avatar, profil, ustawienia, słownik użytkownika, obserwacje (obie strony), bibliotekę i półki, postęp, zakładki i notatki, powiadomienia (własne i te, gdzie był jedynym aktorem), oceny, reakcje, DM (rozmowy i wiadomości obu stron rozmowy z tym kontem), blokady, bany i role moderatora, `readEvents`; `dailyStats` jego tekstów. Kasowane też: `activity` (aktor), `threadFollows`, `communityBans` i `communityModerators` w obu rolach, zgłoszenia złożone przez konto. Forum autora usuwanego konta: wątki i posty kasowane razem z kontem. Wpisy `moderationLog` zostają z tombstone. Komentarze i posty zostają z `userId` wskazującym tombstone: wyświetlane jako „usunięty użytkownik”, bez linku i avatara.
+- Tombstone w `users`: dokument zostaje z `nickname` (blokuje unikalny indeks, D37), `deletedAt`, bez `passwordHash` i `recoveryCodes`; logowanie i reset kodem odrzucane. Schemat: `User.deletedAt?: Date`, `passwordHash` opcjonalne; `authorize`, `recover-actions`, `findUserByNickname` (poza rejestracją, gdzie nick ma zostać zajęty) i wszystkie zapytania społeczności filtrują `deletedAt: { $exists: false }` (lub przez `hiddenUserIdsFor` z 69). `/p/<nick>` → 404. Wszystkie sesje usunięte (D75), wylogowanie.
+- Zakładki i notatki (74): `readerMarks` konta kasowane po `userId` (indeks `{userId, storyId}`), znaczniki innych na jego tekstach – przez `purgeSocialData` (indeksy `{storyId}`, `{folderId}`).
+- Kolejność: najpierw tombstone i sesje, potem sprzątanie w `after()` (znacznik `cleanupPendingAt`). Ponowienie: `after()` w `deleteAccount` i w layoucie `(protected)` przejmuje atomowo (`findOneAndUpdate` z `cleanupPendingAt < now-10 min` → `now`) jeden tombstone i dokańcza sprzątanie.
+- Komentarze (76): komentarze konta po `userId` (indeks `{userId}`), dziś konta bez nicku/nieistniejące są przy odczycie pomijane (poza zaślepką usuniętego/ukrytego) – dostosować do „usunięty użytkownik”. Nowe kolekcje z `folderId` dopisywać też do `moveChapterSocialData` (`lib/social/cascade.ts`).
+- Reakcje (77): reakcje konta kasowane po `userId` (unikalny indeks `{userId, targetType, targetId}`), reakcje innych na jego tekstach – przez `purgeSocialData` (indeksy `{folderId}`, `{storyId}`).
+- Oceny (78): oceny konta kasowane po `userId` (unikalny indeks `{userId, targetType, targetId}`), oceny innych na jego tekstach – przez `purgeSocialData` (indeksy `{folderId}`, `{storyId}`).
+- Moderacja (79): `communityModerators` i `communityBans` kasowane w obie strony (konto jako autor i jako moderator/zbanowany); `moderationLog` (poza `PURGES`) zostaje z tombstone zamiast danych konta.
+- Zgłoszenia (80): `reports` (poza `PURGES`) – obsłużyć zgłoszenia konta po `reporterId` (indeks `{reporterId}`) i zgłoszenia jego treści po `targetUserId`.
+- Powiadomienia (81): `notifications` kasować po `userId` (odbiorca) i usuwać konto jako aktora (`actorIds`).
+- Wzmianki (82): „usunięte konta” w podpowiedziach `suggestNicknames` – wykluczyć konta usunięte (tombstone), dziś takie nie istnieją.
+- Statystyki (83): `readEvents.reader` w formie `u:<userId>` usunąć lub zanonimizować; `dailyStats` konta jako autora kasować po `authorId`.
+- Rankingi (84): `rankings.items` – usunąć `folderId` usuniętych książek konta (`PURGES` robi `$pull` z `rankings.items`).
+- DM (85): `conversations` i `messages`, w których konto jest uczestnikiem, obsłużyć przy usuwaniu (poza `PURGES`); rozmowa z usuniętym kontem pokazuje drugiej stronie „Usunięte konto”.
+- Blokady (86): `blocks` kasowane w obie strony (konto jako blokujący i zablokowany). `liftBlock` zdejmuje `closedAt` rozmowy bez sprawdzania przyczyny zamknięcia – jeśli usuwanie konta zamyka rozmowy przez `closedAt`, uwzględnić to w `liftBlock` (`conversationClosed` i tak sprawdza `Block.exists`).
+- Fora (87): `forumThreads`, `forumPosts` (z reakcjami) i `threadFollows` konta – obsłużyć posty usuniętego konta w cudzych wątkach (zaślepka lub „Usunięte konto”); cytaty jego postów pokazują zaślepkę „Cytowany post jest niedostępny” (`getThread` filtruje cytowany).
+
+- Panel admina (88): pole `User.globalBan` usuwanego konta zdjąć przy tombstone, `globalBan.by` wskazujące usuwane konto (admin) zostawić jako tombstone; `moderationLog` ze `scope: "global"` zostaje z tombstone w `actorId` i `authorId`; konto usuwać z `forumCategories.moderatorIds` (`$pull`).
+
+## Kryteria akceptacji
+
+1. Usunięcie wymaga poprawnego hasła i nicku; błędne hasła liczą się do limitu.
+2. Po usunięciu nie da się zalogować ani zresetować hasła kodem; nick jest nie do zajęcia przy rejestracji.
+3. Dane z listy znikają; komentarze i posty zostają jako „usunięty użytkownik”.
+4. Sesje na innych urządzeniach przestają działać.
+5. Przerwane sprzątanie kończy się przy kolejnej próbie.
+
+## Testy
+
+- Integracyjne: `tests/integration/account-deletion.test.ts` (1–5, sprawdzenie każdej kolekcji z listy; 5 przerywa sprzątanie wstrzykniętym błędem).
+- E2E: `tests/e2e/account-deletion.spec.ts` (nowe konto rejestrowane w teście komentuje i usuwa konto; komentarz widoczny jako „usunięty użytkownik”; rejestracja tym nickiem odrzucona).

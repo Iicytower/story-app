@@ -1,5 +1,10 @@
-// D77. Sent with every page from the proxy, which makes a new nonce per request.
-export function contentSecurityPolicy(nonce: string, dev: boolean): string {
+// D77. Sent with every page from the proxy, which makes a new nonce per request. realtimeUrl:
+// the realtime stream's address (task 90), the only other origin a page may connect to.
+export function contentSecurityPolicy(
+  nonce: string,
+  dev: boolean,
+  realtimeUrl: string | null = null,
+): string {
   return [
     "default-src 'self'",
     // strict-dynamic: scripts loaded by a script with the nonce (Next.js chunks) may run.
@@ -11,7 +16,7 @@ export function contentSecurityPolicy(nonce: string, dev: boolean): string {
     // Covers come from /covers, the crop preview from blob: and data: URLs.
     "img-src 'self' blob: data:",
     "font-src 'self' data:",
-    `connect-src 'self'${dev ? " ws:" : ""}`,
+    `connect-src 'self'${realtimeUrl ? ` ${new URL(realtimeUrl).origin}` : ""}${dev ? " ws:" : ""}`,
     "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",

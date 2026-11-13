@@ -76,18 +76,18 @@ describe("inherited tags", () => {
 describe("tagFilterHref", () => {
   it("adds a tag and keeps the query", () => {
     expect(tagFilterHref("smok", ["a"], "b")).toBe(
-      "/stories?q=smok&tag=a&tag=b",
+      "/books?q=smok&tag=a&tag=b",
     );
   });
 
   it("removes a selected tag", () => {
-    expect(tagFilterHref("", ["a", "b"], "a")).toBe("/stories?tag=b");
-    expect(tagFilterHref("", ["a"], "a")).toBe("/stories");
+    expect(tagFilterHref("", ["a", "b"], "a")).toBe("/books?tag=b");
+    expect(tagFilterHref("", ["a"], "a")).toBe("/books");
   });
 
   it("encodes spaces and Polish letters", () => {
     expect(tagFilterHref("", [], "złoty wiek")).toBe(
-      "/stories?tag=z%C5%82oty+wiek",
+      "/books?tag=z%C5%82oty+wiek",
     );
   });
 });

@@ -67,7 +67,7 @@ export function tagFilterHref(
   query: string,
   selected: string[],
   tag: string,
-  path = "/stories",
+  path = "/books",
 ): string {
   const params = new URLSearchParams();
   if (query) params.set("q", query);

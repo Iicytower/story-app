@@ -1,0 +1,44 @@
+import mongoose, { Schema, type Model, type Types } from "mongoose";
+import { MAX_BAN_REASON_LENGTH } from "@/lib/limits";
+
+// userId is banned in the community of authorId (D80); `until: null` = without end.
+export interface CommunityBanFields {
+  authorId: Types.ObjectId;
+  userId: Types.ObjectId;
+  until: Date | null;
+  reason: string;
+  by: Types.ObjectId;
+  createdAt: Date;
+}
+
+const communityBanSchema = new Schema<CommunityBanFields>(
+  {
+    authorId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    until: { type: Date, default: null },
+    reason: {
+      type: String,
+      required: true,
+      minlength: 1,
+      maxlength: MAX_BAN_REASON_LENGTH,
+    },
+    by: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  },
+  {
+    collection: "communityBans",
+    timestamps: { createdAt: true, updatedAt: false },
+    versionKey: false,
+  },
+);
+
+communityBanSchema.index({ authorId: 1, userId: 1 }, { unique: true });
+// An expired ban already allows everything (isBanActive); this only clears it away. A ban
+// without end has no date, which TTL skips.
+communityBanSchema.index({ until: 1 }, { expireAfterSeconds: 0 });
+
+// A deleted account's bans in other communities (task 89).
+communityBanSchema.index({ userId: 1 });
+
+export const CommunityBan: Model<CommunityBanFields> =
+  (mongoose.models.CommunityBan as Model<CommunityBanFields> | undefined) ??
+  mongoose.model<CommunityBanFields>("CommunityBan", communityBanSchema);

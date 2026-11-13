@@ -29,7 +29,7 @@ for (const { id, extension } of EXPORT_FORMATS) {
       title: "Zażółć",
       content: "Tekst",
     });
-    await page.goto(`/stories/${storyId}`);
+    await page.goto(`/chapters/${storyId}`);
     const download = await exportAs(page, id);
     expect(download.suggestedFilename()).toBe(`zazolc.${extension}`);
     const file = await readFile(await download.path());
@@ -46,7 +46,7 @@ test("saves unsaved changes first and honours the extras switch", async ({
     content: "Old",
     notes: "Private note",
   });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   await markdownEditor(page, "Content").setSource("Fresh");
 
   const clean = await readFile(await (await exportAs(page, "txt")).path());
@@ -64,7 +64,7 @@ test("exports a folder as one document", async ({ page }) => {
     folder: "Książka",
   });
   const folder = await findFolder("Książka");
-  await page.goto(`/folders/${folder!._id}`);
+  await page.goto(`/books/${folder!._id}`);
 
   const download = await exportAs(page, "epub");
   expect(download.suggestedFilename()).toBe("ksiazka.epub");
@@ -77,7 +77,7 @@ for (const id of ["docx", "pdf"] as const) {
     await seedStory("alice", { title: "Jeden", folder: "Książka" });
     await seedStory("alice", { title: "Dwa", folder: "Książka" });
     const folder = await findFolder("Książka");
-    await page.goto(`/folders/${folder!._id}`);
+    await page.goto(`/books/${folder!._id}`);
 
     await menuAction(page, "Actions for Książka", "Export as…");
     await page.getByLabel("Format").selectOption(id);
@@ -89,15 +89,15 @@ for (const id of ["docx", "pdf"] as const) {
     expect(download.suggestedFilename()).toBe("ksiazka.zip");
     const files = unzipSync(await readFile(await download.path()));
     expect(Object.keys(files).sort()).toEqual([
-      `01-dwa.${id}`,
-      `02-jeden.${id}`,
+      `01-jeden.${id}`,
+      `02-dwa.${id}`,
     ]);
   });
 }
 
 test("offers separate chapter files only for folders", async ({ page }) => {
   const id = await seedStory("alice", { title: "Solo" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   await editorAction(page, "Export as…");
   await expect(page.getByLabel("One file per chapter (.zip)")).toHaveCount(0);
 });

@@ -1,8 +1,8 @@
 import { unzipSync } from "fflate";
 import { Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { GET } from "@/app/folders/[id]/export/route";
-import { deleteFolder } from "@/app/[locale]/(protected)/folders/actions";
+import { GET } from "@/app/books/[id]/export/route";
+import { deleteFolder } from "@/app/[locale]/(protected)/books/actions";
 import { requireUser } from "@/lib/auth/session";
 import { getFolderForExport } from "@/lib/folders/queries";
 import { Folder } from "@/lib/models/folder";
@@ -29,7 +29,7 @@ beforeEach(() => signInAs(alice));
 
 const day = (n: number) => new Date(Date.UTC(2026, 0, n));
 
-// Chapters "First", "Second", "Third" created in that order, so newest first is reversed.
+// Chapters "First", "Second", "Third" created in that order (oldest first, D83).
 async function seedFolder(userId = alice) {
   const folder = await Folder.create({
     userId,
@@ -55,9 +55,9 @@ async function seedFolder(userId = alice) {
   return { folderId: folder._id.toString(), ids };
 }
 
-describe("GET /folders/[id]/export", () => {
+describe("GET /books/[id]/export", () => {
   const exportFolder = (id: string) =>
-    GET(new Request(`http://localhost/folders/${id}/export`), {
+    GET(new Request(`http://localhost/books/${id}/export`), {
       params: Promise.resolve({ id }),
     });
 
@@ -72,9 +72,9 @@ describe("GET /folders/[id]/export", () => {
     );
     const files = unzipSync(new Uint8Array(await response.arrayBuffer()));
     expect(Object.keys(files)).toEqual([
-      "01-third.md",
+      "01-first.md",
       "02-second.md",
-      "03-first.md",
+      "03-third.md",
       "notes.md",
     ]);
   });

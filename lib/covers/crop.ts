@@ -1,4 +1,4 @@
-import { COVER_HEIGHT, COVER_WIDTH } from "./covers";
+import { COVER_SIZE, type ImageSize } from "./covers";
 
 export interface CropRect {
   x: number;
@@ -9,15 +9,16 @@ export interface CropRect {
 
 export const MAX_ZOOM = 4;
 
-// The 2:3 part of the image taken for the cover: the largest one at zoom 1, centred and moved by
-// `center` (source pixels from the image centre), kept inside the image.
+// The part of the image with the ratio of `size` (2:3 for a cover): the largest one at zoom 1,
+// centred and moved by `center` (source pixels from the image centre), kept inside the image.
 export function cropRect(
   imageWidth: number,
   imageHeight: number,
   zoom: number,
   center: { x: number; y: number },
+  size: ImageSize = COVER_SIZE,
 ): CropRect {
-  const ratio = COVER_WIDTH / COVER_HEIGHT;
+  const ratio = size.width / size.height;
   const base =
     imageWidth / imageHeight > ratio
       ? { width: imageHeight * ratio, height: imageHeight }

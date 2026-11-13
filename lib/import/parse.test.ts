@@ -134,10 +134,16 @@ describe("export → import", () => {
   );
 
   // A file exported in Polish imports in any language (D48).
-  it.each(STRUCTURED)("%s recognises Polish note headings", async (format) => {
+  it.each(
+    STRUCTURED.flatMap((format) =>
+      ["Notatki książki", "Notatki folderu"].map(
+        (folderNotes) => [format, folderNotes] as const,
+      ),
+    ),
+  )("%s recognises the Polish heading %s", async (format, folderNotes) => {
     const polish: DocumentLabels = {
       notes: "Notatki",
-      folderNotes: "Notatki folderu",
+      folderNotes,
       chapter: (number) => `Rozdział ${number}`,
     };
     const data = await buildExport(format, folder, true, polish);
@@ -237,6 +243,7 @@ describe("export → import", () => {
     const dates = { createdAt: "2026-01-01", updatedAt: "2026-01-02" };
     const zip = buildFolderZip({
       name: "Folder",
+      description: 'Opis: "cytat"\ndruga linia',
       notes: "Notatki folderu",
       createdAt: dates.createdAt,
       notesUpdatedAt: dates.updatedAt,
@@ -250,6 +257,7 @@ describe("export → import", () => {
     const file = await parseImportFile("folder.zip", zip);
     expect(file.title).toBe("Folder");
     expect(file.folderNotes).toBe("Notatki folderu");
+    expect(file.folderDescription).toBe('Opis: "cytat"\ndruga linia');
     expect(file.chapters.map(({ title }) => title)).toEqual(
       Array.from({ length: 11 }, (_, index) => `Rozdział: ${index + 1}`),
     );
@@ -302,6 +310,15 @@ describe("parseImportFile", () => {
       content: "Sam tekst",
       notes: "",
     });
+  });
+
+  it("takes the book description only from the notes of a .zip", async () => {
+    const file = await parseImportFile(
+      "rozdzial.md",
+      strToU8('---\ntitle: "Raz"\ndescription: "Opis"\n---\n\nTreść'),
+    );
+    expect(file.chapters.map(({ title }) => title)).toEqual(["Raz"]);
+    expect(file.folderDescription).toBeUndefined();
   });
 
   it("splits at first-level headings when there is no document title", async () => {

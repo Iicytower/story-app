@@ -40,14 +40,14 @@ test("the desktop layout is restored in another browser and rendered by the serv
   browser,
 }) => {
   const id = await seedChapter();
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   await sideTab(page, "Chapters").click();
   await expect
     .poll(async () => (await findSettings("alice"))?.editor?.layout)
     .toMatchObject({ tab: "chapters" });
 
   const other = await newBrowser(browser, "alice");
-  await other.page.goto(`/stories/${id}`);
+  await other.page.goto(`/chapters/${id}`);
   await expect(sideTab(other.page, "Chapters")).toHaveAttribute(
     "aria-selected",
     "true",
@@ -58,7 +58,7 @@ test("the desktop layout is restored in another browser and rendered by the serv
   const noScript = await newBrowser(browser, "alice", {
     javaScriptEnabled: false,
   });
-  await noScript.page.goto(`/stories/${id}`);
+  await noScript.page.goto(`/chapters/${id}`);
   await expect(sideTab(noScript.page, "Chapters")).toHaveAttribute(
     "aria-selected",
     "true",
@@ -74,7 +74,7 @@ test("another user keeps the default layout and theme", async ({
   browser,
 }) => {
   const id = await seedChapter();
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   await sideTab(page, "Chapters").click();
   await saveTheme(page, "Dark");
   await expect
@@ -86,7 +86,7 @@ test("another user keeps the default layout and theme", async ({
 
   const bobId = await seedStory("bob", { title: "Bob's", folder: "Bob" });
   const bob = await newBrowser(browser, "bob");
-  await bob.page.goto(`/stories/${bobId}`);
+  await bob.page.goto(`/chapters/${bobId}`);
   await expect(sideTab(bob.page, "Notes")).toHaveAttribute(
     "aria-selected",
     "true",
@@ -99,7 +99,7 @@ test("the theme follows the settings in another browser, from the first paint", 
   page,
   browser,
 }) => {
-  await page.goto("/stories");
+  await page.goto("/books");
   await saveTheme(page, "Dark");
   await expect
     .poll(async () => (await findSettings("alice"))?.appearance?.theme)
@@ -107,9 +107,9 @@ test("the theme follows the settings in another browser, from the first paint", 
 
   const other = await newBrowser(browser, "alice");
   // The saved theme is in the server HTML, applied by the script in <head>.
-  const response = await other.page.request.get("/stories");
+  const response = await other.page.request.get("/books");
   expect(await response.text()).toMatch(/<html[^>]*data-theme="dark"/);
-  await other.page.goto("/stories");
+  await other.page.goto("/books");
   await expect(html(other.page)).toHaveClass(/\bdark\b/);
   // The browser keeps a copy for pages without a session.
   expect(await other.page.evaluate(() => localStorage.getItem("theme"))).toBe(
@@ -122,12 +122,12 @@ test("a signed-in user without a saved theme follows the system", async ({
   browser,
 }) => {
   const dark = await newBrowser(browser, "alice", { colorScheme: "dark" });
-  await dark.page.goto("/stories");
+  await dark.page.goto("/books");
   await expect(html(dark.page)).toHaveClass(/\bdark\b/);
   await dark.context.close();
 
   const light = await newBrowser(browser, "alice", { colorScheme: "light" });
-  await light.page.goto("/stories");
+  await light.page.goto("/books");
   await expect(html(light.page)).not.toHaveClass(/\bdark\b/);
   await light.context.close();
 });
@@ -153,7 +153,7 @@ test("the accent color is picked from swatches and kept for the user", async ({
   page,
   browser,
 }) => {
-  await page.goto("/stories");
+  await page.goto("/books");
   const primary = () =>
     page.evaluate(() =>
       getComputedStyle(document.body).getPropertyValue("--primary"),
@@ -167,6 +167,11 @@ test("the accent color is picked from swatches and kept for the user", async ({
   await accents.getByRole("radio", { name: "Navy" }).check();
   await dialog.getByRole("button", { name: "Save" }).click();
   await expect(dialog.getByRole("button", { name: "Save" })).toBeDisabled();
+  // The dialog stays open (D50), so the save is confirmed in it.
+  await expect(dialog.getByText("Settings saved.")).toBeVisible();
+  await accents.getByRole("radio", { name: "Sage" }).check();
+  await expect(dialog.getByText("Settings saved.")).toHaveCount(0);
+  await accents.getByRole("radio", { name: "Navy" }).check();
   await expect(html(page)).toHaveAttribute("data-accent", "navy");
   expect(await primary()).not.toBe(sepia);
   await expect
@@ -193,7 +198,7 @@ test("the dark theme sets a dark color-scheme for native controls", async ({
 }) => {
   for (const colorScheme of ["dark", "light"] as const) {
     const user = await newBrowser(browser, "alice", { colorScheme });
-    await user.page.goto("/stories");
+    await user.page.goto("/books");
     await expect
       .poll(() =>
         user.page.evaluate(
@@ -207,7 +212,7 @@ test("the dark theme sets a dark color-scheme for native controls", async ({
 
 test("dragging a separator sends only a few saves", async ({ page }) => {
   const id = await seedChapter();
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const separator = page.getByRole("separator", {
     name: "Resize notes column",
   });
@@ -237,7 +242,7 @@ test.describe("on a narrow screen", () => {
     browser,
   }) => {
     const id = await seedChapter();
-    await page.goto(`/stories/${id}`);
+    await page.goto(`/chapters/${id}`);
     const tab = (p: Page, name: string) =>
       p.getByRole("tablist", { name: "View" }).getByRole("tab", { name });
 
@@ -252,7 +257,7 @@ test.describe("on a narrow screen", () => {
     );
 
     const desktop = await newBrowser(browser, "alice");
-    await desktop.page.goto(`/stories/${id}`);
+    await desktop.page.goto(`/chapters/${id}`);
     await expect(
       desktop.page
         .getByRole("tablist", { name: "Side panel" })
@@ -260,4 +265,89 @@ test.describe("on a narrow screen", () => {
     ).toHaveAttribute("aria-selected", "true");
     await desktop.context.close();
   });
+});
+
+test("every setting is in one of four tabs, listed on the left", async ({
+  page,
+}) => {
+  await page.goto("/books");
+  const dialog = await openSettings(page);
+  await expect(dialog.getByRole("tablist")).toHaveAttribute(
+    "aria-orientation",
+    "vertical",
+  );
+  const panel = (name: string) =>
+    dialog.getByRole("tabpanel", { name, exact: true });
+  const tab = (name: string) => dialog.getByRole("tab", { name, exact: true });
+  await expect(tab("Appearance")).toHaveAttribute("aria-selected", "true");
+  const appearance = panel("Appearance");
+  await expect(appearance.getByLabel("Theme")).toBeVisible();
+  await expect(
+    appearance.getByRole("radiogroup", { name: "Accent color" }),
+  ).toBeVisible();
+  await expect(appearance.getByLabel("Interface language")).toBeVisible();
+  await expect(
+    appearance.getByRole("heading", { name: "Proofreading dictionary" }),
+  ).toBeVisible();
+  await expect(appearance.getByRole("button", { name: "Save" })).toBeVisible();
+
+  await tab("Profile").click();
+  const profile = panel("Profile");
+  await expect(
+    profile.getByRole("textbox", { name: "About me" }),
+  ).toBeVisible();
+  await expect(
+    profile.getByRole("button", { name: "Avatar", exact: true }),
+  ).toBeVisible();
+  await expect(
+    profile.getByRole("group", {
+      name: "Who can start a conversation with me",
+    }),
+  ).toBeVisible();
+  await expect(
+    profile.getByRole("heading", { name: "Blocked accounts" }),
+  ).toBeVisible();
+
+  await tab("Account").click();
+  const account = panel("Account");
+  for (const name of [
+    "Change password",
+    "Log out other devices",
+    "Delete account",
+  ])
+    await expect(account.getByRole("button", { name })).toBeVisible();
+
+  await tab("Notifications").click();
+  await expect(
+    panel("Notifications").getByRole("group", { name: "My texts" }),
+  ).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Save" })).toHaveCount(0);
+});
+
+test("at 375 px the tabs sit above the content without scrolling the page", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    storageState: storageStatePath("alice"),
+    viewport: { width: 375, height: 740 },
+  });
+  const page = await context.newPage();
+  await page.goto("/books");
+  const dialog = await openSettings(page);
+  const tabs = dialog.getByRole("tablist");
+  await expect(tabs).toHaveAttribute("aria-orientation", "horizontal");
+  await expect(tabs.getByRole("tab")).toHaveCount(4);
+  for (const tab of await tabs.getByRole("tab").all()) {
+    const box = await tab.boundingBox();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(375);
+  }
+  const panel = await dialog.getByRole("tabpanel").boundingBox();
+  expect(panel!.y).toBeGreaterThan((await tabs.boundingBox())!.y);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await context.close();
 });

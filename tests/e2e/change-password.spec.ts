@@ -6,6 +6,7 @@ import {
   expectSignedOut,
   login,
   PASSWORD_REQUIREMENT_TEXTS,
+  logOut,
   openSettings,
   test,
 } from "./helpers";
@@ -34,7 +35,7 @@ async function signIn(page: Page, password: string) {
 test.beforeEach(async ({ page }) => {
   await restorePassword("carol");
   await login(page, "carol");
-  const settings = await openSettings(page);
+  const settings = await openSettings(page, "Account");
   await settings.getByRole("button", { name: "Change password" }).click();
 });
 
@@ -81,8 +82,7 @@ test("after the change only the new password signs in", async ({ page }) => {
   // The menu still responds after the dialog, and this session outlives the change.
   await page.reload();
   await expect(page).toHaveURL("/en");
-  const settings = await openSettings(page);
-  await settings.getByRole("button", { name: "Log out", exact: true }).click();
+  await logOut(page);
   await expectSignedOut(page);
 
   await signIn(page, USERS.carol.password);
@@ -102,7 +102,9 @@ test("Cancel goes back to the settings and clears what was typed", async ({
   await page.getByLabel("Current password").fill("typed");
   await page.getByRole("button", { name: "Cancel" }).click();
   const settings = page.getByRole("dialog", { name: "Settings" });
-  await expect(settings.getByRole("region", { name: "Account" })).toBeVisible();
+  await expect(
+    settings.getByRole("tabpanel", { name: "Account", exact: true }),
+  ).toBeVisible();
 
   await settings.getByRole("button", { name: "Change password" }).click();
   await expect(page.getByLabel("Current password")).toHaveValue("");
@@ -110,6 +112,8 @@ test("Cancel goes back to the settings and clears what was typed", async ({
   // Closing the whole dialog starts from the settings next time.
   await page.getByLabel("Current password").fill("typed");
   await page.keyboard.press("Escape");
-  await openSettings(page);
-  await expect(settings.getByRole("region", { name: "Account" })).toBeVisible();
+  await openSettings(page, "Account");
+  await expect(
+    settings.getByRole("tabpanel", { name: "Account", exact: true }),
+  ).toBeVisible();
 });

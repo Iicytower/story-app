@@ -5,8 +5,8 @@ import {
   labelOf,
   matchingSuggestions,
   MAX_SUGGESTIONS,
-  predefinedTagError,
   tagsForQuery,
+  validatePredefinedTag,
 } from "./predefined";
 
 const SCI_FI = {
@@ -56,12 +56,12 @@ describe("labelOf", () => {
   });
 });
 
-describe("predefinedTagError", () => {
+describe("validatePredefinedTag", () => {
   it("accepts a new entry and an update of the same key", () => {
     const entry = { key: "horror", labels: { en: "Horror", pl: "Horror" } };
-    expect(predefinedTagError(entry, LIST)).toBeNull();
+    expect(validatePredefinedTag(entry, LIST)).toBeNull();
     expect(
-      predefinedTagError(
+      validatePredefinedTag(
         { key: "crime", labels: { en: "Crime story", pl: "Kryminał" } },
         LIST,
       ),
@@ -70,35 +70,35 @@ describe("predefinedTagError", () => {
 
   it("refuses a key that is not normalized", () => {
     expect(
-      predefinedTagError({ key: "Horror", labels: { en: "H", pl: "H" } }, LIST),
-    ).toMatch(/normalized/);
+      validatePredefinedTag({ key: "Horror", labels: { en: "H", pl: "H" } }, LIST),
+    ).toEqual({ key: "tagKeyNotNormalized", values: { key: "horror" } });
   });
 
   it("refuses empty and too long labels", () => {
     expect(
-      predefinedTagError({ key: "x", labels: { en: "X", pl: " " } }, LIST),
-    ).toMatch(/required/);
+      validatePredefinedTag({ key: "x", labels: { en: "X", pl: " " } }, LIST),
+    ).toEqual({ key: "tagLabelRequired" });
     expect(
-      predefinedTagError(
+      validatePredefinedTag(
         { key: "x", labels: { en: "X".repeat(31), pl: "X" } },
         LIST,
       ),
-    ).toMatch(/longer/);
+    ).toMatchObject({ key: "tagLabelTooLong" });
   });
 
   it("refuses a spelling another key already has", () => {
     expect(
-      predefinedTagError(
+      validatePredefinedTag(
         { key: "mystery", labels: { en: "Mystery", pl: "kryminał" } },
         LIST,
       ),
-    ).toMatch(/"crime"/);
+    ).toEqual({ key: "tagSpellingTaken", values: { key: "crime" } });
     expect(
-      predefinedTagError(
+      validatePredefinedTag(
         { key: "science fiction", labels: { en: "SF", pl: "SF" } },
         LIST,
       ),
-    ).toMatch(/"sci-fi"/);
+    ).toEqual({ key: "tagSpellingTaken", values: { key: "sci-fi" } });
   });
 });
 

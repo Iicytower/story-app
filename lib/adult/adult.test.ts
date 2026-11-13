@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { chapterAdultState, folderAdultState, isAdult } from "./adult";
+import {
+  chapterAdultState,
+  folderAdultState,
+  isAdult,
+} from "./adult";
 
 describe("isAdult", () => {
   it("is false for a missing or empty mark", () => {
@@ -73,5 +77,41 @@ describe("chapterAdultState", () => {
 
   it("does not mark the folder", () => {
     expect(folderAdultState(undefined).adult).toBe(false);
+  });
+});
+
+describe("the admin's mark (task 88)", () => {
+  it("decides over the manual and automatic marks", () => {
+    expect(isAdult({ admin: true })).toBe(true);
+    expect(isAdult({ admin: false, manual: true, auto: true })).toBe(false);
+  });
+
+  it("locks the mark with true, before the automatic lock", () => {
+    expect(folderAdultState({ admin: true })).toEqual({
+      adult: true,
+      lock: "admin",
+    });
+    expect(folderAdultState({ admin: true, auto: true }).lock).toBe("admin");
+    expect(chapterAdultState({ admin: true }, { manual: true }).lock).toBe(
+      "admin",
+    );
+  });
+
+  it("lifts the mark and the image lock with false", () => {
+    expect(folderAdultState({ admin: false, auto: true })).toEqual({
+      adult: false,
+      lock: null,
+    });
+    expect(chapterAdultState({ admin: false, auto: true }, {})).toEqual({
+      adult: false,
+      lock: null,
+    });
+  });
+
+  it("does not lift an 18+ folder from a chapter", () => {
+    expect(chapterAdultState({ admin: false }, { manual: true })).toEqual({
+      adult: true,
+      lock: "folder",
+    });
   });
 });

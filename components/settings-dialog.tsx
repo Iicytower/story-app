@@ -2,16 +2,33 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { XIcon } from "lucide-react";
-import { useEffect, useRef, useState, useTransition } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+} from "react";
 import {
   changeLocale,
   listDictionary,
   logOutOtherDevices,
-  logout,
   removeFromDictionary,
   saveSettings,
 } from "@/app/[locale]/(protected)/actions";
+import { getMessageSettings } from "@/app/[locale]/(protected)/messages/actions";
+import {
+  listBlockedUsers,
+  unblockUser,
+} from "@/app/[locale]/p/[nickname]/block-actions";
+import { getNotificationSettings } from "@/app/[locale]/(protected)/notifications/actions";
+import {
+  getMyProfile,
+  updateBio,
+} from "@/app/[locale]/(protected)/profile/actions";
+import { AvatarDialog } from "@/components/avatar-dialog";
 import { ChangePasswordForm } from "@/components/change-password-form";
+import { DeleteAccountForm } from "@/components/delete-account-form";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,16 +40,28 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { usePathname, useRouter } from "@/i18n/navigation";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { UserAvatar } from "@/components/user-avatar";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { type Locale, LOCALE_NAMES, routing } from "@/i18n/routing";
 import { WithTooltip } from "@/components/ui/tooltip";
 import {
   type Accent,
   ACCENTS,
+  DM_FROM,
+  type DmFrom,
   THEMES,
   type Theme,
 } from "@/lib/settings/settings";
+import { MAX_BIO_LENGTH } from "@/lib/limits";
+import {
+  NOTIFICATION_GROUPS,
+  OPTIONAL_GROUPS,
+  type OptionalNotificationType,
+} from "@/lib/social/notifications";
 import { setAccent, setTheme } from "@/lib/theme";
+import { SETTINGS_TABS, type SettingsTab } from "@/lib/settings/open-settings";
 
 const SYSTEM = "system";
 type ThemeChoice = Theme | typeof SYSTEM;
@@ -74,30 +103,68 @@ export function clearSettingsReopen(): void {
 
 const SELECT = "border-input bg-background h-9 rounded-md border px-2 text-sm";
 
+const WIDE = "(min-width: 40rem)";
+
+function subscribeToWidth(onChange: () => void) {
+  const query = window.matchMedia(WIDE);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+// Tabs on the left from sm up, above the content on a phone (D83).
+function useWide(): boolean {
+  return useSyncExternalStore(
+    subscribeToWidth,
+    () => window.matchMedia(WIDE).matches,
+    () => true,
+  );
+}
+
 export function SettingsDialog({
   open,
   onOpenChange,
+  tab = "appearance",
+  toolsAvailable,
+  onCloseAutoFocus,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  tab?: SettingsTab;
+  // Avatars need the classifier on the tools server (D56).
+  toolsAvailable: boolean;
+  onCloseAutoFocus?: (event: Event) => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/* Mounted only while open, so every opening starts from the saved values. */}
-      <DialogContent aria-describedby={undefined}>
-        <SettingsContent />
+      <DialogContent
+        aria-describedby={undefined}
+        onCloseAutoFocus={onCloseAutoFocus}
+        className="flex max-h-[90dvh] flex-col sm:h-[36rem] sm:max-w-2xl"
+      >
+        <SettingsContent initialTab={tab} toolsAvailable={toolsAvailable} />
       </DialogContent>
     </Dialog>
   );
 }
 
-function SettingsContent() {
+function SettingsContent({
+  initialTab,
+  toolsAvailable,
+}: {
+  initialTab: SettingsTab;
+  toolsAvailable: boolean;
+}) {
   const t = useTranslations("settings");
   const tCommon = useTranslations("common");
   const locale = useLocale() as Locale;
   const pathname = usePathname();
   const router = useRouter();
+  const wide = useWide();
+  // Kept here: the password and deletion forms replace the tabs and come back to Account.
+  const [tab, setTab] = useState(initialTab);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const [confirmLogOutOthers, setConfirmLogOutOthers] = useState(false);
   const [othersLoggedOut, setOthersLoggedOut] = useState(false);
   const [saved, setSaved] = useState(savedTheme);
@@ -106,16 +173,29 @@ function SettingsContent() {
   const [accent, setAccentChoice] = useState(savedAccentValue);
   const [language, setLanguage] = useState(locale);
   const [error, setError] = useState<string | null>(null);
+  const [justSaved, setJustSaved] = useState(false);
   const [pending, startTransition] = useTransition();
   const changed =
     theme !== saved || accent !== savedAccentValue || language !== locale;
 
   if (changingPassword) {
-    return <ChangePasswordForm onDone={() => setChangingPassword(false)} />;
+    return (
+      <div className="min-h-0 overflow-y-auto">
+        <ChangePasswordForm onDone={() => setChangingPassword(false)} />
+      </div>
+    );
+  }
+  if (deletingAccount) {
+    return (
+      <div className="min-h-0 overflow-y-auto">
+        <DeleteAccountForm onDone={() => setDeletingAccount(false)} />
+      </div>
+    );
   }
 
   function save() {
     setError(null);
+    setJustSaved(false);
     startTransition(async () => {
       if (theme !== saved) {
         const value = theme === SYSTEM ? null : theme;
@@ -140,134 +220,186 @@ function SettingsContent() {
         router.replace(`${pathname}${window.location.search}`, {
           locale: language,
         });
+        return;
       }
+      setJustSaved(true);
     });
   }
 
+  const panel = "min-h-0 overflow-y-auto px-1 pb-1";
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
       <DialogHeader>
         <DialogTitle>{t("title")}</DialogTitle>
       </DialogHeader>
-      <section aria-labelledby="settings-appearance" className="grid gap-2">
-        <h3 id="settings-appearance" className="font-medium">
-          {t("appearance")}
-        </h3>
-        <Label htmlFor="settings-theme" className="font-normal">
-          {t("theme")}
-        </Label>
-        <select
-          id="settings-theme"
-          className={SELECT}
-          value={theme}
-          onChange={(event) =>
-            setThemeChoice(event.target.value as ThemeChoice)
-          }
+      <Tabs
+        value={tab}
+        onValueChange={(value) => setTab(value as SettingsTab)}
+        orientation={wide ? "vertical" : "horizontal"}
+        className="min-h-0 flex-1 gap-4"
+      >
+        <TabsList
+          aria-label={t("title")}
+          className="shrink-0 group-data-[orientation=horizontal]/tabs:h-auto group-data-[orientation=horizontal]/tabs:w-full group-data-[orientation=horizontal]/tabs:flex-wrap group-data-[orientation=vertical]/tabs:w-40"
         >
-          {THEME_CHOICES.map((choice) => (
-            <option key={choice} value={choice}>
-              {t(`themes.${choice}`)}
-            </option>
+          {SETTINGS_TABS.map((value) => (
+            <TabsTrigger key={value} value={value} className="py-1">
+              {t(value)}
+            </TabsTrigger>
           ))}
-        </select>
-        <span id="settings-accent" className="text-sm">
-          {t("accent")}
-        </span>
-        <div
-          role="radiogroup"
-          aria-labelledby="settings-accent"
-          className="flex gap-3 py-1"
-        >
-          {ACCENTS.map((choice) => (
-            <WithTooltip key={choice} label={t(`accents.${choice}`)}>
-              <label className="relative">
-                <input
-                  type="radio"
-                  name="accent"
-                  value={choice}
-                  aria-label={t(`accents.${choice}`)}
-                  checked={accent === choice}
-                  onChange={() => setAccentChoice(choice)}
-                  className="peer absolute inset-0 cursor-pointer opacity-0"
-                />
-                {/* data-accent gives the swatch that palette's --primary. */}
-                <span
-                  data-accent={choice}
-                  className="bg-primary ring-offset-background peer-checked:ring-foreground peer-focus-visible:outline-ring block size-7 rounded-full ring-offset-2 peer-checked:ring-2 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-4"
-                />
-              </label>
-            </WithTooltip>
-          ))}
-        </div>
-      </section>
-      <section aria-labelledby="settings-language" className="grid gap-2">
-        <h3 id="settings-language" className="font-medium">
-          {t("languageSection")}
-        </h3>
-        <Label htmlFor="settings-locale" className="font-normal">
-          {t("language")}
-        </Label>
-        <select
-          id="settings-locale"
-          className={SELECT}
-          value={language}
-          onChange={(event) => setLanguage(event.target.value as Locale)}
-        >
-          {routing.locales.map((option) => (
-            <option key={option} value={option} lang={option}>
-              {LOCALE_NAMES[option]}
-            </option>
-          ))}
-        </select>
-      </section>
-      <DictionarySection />
-      <section aria-labelledby="settings-account" className="grid gap-2">
-        <h3 id="settings-account" className="font-medium">
-          {t("account")}
-        </h3>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setChangingPassword(true)}>
-            {t("changePassword")}
-          </Button>
-          <Button variant="outline" onClick={() => void logout()}>
-            {t("logOut")}
-          </Button>
-        </div>
-        <Button
-          variant="outline"
-          className="justify-self-start"
-          onClick={() => setConfirmLogOutOthers(true)}
-        >
-          {t("logOutOthers")}
-        </Button>
-        {othersLoggedOut && (
-          <p role="status" className="text-muted-foreground text-sm">
-            {t("logOutOthersDone")}
-          </p>
-        )}
-        <ConfirmDialog
-          open={confirmLogOutOthers}
-          onOpenChange={setConfirmLogOutOthers}
-          title={t("logOutOthersTitle")}
-          description={t("logOutOthersDescription")}
-          confirmLabel={t("logOutOthersConfirm")}
-          action={logOutOtherDevices}
-          onDone={() => setOthersLoggedOut(true)}
-        />
-      </section>
-      {error && (
-        <p role="alert" className="text-destructive text-sm">
-          {error}
-        </p>
-      )}
-      <DialogFooter>
-        <DialogClose asChild>
-          <Button variant="outline">{tCommon("cancel")}</Button>
-        </DialogClose>
-        <Button disabled={!changed || pending} onClick={save}>
-          {pending ? tCommon("saving") : tCommon("save")}
-        </Button>
-      </DialogFooter>
+        </TabsList>
+        <TabsContent value="appearance" className={panel}>
+          <div className="flex flex-col gap-6">
+            <div className="grid gap-2">
+              <Label htmlFor="settings-theme" className="font-normal">
+                {t("theme")}
+              </Label>
+              <select
+                id="settings-theme"
+                className={SELECT}
+                value={theme}
+                onChange={(event) =>
+                  setThemeChoice(event.target.value as ThemeChoice)
+                }
+              >
+                {THEME_CHOICES.map((choice) => (
+                  <option key={choice} value={choice}>
+                    {t(`themes.${choice}`)}
+                  </option>
+                ))}
+              </select>
+              <span id="settings-accent" className="text-sm">
+                {t("accent")}
+              </span>
+              <div
+                role="radiogroup"
+                aria-labelledby="settings-accent"
+                className="flex gap-3 py-1"
+              >
+                {ACCENTS.map((choice) => (
+                  <WithTooltip key={choice} label={t(`accents.${choice}`)}>
+                    <label className="relative">
+                      <input
+                        type="radio"
+                        name="accent"
+                        value={choice}
+                        aria-label={t(`accents.${choice}`)}
+                        checked={accent === choice}
+                        onChange={() => setAccentChoice(choice)}
+                        className="peer absolute inset-0 cursor-pointer opacity-0"
+                      />
+                      {/* data-accent gives the swatch that palette's --primary. */}
+                      <span
+                        data-accent={choice}
+                        className="bg-primary ring-offset-background peer-checked:ring-foreground peer-focus-visible:outline-ring block size-7 rounded-full ring-offset-2 peer-checked:ring-2 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-4"
+                      />
+                    </label>
+                  </WithTooltip>
+                ))}
+              </div>
+            </div>
+            <section aria-labelledby="settings-language" className="grid gap-2">
+              <h3 id="settings-language" className="font-medium">
+                {t("languageSection")}
+              </h3>
+              <Label htmlFor="settings-locale" className="font-normal">
+                {t("language")}
+              </Label>
+              <select
+                id="settings-locale"
+                className={SELECT}
+                value={language}
+                onChange={(event) => setLanguage(event.target.value as Locale)}
+              >
+                {routing.locales.map((option) => (
+                  <option key={option} value={option} lang={option}>
+                    {LOCALE_NAMES[option]}
+                  </option>
+                ))}
+              </select>
+            </section>
+            <DictionarySection />
+            {error && (
+              <p role="alert" className="text-destructive text-sm">
+                {error}
+              </p>
+            )}
+            {/* Only theme, accent and language wait for Save; the rest is saved at once. The footer sits inside the scrolling panel, so it drops the dialog-edge negative margins. */}
+            <DialogFooter className="mx-0 mb-0 flex-row flex-wrap items-center justify-end rounded-lg">
+              <p
+                role="status"
+                className="text-muted-foreground mr-auto text-sm"
+              >
+                {justSaved && !changed && t("saved")}
+              </p>
+              <DialogClose asChild>
+                <Button variant="outline">{tCommon("cancel")}</Button>
+              </DialogClose>
+              <Button disabled={!changed || pending} onClick={save}>
+                {pending ? tCommon("saving") : tCommon("save")}
+              </Button>
+            </DialogFooter>
+          </div>
+        </TabsContent>
+        <TabsContent value="profile" className={panel}>
+          <div className="flex flex-col gap-6">
+            <ProfileSection toolsAvailable={toolsAvailable} />
+            <MessagesSection />
+            <BlockedSection />
+          </div>
+        </TabsContent>
+        <TabsContent value="account" className={panel}>
+          <div className="grid gap-2">
+            <Button
+              variant="outline"
+              className="justify-self-start"
+              onClick={() => setChangingPassword(true)}
+            >
+              {t("changePassword")}
+            </Button>
+            <Button
+              variant="outline"
+              className="justify-self-start"
+              onClick={() => setConfirmLogOutOthers(true)}
+            >
+              {t("logOutOthers")}
+            </Button>
+            {othersLoggedOut && (
+              <p role="status" className="text-muted-foreground text-sm">
+                {t("logOutOthersDone")}
+              </p>
+            )}
+            <ConfirmDialog
+              open={confirmLogOutOthers}
+              onOpenChange={setConfirmLogOutOthers}
+              title={t("logOutOthersTitle")}
+              description={t("logOutOthersDescription")}
+              confirmLabel={t("logOutOthersConfirm")}
+              action={logOutOtherDevices}
+              onDone={() => setOthersLoggedOut(true)}
+            />
+            <div className="mt-4 grid gap-2">
+              <p
+                id="settings-delete-account-help"
+                className="text-muted-foreground text-sm"
+              >
+                {t("deleteAccountHelp")}
+              </p>
+              <Button
+                variant="destructive"
+                className="justify-self-start"
+                aria-describedby="settings-delete-account-help"
+                onClick={() => setDeletingAccount(true)}
+              >
+                {t("deleteAccount")}
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+        <TabsContent value="notifications" className={panel}>
+          <NotificationsSection />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -364,6 +496,409 @@ function DictionarySection() {
       {error && (
         <p role="alert" className="text-destructive text-sm">
           {error}
+        </p>
+      )}
+    </section>
+  );
+}
+
+// One switch per kind in its group (D80); each change is saved at once, moderation has none.
+function NotificationsSection() {
+  const t = useTranslations("settings");
+  const [settings, setSettings] = useState<Record<
+    OptionalNotificationType,
+    boolean
+  > | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let open = true;
+    void getNotificationSettings()
+      .catch(() => null)
+      .then((result) => {
+        if (!open) return;
+        if (result?.ok) setSettings(result.settings);
+        else setError(result?.message ?? t("notificationsFailed"));
+      });
+    return () => {
+      open = false;
+    };
+  }, [t]);
+
+  async function toggle(type: OptionalNotificationType, on: boolean) {
+    setError(null);
+    setSettings((current) => current && { ...current, [type]: on });
+    const result = await saveSettings({ notifications: { [type]: on } }).catch(
+      () => null,
+    );
+    if (!result?.ok) {
+      setSettings((current) => current && { ...current, [type]: !on });
+      setError(result?.message ?? t("notificationsFailed"));
+    }
+  }
+
+  return (
+    <div className="grid gap-2">
+      <p className="text-muted-foreground text-sm">{t("notificationsHelp")}</p>
+      {!settings && !error && (
+        <p role="status" className="text-muted-foreground text-sm">
+          {t("loadingNotifications")}
+        </p>
+      )}
+      {settings &&
+        OPTIONAL_GROUPS.map((group) => (
+          <fieldset key={group} className="grid gap-1">
+            <legend className="text-sm">
+              {t(`notificationGroups.${group}`)}
+            </legend>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              {NOTIFICATION_GROUPS[group].map((type) => (
+                <label
+                  key={type}
+                  className="flex items-center gap-2 text-sm font-normal"
+                >
+                  <input
+                    type="checkbox"
+                    className="accent-primary size-4"
+                    checked={settings[type]}
+                    onChange={(event) =>
+                      void toggle(type, event.target.checked)
+                    }
+                  />
+                  {t(`notificationTypes.${type}`)}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ))}
+      {error && (
+        <p role="alert" className="text-destructive text-sm">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Who may start a conversation (D80); saved at once like the notification switches.
+function MessagesSection() {
+  const t = useTranslations("settings");
+  const [dmFrom, setDmFrom] = useState<DmFrom | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let open = true;
+    void getMessageSettings()
+      .catch(() => null)
+      .then((result) => {
+        if (!open) return;
+        if (result?.ok) setDmFrom(result.dmFrom);
+        else setError(result?.message ?? t("messagesFailed"));
+      });
+    return () => {
+      open = false;
+    };
+  }, [t]);
+
+  async function choose(value: DmFrom) {
+    const previous = dmFrom;
+    setError(null);
+    setDmFrom(value);
+    const result = await saveSettings({ messages: { dmFrom: value } }).catch(
+      () => null,
+    );
+    if (!result?.ok) {
+      setDmFrom(previous);
+      setError(result?.message ?? t("messagesFailed"));
+    }
+  }
+
+  return (
+    <section aria-labelledby="settings-messages" className="grid gap-2">
+      <h3 id="settings-messages" className="font-medium">
+        {t("messages")}
+      </h3>
+      {dmFrom && (
+        <fieldset className="grid gap-1">
+          <legend className="text-sm">{t("dmFrom")}</legend>
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            {DM_FROM.map((value) => (
+              <label
+                key={value}
+                className="flex items-center gap-2 text-sm font-normal"
+              >
+                <input
+                  type="radio"
+                  name="dm-from"
+                  className="accent-primary size-4"
+                  checked={dmFrom === value}
+                  onChange={() => void choose(value)}
+                />
+                {t(`dmFromOptions.${value}`)}
+              </label>
+            ))}
+          </div>
+          <p className="text-muted-foreground text-sm">{t("dmFromHelp")}</p>
+        </fieldset>
+      )}
+      {error && (
+        <p role="alert" className="text-destructive text-sm">
+          {error}
+        </p>
+      )}
+    </section>
+  );
+}
+
+// Read when the dialog opens; an unblock is saved at once (task 86).
+function BlockedSection() {
+  const t = useTranslations("settings");
+  const tBlocking = useTranslations("blocking");
+  const [blocked, setBlocked] = useState<{
+    nicknames: string[];
+    total: number;
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  // Several rows may be unblocked at once.
+  const [removing, setRemoving] = useState<ReadonlySet<string>>(new Set());
+  const heading = useRef<HTMLHeadingElement>(null);
+  const list = useRef<HTMLUListElement>(null);
+  const focusAfter = useRef<number | null>(null);
+
+  useEffect(() => {
+    let open = true;
+    void listBlockedUsers()
+      .catch(() => null)
+      .then((result) => {
+        if (!open) return;
+        if (result?.ok) setBlocked(result);
+        else setError(result?.message ?? t("blockedFailed"));
+      });
+    return () => {
+      open = false;
+    };
+  }, [t]);
+
+  // The removed row's button had the focus: it moves to the next one (or the heading).
+  useEffect(() => {
+    if (focusAfter.current === null) return;
+    const buttons = list.current?.querySelectorAll("button") ?? [];
+    const next = buttons[Math.min(focusAfter.current, buttons.length - 1)];
+    (next ?? heading.current)?.focus();
+    focusAfter.current = null;
+  }, [blocked]);
+
+  async function unblock(nickname: string, index: number) {
+    setError(null);
+    setRemoving((current) => new Set(current).add(nickname));
+    const result = await unblockUser(nickname).catch(() => null);
+    setRemoving((current) => {
+      const next = new Set(current);
+      next.delete(nickname);
+      return next;
+    });
+    if (!result?.ok) return setError(result?.message ?? t("blockedFailed"));
+    focusAfter.current = index;
+    setBlocked(
+      (current) =>
+        current && {
+          nicknames: current.nicknames.filter((n) => n !== nickname),
+          total: current.total - 1,
+        },
+    );
+  }
+
+  return (
+    <section aria-labelledby="settings-blocked" className="grid gap-2">
+      <h3
+        id="settings-blocked"
+        ref={heading}
+        tabIndex={-1}
+        className="font-medium outline-none"
+      >
+        {t("blocked")}
+      </h3>
+      <p className="text-muted-foreground text-sm">{t("blockedHelp")}</p>
+      <p role="status" className="text-sm">
+        {blocked
+          ? t("blockedCount", { count: blocked.total })
+          : !error && t("loadingBlocked")}
+      </p>
+      {blocked && blocked.nicknames.length > 0 && (
+        <ul
+          ref={list}
+          aria-labelledby="settings-blocked"
+          className="flex max-h-40 flex-col gap-1 overflow-y-auto"
+        >
+          {blocked.nicknames.map((nickname, index) => (
+            <li
+              key={nickname}
+              className="flex min-w-0 items-center justify-between gap-2 text-sm"
+            >
+              <span className="min-w-0 [overflow-wrap:anywhere]">
+                {nickname}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label={tBlocking("unblockUser", { nickname })}
+                disabled={removing.has(nickname)}
+                onClick={() => void unblock(nickname, index)}
+              >
+                {tBlocking("unblock")}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {error && (
+        <p role="alert" className="text-destructive text-sm">
+          {error}
+        </p>
+      )}
+    </section>
+  );
+}
+
+// Read when the dialog opens; the bio and the avatar are saved on their own, not with Save.
+function ProfileSection({ toolsAvailable }: { toolsAvailable: boolean }) {
+  const t = useTranslations("settings");
+  const [profile, setProfile] = useState<{
+    nickname: string | null;
+    bio: string;
+    avatar: string | null;
+  } | null>(null);
+  const [bio, setBio] = useState("");
+  const [message, setMessage] = useState<{
+    text: string;
+    error: boolean;
+  } | null>(null);
+  const [avatarOpen, setAvatarOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    let open = true;
+    void getMyProfile()
+      .catch(() => null)
+      .then((result) => {
+        if (!open) return;
+        if (result?.ok) {
+          setProfile(result);
+          setBio(result.bio);
+        } else {
+          setMessage({
+            text: result?.message ?? t("profileFailed"),
+            error: true,
+          });
+        }
+      });
+    return () => {
+      open = false;
+    };
+  }, [t]);
+
+  function saveBio() {
+    setMessage(null);
+    startTransition(async () => {
+      const result = await updateBio(bio).catch(() => null);
+      if (!result?.ok) {
+        setMessage({
+          text: result?.message ?? t("profileFailed"),
+          error: true,
+        });
+        return;
+      }
+      setProfile((current) => current && { ...current, bio: result.bio });
+      setBio(result.bio);
+      setMessage({ text: t("bioSaved"), error: false });
+    });
+  }
+
+  return (
+    <section aria-labelledby="settings-profile" className="grid gap-2">
+      <h3 id="settings-profile" className="font-medium">
+        {t("bio")}
+      </h3>
+      {!profile ? (
+        !message && (
+          <p role="status" className="text-muted-foreground text-sm">
+            {t("loadingProfile")}
+          </p>
+        )
+      ) : (
+        <>
+          <Textarea
+            id="settings-bio"
+            aria-labelledby="settings-profile"
+            aria-describedby="settings-bio-help"
+            value={bio}
+            maxLength={MAX_BIO_LENGTH}
+            rows={4}
+            onChange={(event) => setBio(event.target.value)}
+          />
+          <div
+            id="settings-bio-help"
+            className="text-muted-foreground flex justify-between gap-2 text-xs"
+          >
+            <span>{t("bioHelp")}</span>
+            <span className="shrink-0">
+              {t("bioLength", { length: bio.length, max: MAX_BIO_LENGTH })}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              disabled={pending || bio === profile.bio}
+              onClick={saveBio}
+            >
+              {t("saveBio")}
+            </Button>
+            {profile.nickname && (
+              <>
+                <UserAvatar
+                  nickname={profile.nickname}
+                  src={profile.avatar}
+                  alt=""
+                  size={36}
+                  className="ml-auto"
+                />
+                {toolsAvailable ? (
+                  <Button variant="outline" onClick={() => setAvatarOpen(true)}>
+                    {t("avatar")}
+                  </Button>
+                ) : (
+                  <span className="text-muted-foreground text-sm">
+                    {t("avatarsUnavailable")}
+                  </span>
+                )}
+                <DialogClose asChild>
+                  <Link
+                    href="/profile"
+                    className="text-sm underline-offset-4 hover:underline"
+                  >
+                    {t("viewProfile")}
+                  </Link>
+                </DialogClose>
+                <AvatarDialog
+                  open={avatarOpen}
+                  onOpenChange={setAvatarOpen}
+                  nickname={profile.nickname}
+                  avatar={profile.avatar}
+                  onChange={(avatar) =>
+                    setProfile((current) => current && { ...current, avatar })
+                  }
+                />
+              </>
+            )}
+          </div>
+        </>
+      )}
+      {message && (
+        <p
+          role={message.error ? "alert" : "status"}
+          className={message.error ? "text-destructive text-sm" : "text-sm"}
+        >
+          {message.text}
         </p>
       )}
     </section>

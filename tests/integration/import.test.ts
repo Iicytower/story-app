@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { importStories } from "@/app/[locale]/(protected)/stories/actions";
+import { importStories } from "@/app/[locale]/(protected)/chapters/actions";
 import type { ActionError } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import {
@@ -111,7 +111,7 @@ describe("importStories", () => {
     ]);
   });
 
-  it("keeps a reproducible order in Newest first", async () => {
+  it("keeps a reproducible order in Oldest first", async () => {
     const folder = await seedFolder(alice, "F");
     await importStories(
       { kind: "folder", id: folder._id.toString() },
@@ -119,9 +119,9 @@ describe("importStories", () => {
       "",
     );
     const stories = await Story.find({ folderId: folder._id })
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 })
       .lean();
-    expect(stories.map(({ title }) => title)).toEqual(["3", "2", "1"]);
+    expect(stories.map(({ title }) => title)).toEqual(["1", "2", "3"]);
   });
 
   it("picks an existing folder by name or creates one", async () => {
@@ -130,6 +130,56 @@ describe("importStories", () => {
     await importStories({ kind: "named", name: "New" }, [chapter("B")], "");
     expect(await Story.countDocuments({ folderId: folder._id })).toBe(1);
     expect(await Folder.exists({ name: "New", userId: alice })).toBeTruthy();
+  });
+
+  it("gives a new folder the file's description, leaving an existing folder's own", async () => {
+    await importStories(
+      { kind: "new", name: "Nowa" },
+      [chapter("A")],
+      "",
+      " Opis z pliku ",
+    );
+    expect((await Folder.findOne({ name: "Nowa" }).lean())?.description).toBe(
+      "Opis z pliku",
+    );
+
+    const folder = await seedFolder(alice, "F");
+    await Folder.updateOne({ _id: folder._id }, { description: "Własny" });
+    await importStories(
+      { kind: "folder", id: folder._id.toString() },
+      [chapter("B")],
+      "",
+      "Opis z pliku",
+    );
+    expect((await Folder.findById(folder._id).lean())?.description).toBe(
+      "Własny",
+    );
+
+    expect(
+      await importStories(
+        { kind: "new", name: "Za długi" },
+        [chapter("C")],
+        "",
+        "a".repeat(1001),
+      ),
+    ).toEqual({
+      ok: false,
+      error: "INVALID_INPUT",
+      message: "A book description can have at most 1,000 characters.",
+    });
+    expect(await Folder.exists({ name: "Za długi" })).toBeNull();
+
+    expect(
+      await importStories(
+        { kind: "folder", id: folder._id.toString() },
+        [chapter("D")],
+        "",
+        "a".repeat(1001),
+      ),
+    ).toMatchObject({ ok: true });
+    expect((await Folder.findById(folder._id).lean())?.description).toBe(
+      "Własny",
+    );
   });
 
   it("appends folder notes to the notes of an existing folder", async () => {

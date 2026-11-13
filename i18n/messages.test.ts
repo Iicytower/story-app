@@ -76,3 +76,30 @@ describe("plurals", () => {
     expect(t("versions.willReturn", { count: 5 })).toBe("5 rozdziałów wróci.");
   });
 });
+
+describe("naming (D83)", () => {
+  // The public search keeps "opowiadania" for published works (D83).
+  const ALLOWED = new Set([
+    "search.title",
+    "search.label",
+    "search.placeholder",
+    "search.none",
+  ]);
+
+  // Arguments ({folder}) and select keys (folder {…}) are code, not UI text.
+  const text = (message: string) =>
+    message
+      .replace(/([,}])\s*=?\w+\s*(?=\{)/g, "$1")
+      .replace(/\{\s*\w+\s*\}/g, "");
+
+  it.each(Object.entries(MESSAGES))(
+    "%s calls the container a book",
+    (_, messages) => {
+      const offending = leaves(messages).filter(
+        ([key, message]) =>
+          !ALLOWED.has(key) && /folder|opowiadani/i.test(text(message)),
+      );
+      expect(offending).toEqual([]);
+    },
+  );
+});

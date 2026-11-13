@@ -15,7 +15,7 @@ const text = (length: number) =>
 
 test("saves a chapter of exactly 500,000 characters", async ({ page }) => {
   const id = await seedStory("alice", { title: "Long" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   await markdownEditor(page, "Content").setSource(text(MAX));
   await page.keyboard.press("Control+s");
   await expect(page.getByRole("status")).toHaveText("Saved");
@@ -26,7 +26,7 @@ test("a pasted text over the limit gives a message and stays in the editor", asy
   page,
 }) => {
   const id = await seedStory("alice", { title: "Too long", content: "Before" });
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const content = markdownEditor(page, "Content");
   await content.setSource(text(MAX + 1));
   const message =

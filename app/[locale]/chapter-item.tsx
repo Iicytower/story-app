@@ -10,6 +10,8 @@ export interface ChapterItemProps {
   title: string;
   // "in <folder> by <nickname>", translated by the caller.
   byline: string;
+  // Search results only; one line, cut off.
+  folderDescription?: string;
   snippet: Snippet;
   tags: string[];
   folderTags: string[];
@@ -25,6 +27,7 @@ export function ChapterItem({
   path,
   title,
   byline,
+  folderDescription,
   snippet,
   tags,
   folderTags,
@@ -44,18 +47,29 @@ export function ChapterItem({
           <span className="flex flex-wrap items-baseline gap-x-2">
             <span className="min-w-0 font-medium">{title}</span>
             {adult && <AdultBadge />}
-            <span className="text-muted-foreground min-w-0 text-xs">
-              {byline}
+            {/* One group, so on a narrow screen the date wraps with the author; min-w-48 makes the group move to its own line instead of shrinking. */}
+            <span className="flex min-w-48 flex-1 items-baseline gap-x-2">
+              <span className="text-muted-foreground min-w-0 text-xs">
+                {byline}
+              </span>
+              {date && (
+                <time
+                  dateTime={date.iso}
+                  className="text-muted-foreground ml-auto text-xs whitespace-nowrap"
+                >
+                  {date.text}
+                </time>
+              )}
             </span>
-            {date && (
-              <time
-                dateTime={date.iso}
-                className="text-muted-foreground ml-auto text-xs whitespace-nowrap"
-              >
-                {date.text}
-              </time>
-            )}
           </span>
+          {folderDescription && (
+            <span
+              title={folderDescription}
+              className="text-muted-foreground truncate text-xs italic"
+            >
+              {folderDescription}
+            </span>
+          )}
           <span className="text-muted-foreground line-clamp-2 text-sm">
             {snippet.before}
             {snippet.match && (

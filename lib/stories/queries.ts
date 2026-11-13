@@ -69,6 +69,7 @@ export async function getStory(userId: string, id: string) {
       updatedAt: 1,
       proofreading: 1,
       adult: 1,
+      commentsDisabled: 1,
     })
     .lean();
   if (!story) return null;
@@ -82,6 +83,7 @@ export async function getStory(userId: string, id: string) {
     ...serialize(story),
     folderName: folder ? folder.name : null,
     adult: chapterAdultState(story.adult, folder ? folder.adult : undefined),
+    commentsDisabled: Boolean(story.commentsDisabled),
     publicPath:
       folder && folder.published && story.publication === "public"
         ? await chapterPublicPath(userId, folder._id.toString(), id)
@@ -98,4 +100,23 @@ export async function getStoryForExport(userId: string, id: string) {
     .select({ title: 1, content: 1, notes: 1, createdAt: 1, updatedAt: 1 })
     .lean();
   return story && serialize(story);
+}
+
+// Home page shortcut (D83): the user's chapter changed last, in a book that still exists.
+export async function getLastEditedChapter(userId: string) {
+  await connectDB();
+  const folders = await Folder.find({ userId, deletedAt: null })
+    .select({ name: 1 })
+    .lean();
+  const story = await Story.findOne({
+    userId,
+    folderId: { $in: folders.map(({ _id }) => _id) },
+    deletedAt: null,
+  })
+    .sort({ updatedAt: -1, _id: -1 })
+    .select({ title: 1, folderId: 1 })
+    .lean();
+  if (!story) return null;
+  const folder = folders.find(({ _id }) => _id.equals(story.folderId));
+  return { id: story._id.toString(), title: story.title, bookName: folder!.name };
 }

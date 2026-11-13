@@ -24,8 +24,8 @@ const LOCK_ID = "lock";
 // A failed build never releases its lock, so an old one is taken over.
 const LOCK_TIMEOUT_MS = 15 * 60 * 1000;
 const BACKUP_INFIX = "_backup_";
-// Cover images would take M0 space twice; scripts/backup.sh keeps them outside Atlas (D68).
-const NOT_BACKED_UP = new Set(["covers"]);
+// Cover and avatar images would take M0 space twice; scripts/backup.sh keeps them outside Atlas (D68).
+const NOT_BACKED_UP = new Set(["covers", "avatars"]);
 const FILE_PATTERN = /^\d{3}-[\w-]+\.ts$/;
 
 export type MigrationDecision = { run: true } | { run: false; reason: string };

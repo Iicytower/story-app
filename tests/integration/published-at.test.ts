@@ -3,16 +3,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   publishAllChapters,
   setFolderPublished,
-} from "@/app/[locale]/(protected)/folders/actions";
+} from "@/app/[locale]/(protected)/books/actions";
 import {
   deleteStory,
   moveStory,
   setChapterPublished,
-} from "@/app/[locale]/(protected)/stories/actions";
+} from "@/app/[locale]/(protected)/chapters/actions";
 import {
   createFolderVersion,
   restoreFolderVersion,
-} from "@/app/[locale]/(protected)/folders/[id]/versions/actions";
+} from "@/app/[locale]/(protected)/books/[id]/versions/actions";
 import { requireUser } from "@/lib/auth/session";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";

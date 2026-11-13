@@ -114,7 +114,7 @@ services:
       # Tools gateway (Caddy with X-Tools-Secret), deployed by Coolify inside this server.
       - "127.0.0.1:8110:8110"
 
-  # A fresh "Mikrus" for testing `npm run tools:remote` (task 28, docs/deploy.md). Not started by
+  # A fresh "Mikrus" for testing `npm run tools:remote` (task 28, docs/deploy/tools.md). Not started by
   # `npm run up`: `docker compose --profile fake-mikrus up -d --build`.
   fake-mikrus:
     profiles: [fake-mikrus]

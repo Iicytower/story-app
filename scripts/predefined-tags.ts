@@ -1,6 +1,6 @@
 import { connectDB, disconnectDB } from "@/lib/db";
-import { PredefinedTag } from "@/lib/models/predefined-tag";
-import { predefinedTagError } from "@/lib/tags/predefined";
+import { inEnglish } from "@/lib/i18n/english";
+import { removePredefinedTag, savePredefinedTag } from "@/lib/tags/mutations";
 import { listPredefinedTags } from "@/lib/tags/queries";
 
 // Removing a key leaves it in folders and chapters, where it becomes an own tag again (D79).
@@ -12,30 +12,23 @@ const USAGE = `Usage:
 async function main() {
   const [command, ...args] = process.argv.slice(2);
   await connectDB();
-  const tags = await listPredefinedTags();
 
   if (command === "list" && args.length === 0) {
-    for (const { key, labels } of tags) {
+    for (const { key, labels } of await listPredefinedTags()) {
       console.log(`${key}\t${labels.en}\t${labels.pl}`);
     }
     return;
   }
   if (command === "set" && args.length === 3) {
     const [key, en, pl] = args;
-    const entry = { key, labels: { en: en.trim(), pl: pl.trim() } };
-    const error = predefinedTagError(entry, tags);
-    if (error) throw new Error(error);
-    await PredefinedTag.updateOne(
-      { _id: key },
-      { $set: { labels: entry.labels } },
-      { upsert: true },
-    );
+    const error = await savePredefinedTag({ key, labels: { en, pl } });
+    if (error) throw new Error(inEnglish(error));
     console.log(`Saved "${key}".`);
     return;
   }
   if (command === "remove" && args.length === 1) {
-    const { deletedCount } = await PredefinedTag.deleteOne({ _id: args[0] });
-    console.log(deletedCount ? `Removed "${args[0]}".` : "No such key.");
+    const removed = await removePredefinedTag(args[0]);
+    console.log(removed ? `Removed "${args[0]}".` : "No such key.");
     return;
   }
   console.log(USAGE);

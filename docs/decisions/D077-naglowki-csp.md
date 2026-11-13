@@ -1,0 +1,9 @@
+# D77 – Nagłówki bezpieczeństwa i CSP (2026-11-10)
+
+Status: aktualna.
+
+- Task 60, decyzje użytkownika: CSP z nonce generowanym w `proxy.ts` przy każdym żądaniu (wszystkie strony i tak renderują się dynamicznie; statyczny jest tylko `app/not-found.tsx` bez skryptów) i HSTS ustawiany przez aplikację, bez `preload`.
+- Polityka (`lib/security-headers.ts`): `script-src 'self' 'nonce-…' 'strict-dynamic' 'wasm-unsafe-eval'` (w dev także `'unsafe-eval'`), `style-src 'self' 'unsafe-inline'` (atrybuty `style` edytora i Radix nie mogą mieć nonce), `img-src 'self' blob: data:`, `font-src 'self' data:`, `connect-src 'self'` (w dev także `ws:`; od taska 90 także origin `REALTIME_PUBLIC_URL`, jeśli ustawiony), `worker-src 'self' blob:`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`. Next.js bierze nonce z nagłówka CSP żądania; skrypt motywu (`InlineScript`) dostaje go z `x-nonce`. `next-intl` przekazuje dalej nagłówki żądania, które dostaje.
+- `'wasm-unsafe-eval'` tylko dla pdf.js w imporcie PDF (bez niego pdf.js przechodzi na wolniejszy JavaScript). `eval` jest zablokowany: polyfille w bundlu czytnika `.docx` próbują `Function()` w `try/catch` i bez tego działają.
+- Nagłówki stałe z `next.config.ts` dla każdej odpowiedzi: `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, `Permissions-Policy` (bez kamery, mikrofonu, lokalizacji, płatności, USB i Topics), `Strict-Transport-Security: max-age=63072000; includeSubDomains`. `poweredByHeader: false`.
+- Testy E2E: fixture `context` w `tests/e2e/helpers.ts` zapisuje każde zdarzenie `securitypolicyviolation` i oblewa test, jeśli jakieś wystąpiło. Wyjątki tylko jawnie przez `allowCspViolation` z uzasadnieniem: parsowanie wklejonego HTML w nieaktywnym dokumencie zgłasza `script-src-attr`, choć handler i bez CSP by się nie wykonał (sprawdzone w Chromium), oraz próba `Function()` w imporcie `.docx`.

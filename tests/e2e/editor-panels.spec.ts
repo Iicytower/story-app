@@ -10,7 +10,13 @@ import {
   withE2EDb,
 } from "./db";
 import { storageStatePath } from "./env";
-import { expect, menuAction, runAutosaveDelay, test } from "./helpers";
+import {
+  expect,
+  markdownEditor,
+  menuAction,
+  runAutosaveDelay,
+  test,
+} from "./helpers";
 
 test.use({
   storageState: storageStatePath("alice"),
@@ -41,7 +47,7 @@ const editor = (page: Page) => ({
   title: page.getByRole("textbox", { name: "Title", exact: true }),
   content: page.getByRole("textbox", { name: "Content", exact: true }),
   notes: page.getByRole("textbox", { name: "Notes", exact: true }),
-  folderNotes: page.getByRole("textbox", { name: "Folder notes" }),
+  folderNotes: page.getByRole("textbox", { name: "Book notes" }),
   folderStatus: page.locator("#folder-notes-status"),
   status: page.getByRole("status"),
   chapters: page.getByRole("list", { name: "Chapters" }),
@@ -63,7 +69,7 @@ test("separators resize the columns and the notes split, and the layout survives
   page,
 }) => {
   const { first } = await seedBook();
-  await page.goto(`/stories/${first}`);
+  await page.goto(`/chapters/${first}`);
   const e = editor(page);
   await expect(e.notes).toBeVisible();
 
@@ -76,7 +82,7 @@ test("separators resize the columns and the notes split, and the layout survives
     .toBeGreaterThan(notesWidth + 20);
 
   const folderHeight = (await e.folderNotes.boundingBox())!.height;
-  const rows = page.getByRole("separator", { name: "Resize folder notes" });
+  const rows = page.getByRole("separator", { name: "Resize book notes" });
   await rows.focus();
   for (let i = 0; i < 5; i++) await rows.press("ArrowDown");
   await expect
@@ -103,7 +109,7 @@ test("there is no Split mode; a hidden side panel stays hidden after a reload", 
   page,
 }) => {
   const { first } = await seedBook();
-  await page.goto(`/stories/${first}`);
+  await page.goto(`/chapters/${first}`);
   const e = editor(page);
   await expect(e.notes).toBeVisible();
   await expect(page.getByRole("button", { name: "Split" })).toHaveCount(0);
@@ -131,7 +137,7 @@ test("Tools shows tiles, and a tile opens its tool in a dialog", async ({
   page,
 }) => {
   const { first } = await seedBook();
-  await page.goto(`/stories/${first}`);
+  await page.goto(`/chapters/${first}`);
   const e = editor(page);
   await e.content.fill("Kept while using tools");
 
@@ -161,7 +167,7 @@ test("an open tool survives a move to a narrow screen and back", async ({
   page,
 }) => {
   const { first } = await seedBook();
-  await page.goto(`/stories/${first}`);
+  await page.goto(`/chapters/${first}`);
   const e = editor(page);
   await e.sideTab("Tools").click();
   await e.tools.getByRole("button", { name: "Synonyms" }).click();
@@ -177,7 +183,7 @@ test("an open tool survives a move to a narrow screen and back", async ({
 
 test("the side panel keeps one width across its tabs", async ({ page }) => {
   const { first } = await seedBook();
-  await page.goto(`/stories/${first}`);
+  await page.goto(`/chapters/${first}`);
   const e = editor(page);
   await expect(e.notes).toBeVisible();
 
@@ -217,7 +223,7 @@ test("a stored Split layout shows the tabs with the saved tab width", async ({
       },
     },
   });
-  await page.goto(`/stories/${first}`);
+  await page.goto(`/chapters/${first}`);
   const e = editor(page);
 
   await expect(e.sideTab("Chapters")).toHaveAttribute("aria-selected", "true");
@@ -234,13 +240,13 @@ test("folder and chapter notes save separately; folder notes show in another cha
 }) => {
   const { first, second } = await seedBook();
   await page.clock.install();
-  await page.goto(`/stories/${first}`);
+  await page.goto(`/chapters/${first}`);
   const e = editor(page);
 
   await e.folderNotes.fill("Shared world");
   await runAutosaveDelay(page);
   await expect(e.folderStatus).toHaveText("Saved");
-  await expect(e.status).toHaveText("");
+  await expect(e.status).toHaveText("Saved");
   expect((await findFolder("Book"))?.notes).toBe("Shared world");
   expect((await findStoryById(first))?.notes).toBe("First notes");
 
@@ -249,7 +255,7 @@ test("folder and chapter notes save separately; folder notes show in another cha
   await expect(e.status).toHaveText("Saved");
   expect((await findFolder("Book"))?.notes).toBe("Shared world");
 
-  await page.goto(`/stories/${second}`);
+  await page.goto(`/chapters/${second}`);
   await expect(e.folderNotes).toHaveText("Shared world");
   await expect(e.notes).toHaveText("");
 });
@@ -260,10 +266,10 @@ test("folder notes edited in two chapters conflict, chapter autosave does not", 
 }) => {
   const { first, second } = await seedBook();
   await page.clock.install();
-  await page.goto(`/stories/${first}`);
+  await page.goto(`/chapters/${first}`);
   const other = await context.newPage();
   await other.clock.install();
-  await other.goto(`/stories/${second}`);
+  await other.goto(`/chapters/${second}`);
   const a = editor(page);
   const b = editor(other);
 
@@ -286,10 +292,10 @@ test("Chapters panel saves before moving to another chapter", async ({
   page,
 }) => {
   const { first, second } = await seedBook();
-  await page.goto(`/stories/${first}`);
+  await page.goto(`/chapters/${first}`);
   const e = editor(page);
   await e.sideTab("Chapters").click();
-  await expect(e.chapters.getByRole("link")).toHaveText(["Second", "First"]);
+  await expect(e.chapters.getByRole("link")).toHaveText(["First", "Second"]);
   await expect(e.chapters.getByRole("link", { name: "First" })).toHaveAttribute(
     "aria-current",
     "page",
@@ -297,7 +303,7 @@ test("Chapters panel saves before moving to another chapter", async ({
 
   await e.content.fill("Typed just before leaving");
   await e.chapters.getByRole("link", { name: "Second" }).click();
-  await expect(page).toHaveURL(`/en/stories/${second}`);
+  await expect(page).toHaveURL(`/en/chapters/${second}`);
   expect((await findStoryById(first))?.content).toBe(
     "Typed just before leaving",
   );
@@ -308,7 +314,7 @@ test("Chapters panel stays on the chapter when saving fails or the title is empt
   page,
 }) => {
   const { first } = await seedBook();
-  await page.goto(`/stories/${first}`);
+  await page.goto(`/chapters/${first}`);
   const e = editor(page);
   await e.sideTab("Chapters").click();
 
@@ -325,7 +331,7 @@ test("Chapters panel stays on the chapter when saving fails or the title is empt
   await expect(e.status).toHaveText(
     /changed in another tab or on another device/,
   );
-  await expect(page).toHaveURL(`/en/stories/${first}`);
+  await expect(page).toHaveURL(`/en/chapters/${first}`);
 
   // The Chapters tab must be saved, or the reload opens Notes.
   await expect
@@ -335,7 +341,7 @@ test("Chapters panel stays on the chapter when saving fails or the title is empt
   await e.title.fill("");
   await e.chapters.getByRole("link", { name: "Second" }).click();
   await expect(e.status).toHaveText("Title is required.");
-  await expect(page).toHaveURL(`/en/stories/${first}`);
+  await expect(page).toHaveURL(`/en/chapters/${first}`);
 });
 
 test("Chapters panel lists chapters in manual order and adds one, without row actions", async ({
@@ -348,7 +354,7 @@ test("Chapters panel lists chapters in manual order and adds one, without row ac
       .collection("folders")
       .updateOne({ _id: book!._id }, { $set: { chapterSort: "manual" } }),
   );
-  await page.goto(`/stories/${first}`);
+  await page.goto(`/chapters/${first}`);
   const e = editor(page);
   await e.sideTab("Chapters").click();
   // Manual order from the seeds: First (position 0), Second (position 1).
@@ -371,10 +377,10 @@ test("Chapters panel lists chapters in manual order and adds one, without row ac
 
   await menuAction(page, "Actions for Third", "Delete");
   await page
-    .getByRole("alertdialog", { name: "Delete story?" })
+    .getByRole("alertdialog", { name: "Delete chapter?" })
     .getByRole("button", { name: "Delete" })
     .click();
-  await expect(page).toHaveURL(`/en/folders/${book!._id}`);
+  await expect(page).toHaveURL(`/en/books/${book!._id}`);
   expect((await findStory("Third"))?.deletedAt).toBeInstanceOf(Date);
 });
 
@@ -390,7 +396,7 @@ test("works with the default layout when localStorage throws", async ({
   });
   const { first } = await seedBook();
   await page.clock.install();
-  await page.goto(`/stories/${first}`);
+  await page.goto(`/chapters/${first}`);
   expect(
     await page.evaluate(() => {
       try {
@@ -410,4 +416,79 @@ test("works with the default layout when localStorage throws", async ({
   await e.content.fill("Saved without storage");
   await runAutosaveDelay(page);
   await expect(e.status).toHaveText("Saved");
+});
+
+test("notes show their toolbar only while in use, without moving the text", async ({
+  page,
+}) => {
+  const { first } = await seedBook();
+  await page.goto(`/chapters/${first}`);
+  const e = editor(page);
+  await expect(e.notes).toHaveText("First notes");
+  await expect(markdownEditor(page, "Content").button("Bold")).toBeVisible();
+
+  for (const label of ["Notes", "Book notes"]) {
+    const notes = markdownEditor(page, label);
+    const bold = notes.button("Bold");
+    await expect(bold, label).toBeHidden();
+    await expect(notes.button("Text"), label).toBeHidden();
+    const before = (await notes.field.boundingBox())!.y;
+
+    await notes.field.click();
+    await expect(bold, label).toBeVisible();
+    expect((await notes.field.boundingBox())!.y, label).toBe(before);
+
+    // An open find panel keeps the toolbar, also with the focus elsewhere.
+    await page.keyboard.press("Control+f");
+    await expect(
+      notes.group.getByRole("textbox", { name: "Find" }),
+    ).toBeFocused();
+    await e.title.click();
+    await expect(bold, label).toBeVisible();
+    await notes.group.getByRole("textbox", { name: "Find" }).press("Escape");
+    await e.title.click();
+    await expect(bold, label).toBeHidden();
+  }
+});
+
+test("the editor starts with the app sidebar collapsed and remembers it expanded", async ({
+  page,
+}) => {
+  const { first } = await seedBook();
+  await page.goto(`/chapters/${first}`);
+  const nav = page.getByRole("navigation", { name: "Main" });
+  await expect(
+    nav.getByRole("button", { name: "Expand sidebar" }),
+  ).toBeVisible();
+  expect((await nav.boundingBox())!.width).toBeLessThan(60);
+
+  await nav.getByRole("button", { name: "Expand sidebar" }).click();
+  await expect
+    .poll(
+      async () =>
+        (await findSettings("alice"))?.appearance?.editorSidebarCollapsed,
+    )
+    .toBe(false);
+  await page.reload();
+  await expect(
+    nav.getByRole("button", { name: "Collapse sidebar" }),
+  ).toBeVisible();
+  expect((await nav.boundingBox())!.width).toBeGreaterThan(150);
+
+  // Other pages keep their own state.
+  await page.goto("/books");
+  await expect(
+    nav.getByRole("button", { name: "Collapse sidebar" }),
+  ).toBeVisible();
+  await page.goto(`/chapters/${first}`);
+  await nav.getByRole("button", { name: "Collapse sidebar" }).click();
+  await expect
+    .poll(
+      async () =>
+        (await findSettings("alice"))?.appearance?.editorSidebarCollapsed,
+    )
+    .toBe(true);
+  expect((await findSettings("alice"))?.appearance?.sidebarCollapsed).not.toBe(
+    true,
+  );
 });

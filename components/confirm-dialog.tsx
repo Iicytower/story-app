@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +24,7 @@ export function ConfirmDialog({
   destructive = false,
   action,
   onDone,
+  returnFocus,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -34,13 +35,19 @@ export function ConfirmDialog({
   destructive?: boolean;
   action: () => Promise<ActionResult>;
   onDone?: () => void;
+  // Where the focus goes after a successful action removed or replaced the opener.
+  returnFocus?: () => HTMLElement | null;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const tCommon = useTranslations("common");
   const tErrors = useTranslations("errors");
+  // Opened without a trigger of its own: the focus goes back to where it was, when still there.
+  const returnTo = useRef<HTMLElement | null>(null);
+  const succeeded = useRef(false);
 
   function handleOpenChange(next: boolean) {
+    if (next) succeeded.current = false;
     onOpenChange(next);
     if (!next) setError(null);
   }
@@ -60,14 +67,35 @@ export function ConfirmDialog({
         setError(result.message);
         return;
       }
+      succeeded.current = true;
       onOpenChange(false);
       onDone?.();
+      // The opener's row may unmount this dialog with the refresh, before onCloseAutoFocus.
+      if (returnFocus) requestAnimationFrame(() => returnFocus()?.focus());
     });
   }
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent
+        onOpenAutoFocus={() => {
+          returnTo.current =
+            document.activeElement instanceof HTMLElement
+              ? document.activeElement
+              : null;
+        }}
+        onCloseAutoFocus={(event) => {
+          const target = succeeded.current ? returnFocus?.() : null;
+          if (target) {
+            event.preventDefault();
+            target.focus();
+            return;
+          }
+          if (!returnTo.current?.isConnected) return;
+          event.preventDefault();
+          returnTo.current.focus();
+        }}
+      >
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>

@@ -1,4 +1,6 @@
+import { deflateSync } from "node:zlib";
 import {
+  type Browser,
   expect,
   test as base,
   type Locator,
@@ -12,7 +14,13 @@ import {
 } from "@/lib/credentials";
 import en from "@/messages/en.json";
 import { clearStories } from "./db";
-import { USERS, type UserName } from "./env";
+import {
+  E2E_TOOLS_PORT,
+  E2E_TOOLS_SECRET,
+  storageStatePath,
+  USERS,
+  type UserName,
+} from "./env";
 
 const password = createTranslator({
   locale: "en",
@@ -31,6 +39,15 @@ export async function login(page: Page, user: UserName) {
   await page.getByLabel("Password").fill(USERS[user].password);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL("/en");
+}
+
+// A second user in the same test: their own context with the saved session. The caller
+// closes the context; the CSP fixture does not watch it.
+export async function loginAs(browser: Browser, user: UserName) {
+  const context = await browser.newContext({
+    storageState: storageStatePath(user),
+  });
+  return { context, page: await context.newPage() };
 }
 
 export const test = base.extend<{ cleanStories: void }>({
@@ -88,28 +105,35 @@ export async function expectSignedOut(page: Page) {
   ).toBeVisible();
 }
 
-// The rich text editor has no value; tests read and write its markdown through Source mode.
+// The rich text editor has no value; tests read and write its markdown through Markdown mode.
 export function markdownEditor(page: Page, label: string) {
   const group = page.getByRole("group", {
     name: `${label} editor`,
     exact: true,
   });
-  const mode = (name: "Preview" | "Source") =>
+  const button = (name: string) =>
     group.getByRole("button", { name, exact: true });
+  // The notes show their toolbar only while the field has the focus.
+  async function mode(name: "Text" | "Markdown") {
+    if (!(await button(name).isVisible()))
+      await group.getByRole("textbox").focus();
+    await button(name).click();
+  }
   return {
     field: page.getByRole("textbox", { name: label, exact: true }),
     group,
-    button: (name: string) => group.getByRole("button", { name, exact: true }),
+    button,
+    mode,
     async source(): Promise<string> {
-      await mode("Source").click();
+      await mode("Markdown");
       const value = await group.getByRole("textbox").inputValue();
-      await mode("Preview").click();
+      await mode("Text");
       return value;
     },
     async setSource(markdown: string) {
-      await mode("Source").click();
+      await mode("Markdown");
       await group.getByRole("textbox").fill(markdown);
-      await mode("Preview").click();
+      await mode("Text");
     },
   };
 }
@@ -139,22 +163,51 @@ export function countActionRequests(page: Page) {
   return requests;
 }
 
-// Views and the settings live in the sidebar, a drawer on narrow screens.
-export async function sidebarAction(page: Page, name: string) {
-  const menu = page.getByRole("button", { name: "Menu", exact: true });
+// The sidebar, or the drawer on narrow screens.
+async function mainNav(page: Page) {
+  // With unread notifications its label says so (task 81).
+  const menu = page.getByRole("button", {
+    name: /^Menu(, unread notifications)?$/,
+  });
   // The drawer of a previous action may still be animating away.
   await expect(page.getByRole("dialog")).toBeHidden();
   if (await menu.isVisible()) await menu.click();
-  await page
-    .getByRole("navigation", { name: "Main" })
-    .getByRole(name === "Folders" ? "link" : "button", { name, exact: true })
+  return page.getByRole("navigation", { name: "Main" });
+}
+
+// Views live in the sidebar, a drawer on narrow screens.
+export async function sidebarAction(page: Page, name: string) {
+  await (
+    await mainNav(page)
+  )
+    .getByRole(name === "Books" ? "link" : "button", { name, exact: true })
     .click();
 }
 
-// Opens the settings dialog from the sidebar (D50).
-export async function openSettings(page: Page) {
-  await sidebarAction(page, "Settings");
-  return page.getByRole("dialog", { name: "Settings" });
+// Settings and logging out are in the account menu at the bottom of the sidebar (D83).
+export async function accountAction(
+  page: Page,
+  name: "My profile" | "Settings" | "Log out",
+) {
+  await openMenu(
+    (await mainNav(page)).getByRole("button", { name: /^Account menu, / }),
+  );
+  await page.getByRole("menuitem", { name, exact: true }).click();
+}
+
+// The dialog opens on Appearance; other settings are behind their tab (D83).
+export async function openSettings(
+  page: Page,
+  tab?: "Appearance" | "Profile" | "Account" | "Notifications",
+) {
+  await accountAction(page, "Settings");
+  const dialog = page.getByRole("dialog", { name: "Settings" });
+  if (tab) await dialog.getByRole("tab", { name: tab, exact: true }).click();
+  return dialog;
+}
+
+export async function logOut(page: Page) {
+  await accountAction(page, "Log out");
 }
 
 // Picks a theme in the settings dialog and saves it; the dialog stays open.
@@ -208,6 +261,18 @@ export async function publishFromEditor(page: Page) {
   await expect(page.getByRole("alertdialog")).toBeHidden();
 }
 
+// The "Public · Copy link · Open" row of a published book or chapter (task 98).
+export function publicLinkRow(page: Page) {
+  return page.getByRole("group", { name: "Public link" });
+}
+
+// The address the row's "Open" link goes to, once the row is shown.
+export async function publicLinkHref(page: Page): Promise<string> {
+  const open = publicLinkRow(page).getByRole("link", { name: "Open" });
+  await expect(open).toBeVisible();
+  return (await open.getAttribute("href"))!;
+}
+
 // Picks a sort option from the "Sort" submenu of a ⋮ menu.
 export async function sortBy(page: Page, menu: string, option: string) {
   await openMenu(page.getByRole("button", { name: menu, exact: true }));
@@ -233,4 +298,64 @@ export async function selectToLineStart(page: Page) {
   );
   await page.keyboard.press("Shift+Home");
   await changed;
+}
+
+// The verdict of the fake image filter (fake-tools.mjs) for the next uploads; tests that change
+// it set "safe" back afterwards.
+export async function classifier(mode: "safe" | "adult" | "down") {
+  await fetch(`http://127.0.0.1:${E2E_TOOLS_PORT}/classify/mode`, {
+    method: "POST",
+    headers: { "X-Tools-Secret": E2E_TOOLS_SECRET },
+    body: mode,
+  });
+}
+
+// The fake realtime service (fake-tools.mjs, task 90): down unless a test sets "up", and the
+// test sets "down" back afterwards. Down also ends the open streams.
+export async function realtime(mode: "up" | "down") {
+  await fetch(`http://127.0.0.1:${E2E_TOOLS_PORT}/rt/mode`, {
+    method: "POST",
+    headers: { "X-Tools-Secret": E2E_TOOLS_SECRET },
+    body: mode,
+  });
+}
+
+// A solid-colour PNG the browser can decode, crop and re-encode.
+export function png(
+  width: number,
+  height: number,
+  rgb: [number, number, number],
+) {
+  const crcTable = Array.from({ length: 256 }, (_, n) => {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    return c >>> 0;
+  });
+  const crc = (data: Buffer) => {
+    let c = 0xffffffff;
+    for (const byte of data) c = crcTable[(c ^ byte) & 0xff] ^ (c >>> 8);
+    return (c ^ 0xffffffff) >>> 0;
+  };
+  const chunk = (type: string, data: Buffer) => {
+    const body = Buffer.concat([Buffer.from(type), data]);
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(data.length);
+    const sum = Buffer.alloc(4);
+    sum.writeUInt32BE(crc(body));
+    return Buffer.concat([length, body, sum]);
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header.set([8, 2, 0, 0, 0], 8);
+  const row = Buffer.concat([
+    Buffer.from([0]),
+    Buffer.from(Array(width).fill(rgb).flat()),
+  ]);
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk("IHDR", header),
+    chunk("IDAT", deflateSync(Buffer.concat(Array(height).fill(row)))),
+    chunk("IEND", Buffer.alloc(0)),
+  ]);
 }

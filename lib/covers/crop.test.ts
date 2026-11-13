@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { AVATAR_SIZE } from "./covers";
 import { clampedCenter, cropRect, MAX_ZOOM } from "./crop";
 
 describe("cropRect", () => {
@@ -35,5 +36,20 @@ describe("cropRect", () => {
   it("limits the zoom", () => {
     expect(cropRect(600, 900, 100, { x: 0, y: 0 }).width).toBe(600 / MAX_ZOOM);
     expect(cropRect(600, 900, 0.1, { x: 0, y: 0 }).width).toBe(600);
+  });
+
+  it("takes a square for an avatar", () => {
+    expect(cropRect(1200, 900, 1, { x: 0, y: 0 }, AVATAR_SIZE)).toEqual({
+      x: 150,
+      y: 0,
+      width: 900,
+      height: 900,
+    });
+    expect(cropRect(600, 1200, 2, { x: 0, y: 0 }, AVATAR_SIZE)).toEqual({
+      x: 150,
+      y: 450,
+      width: 300,
+      height: 300,
+    });
   });
 });

@@ -18,6 +18,9 @@ export async function withE2EDb<T>(
 export function clearStories(): Promise<void> {
   return withE2EDb(async (connection) => {
     await connection.collection("rateLimits").deleteMany({});
+    await connection
+      .collection("users")
+      .updateMany({}, { $unset: { globalBan: 1 } });
     await connection.collection("users").deleteMany({
       nickname: { $nin: Object.values(USERS).map((user) => user.nickname) },
     });
@@ -27,6 +30,31 @@ export function clearStories(): Promise<void> {
     await connection.collection("folderVersions").deleteMany({});
     await connection.collection("chapterContents").deleteMany({});
     await connection.collection("covers").deleteMany({});
+    await connection.collection("avatars").deleteMany({});
+    await connection.collection("profiles").deleteMany({});
+    await connection.collection("follows").deleteMany({});
+    await connection.collection("shelves").deleteMany({});
+    await connection.collection("libraryItems").deleteMany({});
+    await connection.collection("readingProgress").deleteMany({});
+    await connection.collection("readerMarks").deleteMany({});
+    await connection.collection("activity").deleteMany({});
+    await connection.collection("comments").deleteMany({});
+    await connection.collection("reactions").deleteMany({});
+    await connection.collection("ratings").deleteMany({});
+    await connection.collection("blocks").deleteMany({});
+    await connection.collection("communityBans").deleteMany({});
+    await connection.collection("communityModerators").deleteMany({});
+    await connection.collection("moderationLog").deleteMany({});
+    await connection.collection("reports").deleteMany({});
+    await connection.collection("notifications").deleteMany({});
+    await connection.collection("readEvents").deleteMany({});
+    await connection.collection("dailyStats").deleteMany({});
+    await connection.collection("rankings").deleteMany({});
+    await connection.collection("conversations").deleteMany({});
+    await connection.collection("messages").deleteMany({});
+    await connection.collection("forumThreads").deleteMany({});
+    await connection.collection("forumPosts").deleteMany({});
+    await connection.collection("threadFollows").deleteMany({});
   });
 }
 
@@ -207,9 +235,21 @@ type FolderDoc = {
   _id: mongoose.Types.ObjectId;
   name: string;
   notes: string;
+  description?: string;
   deletedAt: Date | null;
   published?: boolean;
 };
+
+export function updateFolder(
+  name: string,
+  fields: { description?: string; tags?: string[]; published?: boolean },
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    await connection
+      .collection("folders")
+      .updateOne({ name, deletedAt: null }, { $set: fields });
+  });
+}
 
 export function findFolder(name: string): Promise<FolderDoc | null> {
   return withE2EDb((connection) =>
@@ -260,5 +300,414 @@ export function clearSettings(user: UserName): Promise<void> {
     await connection
       .collection("settings")
       .deleteOne({ userId: await userId(connection, user) });
+  });
+}
+
+// A published folder with chapters that are public or hidden (D38).
+export function seedPublished(
+  user: UserName,
+  folder: string,
+  chapters: {
+    title: string;
+    publication: "public" | "hidden";
+    content?: string;
+    createdAt?: Date;
+  }[],
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const folderId = await ensureFolder(connection, user, folder);
+    await connection
+      .collection("folders")
+      .updateOne({ _id: folderId }, { $set: { published: true } });
+    for (const { title, publication, content, createdAt } of chapters) {
+      const id = await seedStory(user, { title, folder, content, createdAt });
+      // A chapter that has never been public has no publication date (D54).
+      await connection.collection("stories").updateOne(
+        { _id: new mongoose.Types.ObjectId(id) },
+        {
+          $set: {
+            publication,
+            ...(publication === "public" && { publishedAt: new Date() }),
+          },
+        },
+      );
+    }
+  });
+}
+
+export function seedProfile(user: UserName, bio: string): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const now = new Date();
+    await connection.collection("profiles").updateOne(
+      { userId: await userId(connection, user) },
+      {
+        $set: { bio, updatedAt: now },
+        $setOnInsert: { libraryPublic: true, createdAt: now },
+      },
+      { upsert: true },
+    );
+  });
+}
+
+export function seedFollow(
+  follower: UserName,
+  followee: UserName,
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    await connection.collection("follows").insertOne({
+      followerId: await userId(connection, follower),
+      followeeId: await userId(connection, followee),
+      createdAt: new Date(),
+    });
+  });
+}
+
+export function countFollows(): Promise<number> {
+  return withE2EDb((connection) =>
+    connection.collection("follows").countDocuments(),
+  );
+}
+
+export function findLibraryItems(
+  user: UserName,
+): Promise<{ shelves: string[] }[]> {
+  return withE2EDb(async (connection) => {
+    const userIdValue = await userId(connection, user);
+    const items = await connection
+      .collection<{ shelfIds: mongoose.Types.ObjectId[] }>("libraryItems")
+      .find({ userId: userIdValue })
+      .toArray();
+    const shelves = await connection
+      .collection<{ name: string }>("shelves")
+      .find({ userId: userIdValue })
+      .toArray();
+    const names = new Map(shelves.map(({ _id, name }) => [String(_id), name]));
+    return items.map(({ shelfIds }) => ({
+      shelves: shelfIds.map((id) => names.get(String(id)) ?? "").sort(),
+    }));
+  });
+}
+
+export function seedLibraryItem(
+  reader: UserName,
+  author: UserName,
+  folder: string,
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    await connection.collection("libraryItems").insertOne({
+      userId: await userId(connection, reader),
+      folderId: await ensureFolder(connection, author, folder),
+      shelfIds: [],
+      addedAt: new Date(),
+    });
+  });
+}
+
+export function findReadingProgress(
+  user: UserName,
+): Promise<{ position?: number; read: number } | null> {
+  return withE2EDb(async (connection) => {
+    const entry = await connection
+      .collection<{ position?: number; readStoryIds: unknown[] }>(
+        "readingProgress",
+      )
+      .findOne({ userId: await userId(connection, user) });
+    return entry
+      ? { position: entry.position, read: entry.readStoryIds.length }
+      : null;
+  });
+}
+
+export function seedReadingProgress(
+  reader: UserName,
+  author: UserName,
+  folder: string,
+  chapter: string,
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const folderId = await ensureFolder(connection, author, folder);
+    const story = await connection
+      .collection("stories")
+      .findOne({ folderId, title: chapter, deletedAt: null });
+    await connection.collection("readingProgress").insertOne({
+      userId: await userId(connection, reader),
+      folderId,
+      lastStoryId: story!._id,
+      position: 0.5,
+      readStoryIds: [],
+      updatedAt: new Date(),
+    });
+  });
+}
+
+export function clearReadingProgress(reader: UserName): Promise<void> {
+  return withE2EDb(async (connection) => {
+    await connection
+      .collection("readingProgress")
+      .deleteMany({ userId: await userId(connection, reader) });
+  });
+}
+
+export function findReaderMarks(user: UserName): Promise<
+  {
+    kind: string;
+    position: number;
+    name?: string;
+    quote?: string;
+    text?: string;
+  }[]
+> {
+  return withE2EDb(async (connection) =>
+    connection
+      .collection<{
+        kind: string;
+        position: number;
+        name?: string;
+        quote?: string;
+        text?: string;
+      }>("readerMarks")
+      .find(
+        { userId: await userId(connection, user) },
+        {
+          projection: {
+            _id: 0,
+            kind: 1,
+            position: 1,
+            name: 1,
+            quote: 1,
+            text: 1,
+          },
+        },
+      )
+      .toArray(),
+  );
+}
+
+// The author edits a chapter, e.g. the passage of a reader's note.
+export function setStoryContent(
+  author: UserName,
+  folder: string,
+  title: string,
+  content: string,
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const owner = await userId(connection, author);
+    const folderDoc = await connection
+      .collection("folders")
+      .findOne({ userId: owner, name: folder, deletedAt: null });
+    const { matchedCount } = await connection
+      .collection("stories")
+      .updateOne(
+        { userId: owner, folderId: folderDoc?._id, title, deletedAt: null },
+        { $set: { content, updatedAt: new Date() } },
+      );
+    if (matchedCount !== 1) throw new Error(`No chapter ${title} in ${folder}`);
+  });
+}
+
+// Readers of a chapter on days before today, as dailyStats keeps them (task 83).
+export function seedDailyStats(
+  author: UserName,
+  folder: string,
+  title: string,
+  days: { daysAgo: number; readers: number }[],
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const owner = await userId(connection, author);
+    const folderDoc = await connection
+      .collection("folders")
+      .findOne({ userId: owner, name: folder, deletedAt: null });
+    const story = await connection
+      .collection("stories")
+      .findOne({ userId: owner, folderId: folderDoc?._id, title });
+    if (!folderDoc || !story)
+      throw new Error(`No chapter ${title} in ${folder}`);
+    await connection.collection("dailyStats").insertMany(
+      days.map(({ daysAgo, readers }) => ({
+        storyId: story._id,
+        folderId: folderDoc._id,
+        authorId: owner,
+        day: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .slice(0, 10),
+        readers,
+      })),
+    );
+  });
+}
+
+export function sumDailyReaders(): Promise<number> {
+  return withE2EDb(async (connection) => {
+    const [total] = await connection
+      .collection("dailyStats")
+      .aggregate<{ readers: number }>([
+        { $group: { _id: null, readers: { $sum: "$readers" } } },
+      ])
+      .toArray();
+    return total?.readers ?? 0;
+  });
+}
+
+async function findOwnFolder(
+  connection: mongoose.Connection,
+  user: UserName,
+  name: string,
+) {
+  const folder = await connection
+    .collection("folders")
+    .findOne({ userId: await userId(connection, user), name, deletedAt: null });
+  if (!folder) throw new Error(`No folder ${name} of ${user}`);
+  return folder;
+}
+
+// A fresh ranking (task 84), so the page does not recompute it after the response.
+export function seedRanking(
+  key: string,
+  books: { user: UserName; folder: string }[],
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const items = [];
+    for (const [index, { user, folder }] of books.entries()) {
+      const { _id } = await findOwnFolder(connection, user, folder);
+      items.push({ folderId: _id, score: books.length - index });
+    }
+    await connection
+      .collection<{ _id: string }>("rankings")
+      .updateOne(
+        { _id: key },
+        { $set: { items, computedAt: new Date(), computing: null } },
+        { upsert: true },
+      );
+  });
+}
+
+// An 18+ book with a rated 18+ cover: public lists show the badge instead of the image.
+export function markAdultWithCover(
+  user: UserName,
+  folder: string,
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const { _id: folderId, userId: owner } = await findOwnFolder(
+      connection,
+      user,
+      folder,
+    );
+    const now = new Date();
+    const { insertedId } = await connection.collection("covers").insertOne({
+      userId: owner,
+      folderId,
+      data: Buffer.from("cover"),
+      size: 5,
+      state: "rated",
+      manualAdult: true,
+      attempts: 0,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await connection.collection("folders").updateOne(
+      { _id: folderId },
+      {
+        $set: {
+          coverId: insertedId,
+          adult: { manual: true, auto: false },
+        },
+      },
+    );
+  });
+}
+
+// An open report of a chapter for the admins (task 88), as the report action writes it.
+export function seedChapterReport(
+  reporter: UserName,
+  title: string,
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const story = await connection.collection("stories").findOne({ title });
+    if (!story) throw new Error(`No chapter "${title}"`);
+    await connection.collection("reports").insertOne({
+      reporterId: await userId(connection, reporter),
+      targetType: "story",
+      targetId: story._id,
+      targetUserId: story.userId,
+      route: "admin",
+      reason: "unmarkedAdult",
+      details: "No warning",
+      state: "open",
+      createdAt: new Date(),
+    });
+  });
+}
+
+// A comment on a chapter and its open report for the chapter author's community (task 75).
+export function seedCommentReport(
+  reporter: UserName,
+  writer: UserName,
+  title: string,
+  body: string,
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const story = await connection.collection("stories").findOne({ title });
+    if (!story) throw new Error(`No chapter "${title}"`);
+    const writerId = await userId(connection, writer);
+    const { insertedId } = await connection.collection("comments").insertOne({
+      authorId: story.userId,
+      userId: writerId,
+      folderId: story.folderId,
+      storyId: story._id,
+      parentId: null,
+      body,
+      createdAt: new Date(),
+    });
+    await connection.collection("reports").insertOne({
+      reporterId: await userId(connection, reporter),
+      targetType: "comment",
+      targetId: insertedId,
+      targetUserId: writerId,
+      route: "author",
+      authorId: story.userId,
+      reason: "spam",
+      details: "",
+      state: "open",
+      createdAt: new Date(),
+    });
+  });
+}
+
+// A saved version of a book without chapters, saved at a given moment.
+export function seedFolderVersion(
+  user: UserName,
+  folder: string,
+  version: { number: number; name: string; createdAt: Date },
+): Promise<string> {
+  return withE2EDb(async (connection) => {
+    const folderId = await ensureFolder(connection, user, folder);
+    await connection.collection("folderVersions").insertOne({
+      userId: await userId(connection, user),
+      folderId,
+      chapterSort: "created",
+      chapters: [],
+      ...version,
+    });
+    return folderId.toString();
+  });
+}
+
+// A ban in the author's community, written in the log at a given moment.
+export function seedModerationLog(
+  author: UserName,
+  target: UserName,
+  createdAt: Date,
+): Promise<void> {
+  return withE2EDb(async (connection) => {
+    const authorId = await userId(connection, author);
+    await connection.collection("moderationLog").insertOne({
+      authorId,
+      actorId: authorId,
+      action: "ban",
+      targetType: "user",
+      targetUserId: await userId(connection, target),
+      reason: "Spam",
+      createdAt,
+    });
   });
 }

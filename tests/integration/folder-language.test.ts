@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { setFolderLanguage } from "@/app/[locale]/(protected)/folders/actions";
+import { setFolderLanguage } from "@/app/[locale]/(protected)/books/actions";
 import type { ActionError } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import { getEditorFolder, getFolder, listFolders } from "@/lib/folders/queries";

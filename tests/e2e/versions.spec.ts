@@ -50,7 +50,7 @@ test("saves a named version, compares it and restores one, then two chapters", a
     folderId,
     ids: [a, b, c],
   } = await seedBook("A", "B", "C");
-  await page.goto(`/folders/${folderId}`);
+  await page.goto(`/books/${folderId}`);
 
   await page.getByRole("button", { name: "Save version" }).click();
   const dialog = page.getByRole("dialog", { name: "Save version" });
@@ -85,7 +85,7 @@ test("saves a named version, compares it and restores one, then two chapters", a
     "rewritten",
   );
 
-  const folderUrl = `/en/folders/${folderId}`;
+  const folderUrl = `/en/books/${folderId}`;
   const restore = page.getByRole("button", { name: "Restore selected" });
   await expect(restore).toBeDisabled();
   await page.getByRole("checkbox", { name: "A", exact: true }).check();
@@ -123,7 +123,7 @@ test("saves a named version, compares it and restores one, then two chapters", a
 
 test("selects all chapters with one checkbox", async ({ page }) => {
   const { folderId, ids } = await seedBook("A", "B");
-  await page.goto(`/folders/${folderId}`);
+  await page.goto(`/books/${folderId}`);
   await saveVersion(page, "Both");
   for (const id of ids) await updateStoryById(id, { content: "edited" });
 
@@ -136,7 +136,7 @@ test("selects all chapters with one checkbox", async ({ page }) => {
   ).toBeChecked();
   await page.getByRole("button", { name: "Restore selected" }).click();
 
-  await expect(page).toHaveURL(`/en/folders/${folderId}`);
+  await expect(page).toHaveURL(`/en/books/${folderId}`);
   for (const [i, id] of ids.entries()) {
     expect((await findStoryById(id))?.content).toBe(`${"AB"[i]} content`);
   }
@@ -150,12 +150,12 @@ test("an open editor gets a conflict after its chapter is restored", async ({
     folderId,
     ids: [a],
   } = await seedBook("A");
-  await page.goto(`/stories/${a}`);
+  await page.goto(`/chapters/${a}`);
   const content = page.getByRole("textbox", { name: "Content", exact: true });
   await expect(content).toBeVisible();
 
   const other = await context.newPage();
-  await other.goto(`/folders/${folderId}`);
+  await other.goto(`/books/${folderId}`);
   await saveVersion(other, "Before edits");
   // Saved meanwhile without the open editor knowing (it keeps its updatedAt).
   await updateStoryById(a, { content: "Edited elsewhere" });
@@ -164,7 +164,7 @@ test("an open editor gets a conflict after its chapter is restored", async ({
     .click();
   await other.getByRole("checkbox", { name: "A", exact: true }).check();
   await other.getByRole("button", { name: "Restore selected" }).click();
-  await expect(other).toHaveURL(`/en/folders/${folderId}`);
+  await expect(other).toHaveURL(`/en/books/${folderId}`);
 
   await content.fill("Typed in the open editor");
   await page.keyboard.press("Control+s");
@@ -182,7 +182,7 @@ test("restores the entire version after confirmation, removing chapters added si
     folderId,
     ids: [a],
   } = await seedBook("A", "B");
-  await page.goto(`/folders/${folderId}`);
+  await page.goto(`/books/${folderId}`);
   await saveVersion(page, "Two chapters");
   await updateStoryById(a, { content: "A rewritten", notes: "A notes" });
   const added = await seedStory("alice", { title: "C", folder: "Book" });
@@ -204,10 +204,10 @@ test("restores the entire version after confirmation, removing chapters added si
   ]);
   await dialog.getByRole("button", { name: "Restore" }).click();
 
-  await expect(page).toHaveURL(`/en/folders/${folderId}`);
+  await expect(page).toHaveURL(`/en/books/${folderId}`);
   await expect(
     page.getByRole("list", { name: "Chapters" }).getByRole("link"),
-  ).toHaveText([/^B/, /^A/]);
+  ).toHaveText([/^A/, /^B/]);
   expect(await findStoryById(a)).toMatchObject({
     content: "A content",
     notes: "A notes",
@@ -220,7 +220,7 @@ test("restores the entire version after confirmation, removing chapters added si
 
 test("removes a selected chapter added since", async ({ page }) => {
   const { folderId } = await seedBook("A");
-  await page.goto(`/folders/${folderId}`);
+  await page.goto(`/books/${folderId}`);
   await saveVersion(page, "One chapter");
   const added = await seedStory("alice", { title: "New", folder: "Book" });
 
@@ -236,13 +236,13 @@ test("removes a selected chapter added since", async ({ page }) => {
   ).toBeVisible();
   await page.getByRole("button", { name: "Restore selected" }).click();
 
-  await expect(page).toHaveURL(`/en/folders/${folderId}`);
+  await expect(page).toHaveURL(`/en/books/${folderId}`);
   expect((await findStoryById(added))?.deletedAt).toBeInstanceOf(Date);
 });
 
 test("deletes a version after confirmation", async ({ page }) => {
   const { folderId } = await seedBook("A");
-  await page.goto(`/folders/${folderId}`);
+  await page.goto(`/books/${folderId}`);
   await saveVersion(page, "Old");
   await saveVersion(page, "New");
 
@@ -267,7 +267,7 @@ test("restores an entire version from the list after confirmation", async ({
     folderId,
     ids: [a],
   } = await seedBook("A");
-  await page.goto(`/folders/${folderId}`);
+  await page.goto(`/books/${folderId}`);
   await saveVersion(page, "Original");
   await updateStoryById(a, { content: "A rewritten" });
 
@@ -286,4 +286,38 @@ test("restores an entire version from the list after confirmation", async ({
   await expect(versions(page).getByRole("link").first()).toHaveText(
     /Version 2: Before restoring version 1/,
   );
+});
+
+test("restoring an unchanged version is disabled, and a click on the chapter row selects it", async ({
+  page,
+}) => {
+  const {
+    folderId,
+    ids: [a],
+  } = await seedBook("A");
+  await page.goto(`/books/${folderId}`);
+  await saveVersion(page, "Same");
+
+  await versions(page)
+    .getByRole("link", { name: /Version 1/ })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Restore entire version" }),
+  ).toBeDisabled();
+
+  await updateStoryById(a, { content: "A rewritten" });
+  await page.reload();
+  const restore = page.getByRole("button", { name: "Restore entire version" });
+  await expect(restore).toBeEnabled();
+  await restore.click();
+  const dialog = page.getByRole("alertdialog", {
+    name: "Restore entire version?",
+  });
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toBeHidden();
+  expect((await findStoryById(a))?.content).toBe("A rewritten");
+
+  const checkbox = page.getByRole("checkbox", { name: "A", exact: true });
+  await versionChapter(page, "A").getByText("changed", { exact: true }).click();
+  await expect(checkbox).toBeChecked();
 });

@@ -24,6 +24,8 @@ export interface StoryFields {
   proofreading?: StoredProofreading;
   // Missing means not 18+ (D67).
   adult?: AdultMark;
+  // Existing comments are hidden, not deleted (task 76).
+  commentsDisabled?: boolean;
   deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -44,6 +46,7 @@ const storySchema = new Schema<StoryFields>(
     // Checked by parseStoredProofreading in saveStory.
     proofreading: { type: Schema.Types.Mixed },
     adult: { type: adultMarkSchema },
+    commentsDisabled: { type: Boolean },
     // Always stored: a partial index filter cannot express "field does not exist".
     deletedAt: { type: Date, default: null },
   },

@@ -35,8 +35,9 @@ function edges(mode: Mode, field: Locator) {
       : box.bottom - lineHeight;
     return {
       lineHeight,
-      // Empty space left by the gaps, in multiples of the view minus one line.
-      gapTop: (first - view.top) / (view.height - lineHeight),
+      // Empty space above the first line, in lines.
+      gapTop: (first - view.top) / lineHeight,
+      // Empty space below the last line, in multiples of the view minus one line.
       gapBottom: (view.bottom - last - lineHeight) / (view.height - lineHeight),
       lastFromTop: last - view.top,
     };
@@ -50,14 +51,19 @@ async function scrollToEnd(mode: Mode, field: Locator, end: "top" | "bottom") {
 }
 
 async function expectLimits(mode: Mode, field: Locator) {
+  // A short text with its gaps may fit in a tall view, which then has nothing to scroll.
+  const scrolls = await scrollerOf(mode, field).evaluate(
+    (element) => element.scrollHeight > element.clientHeight,
+  );
   await scrollToEnd(mode, field, "bottom");
-  await expect
-    .poll(async () => Math.abs((await edges(mode, field)).gapBottom - 3 / 4))
-    .toBeLessThan(0.01);
+  if (scrolls)
+    await expect
+      .poll(async () => Math.abs((await edges(mode, field)).gapBottom - 3 / 4))
+      .toBeLessThan(0.01);
   await scrollToEnd(mode, field, "top");
   await expect
-    .poll(async () => Math.abs((await edges(mode, field)).gapTop - 1 / 2))
-    .toBeLessThan(0.01);
+    .poll(async () => Math.abs((await edges(mode, field)).gapTop - 2))
+    .toBeLessThan(0.05);
 }
 
 async function seed(content: string) {
@@ -80,58 +86,74 @@ for (const mode of ["Preview", "Source"] as const)
           page,
         }) => {
           const id = await seed(text);
-          await page.goto(`/stories/${id}`);
+          await page.goto(`/chapters/${id}`);
           const editor = markdownEditor(page, label);
           await expect(
             editor.field.getByText("Line 0", { exact: true }),
           ).toBeVisible();
-          if (mode === "Source") await editor.button("Source").click();
+          if (mode === "Source") await editor.mode("Markdown");
           await expectLimits(mode, editor.group.getByRole("textbox"));
         });
 
     test("the limits follow window and panel size", async ({ page }) => {
       const id = await seed(LONG);
-      await page.goto(`/stories/${id}`);
+      await page.goto(`/chapters/${id}`);
       const editor = markdownEditor(page, "Content");
       await expect(editor.field).toBeVisible();
-      if (mode === "Source") await editor.button("Source").click();
+      if (mode === "Source") await editor.mode("Markdown");
       const field = editor.group.getByRole("textbox");
 
       await page.setViewportSize({ width: 1100, height: 500 });
       await expectLimits(mode, field);
       // Hide remounts the editor, which always opens in Preview.
       await page.getByRole("button", { name: "Hide notes" }).click();
-      await expect(editor.button("Preview")).toHaveAttribute(
+      await expect(editor.button("Text")).toHaveAttribute(
         "aria-pressed",
         "true",
       );
-      if (mode === "Source") await editor.button("Source").click();
+      if (mode === "Source") await editor.mode("Markdown");
       await page.setViewportSize({ width: 1280, height: 800 });
       await expectLimits(mode, field);
     });
   });
 
-test("opens with the first line halfway down the view", async ({ page }) => {
-  const id = await seed(LONG);
-  await page.goto(`/stories/${id}`);
-  const { field } = markdownEditor(page, "Content");
-  await expect(field.getByText("Line 0", { exact: true })).toBeVisible();
+for (const [name, viewport] of [
+  ["desktop", { width: 1280, height: 800 }],
+  ["a narrow screen", { width: 375, height: 812 }],
+] as const)
+  test.describe(`on ${name}`, () => {
+    test.use({ viewport });
 
-  await expect
-    .poll(() => scrollerOf("Preview", field).evaluate((e) => e.scrollTop))
-    .toBe(0);
-  const { gapTop } = await edges("Preview", field);
-  expect(Math.abs(gapTop - 1 / 2)).toBeLessThan(0.01);
-});
+    for (const label of ["Content", "Notes"])
+      test(`${label} opens with the first line two lines below the top`, async ({
+        page,
+      }) => {
+        const id = await seed(LONG);
+        await page.goto(`/chapters/${id}`);
+        if (label === "Notes" && name !== "desktop")
+          await page
+            .getByRole("tablist", { name: "View" })
+            .getByRole("tab", { name: "Notes" })
+            .click();
+        const { field } = markdownEditor(page, label);
+        await expect(field.getByText("Line 0", { exact: true })).toBeVisible();
+
+        await expect
+          .poll(() => scrollerOf("Preview", field).evaluate((e) => e.scrollTop))
+          .toBe(0);
+        const { gapTop } = await edges("Preview", field);
+        expect(Math.abs(gapTop - 2)).toBeLessThan(0.05);
+      });
+  });
 
 test("the last line stays in view across switching modes", async ({ page }) => {
   const id = await seed(LONG);
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const editor = markdownEditor(page, "Content");
   await expect(editor.field).toBeVisible();
   await scrollToEnd("Preview", editor.field, "bottom");
 
-  await editor.button("Source").click();
+  await editor.mode("Markdown");
   const { lastFromTop, lineHeight } = await edges(
     "Source",
     editor.group.getByRole("textbox"),
@@ -148,10 +170,10 @@ test("Source: clicking the empty space focuses the text, typing keeps the caret 
   page,
 }) => {
   const id = await seed(LONG);
-  await page.goto(`/stories/${id}`);
+  await page.goto(`/chapters/${id}`);
   const editor = markdownEditor(page, "Content");
   await expect(editor.field).toBeVisible();
-  await editor.button("Source").click();
+  await editor.mode("Markdown");
   const field = editor.group.getByRole("textbox");
 
   const scroller = scrollerOf("Source", field);

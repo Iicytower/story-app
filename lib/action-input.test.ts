@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { isBoolean, isId, isIsoDate, isString } from "./action-input";
+import {
+  isBoolean,
+  isFraction,
+  isId,
+  isIsoDate,
+  isString,
+} from "./action-input";
 
 const WRONG = [123, [], {}, null, undefined, { $ne: 0 }];
 
@@ -18,6 +24,13 @@ describe("action input guards", () => {
     expect(isId("0123456789abcdef0123456")).toBe(false);
     expect(isId({ _bsontype: "ObjectId", id: "x" })).toBe(false);
     for (const value of WRONG) expect(isId(value)).toBe(false);
+  });
+
+  it("isFraction accepts only a number from 0 to 1", () => {
+    for (const value of [0, 0.5, 1]) expect(isFraction(value)).toBe(true);
+    for (const value of [...WRONG, -0.1, 1.1, NaN, Infinity, "0.5"]) {
+      expect(isFraction(value)).toBe(false);
+    }
   });
 
   it("isIsoDate accepts only the ISO string the server sends", () => {

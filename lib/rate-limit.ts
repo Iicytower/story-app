@@ -2,6 +2,7 @@ import { createHmac } from "node:crypto";
 import { isIPv6 } from "node:net";
 import { isDuplicateKeyError } from "@/lib/db";
 import { RateLimit } from "@/lib/models/rate-limit";
+import { User } from "@/lib/models/user";
 
 export interface RateLimitRule {
   name: string;
@@ -62,6 +63,40 @@ export const PROOFREAD_LIMIT: RateLimitRule = {
   windowMs: 10 * 60 * 1000,
 };
 
+const MINUTE = 60 * 1000;
+const DAY = 24 * 60 * MINUTE;
+
+// Anti-spam per account (D80). An action with a limit per minute and per day takes both.
+// Every rule has its own name: a minute and a day window start together at midnight.
+export const SOCIAL_LIMITS = {
+  commentMinute: { name: "comment-minute", max: 10, windowMs: MINUTE },
+  commentDay: { name: "comment-day", max: 200, windowMs: DAY },
+  postMinute: { name: "post-minute", max: 5, windowMs: MINUTE },
+  postDay: { name: "post-day", max: 100, windowMs: DAY },
+  threadDay: { name: "thread-day", max: 10, windowMs: DAY },
+  dmMinute: { name: "dm-minute", max: 30, windowMs: MINUTE },
+  conversationDay: { name: "conversation-day", max: 10, windowMs: DAY },
+  reportDay: { name: "report-day", max: 20, windowMs: DAY },
+  react: { name: "react", max: 60, windowMs: MINUTE },
+  rate: { name: "rate", max: 60, windowMs: MINUTE },
+  follow: { name: "follow", max: 60, windowMs: MINUTE },
+  block: { name: "block", max: 60, windowMs: MINUTE },
+  suggest: { name: "suggest", max: 60, windowMs: MINUTE },
+  // Adding, removing and moving books; the author is notified of an addition (task 81).
+  library: { name: "library", max: 60, windowMs: MINUTE },
+  // The chapter page saves the reading position every 10 seconds (task 73), so several open
+  // tabs of a new account still fit in half of it.
+  progress: { name: "progress", max: 60, windowMs: MINUTE },
+  // Adding, editing and deleting bookmarks and reader notes (task 74).
+  marks: { name: "marks", max: 60, windowMs: MINUTE },
+  // Every step of an author's or moderator's moderation (task 79).
+  moderate: { name: "moderate", max: 60, windowMs: MINUTE },
+  // Each one is a classifier call (task 70).
+  avatarDay: { name: "avatar-day", max: 20, windowMs: DAY },
+} as const satisfies Record<string, RateLimitRule>;
+
+const NEW_ACCOUNT_MS = DAY;
+
 // One subscriber usually owns a whole IPv6 /64, so single addresses would not limit anyone.
 function ipv6Network(ip: string): string {
   const [head, tail] = ip.split("::");
@@ -109,11 +144,15 @@ export function accountKey(nickname: string): string {
   return nickname.trim().toLowerCase();
 }
 
-function slotId(rule: RateLimitRule, ip: string, windowStart: number): string {
-  const client = createHmac("sha256", process.env.AUTH_SECRET!)
-    .update(ip)
+// A keyed hash, so a stored address or account cannot be read back (D40, D74).
+export function clientHash(client: string): string {
+  return createHmac("sha256", process.env.AUTH_SECRET!)
+    .update(client)
     .digest("hex");
-  return `${rule.name}:${client}:${windowStart}`;
+}
+
+function slotId(rule: RateLimitRule, ip: string, windowStart: number): string {
+  return `${rule.name}:${clientHash(ip)}:${windowStart}`;
 }
 
 function increment(id: string, expiresAt: Date) {
@@ -149,6 +188,20 @@ export async function takeIpAttempt(
   if (ip === null) return { slot: null };
   const slot = await takeAttempt(rule, ip);
   return slot ? { slot } : null;
+}
+
+// Per account; an account younger than 24 hours gets half of the limit (D80). An account
+// that is gone is counted as new.
+export async function takeUserAttempt(
+  rule: RateLimitRule,
+  userId: string,
+): Promise<string | null> {
+  const user = await User.findById(userId, { createdAt: 1 }).lean();
+  const young = !user || Date.now() - user.createdAt.getTime() < NEW_ACCOUNT_MS;
+  return takeAttempt(
+    young ? { ...rule, max: Math.floor(rule.max / 2) } : rule,
+    userId,
+  );
 }
 
 export async function giveBackAttempt(slot: string | null): Promise<void> {

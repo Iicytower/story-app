@@ -1,0 +1,12 @@
+# D36 – Tagi (2026-11-01)
+
+Status: aktualna. Częściowo zmieniona w D79 (wyszukiwanie).
+
+- Zmienia spec („bez tagów”). Pole `tags` (tablica stringów) na `folders` i `stories`, tagi osobno na każdym poziomie. Kod odczytu traktuje brak pola jak pustą listę, a powtarzalna migracja `005-tags` uzupełnia dokumenty tworzone przez starą wersję w trakcie builda.
+- Normalizacja: `trim`, zwinięcie białych znaków do jednej spacji, małe litery, bez duplikatów, puste odrzucane. Spacje w środku tagu i polskie znaki zostają. W dialogu przecinek rozdziela tagi. Limity: 30 znaków na tag, 10 tagów na folder lub rozdział; przekroczenie → `INVALID_INPUT`, wejście spoza tablicy stringów też.
+- Rozdział dziedziczy tagi folderu i wliczają się one do jego limitu: suma tagów własnych i odziedziczonych to maks. 10, a tag obecny na obu poziomach liczy się raz. Zapis tagów folderu, który przekroczyłby limit któregoś aktywnego rozdziału, jest odrzucany z nazwą tego rozdziału. Przeniesienie rozdziału przekraczające limit też jest odrzucane. Przywracanie wersji nigdy nie jest odrzucane z tego powodu, a rozdział ponad limitem trzeba zmniejszyć przy kolejnej edycji jego tagów.
+- Tagi to zmiana organizacyjna: akcje `setFolderTags` i `setStoryTags` zastępują całą listę i nie zmieniają `updatedAt`, `lastActivityAt` ani `notesUpdatedAt`, więc otwarty edytor nie dostaje `CONFLICT`. Tagów nie ma w eksporcie, wersjach folderów i na stronach publicznych. Przywrócenie wersji ich nie zmienia; rozdział przeniesiony i kopiowany przy przywracaniu dostaje bieżące tagi oryginału, jak notatki.
+- Podpowiedzi i filtr biorą własne tagi użytkownika z aktywnych folderów i rozdziałów.
+- Filtr na `/stories`: parametry `?tag=a&tag=b`, wartości normalizowane jak przy zapisie. Wybrany tag zmienia widok folderów na listę rozdziałów, ten sam co wyniki wyszukiwania. Kilka tagów działa jak AND, a rozdział dziedziczy tagi folderu, więc każdy tag może pasować przez rozdział albo przez jego folder. Przeniesienie rozdziału zmienia odziedziczone tagi. Pusty folder z tagiem nie pojawia się w wynikach.
+- Wybór tagów to klikalne chipy (linki zachowujące `q`), a formularz wyszukiwania zachowuje wybrane tagi w ukrytych polach.
+- Edycja w dialogu „Tags”: folder na swojej stronie, rozdział w wierszu listy rozdziałów, nie w edytorze. Listy folderów, rozdziałów i wyników pokazują tagi elementu, a przy rozdziałach także odziedziczone, w odróżnionym stylu. Dialog rozdziału pokazuje odziedziczone bez przycisku usuwania, usuwa się je na folderze.
