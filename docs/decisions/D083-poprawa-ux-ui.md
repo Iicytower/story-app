@@ -1,6 +1,6 @@
 # D83 – Poprawa UX i UI (2026-11-12)
 
-Status: aktualna. Zmienia D16, D17, D18, D25, D27, D30, D31, D33, D42, D47, D50, D54 oraz części D80 `navigation.md`, `text-interactions.md`, `stats-discovery.md`.
+Status: aktualna. Zmieniona w D84 (warianty `ui-checker`). Zmienia D16, D17, D18, D25, D27, D30, D31, D33, D42, D47, D50, D54 oraz części D80 `navigation.md`, `text-interactions.md`, `stats-discovery.md`.
 
 - Task zbiorczy 51, subtaski 93–107, decyzje użytkownika z 2026-11-12 na podstawie raportu [`docs/ui-ux-report.md`](../ui-ux-report.md) (ocena 6/10, zrzuty w `docs/ui-ux-report/`). Numery w nawiasach (np. 3.1) to punkty raportu. Priorytet: funkcjonalność i wygoda, potem spójność, potem estetyka; prostota, mało animacji.
 
