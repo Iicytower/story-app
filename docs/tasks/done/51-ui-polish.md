@@ -1,6 +1,6 @@
 # 51 – Poprawa UX i UI (zbiorczy)
 
-Zgłoszenie użytkownika (2026-11-04), zakres z raportu [`docs/ui-ux-report.md`](../../ui-ux-report.md) (2026-11-12, ocena 6/10), decyzja [D83](../../decisions/D083-poprawa-ux-ui.md). Subtaski 93–107 realizowane w kolejności tabeli w `README.md`, w przebiegu bez nadzoru (`/autorun 51`). Szczegóły, kryteria i testy w plikach subtasków.
+Zgłoszenie użytkownika (2026-11-04), zakres z raportu `docs/ui-ux-report.md` (usunięty 2026-11-13, dostępny w historii gita) (2026-11-12, ocena 6/10), decyzja [D83](../../decisions/D083-poprawa-ux-ui.md). Subtaski 93–107 realizowane w kolejności tabeli w `README.md`, w przebiegu bez nadzoru (`/autorun 51`). Szczegóły, kryteria i testy w plikach subtasków.
 
 ## Zakres
 

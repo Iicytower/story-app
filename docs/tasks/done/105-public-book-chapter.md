@@ -1,6 +1,6 @@
 # 105 – Publiczna strona książki i rozdziału
 
-Subtask 51. Podstawa: [D83](../decisions/D083-poprawa-ux-ui.md) i raport [`docs/ui-ux-report.md`](../ui-ux-report.md) (numery punktów w nawiasach). Branch `feature/105-public-book-chapter` z `fix/ui`, merge do `fix/ui`. Użyj skilla `social-checklist`.
+Subtask 51. Podstawa: [D83](../decisions/D083-poprawa-ux-ui.md) i raport `docs/ui-ux-report.md` (usunięty 2026-11-13, dostępny w historii gita) (numery punktów w nawiasach). Branch `feature/105-public-book-chapter` z `fix/ui`, merge do `fix/ui`. Użyj skilla `social-checklist`.
 
 ## Zakres
 

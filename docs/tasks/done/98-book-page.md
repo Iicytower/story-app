@@ -1,6 +1,6 @@
 # 98 – Strona książki, opis i wersje
 
-Subtask 51. Podstawa: [D83](../../decisions/D083-poprawa-ux-ui.md) i raport [`docs/ui-ux-report.md`](../../ui-ux-report.md) (numery punktów w nawiasach). Branch `feature/98-book-page` z `fix/ui`, merge do `fix/ui`.
+Subtask 51. Podstawa: [D83](../../decisions/D083-poprawa-ux-ui.md) i raport `docs/ui-ux-report.md` (usunięty 2026-11-13, dostępny w historii gita) (numery punktów w nawiasach). Branch `feature/98-book-page` z `fix/ui`, merge do `fix/ui`.
 
 ## Zakres
 
