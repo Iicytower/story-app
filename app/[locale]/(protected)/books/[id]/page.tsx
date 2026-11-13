@@ -20,10 +20,11 @@ import { moveChapter } from "../../chapters/actions";
 import { ChapterMenu } from "./chapter-menu";
 import { CoverRejected } from "./cover-rejected";
 import { FolderMenu } from "./folder-menu";
+import { FolderDescription } from "./folder-description";
 import { FolderNotes } from "./folder-notes";
-import { FolderPublicLink } from "./folder-public-link";
 import { FolderVersions } from "./versions/folder-versions";
 import { PageContainer } from "@/components/page-container";
+import { PublicLink } from "@/components/public-link";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -102,10 +103,15 @@ export default async function FolderPage({
                   : undefined
               }
             />
-            {publicPath && <FolderPublicLink publicPath={publicPath} />}
           </div>
+          {publicPath && <PublicLink publicPath={publicPath} />}
           <TagChips tags={folder.tags} />
           {folder.coverRejected && <CoverRejected folderId={folder.id} />}
+          <FolderDescription
+            key={folder.id}
+            folderId={folder.id}
+            initialDescription={folder.description}
+          />
         </div>
       </div>
       <div className="grid gap-6 md:grid-cols-[1fr_20rem]">
@@ -136,7 +142,11 @@ export default async function FolderPage({
                       <span className="text-muted-foreground line-clamp-2 text-sm">
                         {snippet.before}
                       </span>
-                      <TagChips tags={chapter.tags} folderTags={folder.tags} />
+                      <TagChips
+                        tags={(chapter.tags ?? []).filter(
+                          (tag) => !folder.tags?.includes(tag),
+                        )}
+                      />
                       <span className="text-muted-foreground text-xs">
                         <LocalDate iso={chapter.updatedAt} />
                       </span>

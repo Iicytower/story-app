@@ -89,20 +89,12 @@ export function SortSubmenu(props: RadioSubmenuProps) {
   );
 }
 
-export function PublicationIcon({ isPublic }: { isPublic: boolean }) {
+export function PublicationStatus({ isPublic }: { isPublic: boolean }) {
   const t = useTranslations("menu");
-  const label = isPublic ? t("statusPublic") : t("statusPrivate");
   return (
-    <WithTooltip label={label}>
-      <span
-        role="img"
-        aria-label={label}
-        // Focusable, so keyboard users get the tooltip too.
-        tabIndex={0}
-        className="text-muted-foreground focus-visible:ring-ring/50 flex size-8 shrink-0 items-center justify-center rounded-md outline-none focus-visible:ring-3 [&_svg]:size-4"
-      >
-        {isPublic ? <GlobeIcon /> : <GlobeLockIcon />}
-      </span>
-    </WithTooltip>
+    <span className="text-muted-foreground flex shrink-0 items-center gap-1 text-xs whitespace-nowrap [&_svg]:size-3.5">
+      {isPublic ? <GlobeIcon /> : <GlobeLockIcon />}
+      {isPublic ? t("statusPublic") : t("statusPrivate")}
+    </span>
   );
 }

@@ -6,6 +6,8 @@ import type { ValidationError } from "@/lib/action-result";
 export const MAX_NAME_LENGTH = 200;
 export const MAX_CONTENT_LENGTH = 500_000;
 export const MAX_NOTES_LENGTH = 100_000;
+// Plain text shown to readers (task 98).
+export const MAX_FOLDER_DESCRIPTION_LENGTH = 1000;
 
 export const MAX_FOLDERS = 1000;
 export const MAX_CHAPTERS_PER_FOLDER = 500;
@@ -42,6 +44,10 @@ const LENGTHS = {
   content: { max: MAX_CONTENT_LENGTH, key: "contentTooLong" },
   notes: { max: MAX_NOTES_LENGTH, key: "notesTooLong" },
   folderNotes: { max: MAX_NOTES_LENGTH, key: "folderNotesTooLong" },
+  folderDescription: {
+    max: MAX_FOLDER_DESCRIPTION_LENGTH,
+    key: "folderDescriptionTooLong",
+  },
   comment: { max: MAX_COMMENT_LENGTH, key: "commentTooLong" },
   post: { max: MAX_POST_LENGTH, key: "postTooLong" },
   dm: { max: MAX_DM_LENGTH, key: "dmTooLong" },

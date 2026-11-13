@@ -265,6 +265,7 @@ async function main() {
     const folder = await new Folder({
       userId: owner,
       name: book.name,
+      description: book.description,
       notes: book.notes,
       notesUpdatedAt: daysAgo(latest),
       lastActivityAt: daysAgo(latest),

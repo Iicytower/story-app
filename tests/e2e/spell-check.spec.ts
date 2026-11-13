@@ -5,6 +5,7 @@ import {
   expect,
   markdownEditor,
   openMenu,
+  publicLinkRow,
   publishFromEditor,
   test,
 } from "./helpers";
@@ -62,9 +63,7 @@ test("the rest of the UI is not marked as Polish", async ({ page }) => {
     markdownEditor(page, "Content").button("Bold"),
   ).not.toHaveAttribute("lang", "pl");
   await publishFromEditor(page);
-  await expect(
-    page.getByRole("textbox", { name: "Public link" }),
-  ).not.toHaveAttribute("lang", "pl");
+  await expect(publicLinkRow(page)).toBeVisible();
   const polish = page.locator('[lang="pl"]');
   await expect(polish).toHaveCount(4);
   expect(

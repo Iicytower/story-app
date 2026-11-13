@@ -132,6 +132,56 @@ describe("importStories", () => {
     expect(await Folder.exists({ name: "New", userId: alice })).toBeTruthy();
   });
 
+  it("gives a new folder the file's description, leaving an existing folder's own", async () => {
+    await importStories(
+      { kind: "new", name: "Nowa" },
+      [chapter("A")],
+      "",
+      " Opis z pliku ",
+    );
+    expect((await Folder.findOne({ name: "Nowa" }).lean())?.description).toBe(
+      "Opis z pliku",
+    );
+
+    const folder = await seedFolder(alice, "F");
+    await Folder.updateOne({ _id: folder._id }, { description: "Własny" });
+    await importStories(
+      { kind: "folder", id: folder._id.toString() },
+      [chapter("B")],
+      "",
+      "Opis z pliku",
+    );
+    expect((await Folder.findById(folder._id).lean())?.description).toBe(
+      "Własny",
+    );
+
+    expect(
+      await importStories(
+        { kind: "new", name: "Za długi" },
+        [chapter("C")],
+        "",
+        "a".repeat(1001),
+      ),
+    ).toEqual({
+      ok: false,
+      error: "INVALID_INPUT",
+      message: "A book description can have at most 1,000 characters.",
+    });
+    expect(await Folder.exists({ name: "Za długi" })).toBeNull();
+
+    expect(
+      await importStories(
+        { kind: "folder", id: folder._id.toString() },
+        [chapter("D")],
+        "",
+        "a".repeat(1001),
+      ),
+    ).toMatchObject({ ok: true });
+    expect((await Folder.findById(folder._id).lean())?.description).toBe(
+      "Własny",
+    );
+  });
+
   it("appends folder notes to the notes of an existing folder", async () => {
     const folder = await seedFolder(alice, "F", "Stare");
     const empty = await seedFolder(alice, "E");

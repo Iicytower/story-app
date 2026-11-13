@@ -55,79 +55,79 @@ async function loadPublishedFolder(
   folderSlug: string,
   withBanned: boolean,
 ) {
-    await connectDB();
-    const author = await findUserByNickname(nickname);
-    if (!author) return null;
-    const userId = author._id.toString();
-    // A globally banned author's books are hidden from others while the ban lasts (D80); the
-    // session is read only then, so the pages of everyone else stay as they are.
-    if (!withBanned && isBanActive(author.globalBan, new Date())) {
-      const viewer = await requireUser();
-      if (!viewer.ok || viewer.userId !== userId) return null;
-    }
-    const folders = await Folder.find({ userId, deletedAt: null })
-      .select({
-        name: 1,
-        published: 1,
-        formerSlugs: 1,
-        chapterSort: 1,
-        adult: 1,
-        coverId: 1,
-      })
-      .lean();
-    const slugs = folderSlugs(folders);
-    const folder =
-      folders.find(
-        ({ _id, published }) =>
-          published && slugs.get(_id.toString()) === folderSlug,
-      ) ??
-      folders.find(
-        ({ published, formerSlugs }) =>
-          published && formerSlugs?.includes(folderSlug),
-      );
-    if (!folder) return null;
+  await connectDB();
+  const author = await findUserByNickname(nickname);
+  if (!author) return null;
+  const userId = author._id.toString();
+  // A globally banned author's books are hidden from others while the ban lasts (D80); the
+  // session is read only then, so the pages of everyone else stay as they are.
+  if (!withBanned && isBanActive(author.globalBan, new Date())) {
+    const viewer = await requireUser();
+    if (!viewer.ok || viewer.userId !== userId) return null;
+  }
+  const folders = await Folder.find({ userId, deletedAt: null })
+    .select({
+      name: 1,
+      published: 1,
+      formerSlugs: 1,
+      chapterSort: 1,
+      adult: 1,
+      coverId: 1,
+    })
+    .lean();
+  const slugs = folderSlugs(folders);
+  const folder =
+    folders.find(
+      ({ _id, published }) =>
+        published && slugs.get(_id.toString()) === folderSlug,
+    ) ??
+    folders.find(
+      ({ published, formerSlugs }) =>
+        published && formerSlugs?.includes(folderSlug),
+    );
+  if (!folder) return null;
 
-    const chapters = await findChaptersInOrder(
-      userId,
-      folder._id.toString(),
-      chapterOrder(folder.chapterSort ?? "created"),
-    )
-      .select({
-        title: 1,
-        publication: 1,
-        formerSlugs: 1,
-        adult: 1,
-        publishedAt: 1,
-      })
-      .lean();
-    const path = `/p/${author.nickname}/${slugs.get(folder._id.toString())}`;
-    const slugsOfChapters = chapterSlugs(chapters);
-    const visible = chapters
-      .filter(({ publication }) => publication === "public")
-      .map(({ _id, title, formerSlugs, adult, publishedAt }) => {
-        const slug = slugsOfChapters.get(_id.toString())!;
-        return {
-          _id,
-          title,
-          slug,
-          formerSlugs,
-          publishedAt,
-          path: `${path}/${slug}`,
-          adult: isAdult(adult) || isAdult(folder.adult),
-        };
-      });
-    if (visible.length === 0) return null;
-    const covers = await coversOf([folder]);
-    return {
-      id: folder._id.toString(),
-      authorId: userId,
-      nickname: author.nickname,
-      name: folder.name,
-      adult: isAdult(folder.adult),
-      cover: covers.get(folder._id.toString()) ?? null,
-      path,
-      chapters: visible,
-    };
+  const chapters = await findChaptersInOrder(
+    userId,
+    folder._id.toString(),
+    chapterOrder(folder.chapterSort ?? "created"),
+  )
+    .select({
+      title: 1,
+      publication: 1,
+      formerSlugs: 1,
+      adult: 1,
+      publishedAt: 1,
+    })
+    .lean();
+  const path = `/p/${author.nickname}/${slugs.get(folder._id.toString())}`;
+  const slugsOfChapters = chapterSlugs(chapters);
+  const visible = chapters
+    .filter(({ publication }) => publication === "public")
+    .map(({ _id, title, formerSlugs, adult, publishedAt }) => {
+      const slug = slugsOfChapters.get(_id.toString())!;
+      return {
+        _id,
+        title,
+        slug,
+        formerSlugs,
+        publishedAt,
+        path: `${path}/${slug}`,
+        adult: isAdult(adult) || isAdult(folder.adult),
+      };
+    });
+  if (visible.length === 0) return null;
+  const covers = await coversOf([folder]);
+  return {
+    id: folder._id.toString(),
+    authorId: userId,
+    nickname: author.nickname,
+    name: folder.name,
+    adult: isAdult(folder.adult),
+    cover: covers.get(folder._id.toString()) ?? null,
+    path,
+    chapters: visible,
+  };
 }
 
 const findPublishedFolder = cache((nickname: string, folderSlug: string) =>
@@ -414,7 +414,14 @@ export async function chapterPublicPath(
 // Globally banned authors are left out of the search, its tags and the recent list (D80).
 async function findSearchableFolders() {
   const folders = await Folder.find({ published: true, deletedAt: null })
-    .select({ userId: 1, name: 1, tags: 1, adult: 1, coverId: 1 })
+    .select({
+      userId: 1,
+      name: 1,
+      description: 1,
+      tags: 1,
+      adult: 1,
+      coverId: 1,
+    })
     .lean();
   const authors = await User.find({
     _id: { $in: folders.map(({ userId }) => userId) },
@@ -458,6 +465,7 @@ export async function listPublicTags(): Promise<string[]> {
 export interface PublicSearchResult {
   title: string;
   folderName: string;
+  folderDescription: string;
   nickname: string;
   path: string;
   tags: string[];
@@ -564,6 +572,7 @@ export async function searchPublishedChapters(
   return hits.map(({ chapter, folder, text, own, folderTags }) => ({
     title: chapter.title,
     folderName: folder.name,
+    folderDescription: folder.description ?? "",
     nickname: folder.nickname,
     path: paths.get(chapter._id.toString())!,
     tags: own,
@@ -574,7 +583,11 @@ export async function searchPublishedChapters(
   }));
 }
 
-export interface RecentChapter extends PublicSearchResult {
+// The description is shown in search results only (task 98).
+export interface RecentChapter extends Omit<
+  PublicSearchResult,
+  "folderDescription"
+> {
   publishedAt: Date;
 }
 

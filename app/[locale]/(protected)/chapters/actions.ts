@@ -177,12 +177,14 @@ async function createNumberedFolder(
   userId: string,
   name: string,
   notes: string,
+  description: string,
 ): Promise<Types.ObjectId> {
   for (let attempt = 1; ; attempt++) {
     try {
       const folder = await Folder.create({
         userId,
         name: numberedTitle(name, attempt),
+        description,
         notes,
         position: await nextFolderPosition(userId),
         // Keeps the file's order, which "Newest first" would reverse.
@@ -243,11 +245,18 @@ export async function importStories(
   target: ImportTarget,
   chapters: ImportedChapter[],
   folderNotes: string,
+  folderDescription = "",
 ): Promise<ActionResult<{ folderId: string; storyId: string }>> {
   const user = await requireUser();
   if (!user.ok) return user;
   const problem = checkImport(chapters, folderNotes);
   if (problem) return translateError(problem);
+  if (!isString(folderDescription)) return INVALID_REQUEST();
+  const description = folderDescription.trim();
+  if (target?.kind === "new") {
+    const tooLong = lengthError("folderDescription", description);
+    if (tooLong) return translateError(tooLong);
+  }
 
   await connectDB();
   let folderId: Types.ObjectId;
@@ -270,7 +279,12 @@ export async function importStories(
     if (tooLong) return translateError(tooLong);
     if (target.kind === "new") {
       if (!(await canAddFolder(user.userId))) return TOO_MANY_FOLDERS();
-      folderId = await createNumberedFolder(user.userId, name, notesToAppend);
+      folderId = await createNumberedFolder(
+        user.userId,
+        name,
+        notesToAppend,
+        description,
+      );
       notesToAppend = "";
     } else {
       const found = await findOrCreateFolder(user.userId, name);

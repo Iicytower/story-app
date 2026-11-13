@@ -10,6 +10,8 @@ export interface ChapterItemProps {
   title: string;
   // "in <folder> by <nickname>", translated by the caller.
   byline: string;
+  // Search results only; one line, cut off.
+  folderDescription?: string;
   snippet: Snippet;
   tags: string[];
   folderTags: string[];
@@ -25,6 +27,7 @@ export function ChapterItem({
   path,
   title,
   byline,
+  folderDescription,
   snippet,
   tags,
   folderTags,
@@ -56,6 +59,14 @@ export function ChapterItem({
               </time>
             )}
           </span>
+          {folderDescription && (
+            <span
+              title={folderDescription}
+              className="text-muted-foreground truncate text-xs italic"
+            >
+              {folderDescription}
+            </span>
+          )}
           <span className="text-muted-foreground line-clamp-2 text-sm">
             {snippet.before}
             {snippet.match && (

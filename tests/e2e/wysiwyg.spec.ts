@@ -4,6 +4,7 @@ import { storageStatePath } from "./env";
 import {
   expect,
   markdownEditor,
+  publicLinkHref,
   publishFromEditor,
   selectToLineStart,
   test,
@@ -175,9 +176,7 @@ test("typed dialogue stays paragraphs in the editor, Source and on the public pa
   await expect(content.field.locator("ul, li")).toHaveCount(0);
 
   await publishFromEditor(page);
-  const url = await page
-    .getByRole("textbox", { name: "Public link" })
-    .inputValue();
+  const url = await publicLinkHref(page);
   const visitor = await browser.newContext({
     storageState: { cookies: [], origins: [] },
   });
@@ -248,9 +247,7 @@ test("a comment written in the editor is not on the public page", async ({
   await expect(page.getByRole("status")).toHaveText("Saved");
 
   await publishFromEditor(page);
-  const url = await page
-    .getByRole("textbox", { name: "Public link" })
-    .inputValue();
+  const url = await publicLinkHref(page);
   const visitor = await browser.newContext({
     storageState: { cookies: [], origins: [] },
   });

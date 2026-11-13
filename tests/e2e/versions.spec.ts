@@ -287,3 +287,37 @@ test("restores an entire version from the list after confirmation", async ({
     /Version 2: Before restoring version 1/,
   );
 });
+
+test("restoring an unchanged version is disabled, and a click on the chapter row selects it", async ({
+  page,
+}) => {
+  const {
+    folderId,
+    ids: [a],
+  } = await seedBook("A");
+  await page.goto(`/books/${folderId}`);
+  await saveVersion(page, "Same");
+
+  await versions(page)
+    .getByRole("link", { name: /Version 1/ })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Restore entire version" }),
+  ).toBeDisabled();
+
+  await updateStoryById(a, { content: "A rewritten" });
+  await page.reload();
+  const restore = page.getByRole("button", { name: "Restore entire version" });
+  await expect(restore).toBeEnabled();
+  await restore.click();
+  const dialog = page.getByRole("alertdialog", {
+    name: "Restore entire version?",
+  });
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toBeHidden();
+  expect((await findStoryById(a))?.content).toBe("A rewritten");
+
+  const checkbox = page.getByRole("checkbox", { name: "A", exact: true });
+  await versionChapter(page, "A").getByText("changed", { exact: true }).click();
+  await expect(checkbox).toBeChecked();
+});

@@ -9,7 +9,7 @@ import {
   seedReadingProgress,
 } from "./db";
 import { storageStatePath } from "./env";
-import { expect, loginAs, menuAction, test } from "./helpers";
+import { expect, loginAs, menuAction, publicLinkRow, test } from "./helpers";
 
 test.use({ storageState: storageStatePath("dave") });
 
@@ -93,7 +93,9 @@ test("the library counts a newly published chapter until it is read", async ({
     page.getByText(count === 1 ? "1 new chapter" : `${count} new chapters`);
 
   await page.goto("/en/library");
-  await expect(page.getByRole("link", { name: "Book", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Book", exact: true }),
+  ).toBeVisible();
   await expect(newChapters(1)).toBeHidden();
 
   const alice = await loginAs(browser, "alice");
@@ -104,9 +106,7 @@ test("the library counts a newly published chapter until it is read", async ({
     .getByRole("alertdialog", { name: "Publish chapter?" })
     .getByRole("button", { name: "Publish", exact: true })
     .click();
-  await expect(
-    alice.page.getByRole("textbox", { name: "Public link" }),
-  ).toBeVisible();
+  await expect(publicLinkRow(alice.page)).toBeVisible();
   await alice.context.close();
 
   await page.reload();

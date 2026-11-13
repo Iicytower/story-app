@@ -4,6 +4,7 @@ import {
   createFolder,
   deleteFolder,
   renameFolder,
+  saveFolderDescription,
   saveFolderNotes,
 } from "@/app/[locale]/(protected)/books/actions";
 import {
@@ -13,6 +14,7 @@ import {
 import type { ActionError } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/session";
 import { getFolder, listFolders } from "@/lib/folders/queries";
+import { MAX_FOLDER_DESCRIPTION_LENGTH } from "@/lib/limits";
 import { Folder } from "@/lib/models/folder";
 import { Story } from "@/lib/models/story";
 import { getStory, listStories } from "@/lib/stories/queries";
@@ -275,6 +277,85 @@ describe("saveFolderNotes", () => {
     expect(
       await saveFolderNotes(folderId.toString(), "x", OLD.toISOString()),
     ).toEqual(unauthorized);
+  });
+});
+
+describe("saveFolderDescription", () => {
+  it("saves a trimmed description that getFolder returns", async () => {
+    const folderId = await seedFolder("Drafts");
+    await Folder.collection.updateOne(
+      { _id: folderId },
+      { $set: { updatedAt: OLD } },
+    );
+
+    expect(
+      await saveFolderDescription(folderId.toString(), "  A tale.\n "),
+    ).toEqual({ ok: true, description: "A tale." });
+    expect(
+      (await getFolder(alice.toString(), folderId.toString()))?.description,
+    ).toBe("A tale.");
+    const folder = await Folder.findById(folderId).lean();
+    expect(folder!.updatedAt.getTime()).toBeGreaterThan(OLD.getTime());
+    expect(folder!.notesUpdatedAt).toEqual(OLD);
+  });
+
+  it("reads a folder without the field as an empty description", async () => {
+    const folderId = await seedFolder("Old");
+    await Folder.collection.updateOne(
+      { _id: folderId },
+      { $unset: { description: "" } },
+    );
+
+    expect(
+      (await getFolder(alice.toString(), folderId.toString()))?.description,
+    ).toBe("");
+  });
+
+  it("rejects a description over the limit", async () => {
+    const folderId = await seedFolder("Drafts");
+
+    expect(
+      await saveFolderDescription(
+        folderId.toString(),
+        "a".repeat(MAX_FOLDER_DESCRIPTION_LENGTH + 1),
+      ),
+    ).toEqual({
+      ok: false,
+      error: "INVALID_INPUT",
+      message: "A book description can have at most 1,000 characters.",
+    });
+    expect(
+      await saveFolderDescription(
+        folderId.toString(),
+        ` ${"a".repeat(MAX_FOLDER_DESCRIPTION_LENGTH)} `,
+      ),
+    ).toMatchObject({ ok: true });
+  });
+
+  it("returns NOT_FOUND for another user's or a deleted folder", async () => {
+    const bobs = await seedFolder("Bob's", bob);
+    const deleted = await seedFolder("Gone");
+    await deleteFolder(deleted.toString());
+
+    for (const id of [bobs, deleted]) {
+      expect(await saveFolderDescription(id.toString(), "Hijack")).toEqual({
+        ok: false,
+        error: "NOT_FOUND",
+        message: expect.any(String),
+      });
+    }
+    expect((await folderDoc(bobs))?.description).toBe("");
+  });
+
+  it("rejects input that is not text and a missing session", async () => {
+    const folderId = await seedFolder("Drafts");
+    expect(
+      await saveFolderDescription(folderId.toString(), 42 as unknown as string),
+    ).toMatchObject({ ok: false, error: "INVALID_INPUT" });
+    signInAs(null);
+    expect(await saveFolderDescription(folderId.toString(), "x")).toEqual(
+      unauthorized,
+    );
   });
 });
 

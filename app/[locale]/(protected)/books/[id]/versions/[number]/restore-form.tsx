@@ -148,14 +148,20 @@ export function RestoreForm({
             const effect = EFFECTS[row.status];
             return (
               <li key={row.id} className="flex flex-col gap-2 px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <label className="flex min-w-0 flex-1 items-center gap-3">
-                    <input
-                      type="checkbox"
-                      disabled={effect === null}
-                      checked={selected.has(row.id)}
-                      onChange={(event) => toggle(row.id, event.target.checked)}
-                    />
+                {/* The whole row toggles the checkbox, not just the 14 px box. */}
+                <label
+                  className={`flex items-center gap-3 ${effect === null ? "" : "cursor-pointer"}`}
+                >
+                  <input
+                    type="checkbox"
+                    disabled={effect === null}
+                    checked={selected.has(row.id)}
+                    onChange={(event) => toggle(row.id, event.target.checked)}
+                    // The label also holds the status and effect, which would join the name.
+                    aria-label={row.title}
+                    className="size-4 shrink-0"
+                  />
+                  <span className="flex min-w-0 flex-1 items-center">
                     {row.status === "added" ? (
                       <Link
                         href={`/chapters/${row.id}`}
@@ -166,7 +172,7 @@ export function RestoreForm({
                     ) : (
                       <span className="truncate font-medium">{row.title}</span>
                     )}
-                  </label>
+                  </span>
                   {effect && selected.has(row.id) && (
                     <span className="text-sm font-medium">
                       {t(`effects.${effect}`)}
@@ -175,7 +181,7 @@ export function RestoreForm({
                   <span className="text-muted-foreground text-sm">
                     {t(`status.${row.status}`)}
                   </span>
-                </div>
+                </label>
                 {row.diffs.length > 0 && (
                   <details>
                     <summary className="text-muted-foreground cursor-pointer text-sm">
@@ -215,6 +221,7 @@ function RestoreEntireDialog({
   const t = useTranslations("versions");
   const tCommon = useTranslations("common");
   const { reverted, returned, removed } = restoreSummary(comparison);
+  const unchanged = reverted + returned + removed === 0;
   const changes = [
     reverted > 0 && t("willRevert", { count: reverted }),
     returned > 0 && t("willReturn", { count: returned }),
@@ -225,7 +232,7 @@ function RestoreEntireDialog({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button disabled={pending}>
+        <Button variant="outline" disabled={pending || unchanged}>
           <RotateCcwIcon />
           {pending ? t("restoring") : t("restoreEntire")}
         </Button>

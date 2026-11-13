@@ -10,7 +10,7 @@ import {
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { ActionMenu, PublicationIcon } from "@/components/action-menu";
+import { ActionMenu, PublicationStatus } from "@/components/action-menu";
 import { AdultDialog, AdultMenuItem } from "@/components/adult";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { type TagOptions, TagsDialog } from "@/components/tags-dialog";
@@ -55,7 +55,7 @@ export function FolderRowMenu({
 
   return (
     <>
-      <PublicationIcon isPublic={isPublic} />
+      <PublicationStatus isPublic={isPublic} />
       <ActionMenu label={t("actionsFor", { name })}>
         <DropdownMenuItem onSelect={() => setDialog("tags")}>
           <TagIcon />
